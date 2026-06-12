@@ -4,9 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseRTDB } from "@/lib/firebase";
-import { doc, getDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, orderBy, limit, writeBatch } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, orderBy, limit, writeBatch, where, getDocs } from "firebase/firestore";
 import { ref, onValue, set, onDisconnect } from "firebase/database";
-import { FiArrowLeft, FiUsers, FiSend, FiLoader } from "react-icons/fi";
+import { FiArrowLeft, FiUsers, FiSend, FiLoader, FiMoreVertical, FiSearch, FiUserPlus, FiClipboard, FiX, FiPlus, FiCheck, FiCopy } from "react-icons/fi";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -28,6 +28,22 @@ type Message = {
   senderName: string;
   senderAvatar: string;
   createdAt: any;
+  type?: 'text' | 'poll';
+  pollData?: PollData;
+};
+
+type PollData = {
+  question: string;
+  options: { text: string; votes: string[] }[];
+  creatorId: string;
+  createdAt: any;
+};
+
+type UserData = {
+  uid: string;
+  displayName: string;
+  email: string;
+  photoURL: string;
 };
 
 export default function ChatRoom() {
@@ -43,6 +59,18 @@ export default function ChatRoom() {
   const [sending, setSending] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  
+  // Menu + Modal states
+  const [showMenu, setShowMenu] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Message[]>([]);
+  const [showInvite, setShowInvite] = useState(false);
+  const [allUsers, setAllUsers] = useState<UserData[]>([]);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [showPoll, setShowPoll] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState(["", ""]);
 
   const isPublicRoom = typeof roomId === 'string' && roomId.startsWith('public_');
 
@@ -122,7 +150,7 @@ export default function ChatRoom() {
     const unsubChatCheck = onSnapshot(chatRef, (chatSnap) => {
       if (chatSnap.exists()) {
         const messagesRef = collection(db, "chats", roomId as string, "messages");
-        const q = query(messagesRef, orderBy("createdAt", "asc"), limit(100));
+        const q = query(messagesRef, orderBy("createdAt", "asc"), limit(200));
         unsubMessages = onSnapshot(q, (snap) => {
           const msgs: Message[] = [];
           snap.forEach((doc) => {
@@ -136,6 +164,8 @@ export default function ChatRoom() {
               senderName,
               senderAvatar,
               createdAt: data.createdAt,
+              type: data.type || 'text',
+              pollData: data.pollData || null,
             } as Message);
           });
           setMessages(msgs);
@@ -201,6 +231,7 @@ export default function ChatRoom() {
         senderName: userName,
         senderAvatar: userAvatar,
         createdAt: serverTimestamp(),
+        type: 'text',
       });
 
       await batch.commit();
@@ -211,6 +242,159 @@ export default function ChatRoom() {
       setMessage(text);
     } finally {
       setSending(false);
+    }
+  };
+
+  // Tìm tin nhắn
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const results = messages.filter(msg => 
+      msg.text.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setSearchResults(results);
+  };
+
+  const scrollToMessage = (msgId: string) => {
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('bg-yellow-200', 'dark:bg-yellow-900');
+      setTimeout(() => el.classList.remove('bg-yellow-200', 'dark:bg-yellow-900'), 2000);
+      setShowSearch(false);
+      setSearchQuery("");
+    }
+  };
+
+  // Mời bạn bè
+  const loadAllUsers = async () => {
+  if (!user?.uid) return;
+  setInviteLoading(true);
+  try {
+    // 1. Lấy danh sách friend IDs từ user hiện tại
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    const friendIds = userDoc.data()?.friends || [];
+    
+    if (friendIds.length === 0) {
+      setAllUsers([]);
+      setInviteLoading(false);
+      return;
+    }
+
+    // 2. Load thông tin từng friend chưa có trong room
+    const users: UserData[] = [];
+    const chunks = [];
+    for (let i = 0; i < friendIds.length; i += 10) {
+      chunks.push(friendIds.slice(i, i + 10));
+    }
+
+    for (const chunk of chunks) {
+      const q = query(collection(db, "users"), where("__name__", "in", chunk));
+      const snap = await getDocs(q);
+      snap.forEach(doc => {
+        const data = doc.data();
+        if (!roomData?.members.includes(doc.id)) {
+          users.push({
+            uid: doc.id,
+            displayName: data.displayName || data.email?.split('@')[0] || "User",
+            email: data.email || "",
+            photoURL: data.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.displayName || "User")}&background=random`,
+          });
+        }
+      });
+    }
+    setAllUsers(users);
+  } catch (e) {
+    console.error(e);
+    toast.error("Lỗi tải danh sách bạn bè");
+  } finally {
+    setInviteLoading(false);
+  }
+};
+
+  const inviteUser = async (uid: string) => {
+    try {
+      const chatRef = doc(db, "chats", roomId as string);
+      await writeBatch(db).update(chatRef, {
+        members: arrayUnion(uid),
+        memberCount: (roomData?.memberCount || 0) + 1,
+      }).commit();
+      toast.success("Đã mời thành công");
+      setAllUsers(prev => prev.filter(u => u.uid!== uid));
+    } catch (e) {
+      toast.error("Lỗi mời bạn");
+    }
+  };
+
+  const copyInviteLink = () => {
+    const link = `${window.location.origin}/chat/${roomId}`;
+    navigator.clipboard.writeText(link);
+    toast.success("Đã copy link mời");
+  };
+
+  // Tạo bình chọn
+  const createPoll = async () => {
+    if (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2) {
+      toast.error("Cần câu hỏi và ít nhất 2 lựa chọn");
+      return;
+    }
+    setSending(true);
+    try {
+      const userName = user?.displayName || user?.email?.split('@')[0] || "User";
+      const userAvatar = user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
+
+      const msgRef = doc(collection(db, "chats", roomId as string, "messages"));
+      await writeBatch(db).set(msgRef, {
+        text: `📊 ${pollQuestion}`,
+        senderId: user?.uid,
+        senderName: userName,
+        senderAvatar: userAvatar,
+        createdAt: serverTimestamp(),
+        type: 'poll',
+        pollData: {
+          question: pollQuestion,
+          options: pollOptions.filter(o => o.trim()).map(o => ({ text: o, votes: [] })),
+          creatorId: user?.uid,
+          createdAt: serverTimestamp(),
+        }
+      }).commit();
+
+      setShowPoll(false);
+      setPollQuestion("");
+      setPollOptions(["", ""]);
+      toast.success("Đã tạo bình chọn");
+    } catch (e) {
+      toast.error("Lỗi tạo bình chọn");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const votePoll = async (msgId: string, optionIdx: number) => {
+    if (!user?.uid) return;
+    try {
+      const msgRef = doc(db, "chats", roomId as string, "messages", msgId);
+      const msgSnap = await getDoc(msgRef);
+      if (!msgSnap.exists()) return;
+      
+      const data = msgSnap.data();
+      const pollData = data.pollData;
+      const newOptions = pollData.options.map((opt: any, idx: number) => {
+        const votes = opt.votes || [];
+        if (idx === optionIdx) {
+          return {...opt, votes: votes.includes(user.uid)? votes.filter((v: string) => v!== user.uid) : [...votes, user.uid] };
+        } else {
+          return {...opt, votes: votes.filter((v: string) => v!== user.uid) };
+        }
+      });
+
+      await writeBatch(db).update(msgRef, {
+        'pollData.options': newOptions
+      }).commit();
+    } catch (e) {
+      toast.error("Lỗi vote");
     }
   };
 
@@ -234,6 +418,7 @@ export default function ChatRoom() {
 
   return (
     <div className="fixed inset-0 bg-white dark:bg-black flex flex-col">
+      {/* Header */}
       <div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-black/5 dark:border-white/5 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-3 px-4 py-3">
           <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center -ml-2 active:opacity-60">
@@ -256,9 +441,44 @@ export default function ChatRoom() {
               )}
             </p>
           </div>
+          
+          {/* Nút... Menu */}
+          <button 
+            onClick={() => setShowMenu(!showMenu)} 
+            className="w-9 h-9 flex items-center justify-center -mr-2 active:opacity-60 relative"
+          >
+            <FiMoreVertical size={20} />
+            
+            {showMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                <div className="absolute top-12 right-0 z-50 w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+                  <button 
+                    onClick={() => { setShowSearch(true); setShowMenu(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800"
+                  >
+                    <FiSearch size={18} /> <span className="text-[15px]">Tìm tin nhắn</span>
+                  </button>
+                  <button 
+                    onClick={() => { setShowInvite(true); setShowMenu(false); loadAllUsers(); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800"
+                  >
+                    <FiUserPlus size={18} /> <span className="text-[15px]">Mời bạn bè</span>
+                  </button>
+                  <button 
+                    onClick={() => { setShowPoll(true); setShowMenu(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800"
+                  >
+                    <FiClipboard size={18} /> <span className="text-[15px]">Tạo bình chọn</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
+      {/* Messages */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
@@ -278,8 +498,64 @@ export default function ChatRoom() {
             const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
             const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
 
+            // Render Poll
+            if (msg.type === 'poll' && msg.pollData) {
+              const totalVotes = msg.pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
+              return (
+                <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
+                  <div className="w-8 flex-shrink-0 self-end">
+                    {isFirstInGroup? (
+                      <img
+                        src={msg.senderAvatar}
+                        alt={msg.senderName}
+                        className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : <div className="w-8" />}
+                  </div>
+                  <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+                    <div className="px-4 py-3 rounded-[18px] bg-zinc-100 dark:bg-zinc-800 w-full">
+                      <p className="text-[15px] font-semibold mb-3">📊 {msg.pollData.question}</p>
+                      <div className="space-y-2">
+                        {msg.pollData.options.map((opt, optIdx) => {
+                          const voted = opt.votes.includes(user?.uid || '');
+                          const percent = totalVotes > 0? (opt.votes.length / totalVotes * 100).toFixed(0) : 0;
+                          return (
+                            <button
+                              key={optIdx}
+                              onClick={() => votePoll(msg.id, optIdx)}
+                              className="w-full text-left relative overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700 active:opacity-70"
+                            >
+                              <div 
+                                className="absolute inset-0 bg-[#0a84ff]/20 transition-all"
+                                style={{ width: `${percent}%` }}
+                              />
+                              <div className="relative px-3 py-2.5 flex items-center justify-between">
+                                <span className="text-[15px] flex items-center gap-2">
+                                  {voted && <FiCheck className="text-[#0a84ff]" size={16} />}
+                                  {opt.text}
+                                </span>
+                                <span className="text-[13px] text-[#8e8e93]">{opt.votes.length}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[11px] text-[#8e8e93] mt-2">{totalVotes} lượt bình chọn</p>
+                    </div>
+                    {isLastInGroup && (
+                      <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
+                        {formatMessageTime(msg.createdAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
+            // Render Text message
             return (
-              <div key={msg.id} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
+              <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
                 <div className="w-8 flex-shrink-0 self-end">
                   {isFirstInGroup? (
                     <img
@@ -297,7 +573,7 @@ export default function ChatRoom() {
                 <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
                   <div className={`px-4 py-2.5 rounded-[18px] ${
                     isMe
-                ? 'bg-[#0a84ff] text-white'
+               ? 'bg-[#0a84ff] text-white'
                     : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
                   } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
                     <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
@@ -314,6 +590,7 @@ export default function ChatRoom() {
         )}
       </div>
 
+      {/* Input */}
       <div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-black/5 dark:border-white/5 pb-[env(safe-area-inset-bottom)]">
         <div className="px-3 py-2">
           <div className="flex items-end gap-2">
@@ -341,6 +618,136 @@ export default function ChatRoom() {
           </div>
         </div>
       </div>
+
+      {/* Modal Tìm tin nhắn */}
+      {showSearch && (
+        <div className="fixed inset-0 z-50 bg-white dark:bg-black flex flex-col pt-[env(safe-area-inset-top)]">
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-black/5 dark:border-white/5">
+            <button onClick={() => { setShowSearch(false); setSearchQuery(""); setSearchResults([]); }} className="w-9 h-9 flex items-center justify-center -ml-2">
+              <FiX size={22} />
+            </button>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Tìm tin nhắn..."
+              autoFocus
+              className="flex-1 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-[20px] text-[15px] outline-none"
+            />
+            <button onClick={handleSearch} className="text-[#0a84ff] font-semibold">Tìm</button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-2">
+            {searchResults.length === 0 && searchQuery? (
+              <p className="text-center text-[#8e8e93] mt-10">Không tìm thấy kết quả</p>
+            ) : searchResults.map(msg => (
+              <button
+                key={msg.id}
+                onClick={() => scrollToMessage(msg.id)}
+                className="w-full text-left p-3 active:bg-zinc-100 dark:active:bg-zinc-800 rounded-lg mb-1"
+              >
+                <p className="text-[13px] text-[#8e8e93] mb-1">{msg.senderName} • {formatMessageTime(msg.createdAt)}</p>
+                <p className="text-[15px] line-clamp-2">{msg.text}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Modal Mời bạn bè */}
+      {showInvite && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end">
+          <div className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/5">
+              <h3 className="text-[17px] font-semibold">Mời bạn bè</h3>
+              <button onClick={() => setShowInvite(false)}><FiX size={24} /></button>
+            </div>
+            <button 
+              onClick={copyInviteLink}
+              className="mx-4 mt-4 flex items-center gap-3 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl active:opacity-70"
+            >
+              <FiCopy size={20} className="text-[#0a84ff]" />
+              <span className="text-[15px] font-medium">Copy link mời</span>
+            </button>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {inviteLoading? (
+                <div className="flex justify-center py-10"><FiLoader className="animate-spin" size={24} /></div>
+              ) : allUsers.length === 0? (
+                <p className="text-center text-[#8e8e93] py-10">Không có ai để mời</p>
+              ) : allUsers.map(user => (
+                <div key={user.uid} className="flex items-center gap-3 py-2">
+                  <img src={user.photoURL} className="w-12 h-12 rounded-full" alt="" />
+                  <div className="flex-1">
+                    <p className="text-[15px] font-medium">{user.displayName}</p>
+                    <p className="text-[13px] text-[#8e8e93]">{user.email}</p>
+                  </div>
+                  <button 
+                    onClick={() => inviteUser(user.uid)}
+                    className="px-4 py-1.5 bg-[#0a84ff] text-white rounded-full text-[15px] font-medium active:opacity-70"
+                  >
+                    Mời
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Tạo bình chọn */}
+      {showPoll && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end">
+          <div className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/5">
+              <button onClick={() => setShowPoll(false)} className="text-[#0a84ff]">Huỷ</button>
+              <h3 className="text-[17px] font-semibold">Tạo bình chọn</h3>
+              <button 
+                onClick={createPoll} 
+                disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
+                className="text-[#0a84ff] font-semibold disabled:opacity-40"
+              >
+                Tạo
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              <input
+                type="text"
+                value={pollQuestion}
+                onChange={(e) => setPollQuestion(e.target.value)}
+                placeholder="Đặt câu hỏi..."
+                className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-[15px] outline-none mb-4"
+              />
+              <p className="text-[13px] text-[#8e8e93] mb-2">Lựa chọn</p>
+              {pollOptions.map((opt, idx) => (
+                <div key={idx} className="flex items-center gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={opt}
+                    onChange={(e) => {
+                      const newOpts = [...pollOptions];
+                      newOpts[idx] = e.target.value;
+                      setPollOptions(newOpts);
+                    }}
+                    placeholder={`Lựa chọn ${idx + 1}`}
+                    className="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-[15px] outline-none"
+                  />
+                  {pollOptions.length > 2 && (
+                    <button onClick={() => setPollOptions(pollOptions.filter((_, i) => i!== idx))}>
+                      <FiX size={20} className="text-red-500" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button 
+                onClick={() => setPollOptions([...pollOptions, ""])}
+                className="flex items-center gap-2 text-[#0a84ff] mt-2"
+              >
+                <FiPlus size={20} /> <span className="text-[15px]">Thêm lựa chọn</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
