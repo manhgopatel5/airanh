@@ -158,48 +158,55 @@ service cloud.firestore {
     }
 
     // ========== CHATS ==========
-    match /chats/{chatId} {
-      allow get: if isSignedIn() && request.auth.uid in resource.data.members;
+match /chats/{chatId} {
+  // SỬA: Cho phép get nếu là phòng public
+  allow get: if isSignedIn() && (
+    request.auth.uid in resource.data.members ||
+    chatId.matches('public_.*')
+  );
 
-      allow list: if isSignedIn()
-        && request.auth.uid in resource.data.members
-        &&!(request.auth.uid in resource.data.get('deletedFor', []))
-        && resource.data.get('status', 'active') == 'active';
+  // SỬA: Cho phép list nếu là phòng public
+  allow list: if isSignedIn() && (
+    request.auth.uid in resource.data.members ||
+    chatId.matches('public_.*')
+  );
 
-      // SỬA DÒNG NÀY: Cho phép tạo nếu có isPublicRoom = true
-      allow create: if isSignedIn()
-        && request.auth.uid in request.resource.data.members
-        && (
-          request.resource.data.members.size() >= 2 ||
-          request.resource.data.get('isPublicRoom', false) == true
-        );
+  // Giữ nguyên, đã fix ở lần trước
+  allow create: if isSignedIn()
+    && request.auth.uid in request.resource.data.members
+    && (
+      request.resource.data.members.size() >= 2 ||
+      request.resource.data.get('isPublicRoom', false) == true
+    );
 
-      allow update: if isSignedIn()
-        && request.auth.uid in resource.data.members;
+  allow update: if isSignedIn()
+    && request.auth.uid in resource.data.members;
 
-      allow delete: if false;
+  allow delete: if false;
 
-      match /messages/{messageId} {
-        allow read: if isSignedIn()
-          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
-          &&!(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('deletedFor', []));
+  match /messages/{messageId} {
+    // SỬA: Đọc được nếu là phòng public
+    allow read: if isSignedIn() && (
+      request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members ||
+      chatId.matches('public_.*')
+    );
 
-        allow create: if isSignedIn()
-          && request.auth.uid == request.resource.data.senderId
-          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
-          && get(/databases/$(database)/documents/chats/$(chatId)).data.get('status', 'active') == 'active'
-          &&!(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('blockedUsers', []));
+    allow create: if isSignedIn()
+      && request.auth.uid == request.resource.data.senderId
+      && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
+      && get(/databases/$(database)/documents/chats/$(chatId)).data.get('status', 'active') == 'active'
+      &&!(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('blockedUsers', []));
 
-        allow update: if isSignedIn()
-          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
-          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
-            'seenBy', 'reactions', 'text', 'editedAt', 'edited'
-          ])
-          && (request.resource.data.senderId == request.auth.uid || request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenBy', 'reactions']));
+    allow update: if isSignedIn()
+      && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
+      && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+        'seenBy', 'reactions', 'text', 'editedAt', 'edited'
+      ])
+      && (request.resource.data.senderId == request.auth.uid || request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenBy', 'reactions']));
 
-        allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
-      }
-    }
+    allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
+  }
+}
 
     // ========== FRIEND REQUESTS ==========
     match /friendRequests/{reqId} {
