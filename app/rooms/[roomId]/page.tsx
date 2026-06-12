@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { doc, getDoc, onSnapshot, arrayUnion, serverTimestamp, collection, addDoc, query, orderBy, limit, setDoc, writeBatch } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, orderBy, limit, setDoc, writeBatch } from "firebase/firestore";
 import { FiArrowLeft, FiUsers, FiSend, FiLoader } from "react-icons/fi";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
