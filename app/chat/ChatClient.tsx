@@ -20,7 +20,7 @@ import {
   getDoc,
   arrayUnion,
   setDoc,
-  increment,
+  
   limit,
   updateDoc,
   arrayRemove,
@@ -1255,7 +1255,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
       // Join phòng đã có
       await updateDoc(roomRef, {
         members: arrayUnion(user.uid),
-        memberCount: increment(1),
+        
         updatedAt: serverTimestamp(),
       });
     }
