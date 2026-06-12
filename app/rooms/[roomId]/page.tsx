@@ -73,7 +73,7 @@ const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
   const [showPoll, setShowPoll] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
-
+const [activePopupMsgId, setActivePopupMsgId] = useState<string | null>(null);
   const isPublicRoom = typeof roomId === 'string' && roomId.startsWith('public_');
   const [searchFriend, setSearchFriend] = useState("");
   const handleScroll = useCallback(() => {
@@ -147,7 +147,13 @@ const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
         router.push("/chat");
       }
     });
-
+useEffect(() => {
+  const handleClickOutside = () => setActivePopupMsgId(null);
+  if (activePopupMsgId) {
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }
+}, [activePopupMsgId]);
     const chatRef = doc(db, "chats", roomId as string);
     const unsubChatCheck = onSnapshot(chatRef, (chatSnap) => {
       if (chatSnap.exists()) {
@@ -414,15 +420,9 @@ const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
     toast.error("Lỗi vote: " + e.message);
   }
 };
-const handleAvatarClick = (e: React.MouseEvent, uid: string) => {
+const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
   e.stopPropagation();
-  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-  setPopupPos({ 
-    x: rect.left + rect.width / 2, 
-    y: rect.bottom + 8 
-  });
-  setSelectedUserId(uid);
-  setShowUserPopup(true);
+  setActivePopupMsgId(prev => prev === msgId? null : msgId);
 };
   const formatMessageTime = (timestamp: any) => {
     if (!timestamp?.toDate) return "";
@@ -529,96 +529,138 @@ const handleAvatarClick = (e: React.MouseEvent, uid: string) => {
               const totalVotes = msg.pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
               return (
                 <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
-                  <div className="w-8 flex-shrink-0 self-end">
-                    {isFirstInGroup? (
-                 <img
-  src={msg.senderAvatar}
-  alt={msg.senderName}
-  className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
-  referrerPolicy="no-referrer"
-  onClick={(e) => handleAvatarClick(e, msg.senderId)}
-/>
-                    ) : <div className="w-8" />}
-                  </div>
-                  <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-                    <div className="px-4 py-3 rounded-[18px] bg-zinc-100 dark:bg-zinc-800 w-full">
-                      <p className="text-[15px] font-semibold mb-3">📊 {msg.pollData.question}</p>
-                      <div className="space-y-2">
-                        {msg.pollData.options.map((opt, optIdx) => {
-                          const voted = opt.votes.includes(user?.uid || '');
-                          const percent = totalVotes > 0? (opt.votes.length / totalVotes * 100).toFixed(0) : 0;
-                          return (
-                            <button
-                              key={optIdx}
-                              onClick={() => votePoll(msg.id, optIdx)}
-                              className="w-full text-left relative overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700 active:opacity-70"
-                            >
-                              <div 
-                                className="absolute inset-0 bg-[#0a84ff]/20 transition-all"
-                                style={{ width: `${percent}%` }}
-                              />
-                              <div className="relative px-3 py-2.5 flex items-center justify-between">
-                                <span className="text-[15px] flex items-center gap-2">
-                                  {voted && <FiCheck className="text-[#0a84ff]" size={16} />}
-                                  {opt.text}
-                                </span>
-                                <span className="text-[13px] text-[#8e8e93]">{opt.votes.length}</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <p className="text-[11px] text-[#8e8e93] mt-2">{totalVotes} lượt bình chọn</p>
-                    </div>
-                    {isLastInGroup && (
-                      <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
-                        {formatMessageTime(msg.createdAt)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
-            }
+             <div className="w-8 flex-shrink-0 self-end relative">
+  {isFirstInGroup? (
+    <>
+      <img
+        src={msg.senderAvatar}
+        alt={msg.senderName}
+        className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
+        referrerPolicy="no-referrer"
+        onClick={(e) => handleAvatarClick(e, msg.id)}
+      />
+      {activePopupMsgId === msg.id && (
+        <div 
+          className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => {
+              router.push(`/profile/${msg.senderId}`);
+              setActivePopupMsgId(null);
+            }}
+            className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
+          >
+            <User className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+            <span className="text- font-medium text-zinc-900 dark:text-white">
+              Thông tin cá nhân
+            </span>
+          </button>
+        </div>
+      )}
+    </>
+  ) : <div className="w-8" />}
+</div>
+<div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+  <div className="px-4 py-3 rounded-[18px] bg-zinc-100 dark:bg-zinc-800 w-full">
+    <p className="text-[15px] font-semibold mb-3">📊 {msg.pollData.question}</p>
+    <div className="space-y-2">
+      {msg.pollData.options.map((opt, optIdx) => {
+        const voted = opt.votes.includes(user?.uid || '');
+        const percent = totalVotes > 0? (opt.votes.length / totalVotes * 100).toFixed(0) : 0;
+        return (
+          <button
+            key={optIdx}
+            onClick={() => votePoll(msg.id, optIdx)}
+            className="w-full text-left relative overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700 active:opacity-70"
+          >
+            <div 
+              className="absolute inset-0 bg-[#0a84ff]/20 transition-all"
+              style={{ width: `${percent}%` }}
+            />
+            <div className="relative px-3 py-2.5 flex items-center justify-between">
+              <span className="text-[15px] flex items-center gap-2">
+                {voted && <FiCheck className="text-[#0a84ff]" size={16} />}
+                {opt.text}
+              </span>
+              <span className="text-[13px] text-[#8e8e93]">{opt.votes.length}</span>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+    <p className="text-[11px] text-[#8e8e93] mt-2">{totalVotes} lượt bình chọn</p>
+  </div>
+  {isLastInGroup && (
+    <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
+      {formatMessageTime(msg.createdAt)}
+    </p>
+  )}
+</div>
+</div>
+);
+}
 
-            // Render Text message
-            return (
-              <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
-                <div className="w-8 flex-shrink-0 self-end">
-                  {isFirstInGroup? (
-            <img
-  src={msg.senderAvatar}
-  alt={msg.senderName}
-  className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
-  referrerPolicy="no-referrer"
-  onClick={(e) => handleAvatarClick(e, msg.senderId)}
-  onError={(e) => {
-    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
-  }}
-/>
-                  ) : <div className="w-8" />}
-                </div>
+// Render Text message
+return (
+  <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
+    <div className="w-8 flex-shrink-0 self-end relative">
+      {isFirstInGroup? (
+        <>
+          <img
+            src={msg.senderAvatar}
+            alt={msg.senderName}
+            className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
+            referrerPolicy="no-referrer"
+            onClick={(e) => handleAvatarClick(e, msg.id)}
+            onError={(e) => {
+              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
+            }}
+          />
+          {activePopupMsgId === msg.id && (
+            <div 
+              className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => {
+                  router.push(`/profile/${msg.senderId}`);
+                  setActivePopupMsgId(null);
+                }}
+                className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
+              >
+                <User className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                <span className="text- font-medium text-zinc-900 dark:text-white">
+                  Thông tin cá nhân
+                </span>
+              </button>
+            </div>
+          )}
+        </>
+      ) : <div className="w-8" />}
+    </div>
 
-                <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-                  <div className={`px-4 py-2.5 rounded-[18px] ${
-                    isMe
-               ? 'bg-[#0a84ff] text-white'
-                    : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-                  } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
-                    <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
-                  </div>
-                  {isLastInGroup && (
-                    <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
-                      {formatMessageTime(msg.createdAt)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })
-        )}
+    <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+      <div className={`px-4 py-2.5 rounded-[18px] ${
+        isMe
+  ? 'bg-[#0a84ff] text-white'
+        : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+      } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
+        <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
       </div>
+      {isLastInGroup && (
+        <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
+          {formatMessageTime(msg.createdAt)}
+        </p>
+      )}
+    </div>
+  </div>
+);
+})
+)}
+</div>
 
-      {/* Input */}
+{/* Input */}
       <div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-black/5 dark:border-white/5 pb-[env(safe-area-inset-bottom)]">
         <div className="px-3 py-2">
           <div className="flex items-end gap-2">
