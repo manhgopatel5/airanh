@@ -247,8 +247,9 @@ export default function ChatRoom() {
 
             return (
            <div key={msg.id} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
-  {/* Avatar - Show cho tất cả */}
-  <div className="w-8 flex-shrink-0">
+{/* Avatar - Chỉ show ở tin đầu chuỗi */}
+<div className="w-8 flex-shrink-0">
+  {isFirstInGroup? (
     <img
       src={msg.senderAvatar}
       alt={msg.senderName}
@@ -258,15 +259,16 @@ export default function ChatRoom() {
         e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
       }}
     />
-  </div>
+  ) : <div className="w-8" />}
+</div>
 
   {/* Message bubble */}
   <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-    {isFirstInGroup && (
-      <p className={`text-[13px] text-[#8e8e93] mb-1 px-3 font-medium ${isMe? 'text-right' : ''}`}>
-        {msg.senderName}{isMe? ' (Bạn)' : ''}
-      </p>
-    )}
+{isFirstInGroup && (
+  <p className="text-sm text-[#8e8e93] mb-1 px-3 font-medium">
+    {msg.senderName}
+  </p>
+)}
                   <div className={`px-4 py-2.5 rounded-[18px] ${
                     isMe
                    ? 'bg-[#0a84ff] text-white'
