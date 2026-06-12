@@ -559,30 +559,36 @@ useEffect(() => {
   }, [user?.uid, activeTab, db]);
 
   useEffect(() => {
-    if (authLoading ||!user?.uid) return;
-    let retryCount = 0;
-    let isMounted = true;
+  if (authLoading || !user?.uid) return;
+  let retryCount = 0;
+  let isMounted = true;
 
-    const setupListener = (): Unsubscribe => {
-      const chatsQuery = query(collection(db, "chats"), where("members", "array-contains", user.uid));
-      const unsubscribe = onSnapshot(chatsQuery, async (snapshot: QuerySnapshot<DocumentData>) => {
-        retryCount = 0;
-        if (!isMounted) return;
-        setLoading(true);
-        try {
-          const rawChats: RawChat[] = [];
-          const userIdsToFetch = new Set<string>();
-          snapshot.forEach((document) => {
-            const chatData = document.data();
-            const isGroupChat = Boolean(chatData.isGroup);
-            if (isGroupChat) {
-              rawChats.push({ id: document.id, c: chatData, isGroup: true });
-            } else {
-              const otherUserId = chatData.members?.find((memberId: string) => memberId!== user.uid);
-              if (otherUserId) userIdsToFetch.add(otherUserId);
-              rawChats.push({ id: document.id, c: chatData, other: otherUserId, isGroup: false });
-            }
-          });
+  const setupListener = (): Unsubscribe => {
+    const chatsQuery = query(collection(db, "chats"), where("members", "array-contains", user.uid));
+    const unsubscribe = onSnapshot(chatsQuery, async (snapshot: QuerySnapshot<DocumentData>) => {
+      retryCount = 0;
+      if (!isMounted) return;
+      setLoading(true);
+      try {
+        const rawChats: RawChat[] = [];
+        const userIdsToFetch = new Set<string>();
+        snapshot.forEach((document) => {
+          const chatData = document.data();
+
+          // THÊM 3 DÒNG NÀY ĐỂ ẨN PHÒNG PUBLIC
+          if (document.id.startsWith('public_') || chatData.isPublicRoom === true) {
+            return; // Bỏ qua, không thêm vào list inbox
+          }
+
+          const isGroupChat = Boolean(chatData.isGroup);
+          if (isGroupChat) {
+            rawChats.push({ id: document.id, c: chatData, isGroup: true });
+          } else {
+            const otherUserId = chatData.members?.find((memberId: string) => memberId !== user.uid);
+            if (otherUserId) userIdsToFetch.add(otherUserId);
+            rawChats.push({ id: document.id, c: chatData, other: otherUserId, isGroup: false });
+          }
+        });
 
           const usersMap: Record<string, any> = {};
           if (userIdsToFetch.size > 0) {
@@ -1459,17 +1465,17 @@ return (
     </button>
   </div>
 
-  <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
-    {publicRoomsLoading? (
-      [1,2,3,4].map(i => (
-        <div key={i} className="flex-shrink-0 w-36 h-36 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
-      ))
-    ) : publicRooms.slice(0, 6).map((room) => (
-      <button
-        key={room.id}
-        onClick={() => handleJoinPublicRoom(room)}
-        className="flex-shrink-0 w-36 bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
-      >
+<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 px-4">
+  {publicRoomsLoading? (
+    [1,2,3,4].map(i => (
+      <div key={i} className="h-36 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
+    ))
+  ) : publicRooms.slice(0, 8).map((room) => (
+    <button
+      key={room.id}
+      onClick={() => handleJoinPublicRoom(room)}
+      className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
+    >
         <div className={`relative h-20 bg-gradient-to-br ${room.color} flex items-center justify-center`}>
           <span className="text-4xl drop-shadow-lg">{room.emoji}</span>
           {room.isHot && (
