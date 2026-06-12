@@ -318,50 +318,34 @@ useEffect(() => {
 }, []); // Bỏ dependency [db]
 // THÊM DÒNG NÀY
 useEffect(() => {
-  const unsubs: (() => void)[] = [];
-
-  // 1. Set data ảo ngay lập tức để có card hiển thị
-  const defaultRooms = PUBLIC_CITIES.map((city) => ({
-    id: `public_${city.id}`,
-    name: city.name,
-    emoji: city.emoji,
-    color: city.color,
-    memberCount: Math.floor(Math.random() * 500) + 50,
-    onlineCount: Math.floor(Math.random() * 80) + 10,
-    lastMessage: `Chào mừng đến ${city.name}!`,
-    isJoined: false,
-    isHot: Math.random() > 0.7,
-  }));
-  setPublicRooms(defaultRooms);
-  setPublicRoomsLoading(false);
-
-  // 2. Nếu có user thì listen Firestore để update số thật
-  if (user?.uid) {
-    PUBLIC_CITIES.forEach((city) => {
-      const roomId = `public_${city.id}`;
-      const unsub = onSnapshot(doc(db, "public_rooms", roomId), (snap) => {
-        const data = snap.data();
-        if (data) {
-          setPublicRooms((prev) => {
-            const filtered = prev.filter((r) => r.id!== roomId);
-            const newRoom: PublicRoomItem = {
-              id: roomId,
-              name: city.name,
-              emoji: city.emoji,
-              color: city.color,
-              memberCount: data.memberCount || 0,
-              onlineCount: data.onlineCount || 0,
-              lastMessage: data.lastMessage || `Chào mừng đến ${city.name}!`,
-              isJoined: data.members?.includes(user.uid) || false,
-              isHot: (data.onlineCount || 0) > 20,
-            };
-            return [...filtered, newRoom].sort((a, b) => b.onlineCount - a.onlineCount);
-          });
-        }
-      });
-      unsubs.push(unsub);
-    });
+  if (!user?.uid) {
+    setPublicRoomsLoading(false);
+    return;
   }
+  const unsubs: (() => void)[] = [];
+  PUBLIC_CITIES.forEach((city) => {
+    const roomId = `public_${city.id}`;
+    const unsub = onSnapshot(doc(db, "public_rooms", roomId), (snap) => {
+      const data = snap.data();
+      setPublicRooms((prev) => {
+        const filtered = prev.filter((r) => r.id!== roomId);
+        const newRoom: PublicRoomItem = {
+          id: roomId,
+          name: city.name,
+          emoji: city.emoji,
+          color: city.color,
+          memberCount: data?.memberCount || 0,
+          onlineCount: data?.onlineCount || 0,
+          lastMessage: data?.lastMessage || "",
+          isJoined: data?.members?.includes(user.uid) || false,
+          isHot: (data?.onlineCount || 0) > 20,
+        };
+        return [...filtered, newRoom].sort((a, b) => b.onlineCount - a.onlineCount);
+      });
+      setPublicRoomsLoading(false);
+    });
+    unsubs.push(unsub);
+  });
   return () => unsubs.forEach((u) => u());
 }, [user?.uid, db]);
 type VipTier = {
@@ -1236,12 +1220,12 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
   if (room.isJoined) return router.push(`/chat/${room.id}`);
 
   try {
+    const batch = writeBatch(db);
     const roomRef = doc(db, "public_rooms", room.id);
     const roomSnap = await getDoc(roomRef);
 
     if (!roomSnap.exists()) {
-      // Tạo phòng mới
-      await setDoc(roomRef, {
+      batch.set(roomRef, {
         name: room.name,
         emoji: room.emoji,
         color: room.color,
@@ -1250,19 +1234,28 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
         onlineCount: 1,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        lastMessage: `Chào mừng đến ${room.name}! 👋`,
       });
     } else {
-      // Join phòng đã có
-      await updateDoc(roomRef, {
+      batch.update(roomRef, {
         members: arrayUnion(user.uid),
         memberCount: increment(1),
         updatedAt: serverTimestamp(),
       });
     }
 
-    // KHÔNG TẠO DOCUMENT `chats` Ở ĐÂY
-    // Để ChatRoom.tsx tự tạo khi user gửi tin nhắn đầu tiên
+    batch.set(doc(db, "chats", room.id), {
+      isGroup: true,
+      isPublicRoom: true,
+      groupName: room.name,
+      groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
+      members: arrayUnion(user.uid),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      lastMessage: `Bạn đã tham gia ${room.name}`,
+    }, { merge: true });
 
+    await batch.commit();
     if ("vibrate" in navigator) navigator.vibrate(10);
     toast.success(`Đã vào ${room.name}`, { icon: room.emoji });
     router.push(`/chat/${room.id}`);
@@ -2148,4 +2141,3 @@ return (
     </>
   );
 }
-
