@@ -1465,16 +1465,16 @@ return (
     </button>
   </div>
 
-<div className="grid grid-cols-1 gap-3 px-4">
+<div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
   {publicRoomsLoading? (
     [1,2,3,4].map(i => (
-      <div key={i} className="h-32 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
+      <div key={i} className="flex-shrink-0 w-36 h-36 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
     ))
   ) : publicRooms.slice(0, 8).map((room) => (
     <button
       key={room.id}
       onClick={() => handleJoinPublicRoom(room)}
-      className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
+      className="flex-shrink-0 w-36 bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
     >
         <div className={`relative h-20 bg-gradient-to-br ${room.color} flex items-center justify-center`}>
           <span className="text-4xl drop-shadow-lg">{room.emoji}</span>
