@@ -1233,13 +1233,14 @@ const getNotificationIcon = (type: string) => {
 
 const handleJoinPublicRoom = async (room: PublicRoomItem) => {
   if (!user?.uid) return toast.error("Vui lòng đăng nhập");
-  if (room.isJoined) return router.push(`/rooms/${room.id}`); // ← Đổi từ /chat
+  if (room.isJoined) return router.push(`/rooms/${room.id}`);
 
   try {
     const roomRef = doc(db, "public_rooms", room.id);
     const roomSnap = await getDoc(roomRef);
 
     if (!roomSnap.exists()) {
+      // Tạo phòng mới nếu chưa có
       await setDoc(roomRef, {
         name: room.name,
         emoji: room.emoji,
@@ -1251,6 +1252,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
         updatedAt: serverTimestamp(),
       });
     } else {
+      // Join phòng đã có
       await updateDoc(roomRef, {
         members: arrayUnion(user.uid),
         memberCount: increment(1),
@@ -1260,7 +1262,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
 
     if ("vibrate" in navigator) navigator.vibrate(10);
     toast.success(`Đã vào ${room.name}`, { icon: room.emoji });
-    router.push(`/rooms/${room.id}`); // ← Đổi từ /chat
+    router.push(`/rooms/${room.id}`); // ← Đúng rồi, dùng /rooms
   } catch (e: any) {
     console.error(e);
     toast.error("Lỗi vào phòng: " + e.message);
@@ -1684,13 +1686,13 @@ return (
               <div className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-zinc-900">
                 {[...pinnedChats,...normalChats].map((chat) => (
                   <div key={chat.chatId} className="group relative">
-              <Link
+          <Link
   href={
     chat.chatId.startsWith('public_') || chat.isGroup
-  ? `/rooms/${chat.chatId}`
+ ? `/rooms/${chat.chatId}`
       : `/chat/${chat.chatId}`
   }
-  className="flex items-center gap-3 px-4 py- active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150 select-none"
+  className="flex items-center gap-3 px-4 py-[10px] active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150 select-none"
   onPointerDown={() => handleLongPressStart(chat.chatId)}
   onPointerUp={handleLongPressEnd}
   onPointerLeave={handleLongPressEnd}
