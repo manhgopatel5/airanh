@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { getFirebaseDB, getFirebaseRtdb } from "@/lib/firebase";
+import { getFirebaseDB, getFirebaseRTDB } from "@/lib/firebase";
 import { doc, getDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, orderBy, limit, writeBatch } from "firebase/firestore";
 import { ref, onValue, set, onDisconnect } from "firebase/database";
 import { FiArrowLeft, FiUsers, FiSend, FiLoader } from "react-icons/fi";
@@ -34,7 +34,7 @@ export default function ChatRoom() {
   const { roomId } = useParams();
   const { user } = useAuth();
   const db = getFirebaseDB();
-  const rtdb = getFirebaseRtdb();
+  const rtdb = getFirebaseRTDB();
   const router = useRouter();
   const [roomData, setRoomData] = useState<RoomData | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -297,7 +297,7 @@ export default function ChatRoom() {
                 <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
                   <div className={`px-4 py-2.5 rounded-[18px] ${
                     isMe
-                 ? 'bg-[#0a84ff] text-white'
+                ? 'bg-[#0a84ff] text-white'
                     : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
                   } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
                     <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
