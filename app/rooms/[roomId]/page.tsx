@@ -59,7 +59,9 @@ export default function ChatRoom() {
   const [sending, setSending] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  
+  const [showUserPopup, setShowUserPopup] = useState(false);
+const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
   // Menu + Modal states
   const [showMenu, setShowMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -412,7 +414,16 @@ export default function ChatRoom() {
     toast.error("Lỗi vote: " + e.message);
   }
 };
-
+const handleAvatarClick = (e: React.MouseEvent, uid: string) => {
+  e.stopPropagation();
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  setPopupPos({ 
+    x: rect.left + rect.width / 2, 
+    y: rect.bottom + 8 
+  });
+  setSelectedUserId(uid);
+  setShowUserPopup(true);
+};
   const formatMessageTime = (timestamp: any) => {
     if (!timestamp?.toDate) return "";
     const date = timestamp.toDate();
@@ -520,12 +531,13 @@ export default function ChatRoom() {
                 <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
                   <div className="w-8 flex-shrink-0 self-end">
                     {isFirstInGroup? (
-                      <img
-                        src={msg.senderAvatar}
-                        alt={msg.senderName}
-                        className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700"
-                        referrerPolicy="no-referrer"
-                      />
+                 <img
+  src={msg.senderAvatar}
+  alt={msg.senderName}
+  className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
+  referrerPolicy="no-referrer"
+  onClick={(e) => handleAvatarClick(e, msg.senderId)}
+/>
                     ) : <div className="w-8" />}
                   </div>
                   <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
@@ -573,15 +585,16 @@ export default function ChatRoom() {
               <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
                 <div className="w-8 flex-shrink-0 self-end">
                   {isFirstInGroup? (
-                    <img
-                      src={msg.senderAvatar}
-                      alt={msg.senderName}
-                      className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
-                      }}
-                    />
+            <img
+  src={msg.senderAvatar}
+  alt={msg.senderName}
+  className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
+  referrerPolicy="no-referrer"
+  onClick={(e) => handleAvatarClick(e, msg.senderId)}
+  onError={(e) => {
+    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
+  }}
+/>
                   ) : <div className="w-8" />}
                 </div>
 
@@ -791,6 +804,43 @@ export default function ChatRoom() {
           </div>
         </div>
       )}
+{/* Popup mini khi bấm avatar */}
+{showUserPopup && selectedUserId && (
+  <>
+    <div 
+      className="fixed inset-0 z-40" 
+      onClick={() => setShowUserPopup(false)} 
+    />
+    <div 
+      className="fixed z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
+      style={{ 
+        top: `${popupPos.y}px`, 
+        left: `${popupPos.x}px`,
+        transform: 'translateX(-50%)'
+      }}
+    >
+      <button
+        onClick={() => {
+          router.push(`/profile/${selectedUserId}`);
+          setShowUserPopup(false);
+        }}
+        className="flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 min-w-[180px]"
+      >
+        <User className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+        <span className="text- font-medium text-zinc-900 dark:text-white">
+          Thông tin cá nhân
+        </span>
+      </button>
+      {/* Sau này thêm mục ở đây */}
+      {/* 
+      <button className="flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800">
+        <MessageCircle className="w-4 h-4 text-zinc-600" />
+        <span className="text- font-medium">Nhắn tin</span>
+      </button>
+      */}
+    </div>
+  </>
+)}
     </div>
   );
 }
