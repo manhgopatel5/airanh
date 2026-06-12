@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseRTDB } from "@/lib/firebase";
 import { doc, getDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, orderBy, limit, writeBatch, where, getDocs } from "firebase/firestore";
 import { ref, onValue, set, onDisconnect } from "firebase/database";
-import { FiArrowLeft, User, FiUsers, FiSend, FiLoader, FiMoreVertical, FiSearch, FiUserPlus, FiClipboard, FiX, FiPlus, FiCheck } from "react-icons/fi";
+import { FiArrowLeft, FiUser, FiUsers, FiSend, FiLoader, FiMoreVertical, FiSearch, FiUserPlus, FiClipboard, FiX, FiPlus, FiCheck } from "react-icons/fi";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -826,7 +826,7 @@ const handleAvatarClick = (e: React.MouseEvent, uid: string) => {
         }}
         className="flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 min-w-[180px]"
       >
-        <User className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+        <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
         <span className="text- font-medium text-zinc-900 dark:text-white">
           Thông tin cá nhân
         </span>
