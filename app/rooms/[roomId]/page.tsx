@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseRTDB } from "@/lib/firebase";
 import { doc, getDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, orderBy, limit, writeBatch, where, getDocs } from "firebase/firestore";
 import { ref, onValue, set, onDisconnect } from "firebase/database";
-import { FiArrowLeft, FiUsers, FiSend, FiLoader, FiMoreVertical, FiSearch, FiUserPlus, FiClipboard, FiX, FiPlus, FiCheck, FiCopy } from "react-icons/fi";
+import { FiArrowLeft, FiUsers, FiSend, FiLoader, FiMoreVertical, FiSearch, FiUserPlus, FiClipboard, FiX, FiPlus, FiCheck } from "react-icons/fi";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import { vi } from "date-fns/locale";
