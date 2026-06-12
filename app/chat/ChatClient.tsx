@@ -1233,14 +1233,13 @@ const getNotificationIcon = (type: string) => {
 
 const handleJoinPublicRoom = async (room: PublicRoomItem) => {
   if (!user?.uid) return toast.error("Vui lòng đăng nhập");
-  if (room.isJoined) return router.push(`/chat/${room.id}`);
+  if (room.isJoined) return router.push(`/rooms/${room.id}`); // ← Đổi từ /chat
 
   try {
     const roomRef = doc(db, "public_rooms", room.id);
     const roomSnap = await getDoc(roomRef);
 
     if (!roomSnap.exists()) {
-      // Tạo phòng mới
       await setDoc(roomRef, {
         name: room.name,
         emoji: room.emoji,
@@ -1252,7 +1251,6 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
         updatedAt: serverTimestamp(),
       });
     } else {
-      // Join phòng đã có
       await updateDoc(roomRef, {
         members: arrayUnion(user.uid),
         memberCount: increment(1),
@@ -1260,12 +1258,9 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
       });
     }
 
-    // KHÔNG TẠO DOCUMENT `chats` Ở ĐÂY
-    // Để ChatRoom.tsx tự tạo khi user gửi tin nhắn đầu tiên
-
     if ("vibrate" in navigator) navigator.vibrate(10);
     toast.success(`Đã vào ${room.name}`, { icon: room.emoji });
-    router.push(`/chat/${room.id}`);
+    router.push(`/rooms/${room.id}`); // ← Đổi từ /chat
   } catch (e: any) {
     console.error(e);
     toast.error("Lỗi vào phòng: " + e.message);
@@ -1689,14 +1684,18 @@ return (
               <div className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-zinc-900">
                 {[...pinnedChats,...normalChats].map((chat) => (
                   <div key={chat.chatId} className="group relative">
-                    <Link
-                      href={`/chat/${chat.chatId}`}
-                      className="flex items-center gap-3 px-4 py-[10px] active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150 select-none"
-                      onPointerDown={() => handleLongPressStart(chat.chatId)}
-                      onPointerUp={handleLongPressEnd}
-                      onPointerLeave={handleLongPressEnd}
-                      onContextMenu={(e) => e.preventDefault()}
-                    >
+              <Link
+  href={
+    chat.chatId.startsWith('public_') || chat.isGroup
+  ? `/rooms/${chat.chatId}`
+      : `/chat/${chat.chatId}`
+  }
+  className="flex items-center gap-3 px-4 py- active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150 select-none"
+  onPointerDown={() => handleLongPressStart(chat.chatId)}
+  onPointerUp={handleLongPressEnd}
+  onPointerLeave={handleLongPressEnd}
+  onContextMenu={(e) => e.preventDefault()}
+>
                       <div className="relative flex-shrink-0">
                         <img src={chat.avatar} alt={chat.name} className="w-[52px] h-[52px] rounded-full object-cover bg-gray-100 dark:bg-zinc-800" loading="lazy" />
                         {chat.isOnline &&!chat.isGroup && <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />}
