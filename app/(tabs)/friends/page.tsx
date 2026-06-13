@@ -88,21 +88,28 @@ export default function FriendsPage() {
     return () => unsub();
   }, [user?.uid, db]);
 
-  // 2. Load DM từ người lạ - không phải bạn bè
-  useEffect(() => {
-    if (!user?.uid) return;
+// 2. Load DM từ người lạ - đã fix
+useEffect(() => {
+  if (!user?.uid) return;
 
-    const q = query(
-      collection(db, "chats"),
-      where("members", "array-contains", user.uid),
-      where("type", "==", "dm")
-    );
+  const q = query(
+    collection(db, "chats"),
+    where("members", "array-contains", user.uid)
+    // Đã xóa where("type", "==", "dm")
+  );
 
-    const unsub = onSnapshot(q, async (snap) => {
-      const strangerList: StrangerChat[] = [];
+  const unsub = onSnapshot(q, async (snap) => {
+    const strangerList: StrangerChat[] = [];
 
-      for (const docSnap of snap.docs) {
+    for (const docSnap of snap.docs) {
+      try {
         const data = docSnap.data();
+        
+        // THÊM 3 DÒNG NÀY ĐỂ BỎ QUA CHAT RÁC
+        if (!data.members || !Array.isArray(data.members)) continue;
+        if (data.isGroup === true || data.isPublicRoom === true) continue;
+        if (docSnap.id.startsWith('public_')) continue;
+
         const otherUserId = data.members.find((id: string) => id!== user.uid);
         if (!otherUserId) continue;
 
@@ -121,19 +128,24 @@ export default function FriendsPage() {
                 avatar: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=random`,
                 username: u.username || "",
               },
-              lastMessage: data.lastMessage,
+              lastMessage: typeof data.lastMessage === 'string'? data.lastMessage : data.lastMessage?.text || "",
               updatedAt: data.updatedAt,
             });
           }
         }
+      } catch (e) {
+        console.error("Lỗi xử lý chat:", docSnap.id, e);
       }
+    }
 
-      strangerList.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
-      setStrangerChats(strangerList);
-    });
+    strangerList.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+    setStrangerChats(strangerList);
+  }, (error) => {
+    console.error("Lỗi load stranger chats:", error);
+  });
 
-    return () => unsub();
-  }, [user?.uid, db]);
+  return () => unsub();
+}, [user?.uid, db]);
 
   // 3. Load lời mời kết bạn - dùng listenFriendRequests từ service
   useEffect(() => {
