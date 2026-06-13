@@ -71,6 +71,19 @@ export default function ChatRoom() {
   const [showPoll, setShowPoll] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
+const [searching, setSearching] = useState(false);
+const [currentResultIdx, setCurrentResultIdx] = useState(-1);
+
+// Highlight từ khóa
+const highlightText = (text: string, query: string) => {
+  if (!query.trim()) return text;
+  const parts = text.split(new RegExp(`(${query})`, 'gi'));
+  return parts.map((part, i) => 
+    part.toLowerCase() === query.toLowerCase() 
+     ? <mark key={i} className="bg-yellow-300 dark:bg-yellow-600 rounded px-0.5">{part}</mark> 
+      : part
+  );
+};
 const [activePopupMsgId, setActivePopupMsgId] = useState<string | null>(null);
 useEffect(() => {
   const handleClickOutside = () => setActivePopupMsgId(null);
@@ -253,27 +266,53 @@ useEffect(() => {
   };
 
   // Tìm tin nhắn
-  const handleSearch = () => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    const results = messages.filter(msg => 
-      msg.text.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setSearchResults(results);
-  };
+  const handleSearch = useCallback(() => {
+  if (!searchQuery.trim()) {
+    setSearchResults([]);
+    setCurrentResultIdx(-1);
+    return;
+  }
+  setSearching(true);
+  
+  const query = searchQuery.toLowerCase().trim();
+  const results = messages
+   .filter(msg => {
+      // Search text
+      if (msg.text.toLowerCase().includes(query)) return true;
+      // Search poll question
+      if (msg.type === 'poll' && msg.pollData?.question.toLowerCase().includes(query)) return true;
+      // Search poll options
+      if (msg.type === 'poll' && msg.pollData?.options.some(opt => opt.text.toLowerCase().includes(query))) return true;
+      return false;
+    })
+   .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)); // Mới nhất lên đầu
 
-  const scrollToMessage = (msgId: string) => {
-    const el = document.getElementById(`msg-${msgId}`);
-    if (el) {
+  setSearchResults(results);
+  setCurrentResultIdx(results.length > 0? 0 : -1);
+  setSearching(false);
+}, [searchQuery, messages]);
+
+// Auto search khi gõ - debounce 300ms
+useEffect(() => {
+  const timer = setTimeout(() => {
+    if (showSearch && searchQuery) handleSearch();
+  }, 300);
+  return () => clearTimeout(timer);
+}, [searchQuery, showSearch, handleSearch]);
+  const scrollToMessage = (msgId: string, idx?: number) => {
+  const el = document.getElementById(`msg-${msgId}`);
+  if (el) {
+    setShowSearch(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setTimeout(() => {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('bg-yellow-200', 'dark:bg-yellow-900');
-      setTimeout(() => el.classList.remove('bg-yellow-200', 'dark:bg-yellow-900'), 2000);
-      setShowSearch(false);
-      setSearchQuery("");
-    }
-  };
+      el.classList.add('ring-2', 'ring-[#0a84ff]', 'ring-offset-2', 'dark:ring-offset-black');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-[#0a84ff]', 'ring-offset-2', 'dark:ring-offset-black'), 2000);
+    }, 100);
+  }
+  if (idx!== undefined) setCurrentResultIdx(idx);
+};
 
   // Mời bạn bè
   const loadAllUsers = async () => {
@@ -689,44 +728,101 @@ return (
       </div>
 
       {/* Modal Tìm tin nhắn */}
-      {showSearch && (
-        <div className="fixed inset-0 z-50 bg-white dark:bg-black flex flex-col pt-[env(safe-area-inset-top)]">
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-black/5 dark:border-white/5">
-            <button onClick={() => { setShowSearch(false); setSearchQuery(""); setSearchResults([]); }} className="w-9 h-9 flex items-center justify-center -ml-2">
-              <FiX size={22} />
-            </button>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Tìm tin nhắn..."
-              autoFocus
-              className="flex-1 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-[20px] text-[15px] outline-none"
-            />
-            <button onClick={handleSearch} className="text-[#0a84ff] font-semibold">Tìm</button>
-          </div>
-          <div className="flex-1 overflow-y-auto px-4 py-2">
-            {searchResults.length === 0 && searchQuery? (
-              <p className="text-center text-[#8e8e93] mt-10">Không tìm thấy kết quả</p>
-            ) : searchResults.map(msg => (
-              <button
-                key={msg.id}
-                onClick={() => scrollToMessage(msg.id)}
-                className="w-full text-left p-3 active:bg-zinc-100 dark:active:bg-zinc-800 rounded-lg mb-1"
-              >
-                <p className="text-[13px] text-[#8e8e93] mb-1">{msg.senderName} • {formatMessageTime(msg.createdAt)}</p>
-                <p className="text-[15px] line-clamp-2">{msg.text}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+ {showSearch && (
+  <div 
+    className="fixed inset-0 z-50 bg-white dark:bg-black flex flex-col pt-[env(safe-area-inset-top)] animate-in fade-in duration-200"
+    onClick={() => { setShowSearch(false); setSearchQuery(""); setSearchResults([]); setCurrentResultIdx(-1); }}
+  >
+    <div 
+      className="flex items-center gap-2 px-4 py-3 border-b border-black/5 dark:border-white/5"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button 
+        onClick={() => { setShowSearch(false); setSearchQuery(""); setSearchResults([]); setCurrentResultIdx(-1); }} 
+        className="w-9 h-9 flex items-center justify-center -ml-2 active:opacity-60"
+      >
+        <FiX size={22} />
+      </button>
+      <div className="flex-1 relative">
+        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={18} />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Tìm trong đoạn chat..."
+          autoFocus
+          className="w-full pl-10 pr-4 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-[20px] text-[15px] outline-none"
+        />
+        {searching && <FiLoader className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#8e8e93]" size={16} />}
+      </div>
+    </div>
 
+    {/* Counter + Prev/Next */}
+    {searchResults.length > 0 && (
+      <div className="flex items-center justify-between px-4 py-2 bg-zinc-50 dark:bg-zinc-900 border-b border-black/5 dark:border-white/5">
+        <span className="text-[13px] text-[#8e8e93]">
+          {currentResultIdx + 1}/{searchResults.length} kết quả
+        </span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              const newIdx = currentResultIdx > 0? currentResultIdx - 1 : searchResults.length - 1;
+              setCurrentResultIdx(newIdx);
+              scrollToMessage(searchResults[newIdx].id, newIdx);
+            }}
+            className="px-3 py-1 text-[13px] text-[#0a84ff] active:opacity-60"
+          >
+            Trước
+          </button>
+          <button
+            onClick={() => {
+              const newIdx = currentResultIdx < searchResults.length - 1? currentResultIdx + 1 : 0;
+              setCurrentResultIdx(newIdx);
+              scrollToMessage(searchResults[newIdx].id, newIdx);
+            }}
+            className="px-3 py-1 text-[13px] text-[#0a84ff] active:opacity-60"
+          >
+            Sau
+          </button>
+        </div>
+      </div>
+    )}
+
+    <div className="flex-1 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      {searchQuery && searchResults.length === 0 &&!searching? (
+        <div className="flex flex-col items-center justify-center h-full py-20">
+          <FiSearch size={48} className="text-zinc-300 dark:text-zinc-700 mb-3" />
+          <p className="text-[15px] text-[#8e8e93]">Không tìm thấy "{searchQuery}"</p>
+        </div>
+      ) : searchResults.map((msg, idx) => (
+        <button
+          key={msg.id}
+          onClick={() => scrollToMessage(msg.id, idx)}
+          className={`w-full text-left px-4 py-3 border-b border-black/5 dark:border-white/5 active:bg-zinc-100 dark:active:bg-zinc-800 ${idx === currentResultIdx? 'bg-blue-50 dark:bg-blue-950/30' : ''}`}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <img src={msg.senderAvatar} className="w-5 h-5 rounded-full" alt="" />
+            <p className="text-[13px] font-medium">{msg.senderName}</p>
+            <p className="text-[11px] text-[#8e8e93]">• {formatMessageTime(msg.createdAt)}</p>
+          </div>
+          <p className="text-[15px] line-clamp-2 pl-7">
+            {msg.type === 'poll'? `📊 ${msg.pollData?.question}` : highlightText(msg.text, searchQuery)}
+          </p>
+        </button>
+      ))}
+    </div>
+  </div>
+)}
      {/* Modal Mời bạn bè */}
 {showInvite && (
-  <div className="fixed inset-0 z-50 bg-black/50 flex items-end">
-    <div className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h-[80vh] flex flex-col">
+  <div 
+    className="fixed inset-0 z-50 bg-black/50 flex items-end animate-in fade-in duration-200"
+    onClick={() => { setShowInvite(false); setSearchFriend(""); }}
+  >
+    <div 
+      className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom-5 duration-300"
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/5">
         <h3 className="text-[17px] font-semibold">Mời bạn bè</h3>
         <button onClick={() => { setShowInvite(false); setSearchFriend(""); }}>
@@ -734,7 +830,6 @@ return (
         </button>
       </div>
       
-      {/* Ô Search bạn bè */}
       <div className="px-4 pt-3 pb-2">
         <div className="flex items-center gap-2 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
           <FiSearch size={18} className="text-[#8e8e93]" />
@@ -792,59 +887,65 @@ return (
 )}
 
       {/* Modal Tạo bình chọn */}
-      {showPoll && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-end">
-          <div className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/5">
-              <button onClick={() => setShowPoll(false)} className="text-[#0a84ff]">Huỷ</button>
-              <h3 className="text-[17px] font-semibold">Tạo bình chọn</h3>
-              <button 
-                onClick={createPoll} 
-                disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
-                className="text-[#0a84ff] font-semibold disabled:opacity-40"
-              >
-                Tạo
+   {showPoll && (
+  <div 
+    className="fixed inset-0 z-50 bg-black/50 flex items-end animate-in fade-in duration-200"
+    onClick={() => setShowPoll(false)}
+  >
+    <div 
+      className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom-5 duration-300"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/5">
+        <button onClick={() => setShowPoll(false)} className="text-[#0a84ff]">Huỷ</button>
+        <h3 className="text-[17px] font-semibold">Tạo bình chọn</h3>
+        <button 
+          onClick={createPoll} 
+          disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
+          className="text-[#0a84ff] font-semibold disabled:opacity-40"
+        >
+          Tạo
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <input
+          type="text"
+          value={pollQuestion}
+          onChange={(e) => setPollQuestion(e.target.value)}
+          placeholder="Đặt câu hỏi..."
+          className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-[15px] outline-none mb-4"
+        />
+        <p className="text-[13px] text-[#8e8e93] mb-2">Lựa chọn</p>
+        {pollOptions.map((opt, idx) => (
+          <div key={idx} className="flex items-center gap-2 mb-2">
+            <input
+              type="text"
+              value={opt}
+              onChange={(e) => {
+                const newOpts = [...pollOptions];
+                newOpts[idx] = e.target.value;
+                setPollOptions(newOpts);
+              }}
+              placeholder={`Lựa chọn ${idx + 1}`}
+              className="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-[15px] outline-none"
+            />
+            {pollOptions.length > 2 && (
+              <button onClick={() => setPollOptions(pollOptions.filter((_, i) => i!== idx))}>
+                <FiX size={20} className="text-red-500" />
               </button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 py-4">
-              <input
-                type="text"
-                value={pollQuestion}
-                onChange={(e) => setPollQuestion(e.target.value)}
-                placeholder="Đặt câu hỏi..."
-                className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-[15px] outline-none mb-4"
-              />
-              <p className="text-[13px] text-[#8e8e93] mb-2">Lựa chọn</p>
-              {pollOptions.map((opt, idx) => (
-                <div key={idx} className="flex items-center gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={opt}
-                    onChange={(e) => {
-                      const newOpts = [...pollOptions];
-                      newOpts[idx] = e.target.value;
-                      setPollOptions(newOpts);
-                    }}
-                    placeholder={`Lựa chọn ${idx + 1}`}
-                    className="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-[15px] outline-none"
-                  />
-                  {pollOptions.length > 2 && (
-                    <button onClick={() => setPollOptions(pollOptions.filter((_, i) => i!== idx))}>
-                      <FiX size={20} className="text-red-500" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button 
-                onClick={() => setPollOptions([...pollOptions, ""])}
-                className="flex items-center gap-2 text-[#0a84ff] mt-2"
-              >
-                <FiPlus size={20} /> <span className="text-[15px]">Thêm lựa chọn</span>
-              </button>
-            </div>
+            )}
           </div>
-        </div>
-      )}
+        ))}
+        <button 
+          onClick={() => setPollOptions([...pollOptions, ""])}
+          className="flex items-center gap-2 text-[#0a84ff] mt-2"
+        >
+          <FiPlus size={20} /> <span className="text-[15px]">Thêm lựa chọn</span>
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
     </div>
   );
