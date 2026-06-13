@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { collection, query, where, onSnapshot, doc, getDoc, Unsubscribe, QuerySnapshot, DocumentData } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, getDoc, Unsubscribe, DocumentData } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
