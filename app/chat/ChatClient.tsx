@@ -557,17 +557,27 @@ useEffect(() => {
       unsub();
     };
   }, [user?.uid, activeTab, db]);
-// 3. Load lời mời kết bạn - THÊM ĐOẠN NÀY
-
+// 3. Load danh sách chat - CHỈ CHẠY KHI BẤM TAB BẠN BÈ
 useEffect(() => {
   if (authLoading || !user?.uid) return;
+  
+  // CHỈ QUERY KHI activeTab === "friends" - CÒN LẠI DỪNG LUÔN
+  if (activeTab !== "friends") {
+    setItems([]);
+    setLoading(false);
+    if (unsubRef.current) {
+      unsubRef.current();
+      unsubRef.current = null;
+    }
+    return;
+  }
+
   let retryCount = 0;
   let isMounted = true;
 
   const setupListener = (): Unsubscribe => {
     const chatsQuery = query(collection(db, "chats"), where("members", "array-contains", user.uid));
     
-    // ✅ Thêm async ở đây để dùng await bên trong
     const unsubscribe = onSnapshot(chatsQuery, async (snapshot: QuerySnapshot<DocumentData>) => {
       retryCount = 0;
       if (!isMounted) return;
@@ -582,6 +592,9 @@ useEffect(() => {
 
         snapshot.forEach((document) => {
           const chatData = document.data();
+
+          // Bỏ qua doc rác không có members
+          if (!chatData.members || !Array.isArray(chatData.members)) return;
 
           // ẨN PHÒNG PUBLIC
           if (document.id.startsWith('public_') || chatData.isPublicRoom === true) {
@@ -611,7 +624,6 @@ useEffect(() => {
           const chunks: string[][] = [];
           for (let i = 0; i < userIds.length; i += BATCH_SIZE) chunks.push(userIds.slice(i, i + BATCH_SIZE));
           
-          // ✅ await này giờ hợp lệ vì callback đã async
           await Promise.all(chunks.map(async (chunk) => {
             const userDocs = await Promise.all(chunk.map((userId) => getDoc(doc(db, "users", userId))));
             userDocs.forEach((userDoc) => { if (userDoc.exists()) usersMap[userDoc.id] = userDoc.data(); });
@@ -676,7 +688,9 @@ useEffect(() => {
         retryCount++;
         const delay = RETRY_DELAY * retryCount;
         setTimeout(() => { if (isMounted) setupListener(); }, delay);
-      } else if (error.code !== "permission-denied") {
+      } else if (error.code === "permission-denied") {
+        toast.error("Lỗi quyền truy cập chat");
+      } else {
         toast.error("Không thể kết nối realtime");
       }
       setLoading(false);
@@ -692,7 +706,7 @@ useEffect(() => {
     if (unsubscribe) unsubscribe(); 
     if (unsubRef.current) unsubRef.current();
   };
-}, [user?.uid, authLoading, db, mode]);
+}, [user?.uid, authLoading, db, mode, activeTab]); // THÊM activeTab VÀO DEPS
   const createNotification = useCallback(async (targetUid: string, notif: Omit<NotificationItem, "id" | "createdAt" | "read">) => {
     try {
       const notifRef = doc(collection(db, "notifications", targetUid, "items"));
