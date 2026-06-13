@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseRTDB } from "@/lib/firebase";
 import { doc, getDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, orderBy, limit, writeBatch, where, getDocs } from "firebase/firestore";
 import { ref, onValue, set, onDisconnect } from "firebase/database";
-import { FiArrowLeft, FiUser, FiUsers, FiSend, FiLoader, FiMoreVertical, FiSearch, FiUserPlus, FiClipboard, FiX, FiPlus, FiCheck } from "react-icons/fi";
+import { FiArrowLeft, FiUser, FiUsers, FiSend, FiLoader, FiMoreVertical, FiSearch, FiChevronUp, FiChevronDown, FiUserPlus, FiClipboard, FiX, FiPlus, FiCheck } from "react-icons/fi";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -59,7 +59,8 @@ export default function ChatRoom() {
   const [sending, setSending] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
-
+  const [selectedInviteIds, setSelectedInviteIds] = useState<string[]>([]);
+const [inviting, setInviting] = useState(false);
   // Menu + Modal states
   const [showMenu, setShowMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -67,7 +68,7 @@ export default function ChatRoom() {
   const [searchResults, setSearchResults] = useState<Message[]>([]);
   const [showInvite, setShowInvite] = useState(false);
   const [allUsers, setAllUsers] = useState<UserData[]>([]);
-  const [inviteLoading, setInviteLoading] = useState(false);
+
   const [showPoll, setShowPoll] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
@@ -299,7 +300,7 @@ useEffect(() => {
   }, 300);
   return () => clearTimeout(timer);
 }, [searchQuery, showSearch, handleSearch]);
-  const scrollToMessage = (msgId: string, idx?: number) => {
+const scrollToMessage = (msgId: string, idx?: number) => {
   const el = document.getElementById(`msg-${msgId}`);
   if (el) {
     setShowSearch(false);
@@ -307,19 +308,18 @@ useEffect(() => {
     setSearchResults([]);
     setTimeout(() => {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('ring-2', 'ring-[#0a84ff]', 'ring-offset-2', 'dark:ring-offset-black');
-      setTimeout(() => el.classList.remove('ring-2', 'ring-[#0a84ff]', 'ring-offset-2', 'dark:ring-offset-black'), 2000);
+      el.classList.add('outline', 'outline-2', 'outline-[#0a84ff]', 'rounded-');
+      setTimeout(() => el.classList.remove('outline', 'outline-2', 'outline-[#0a84ff]', 'rounded-'), 2000);
     }, 100);
   }
   if (idx!== undefined) setCurrentResultIdx(idx);
 };
 
   // Mời bạn bè
-  const loadAllUsers = async () => {
+const loadAllUsers = async () => {
   if (!user?.uid) return;
   setInviteLoading(true);
   try {
-    // 1. Lấy danh sách friend IDs từ user hiện tại
     const userDoc = await getDoc(doc(db, "users", user.uid));
     const friendIds = userDoc.data()?.friends || [];
     
@@ -329,7 +329,6 @@ useEffect(() => {
       return;
     }
 
-    // 2. Load thông tin từng friend chưa có trong room
     const users: UserData[] = [];
     const chunks = [];
     for (let i = 0; i < friendIds.length; i += 10) {
@@ -341,16 +340,24 @@ useEffect(() => {
       const snap = await getDocs(q);
       snap.forEach(doc => {
         const data = doc.data();
-        if (!roomData?.members.includes(doc.id)) {
-          users.push({
-            uid: doc.id,
-            displayName: data.displayName || data.email?.split('@')[0] || "User",
-            email: data.email || "",
-            photoURL: data.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.displayName || "User")}&background=random`,
-          });
-        }
+        users.push({
+          uid: doc.id,
+          displayName: data.displayName || data.email?.split('@')[0] || "User",
+          email: data.email || "",
+          photoURL: data.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.displayName || "User")}&background=random`,
+        });
       });
     }
+    
+    // Sort: chưa vào room lên trước
+    users.sort((a, b) => {
+      const aInRoom = roomData?.members.includes(a.uid);
+      const bInRoom = roomData?.members.includes(b.uid);
+      if (aInRoom &&!bInRoom) return 1;
+      if (!aInRoom && bInRoom) return -1;
+      return a.displayName.localeCompare(b.displayName);
+    });
+    
     setAllUsers(users);
   } catch (e) {
     console.error(e);
@@ -359,20 +366,46 @@ useEffect(() => {
     setInviteLoading(false);
   }
 };
-
-  const inviteUser = async (uid: string) => {
-    try {
-      const chatRef = doc(db, "chats", roomId as string);
-      await writeBatch(db).update(chatRef, {
-        members: arrayUnion(uid),
-        memberCount: (roomData?.memberCount || 0) + 1,
-      }).commit();
-      toast.success("Đã mời thành công");
-      setAllUsers(prev => prev.filter(u => u.uid!== uid));
-    } catch (e) {
-      toast.error("Lỗi mời bạn");
-    }
-  };
+const inviteUsers = async () => {
+  if (selectedInviteIds.length === 0) return;
+  setInviting(true);
+  try {
+    const batch = writeBatch(db);
+    const chatRef = doc(db, "chats", roomId as string);
+    
+    batch.update(chatRef, {
+      members: arrayUnion(...selectedInviteIds),
+      memberCount: (roomData?.memberCount || 0) + selectedInviteIds.length,
+      updatedAt: serverTimestamp(),
+    });
+    
+    // Gửi tin nhắn hệ thống
+    const msgRef = doc(collection(db, "chats", roomId as string, "messages"));
+    const invitedNames = allUsers
+    .filter(u => selectedInviteIds.includes(u.uid))
+    .map(u => u.displayName)
+    .join(", ");
+    
+    batch.set(msgRef, {
+      text: `${user?.displayName} đã thêm ${invitedNames} vào nhóm`,
+      senderId: "system",
+      senderName: "Hệ thống",
+      senderAvatar: "",
+      createdAt: serverTimestamp(),
+      type: 'system',
+    });
+    
+    await batch.commit();
+    toast.success(`Đã mời ${selectedInviteIds.length} người`);
+    setSelectedInviteIds([]);
+    setShowInvite(false);
+    setSearchFriend("");
+  } catch (e) {
+    toast.error("Lỗi mời bạn");
+  } finally {
+    setInviting(false);
+  }
+};
 
  
 
@@ -757,84 +790,98 @@ return (
       </div>
     </div>
 
-    {/* Counter + Prev/Next */}
-    {searchResults.length > 0 && (
-      <div className="flex items-center justify-between px-4 py-2 bg-zinc-50 dark:bg-zinc-900 border-b border-black/5 dark:border-white/5">
-        <span className="text-[13px] text-[#8e8e93]">
-          {currentResultIdx + 1}/{searchResults.length} kết quả
-        </span>
-        <div className="flex gap-2">
-       <button
-  onClick={() => {
-    if (searchResults.length === 0) return;
-    const newIdx = currentResultIdx > 0? currentResultIdx - 1 : searchResults.length - 1;
-    const result = searchResults[newIdx];
-    if (result) {
-      setCurrentResultIdx(newIdx);
-      scrollToMessage(result.id, newIdx);
-    }
-  }}
-  className="px-3 py-1 text- text-[#0a84ff] active:opacity-60"
->
-  Trước
-</button>
-<button
-  onClick={() => {
-    if (searchResults.length === 0) return;
-    const newIdx = currentResultIdx < searchResults.length - 1? currentResultIdx + 1 : 0;
-    const result = searchResults[newIdx];
-    if (result) {
-      setCurrentResultIdx(newIdx);
-      scrollToMessage(result.id, newIdx);
-    }
-  }}
-  className="px-3 py-1 text- text-[#0a84ff] active:opacity-60"
->
-  Sau
-</button>
-        </div>
-      </div>
-    )}
-
-    <div className="flex-1 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-      {searchQuery && searchResults.length === 0 &&!searching? (
-        <div className="flex flex-col items-center justify-center h-full py-20">
-          <FiSearch size={48} className="text-zinc-300 dark:text-zinc-700 mb-3" />
-          <p className="text-[15px] text-[#8e8e93]">Không tìm thấy "{searchQuery}"</p>
-        </div>
-      ) : searchResults.map((msg, idx) => (
-        <button
-          key={msg.id}
-          onClick={() => scrollToMessage(msg.id, idx)}
-          className={`w-full text-left px-4 py-3 border-b border-black/5 dark:border-white/5 active:bg-zinc-100 dark:active:bg-zinc-800 ${idx === currentResultIdx? 'bg-blue-50 dark:bg-blue-950/30' : ''}`}
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <img src={msg.senderAvatar} className="w-5 h-5 rounded-full" alt="" />
-            <p className="text-[13px] font-medium">{msg.senderName}</p>
-            <p className="text-[11px] text-[#8e8e93]">• {formatMessageTime(msg.createdAt)}</p>
-          </div>
-          <p className="text-[15px] line-clamp-2 pl-7">
-            {msg.type === 'poll'? `📊 ${msg.pollData?.question}` : highlightText(msg.text, searchQuery)}
-          </p>
-        </button>
-      ))}
+{/* Counter + Prev/Next */}
+{searchResults.length > 0 && (
+  <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900 border-b border-black/5 dark:border-white/5">
+    <span className="text- text-[#8e8e93] font-medium">
+      {currentResultIdx + 1}/{searchResults.length} kết quả
+    </span>
+    <div className="flex gap-2">
+      <button
+        onClick={() => {
+          if (searchResults.length === 0) return;
+          const newIdx = currentResultIdx > 0? currentResultIdx - 1 : searchResults.length - 1;
+          const result = searchResults[newIdx];
+          if (result) {
+            setCurrentResultIdx(newIdx);
+            scrollToMessage(result.id, newIdx);
+          }
+        }}
+        className="w-9 h-9 rounded-full bg-zinc-200 dark:bg-zinc-700 active:scale-90 transition-all flex items-center justify-center shadow-sm"
+      >
+        <FiChevronUp size={18} className="text-zinc-900 dark:text-white" />
+      </button>
+      <button
+        onClick={() => {
+          if (searchResults.length === 0) return;
+          const newIdx = currentResultIdx < searchResults.length - 1? currentResultIdx + 1 : 0;
+          const result = searchResults[newIdx];
+          if (result) {
+            setCurrentResultIdx(newIdx);
+            scrollToMessage(result.id, newIdx);
+          }
+        }}
+        className="w-9 h-9 rounded-full bg-zinc-200 dark:bg-zinc-700 active:scale-90 transition-all flex items-center justify-center shadow-sm"
+      >
+        <FiChevronDown size={18} className="text-zinc-900 dark:text-white" />
+      </button>
     </div>
   </div>
+)}
+
+<div className="flex-1 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+  {searchQuery && searchResults.length === 0 &&!searching? (
+    <div className="flex flex-col items-center justify-center h-full py-20">
+      <FiSearch size={48} className="text-zinc-300 dark:text-zinc-700 mb-3" />
+      <p className="text- text-[#8e8e93]">Không tìm thấy "{searchQuery}"</p>
+    </div>
+  ) : searchResults.map((msg, idx) => (
+    <button
+      key={msg.id}
+      onClick={() => scrollToMessage(msg.id, idx)}
+      className={`w-full text-left px-4 py-3 border-b border-black/5 dark:border-white/5 active:bg-zinc-100 dark:active:bg-zinc-800 transition-colors ${
+        idx === currentResultIdx? 'bg-blue-50 dark:bg-blue-950/30' : ''
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-1.5">
+        <img src={msg.senderAvatar} className="w-6 h-6 rounded-full" alt="" />
+        <p className="text- font-medium text-zinc-900 dark:text-white">{msg.senderName}</p>
+        <p className="text- text-[#8e8e93]">• {formatMessageTime(msg.createdAt)}</p>
+      </div>
+      <div className="pl-8">
+        <p className="text- text-zinc-900 dark:text-white line-clamp-2">
+          {msg.type === 'poll'? `📊 ${msg.pollData?.question}` : highlightText(msg.text, searchQuery)}
+        </p>
+      </div>
+    </button>
+  ))}
+</div>
+</div>
 )}
      {/* Modal Mời bạn bè */}
 {showInvite && (
   <div 
     className="fixed inset-0 z-50 bg-black/50 flex items-end animate-in fade-in duration-200"
-    onClick={() => { setShowInvite(false); setSearchFriend(""); }}
+    onClick={() => { setShowInvite(false); setSearchFriend(""); setSelectedInviteIds([]); }}
   >
     <div 
-      className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom-5 duration-300"
+      className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h- flex flex-col animate-in slide-in-from-bottom-5 duration-300"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/5">
-        <h3 className="text-[17px] font-semibold">Mời bạn bè</h3>
-        <button onClick={() => { setShowInvite(false); setSearchFriend(""); }}>
-          <FiX size={24} />
+        <button 
+          onClick={() => { setShowInvite(false); setSearchFriend(""); setSelectedInviteIds([]); }}
+          className="text-[#0a84ff] active:opacity-60"
+        >
+          Hủy
+        </button>
+        <h3 className="text- font-semibold">Mời bạn bè</h3>
+        <button 
+          onClick={inviteUsers}
+          disabled={selectedInviteIds.length === 0 || inviting}
+          className="text-[#0a84ff] font-semibold disabled:opacity-40 active:opacity-60"
+        >
+          {inviting? <FiLoader className="animate-spin" size={18} /> : `Mời${selectedInviteIds.length > 0? ` (${selectedInviteIds.length})` : ''}`}
         </button>
       </div>
       
@@ -846,7 +893,7 @@ return (
             value={searchFriend}
             onChange={(e) => setSearchFriend(e.target.value)}
             placeholder="Tìm bạn bè..."
-            className="flex-1 bg-transparent text-[15px] outline-none placeholder:text-[#8e8e93]"
+            className="flex-1 bg-transparent text- outline-none placeholder:text-[#8e8e93]"
           />
           {searchFriend && (
             <button onClick={() => setSearchFriend("")}>
@@ -855,6 +902,29 @@ return (
           )}
         </div>
       </div>
+
+      {/* Counter đã chọn */}
+      {selectedInviteIds.length > 0 && (
+        <div className="px-4 pb-2">
+          <div className="flex gap-2 overflow-x-auto py-2 scrollbar-hide">
+            {selectedInviteIds.map(uid => {
+              const u = allUsers.find(x => x.uid === uid);
+              if (!u) return null;
+              return (
+                <div key={uid} className="relative flex-shrink-0">
+                  <img src={u.photoURL} className="w-12 h-12 rounded-full" alt="" />
+                  <button
+                    onClick={() => setSelectedInviteIds(prev => prev.filter(id => id!== uid))}
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-zinc-800 dark:bg-zinc-200 text-white dark:text-black rounded-full flex items-center justify-center"
+                  >
+                    <FiX size={12} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto px-4 py-2">
         {inviteLoading? (
@@ -868,25 +938,44 @@ return (
           );
           
           return filtered.length === 0? (
-            <p className="text-center text-[#8e8e93] py-10">
-              {searchFriend? "Không tìm thấy bạn bè" : "Không có ai để mời"}
-            </p>
+            <div className="flex flex-col items-center justify-center py-20">
+              <FiUserPlus size={48} className="text-zinc-300 dark:text-zinc-700 mb-3" />
+              <p className="text- text-[#8e8e93]">
+                {searchFriend? "Không tìm thấy bạn bè" : "Không có bạn bè để mời"}
+              </p>
+            </div>
           ) : (
-            filtered.map(user => (
-              <div key={user.uid} className="flex items-center gap-3 py-2.5">
-                <img src={user.photoURL} className="w-12 h-12 rounded-full" alt="" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-medium truncate">{user.displayName}</p>
-                  <p className="text-[13px] text-[#8e8e93] truncate">{user.email}</p>
-                </div>
-                <button 
-                  onClick={() => inviteUser(user.uid)}
-                  className="px-5 py-1.5 bg-[#0a84ff] text-white rounded-full text-[15px] font-medium active:opacity-70"
+            filtered.map(user => {
+              const isInRoom = roomData?.members.includes(user.uid);
+              const isSelected = selectedInviteIds.includes(user.uid);
+              
+              return (
+                <button
+                  key={user.uid}
+                  onClick={() => {
+                    if (isInRoom) return;
+                    setSelectedInviteIds(prev => 
+                      isSelected? prev.filter(id => id!== user.uid) : [...prev, user.uid]
+                    );
+                  }}
+                  disabled={isInRoom}
+                  className="w-full flex items-center gap-3 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 rounded-lg disabled:opacity-40"
                 >
-                  Mời
+                  <img src={user.photoURL} className="w-12 h-12 rounded-full" alt="" />
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text- font-medium truncate">{user.displayName}</p>
+                    <p className="text- text-[#8e8e93] truncate">
+                      {isInRoom? "Đã tham gia" : user.email}
+                    </p>
+                  </div>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                    isSelected? 'bg-[#0a84ff] border-[#0a84ff]' : 'border-zinc-300 dark:border-zinc-600'
+                  }`}>
+                    {isSelected && <FiCheck className="text-white" size={14} />}
+                  </div>
                 </button>
-              </div>
-            ))
+              );
+            })
           );
         })()}
       </div>
