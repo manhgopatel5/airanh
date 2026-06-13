@@ -572,6 +572,11 @@ useEffect(() => {
       try {
         const rawChats: RawChat[] = [];
 const userIdsToFetch = new Set<string>();
+
+// Load danh sách bạn bè 1 lần duy nhất
+const friendsSnap = await getDocs(collection(db, "users", user.uid, "friends"));
+const friendIds = new Set(friendsSnap.docs.map(d => d.id));
+
 snapshot.forEach((document) => {
   const chatData = document.data();
 
@@ -585,32 +590,19 @@ snapshot.forEach((document) => {
     rawChats.push({ id: document.id, c: chatData, isGroup: true });
   } else {
     const otherUserId = chatData.members?.find((memberId: string) => memberId !== user.uid);
-    if (otherUserId) userIdsToFetch.add(otherUserId);
+    if (!otherUserId) return;
+    
+    // Chỉ giữ DM nếu là bạn bè
+    if (!friendIds.has(otherUserId)) {
+      return; // Bỏ DM người lạ
+    }
+    
+    userIdsToFetch.add(otherUserId);
     rawChats.push({ id: document.id, c: chatData, other: otherUserId, isGroup: false });
   }
 });
 
-// THÊM ĐOẠN NÀY: Check bạn bè, bỏ DM người lạ ra khỏi Inbox
-const filteredRawChats = await Promise.all(
-  rawChats.map(async (raw) => {
-    if (raw.isGroup) return raw; // Giữ group
-    
-    const otherUserId = raw.other;
-    if (!otherUserId) return null;
-    
-    // Check có phải bạn bè không
-    const friendDoc = await getDoc(doc(db, "users", user.uid, "friends", otherUserId));
-    if (!friendDoc.exists()) {
-      return null; // Bỏ DM người lạ, không hiện ở Inbox
-    }
-    return raw;
-  })
-);
-
-// Dùng filteredRawChats thay vì rawChats ở dưới
-const finalRawChats = filteredRawChats.filter(Boolean) as RawChat[];
-
-// Thay rawChats bằng finalRawChats ở đoạn tiếp theo
+// Xóa hết đoạn filteredRawChats và finalRawChats, dùng thẳng rawChats
 const usersMap: Record<string, any> = {};
 if (userIdsToFetch.size > 0) {
   const userIds = Array.from(userIdsToFetch);
@@ -621,6 +613,8 @@ if (userIdsToFetch.size > 0) {
     userDocs.forEach((userDoc) => { if (userDoc.exists()) usersMap[userDoc.id] = userDoc.data(); });
   }));
 }
+
+const chatList: ChatItem[] = rawChats.map((raw) => { // Dùng rawChats thay vì finalRawChats
 
 const chatList: ChatItem[] = finalRawChats.map((raw) => { // Đổi rawChats -> finalRawChats
           const usersMap: Record<string, any> = {};
