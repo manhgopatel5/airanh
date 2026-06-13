@@ -549,7 +549,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
             }}
             className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
           >
-            <User className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+            <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
             <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
               Thông tin cá nhân
             </span>
