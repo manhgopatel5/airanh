@@ -571,25 +571,58 @@ useEffect(() => {
       setLoading(true);
       try {
         const rawChats: RawChat[] = [];
-        const userIdsToFetch = new Set<string>();
-        snapshot.forEach((document) => {
-          const chatData = document.data();
+const userIdsToFetch = new Set<string>();
+snapshot.forEach((document) => {
+  const chatData = document.data();
 
-          // THÊM 3 DÒNG NÀY ĐỂ ẨN PHÒNG PUBLIC
-          if (document.id.startsWith('public_') || chatData.isPublicRoom === true) {
-            return; // Bỏ qua, không thêm vào list inbox
-          }
+  // ẨN PHÒNG PUBLIC
+  if (document.id.startsWith('public_') || chatData.isPublicRoom === true) {
+    return;
+  }
 
-          const isGroupChat = Boolean(chatData.isGroup);
-          if (isGroupChat) {
-            rawChats.push({ id: document.id, c: chatData, isGroup: true });
-          } else {
-            const otherUserId = chatData.members?.find((memberId: string) => memberId !== user.uid);
-            if (otherUserId) userIdsToFetch.add(otherUserId);
-            rawChats.push({ id: document.id, c: chatData, other: otherUserId, isGroup: false });
-          }
-        });
+  const isGroupChat = Boolean(chatData.isGroup);
+  if (isGroupChat) {
+    rawChats.push({ id: document.id, c: chatData, isGroup: true });
+  } else {
+    const otherUserId = chatData.members?.find((memberId: string) => memberId !== user.uid);
+    if (otherUserId) userIdsToFetch.add(otherUserId);
+    rawChats.push({ id: document.id, c: chatData, other: otherUserId, isGroup: false });
+  }
+});
 
+// THÊM ĐOẠN NÀY: Check bạn bè, bỏ DM người lạ ra khỏi Inbox
+const filteredRawChats = await Promise.all(
+  rawChats.map(async (raw) => {
+    if (raw.isGroup) return raw; // Giữ group
+    
+    const otherUserId = raw.other;
+    if (!otherUserId) return null;
+    
+    // Check có phải bạn bè không
+    const friendDoc = await getDoc(doc(db, "users", user.uid, "friends", otherUserId));
+    if (!friendDoc.exists()) {
+      return null; // Bỏ DM người lạ, không hiện ở Inbox
+    }
+    return raw;
+  })
+);
+
+// Dùng filteredRawChats thay vì rawChats ở dưới
+const finalRawChats = filteredRawChats.filter(Boolean) as RawChat[];
+
+// Thay rawChats bằng finalRawChats ở đoạn tiếp theo
+const usersMap: Record<string, any> = {};
+if (userIdsToFetch.size > 0) {
+  const userIds = Array.from(userIdsToFetch);
+  const chunks: string[][] = [];
+  for (let i = 0; i < userIds.length; i += BATCH_SIZE) chunks.push(userIds.slice(i, i + BATCH_SIZE));
+  await Promise.all(chunks.map(async (chunk) => {
+    const userDocs = await Promise.all(chunk.map((userId) => getDoc(doc(db, "users", userId))));
+    userDocs.forEach((userDoc) => { if (userDoc.exists()) usersMap[userDoc.id] = userDoc.data(); });
+  }));
+}
+
+const chatList: ChatItem[] = finalRawChats.map((raw) => { // Đổi rawChats -> finalRawChats
           const usersMap: Record<string, any> = {};
           if (userIdsToFetch.size > 0) {
             const userIds = Array.from(userIdsToFetch);
