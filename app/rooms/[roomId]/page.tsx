@@ -620,80 +620,131 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
             const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
 
             // Render Poll
-            if (msg.type === 'poll' && msg.pollData) {
-              const totalVotes = msg.pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
-              return (
-                <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
-         <div className="w-8 flex-shrink-0 self-end relative">
-  {isFirstInGroup? (
-    <>
-      <img
-        src={msg.senderAvatar}
-        alt={msg.senderName}
-        className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
-        referrerPolicy="no-referrer"
-        onClick={(e) => handleAvatarClick(e, msg.id)}
-      />
-      {activePopupMsgId === msg.id && (
-        <div 
-          className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={() => {
-              router.push(`/profile/${msg.senderId}`);
-              setActivePopupMsgId(null);
-            }}
-            className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
-          >
-            <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-            <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
-              Thông tin cá nhân
-            </span>
-          </button>
-        </div>
-      )}
-    </>
-  ) : <div className="w-8" />}
-</div>
-<div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-  <div className="px-4 py-3 rounded-[18px] bg-zinc-100 dark:bg-zinc-800 w-full">
-    <p className="text-[15px] font-semibold mb-3">📊 {msg.pollData.question}</p>
-    <div className="space-y-2">
-      {msg.pollData.options.map((opt, optIdx) => {
-        const voted = opt.votes.includes(user?.uid || '');
-        const percent = totalVotes > 0? (opt.votes.length / totalVotes * 100).toFixed(0) : 0;
-        return (
-          <button
-            key={optIdx}
-            onClick={() => votePoll(msg.id, optIdx)}
-            className="w-full text-left relative overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700 active:opacity-70"
-          >
-            <div 
-              className="absolute inset-0 bg-[#0a84ff]/20 transition-all"
-              style={{ width: `${percent}%` }}
+if (msg.type === 'poll' && msg.pollData) {
+  const totalVotes = msg.pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
+  const isExpired = msg.pollData.endTime && msg.pollData.endTime.toDate() < new Date();
+  const isClosed = msg.pollData.closed || isExpired;
+  const isCreator = msg.pollData.creatorId === user?.uid;
+  
+  return (
+    <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
+      <div className="w-8 flex-shrink-0 self-end relative">
+        {isFirstInGroup? (
+          <>
+            <img
+              src={msg.senderAvatar}
+              alt={msg.senderName}
+              className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
+              referrerPolicy="no-referrer"
+              onClick={(e) => handleAvatarClick(e, msg.id)}
             />
-            <div className="relative px-3 py-2.5 flex items-center justify-between">
-              <span className="text-[15px] flex items-center gap-2">
-                {voted && <FiCheck className="text-[#0a84ff]" size={16} />}
-                {opt.text}
-              </span>
-              <span className="text-[13px] text-[#8e8e93]">{opt.votes.length}</span>
-            </div>
-          </button>
-        );
-      })}
+            {activePopupMsgId === msg.id && (
+              <div 
+                className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => {
+                    router.push(`/profile/${msg.senderId}`);
+                    setActivePopupMsgId(null);
+                  }}
+                  className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
+                >
+                  <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                  <span className="text- font-medium text-zinc-900 dark:text-white">
+                    Thông tin cá nhân
+                  </span>
+                </button>
+              </div>
+            )}
+          </>
+        ) : <div className="w-8" />}
+      </div>
+      <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+        <div className="px-4 py-3 rounded- bg-zinc-100 dark:bg-zinc-800 w-full">
+          <div className="flex items-start justify-between mb-3">
+            <p className="text- font-semibold flex-1">📊 {msg.pollData.question}</p>
+            {isCreator &&!isClosed && (
+              <button
+                onClick={async () => {
+                  const { updateDoc } = await import("firebase/firestore");
+                  const msgRef = doc(db, "chats", roomId as string, "messages", msg.id);
+                  await updateDoc(msgRef, { 'pollData.closed': true });
+                  toast.success("Đã khóa bình chọn");
+                }}
+                className="text- text-red-500 active:opacity-60"
+              >
+                Khóa
+              </button>
+            )}
+          </div>
+          
+          {msg.pollData.endTime && (
+            <p className="text- text-[#8e8e93] mb-2">
+              {isExpired? 'Đã kết thúc' : `Kết thúc: ${format(msg.pollData.endTime.toDate(), 'HH:mm dd/MM', { locale: vi })}`}
+            </p>
+          )}
+          
+          <div className="space-y-2">
+            {msg.pollData.options.map((opt, optIdx) => {
+              const voted = opt.votes.includes(user?.uid || '');
+              const percent = totalVotes > 0? (opt.votes.length / totalVotes * 100) : 0;
+              return (
+                <button
+                  key={optIdx}
+                  onClick={() =>!isClosed && votePoll(msg.id, optIdx)}
+                  disabled={isClosed}
+                  className="w-full text-left relative overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700 active:opacity-70 disabled:opacity-60"
+                >
+                  <div 
+                    className="absolute inset-0 bg-[#0a84ff]/20 transition-all duration-300"
+                    style={{ width: `${percent}%` }}
+                  />
+                  <div className="relative px-3 py-2.5">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text- flex items-center gap-2">
+                        {voted && <FiCheck className="text-[#0a84ff]" size={16} />}
+                        {opt.text}
+                      </span>
+                      <span className="text- text-[#8e8e93] font-medium">{percent.toFixed(0)}%</span>
+                    </div>
+                    {opt.votes.length > 0 && (
+                      <div className="flex -space-x-1">
+                        {opt.votes.slice(0, 5).map((uid: string) => {
+                          const voter = allUsers.find(u => u.uid === uid);
+                          return voter? (
+                            <img 
+                              key={uid} 
+                              src={voter.photoURL} 
+                              className="w-5 h-5 rounded-full border border-white dark:border-zinc-800" 
+                              alt=""
+                            />
+                          ) : null;
+                        })}
+                        {opt.votes.length > 5 && (
+                          <div className="w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-600 border border-white dark:border-zinc-800 flex items-center justify-center text- text-zinc-600 dark:text-zinc-300">
+                            +{opt.votes.length - 5}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text- text-[#8e8e93] mt-2">
+            {totalVotes} lượt bình chọn{msg.pollData.allowMultiple? ' • Nhiều lựa chọn' : ''}
+          </p>
+        </div>
+        {isLastInGroup && (
+          <p className="text- text-[#8e8e93] mt-1 px-3">
+            {formatMessageTime(msg.createdAt)}
+          </p>
+        )}
+      </div>
     </div>
-    <p className="text-[11px] text-[#8e8e93] mt-2">{totalVotes} lượt bình chọn</p>
-  </div>
-  {isLastInGroup && (
-    <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
-      {formatMessageTime(msg.createdAt)}
-    </p>
-  )}
-</div>
-</div>
-);
+  );
 }
 
 // Render Text message
@@ -1107,132 +1158,8 @@ return (
     </div>
   </div>
 )}
-// Render Poll
-if (msg.type === 'poll' && msg.pollData) {
-  const totalVotes = msg.pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
-  const isExpired = msg.pollData.endTime && msg.pollData.endTime.toDate() < new Date();
-  const isClosed = msg.pollData.closed || isExpired;
-  const isCreator = msg.pollData.creatorId === user?.uid;
-  
-  return (
-    <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
-      <div className="w-8 flex-shrink-0 self-end relative">
-        {isFirstInGroup? (
-          <>
-            <img
-              src={msg.senderAvatar}
-              alt={msg.senderName}
-              className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
-              referrerPolicy="no-referrer"
-              onClick={(e) => handleAvatarClick(e, msg.id)}
-            />
-            {activePopupMsgId === msg.id && (
-              <div 
-                className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => {
-                    router.push(`/profile/${msg.senderId}`);
-                    setActivePopupMsgId(null);
-                  }}
-                  className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
-                >
-                  <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                  <span className="text- font-medium text-zinc-900 dark:text-white">
-                    Thông tin cá nhân
-                  </span>
-                </button>
-              </div>
-            )}
-          </>
-        ) : <div className="w-8" />}
-      </div>
-      <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-        <div className="px-4 py-3 rounded- bg-zinc-100 dark:bg-zinc-800 w-full">
-          <div className="flex items-start justify-between mb-3">
-            <p className="text- font-semibold flex-1">📊 {msg.pollData.question}</p>
-            {isCreator &&!isClosed && (
-              <button
-                onClick={async () => {
-                  const msgRef = doc(db, "chats", roomId as string, "messages", msg.id);
-                  await updateDoc(msgRef, { 'pollData.closed': true });
-                  toast.success("Đã khóa bình chọn");
-                }}
-                className="text- text-red-500 active:opacity-60"
-              >
-                Khóa
-              </button>
-            )}
-          </div>
-          
-          {msg.pollData.endTime && (
-            <p className="text- text-[#8e8e93] mb-2">
-              {isExpired? 'Đã kết thúc' : `Kết thúc: ${format(msg.pollData.endTime.toDate(), 'HH:mm dd/MM', { locale: vi })}`}
-            </p>
-          )}
-          
-          <div className="space-y-2">
-            {msg.pollData.options.map((opt, optIdx) => {
-              const voted = opt.votes.includes(user?.uid || '');
-              const percent = totalVotes > 0? (opt.votes.length / totalVotes * 100) : 0;
-              return (
-                <button
-                  key={optIdx}
-                  onClick={() =>!isClosed && votePoll(msg.id, optIdx)}
-                  disabled={isClosed}
-                  className="w-full text-left relative overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700 active:opacity-70 disabled:opacity-60"
-                >
-                  <div 
-                    className="absolute inset-0 bg-[#0a84ff]/20 transition-all duration-300"
-                    style={{ width: `${percent}%` }}
-                  />
-                  <div className="relative px-3 py-2.5">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text- flex items-center gap-2">
-                        {voted && <FiCheck className="text-[#0a84ff]" size={16} />}
-                        {opt.text}
-                      </span>
-                      <span className="text- text-[#8e8e93] font-medium">{percent.toFixed(0)}%</span>
-                    </div>
-                    {opt.votes.length > 0 && (
-                      <div className="flex -space-x-1">
-                        {opt.votes.slice(0, 5).map((uid: string) => {
-                          const voter = allUsers.find(u => u.uid === uid);
-                          return voter? (
-                            <img 
-                              key={uid} 
-                              src={voter.photoURL} 
-                              className="w-5 h-5 rounded-full border border-white dark:border-zinc-800" 
-                              alt=""
-                            />
-                          ) : null;
-                        })}
-                        {opt.votes.length > 5 && (
-                          <div className="w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-600 border border-white dark:border-zinc-800 flex items-center justify-center text- text-zinc-600 dark:text-zinc-300">
-                            +{opt.votes.length - 5}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-          <p className="text- text-[#8e8e93] mt-2">
-            {totalVotes} lượt bình chọn{msg.pollData.allowMultiple? ' • Nhiều lựa chọn' : ''}
-          </p>
-        </div>
-        {isLastInGroup && (
-          <p className="text- text-[#8e8e93] mt-1 px-3">
-            {formatMessageTime(msg.createdAt)}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
+
+
 
     </div>
   );
