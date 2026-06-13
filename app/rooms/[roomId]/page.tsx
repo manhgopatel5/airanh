@@ -318,14 +318,14 @@ const scrollToMessage = (msgId: string, idx?: number) => {
   // Mời bạn bè
 const loadAllUsers = async () => {
   if (!user?.uid) return;
-  setInviteLoading(true);
+  setInviting(true);
   try {
     const userDoc = await getDoc(doc(db, "users", user.uid));
     const friendIds = userDoc.data()?.friends || [];
     
     if (friendIds.length === 0) {
       setAllUsers([]);
-      setInviteLoading(false);
+      setInviting(false);
       return;
     }
 
@@ -349,7 +349,6 @@ const loadAllUsers = async () => {
       });
     }
     
-    // Sort: chưa vào room lên trước
     users.sort((a, b) => {
       const aInRoom = roomData?.members.includes(a.uid);
       const bInRoom = roomData?.members.includes(b.uid);
@@ -363,7 +362,7 @@ const loadAllUsers = async () => {
     console.error(e);
     toast.error("Lỗi tải danh sách bạn bè");
   } finally {
-    setInviteLoading(false);
+    setInviting(false);
   }
 };
 const inviteUsers = async () => {
@@ -927,7 +926,7 @@ return (
       )}
 
       <div className="flex-1 overflow-y-auto px-4 py-2">
-        {inviteLoading? (
+        {inviting? (
           <div className="flex justify-center py-10">
             <FiLoader className="animate-spin" size={24} />
           </div>
