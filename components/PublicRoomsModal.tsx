@@ -93,74 +93,91 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
   }, [user?.uid, db]);
 
   const handleJoinRoom = async (room: PublicRoomItem) => {
-  if (!user?.uid) return toast.error("Vui lòng đăng nhập");
-  setJoining(room.id);
-
-  try {
-    // 1. Tạo/update public_rooms
-    const roomRef = doc(db, "public_rooms", room.id);
-    const roomSnap = await getDoc(roomRef);
-
-    if (!roomSnap.exists()) {
-      await setDoc(roomRef, {
-        name: room.name,
-        city: room.city,
-        emoji: room.emoji,
-        color: room.color,
-        desc: room.desc,
-        members: [user.uid], // Array thường
-        memberCount: 1,
-        onlineCount: 1,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        lastMessage: `Chào mừng đến ${room.name}! 👋`,
-      });
-    } else if (!roomSnap.data()?.members?.includes(user.uid)) {
-      await updateDoc(roomRef, {
-        members: arrayUnion(user.uid), // Update mới dùng arrayUnion
-        memberCount: increment(1),
-        updatedAt: serverTimestamp(),
-      });
+    if (!user?.uid) {
+      toast.error("Vui lòng đăng nhập");
+      return;
     }
+    setJoining(room.id);
 
-    // 2. Tạo/update chats - QUAN TRỌNG
-    const chatRef = doc(db, "chats", room.id);
-    const chatSnap = await getDoc(chatRef);
+    try {
+      // 1. Tạo/update public_rooms
+      const roomRef = doc(db, "public_rooms", room.id);
+      const roomSnap = await getDoc(roomRef);
 
-    if (!chatSnap.exists()) {
-      // Tạo mới: DÙNG ARRAY THƯỜNG, KHÔNG DÙNG arrayUnion
-      await setDoc(chatRef, {
-        isGroup: true,
-        isPublicRoom: true,
-        status: 'active',
-        groupName: room.name,
-        groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
-        members: [user.uid], // Fix chỗ này
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        lastMessage: `Bạn đã tham gia ${room.name}`,
-        lastMessageTime: serverTimestamp(),
-      });
-    } else {
-      // Update: mới dùng arrayUnion
-      await updateDoc(chatRef, {
-        isPublicRoom: true,
-        status: 'active',
-        members: arrayUnion(user.uid),
-        updatedAt: serverTimestamp(),
-      });
+      if (!roomSnap.exists()) {
+        console.log("Creating public_rooms:", room.id);
+        await setDoc(roomRef, {
+          name: room.name,
+          city: room.city,
+          emoji: room.emoji,
+          color: room.color,
+          desc: room.desc,
+          members: [user.uid],
+          memberCount: 1,
+          onlineCount: 1,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastMessage: `Chào mừng đến ${room.name}! 👋`,
+        });
+      } else if (!roomSnap.data()?.members?.includes(user.uid)) {
+        console.log("Updating public_rooms:", room.id);
+        await updateDoc(roomRef, {
+          members: arrayUnion(user.uid),
+          memberCount: increment(1),
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      // 2. Tạo/update chats
+      const chatRef = doc(db, "chats", room.id);
+      const chatSnap = await getDoc(chatRef);
+      
+      console.log("=== DEBUG CHATS ===");
+      console.log("UID gửi lên:", user.uid);
+      console.log("Room ID:", room.id);
+      console.log("Chat exists:", chatSnap.exists());
+      console.log("===================");
+
+      if (!chatSnap.exists()) {
+        const chatData = {
+          isGroup: true,
+          isPublicRoom: true,
+          status: 'active',
+          groupName: room.name,
+          groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
+          members: [user.uid],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastMessage: `Bạn đã tham gia ${room.name}`,
+          lastMessageTime: serverTimestamp(),
+        };
+        console.log("Creating chats with data:", chatData);
+        await setDoc(chatRef, chatData);
+        console.log("Created chats doc successfully");
+      } else {
+        console.log("Updating existing chats doc");
+        await updateDoc(chatRef, {
+          isPublicRoom: true,
+          status: 'active',
+          members: arrayUnion(user.uid),
+          updatedAt: serverTimestamp(),
+        });
+        console.log("Updated chats doc successfully");
+      }
+
+      toast.success(`Đã vào phòng ${room.name}`);
+      onClose();
+      router.push(`/chat/${room.id}`);
+    } catch (error: any) {
+      console.error("Join room error code:", error.code);
+      console.error("Join room error message:", error.message);
+      console.error("Full error:", error);
+      toast.error("Lỗi: " + error.message);
+    } finally {
+      setJoining(null);
     }
+  };
 
-    toast.success(`Đã vào phòng ${room.name}`);
-    onClose();
-    router.push(`/chat/${room.id}`);
-  } catch (error: any) {
-    console.error("Join room error:", error);
-    toast.error("Lỗi: " + error.message);
-  } finally {
-    setJoining(null);
-  }
-};
   const handleLeaveRoom = async (room: PublicRoomItem) => {
     if (!user?.uid) return;
     if (!confirm(`Rời phòng ${room.name}?`)) return;
@@ -173,7 +190,6 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
         updatedAt: serverTimestamp(),
       });
 
-      // Xóa khỏi chats luôn
       const chatRef = doc(db, "chats", room.id);
       await updateDoc(chatRef, {
         members: arrayRemove(user.uid),
