@@ -72,6 +72,13 @@ export default function ChatRoom() {
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
 const [activePopupMsgId, setActivePopupMsgId] = useState<string | null>(null);
+useEffect(() => {
+  const handleClickOutside = () => setActivePopupMsgId(null);
+  if (activePopupMsgId) {
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }
+}, [activePopupMsgId]);
   const isPublicRoom = typeof roomId === 'string' && roomId.startsWith('public_');
   const [searchFriend, setSearchFriend] = useState("");
   const handleScroll = useCallback(() => {
@@ -145,13 +152,7 @@ const [activePopupMsgId, setActivePopupMsgId] = useState<string | null>(null);
         router.push("/chat");
       }
     });
-useEffect(() => {
-  const handleClickOutside = () => setActivePopupMsgId(null);
-  if (activePopupMsgId) {
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }
-}, [activePopupMsgId]);
+
     const chatRef = doc(db, "chats", roomId as string);
     const unsubChatCheck = onSnapshot(chatRef, (chatSnap) => {
       if (chatSnap.exists()) {
