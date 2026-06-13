@@ -558,37 +558,7 @@ useEffect(() => {
     };
   }, [user?.uid, activeTab, db]);
 // 3. Load lời mời kết bạn - THÊM ĐOẠN NÀY
-useEffect(() => {
-  if (!user?.uid) return;
 
-  const q = query(
-    collection(db, "friendRequests"),
-    where("toUserId", "==", user.uid), // ✅ đúng field theo friendService.ts
-    where("status", "==", "pending")
-  );
-
-  const unsub = onSnapshot(q, async (snap) => {
-    const reqList = await Promise.all(
-      snap.docs.map(async (d) => {
-        const data = d.data();
-        const fromUser = await getDoc(doc(db, "users", data.fromUserId)); // ✅ fromUserId
-        const u = fromUser.exists() ? fromUser.data() : {};
-        return {
-          id: d.id,
-          fromUserId: data.fromUserId,
-          toUserId: data.toUserId,
-          status: data.status,
-          createdAt: data.createdAt,
-          fromName: u.name || "User",
-          fromAvatar: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || "U")}&background=random`,
-        };
-      })
-    );
-    setRequests(reqList);
-  });
-
-  return () => unsub();
-}, [user?.uid, db]);
 useEffect(() => {
   if (authLoading || !user?.uid) return;
   let retryCount = 0;
