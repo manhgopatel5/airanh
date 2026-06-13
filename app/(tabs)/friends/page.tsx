@@ -8,6 +8,14 @@ import { FiUserPlus, FiX, FiUsers, FiMessageSquare, FiCheck } from "react-icons/
 import { toast, Toaster } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
+import {
+  listenFriendRequests,
+  acceptRequest,
+  rejectRequest,
+  sendFriendRequest,
+  unfriend,
+  type FriendRequest,
+} from "@/lib/friendService";
 
 type FriendItem = {
   uid: string;
@@ -29,14 +37,6 @@ type StrangerChat = {
   };
   lastMessage?: string;
   updatedAt?: any;
-};
-
-type FriendRequest = {
-  id: string;
-  from: string;
-  fromName: string;
-  fromAvatar: string;
-  createdAt: any;
 };
 
 export default function FriendsPage() {
@@ -135,104 +135,73 @@ export default function FriendsPage() {
     return () => unsub();
   }, [user?.uid, db]);
 
-  // 3. Load lời mời kết bạn - FIX FIELD "to"
+  // 3. Load lời mời kết bạn - dùng listenFriendRequests từ service
   useEffect(() => {
     if (!user?.uid) return;
 
-    const q = query(
-      collection(db, "friendRequests"),
-      where("to", "==", user.uid),
-      where("status", "==", "pending")
-    );
-
-    const unsub = onSnapshot(q, async (snap) => {
-      const reqList: FriendRequest[] = [];
-
-      for (const d of snap.docs) {
-        const data = d.data();
-        const fromUser = await getDoc(doc(db, "users", data.from));
-        if (fromUser.exists()) {
-          const u = fromUser.data();
-          reqList.push({
-            id: d.id,
-            from: data.from,
+    const unsub = listenFriendRequests(user.uid, async (reqs) => {
+      // Map lại để có fromName, fromAvatar
+      const reqList = await Promise.all(
+        reqs.map(async (req) => {
+          const fromUser = await getDoc(doc(db, "users", req.fromUserId));
+          const u = fromUser.exists()? fromUser.data() : {};
+          return {
+           ...req,
             fromName: u.name || "User",
-            fromAvatar: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=random`,
-            createdAt: data.createdAt,
-          });
-        }
-      }
-
-      setRequests(reqList);
+            fromAvatar: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || "U")}&background=random`,
+          };
+        })
+      );
+      setRequests(reqList as any);
     });
 
     return () => unsub();
   }, [user?.uid, db]);
 
   // Gửi lời mời kết bạn
-  const sendFriendRequest = async (toUserId: string, e: React.MouseEvent) => {
+  const handleSendFriendRequest = async (toUserId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) return;
 
     try {
-      await addDoc(collection(db, "friendRequests"), {
-        from: user.uid,
-        to: toUserId,
-        status: "pending",
-        createdAt: serverTimestamp(),
-      });
+      await sendFriendRequest(user.uid, toUserId);
       toast.success("Đã gửi lời mời kết bạn");
-    } catch (err) {
-      toast.error("Lỗi gửi lời mời");
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi gửi lời mời");
     }
   };
 
   // Chấp nhận lời mời
-  const acceptRequest = async (req: FriendRequest) => {
+  const handleAcceptRequest = async (req: any) => {
     if (!user) return;
-
     try {
-      const batch = [
-        setDoc(doc(db, "users", user.uid, "friends", req.from), {
-          status: "active",
-          createdAt: serverTimestamp(),
-        }),
-        setDoc(doc(db, "users", req.from, "friends", user.uid), {
-          status: "active",
-          createdAt: serverTimestamp(),
-        }),
-        deleteDoc(doc(db, "friendRequests", req.id)),
-      ];
-
-      await Promise.all(batch);
+      await acceptRequest(req);
       toast.success(`Đã kết bạn với ${req.fromName}`);
-    } catch (err) {
-      toast.error("Lỗi chấp nhận");
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi chấp nhận");
     }
   };
 
   // Từ chối lời mời
-  const rejectRequest = async (reqId: string) => {
+  const handleRejectRequest = async (reqId: string) => {
+    if (!user) return;
     try {
-      await deleteDoc(doc(db, "friendRequests", reqId));
+      await rejectRequest(reqId, user.uid);
       toast.success("Đã từ chối");
-    } catch (err) {
-      toast.error("Lỗi từ chối");
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi từ chối");
     }
   };
 
   // Xóa bạn
-  const removeFriend = async (friendId: string, friendName: string) => {
+  const handleRemoveFriend = async (friendId: string, friendName: string) => {
     if (!user ||!confirm(`Xóa ${friendName} khỏi danh sách bạn bè?`)) return;
 
     try {
-      await Promise.all([
-        deleteDoc(doc(db, "users", user.uid, "friends", friendId)),
-        deleteDoc(doc(db, "users", friendId, "friends", user.uid)),
-      ]);
+      await unfriend(user.uid, friendId);
       toast.success("Đã hủy kết bạn");
-    } catch (err) {
-      toast.error("Lỗi xóa bạn");
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi xóa bạn");
     }
   };
 
@@ -256,7 +225,7 @@ export default function FriendsPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-900">
         <div className="px-4 pt-3 pb-2">
-          <h1 className="text-[22px] font-bold mb-3">Bạn bè</h1>
+          <h1 className="text-2xl font-bold mb-3">Bạn bè</h1>
 
           {/* Tabs */}
           <div className="flex gap-2">
@@ -270,7 +239,7 @@ export default function FriendsPage() {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`px-4 h-8 rounded-full text-[14px] font-[550] transition-all ${
                   activeTab === tab.id
-                  ? "bg-[#0a84ff] text-white"
+                 ? "bg-[#0a84ff] text-white"
                     : "bg-gray-100 dark:bg-zinc-900 text-gray-600 dark:text-zinc-400"
                 }`}
               >
@@ -291,7 +260,7 @@ export default function FriendsPage() {
                 <p className="text-gray-500">Không có lời mời nào</p>
               </div>
             ) : (
-              requests.map((req) => (
+              requests.map((req: any) => (
                 <div key={req.id} className="flex items-center gap-3 py-3">
                   <img src={req.fromAvatar} className="w-14 h-14 rounded-full object-cover" alt={req.fromName} />
                   <div className="flex-1 min-w-0">
@@ -300,13 +269,13 @@ export default function FriendsPage() {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => acceptRequest(req)}
+                      onClick={() => handleAcceptRequest(req)}
                       className="h-9 px-4 bg-[#0a84ff] text-white rounded-full text-[14px] font-medium active:scale-95"
                     >
                       <FiCheck size={18} />
                     </button>
                     <button
-                      onClick={() => rejectRequest(req.id)}
+                      onClick={() => handleRejectRequest(req.id)}
                       className="h-9 px-4 bg-gray-200 dark:bg-zinc-800 rounded-full text-[14px] font-medium active:scale-95"
                     >
                       <FiX size={18} />
@@ -343,7 +312,7 @@ export default function FriendsPage() {
                     </div>
                   </div>
                   <button
-                    onClick={(e) => sendFriendRequest(chat.user.id, e)}
+                    onClick={(e) => handleSendFriendRequest(chat.user.id, e)}
                     className="w-10 h-10 rounded-full bg-[#0a84ff] flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
                   >
                     <FiUserPlus className="text-white" size={20} />
@@ -394,7 +363,7 @@ export default function FriendsPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => removeFriend(friend.uid, friend.name)}
+                    onClick={() => handleRemoveFriend(friend.uid, friend.name)}
                     className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 active:scale-90 transition-all"
                   >
                     <FiX size={20} strokeWidth={2.5} />
