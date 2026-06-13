@@ -79,7 +79,7 @@ export default function ProfileTabContent() {
   const accentGradient = isPlan
    ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
-const ADMIN_EMAIL = "justastormyday@gmail.com";
+const ADMIN_EMAILS = ["justastormyday@gmail.com", "hongann2210@gmail.com"];
   // Ẩn nav bar khi modal mở - FIX SSR
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -734,17 +734,18 @@ const ADMIN_EMAIL = "justastormyday@gmail.com";
             />
           </div>
           {/* NÚT ADMIN - CHỈ HIỆN VỚI justastormyday@gmail.com */}
-          {user?.email === ADMIN_EMAIL && (
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden mb-4">
-              <SettingItem
-                label="Quản lý Events"
-                subtitle="Tạo và chỉnh sửa sự kiện"
-                icon={Database}
-                iconColor="text-[#0a84ff]"
-                onClick={() => router.push("/admin/events")}
-              />
-            </div>
-          )}
+    {ADMIN_EMAILS.includes(user?.email || "") && (
+  <>
+    <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+    <SettingItem
+      label="Quản lý Events"
+      subtitle="Tạo và chỉnh sửa sự kiện"
+      icon={Database}
+      iconColor="text-[#0a84ff]"
+      onClick={() => router.push("/admin/events")}
+    />
+  </>
+)}
 
          
           <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
