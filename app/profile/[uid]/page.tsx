@@ -73,7 +73,7 @@ import {
   Lock,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
-
+  import { sendFriendRequest, cancelFriendRequest, unfriend } from "@/lib/friendService";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -727,23 +727,30 @@ if (!friendSnap.exists()) {
     fetchUser();
   }, [fetchUser]);
 
-  const handleConnect = async () => {
+
+
+const handleConnect = async () => {
   if (!user || !targetUser || actionLoading) return;
 
   if (user.uid === targetUser?.uid) {
     return toast.error("Đây là bạn");
   }
 
-  if (isFriend) {
-    return toast.info("Các bạn đã là bạn bè");
-  }
-
   setActionLoading(true);
 
   try {
-    // Nếu đã gửi rồi thì hủy
-    if (hasSentRequest && _requestId) {
-      await deleteDoc(doc(db, "friendRequests", _requestId));
+    // 1. Đã là bạn bè -> hủy bạn
+    if (isFriend) {
+      await unfriend(user.uid, targetUser.uid);
+      setIsFriend(false);
+      toast.success("Đã hủy kết bạn");
+      if ("vibrate" in navigator) navigator.vibrate(8);
+      return;
+    }
+
+    // 2. Đã gửi lời mời -> hủy lời mời
+    if (hasSentRequest) {
+      await cancelFriendRequest(user.uid, targetUser.uid);
       setHasSentRequest(false);
       setRequestId(null);
       toast.success("Đã hủy lời mời kết bạn");
@@ -751,34 +758,14 @@ if (!friendSnap.exists()) {
       return;
     }
 
-    // Chưa gửi thì tạo request mới
-    const reqId = [user.uid, targetUser.uid].sort().join('_');
-    
-    await setDoc(
-      doc(db, "friendRequests", reqId),
-      {
-        from: user.uid,
-        to: targetUser.uid,
-        status: "pending",
-        createdAt: serverTimestamp(),
-        fromName: currentUserData?.name || user.displayName || "User",
-        fromAvatar: currentUserData?.avatar || user.photoURL || "",
-        fromShortId: currentUserData?.userId || "",
-        toName: targetUser.name,
-        toAvatar: targetUser.avatar,
-        toShortId: targetUser.userId,
-      }
-    );
-
+    // 3. Chưa gửi -> gửi lời mời mới
+    await sendFriendRequest(user.uid, targetUser.uid);
     setHasSentRequest(true);
-    setRequestId(reqId);
     toast.success(`Đã gửi lời mời tới ${targetUser.name}`);
-    if ("vibrate" in navigator) {
-      navigator.vibrate(8);
-    }
-  } catch (err) {
+    if ("vibrate" in navigator) navigator.vibrate(8);
+  } catch (err: any) {
     console.error(err);
-    toast.error("Thao tác thất bại");
+    toast.error(err.message || "Thao tác thất bại");
   } finally {
     setActionLoading(false);
   }
