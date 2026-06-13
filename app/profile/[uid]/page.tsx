@@ -925,7 +925,48 @@ const handleMessage = async () => {
       perks: "Biểu tượng uy tín của cộng đồng",
     },
   ];
-
+const handleMessage = async () => {
+  if (!user || !targetUser || actionLoading) return;
+  if (user.uid === targetUser.uid) return toast.error("Không thể tự nhắn cho mình");
+  
+  setActionLoading(true);
+  try {
+    const chatId = [user.uid, targetUser.uid].sort().join('_');
+    const chatRef = doc(db, "chats", chatId);
+    
+    // Tạo chat doc nếu chưa có
+    await setDoc(chatRef, {
+      members: [user.uid, targetUser.uid],
+      membersInfo: {
+        [user.uid]: {
+          name: currentUserData?.name || user.displayName || "User",
+          avatar: currentUserData?.avatar || user.photoURL || "",
+          userId: currentUserData?.userId || ""
+        },
+        [targetUser.uid]: {
+          name: targetUser.name || "Unknown",
+          avatar: targetUser.avatar || "",
+          userId: targetUser.userId || ""
+        }
+      },
+      type: "dm",
+      createdAt: serverTimestamp(),
+      lastMessage: "",
+      lastMessageTime: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      deletedFor: [],
+      status: 'active',
+      blockedUsers: []
+    }, { merge: true });
+    
+    router.push(`/chat/${chatId}`);
+  } catch (err: any) {
+    console.error("Lỗi tạo chat:", err);
+    toast.error(`Không thể mở cuộc trò chuyện: ${err.message}`);
+  } finally {
+    setActionLoading(false);
+  }
+};
   const handleShare = async () => {
     if (!targetUser) return;
 
@@ -1094,7 +1135,17 @@ return (
     </div>
   )}
 </div>
-
+{/* NÚT NHẮN TIN - CHỈ HIỆN KHI XEM PROFILE NGƯỜI KHÁC */}
+{!isOwnProfile && (
+  <button
+    onClick={handleMessage}
+    disabled={actionLoading}
+    className="mt-3 px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-500 to-sky-500 text-white font-semibold text-sm shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 mx-auto"
+  >
+    <MessageCircle className="w-4 h-4" />
+    {actionLoading ? "Đang mở..." : "Nhắn tin"}
+  </button>
+)}
     {/* BỎ USERID */}
 
     {/* RANK BADGE - INFO NÚT NHỎ GÓC PHẢI */}
