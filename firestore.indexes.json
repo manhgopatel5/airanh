@@ -400,13 +400,6 @@
         { "fieldPath": "fromUserId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "public_rooms",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "onlineCount", "order": "DESCENDING" }
-      ]
     }
   ],
   "fieldOverrides": []
