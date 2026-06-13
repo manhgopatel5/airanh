@@ -832,57 +832,7 @@ const handleBlock = async () => {
     setActionLoading(false);
   }
 };
-const handleMessage = async () => {
-  if (!user || !targetUser || actionLoading) return;
-  if (user.uid === targetUser.uid) return toast.error("Không thể tự nhắn cho mình");
-  
-  setActionLoading(true);
-  try {
-    let currentUser = currentUserData;
-    if (!currentUser) {
-      const userSnap = await getDoc(doc(db, "users", user.uid));
-      if (!userSnap.exists()) {
-        toast.error("Không tìm thấy thông tin của bạn");
-        return;
-      }
-      currentUser = userSnap.data();
-      setCurrentUserData(currentUser);
-    }
 
-    const chatId = [user.uid, targetUser.uid].sort().join('_');
-    const chatRef = doc(db, "chats", chatId);
-    
-    await setDoc(chatRef, {
-      members: [user.uid, targetUser.uid],
-      membersInfo: {
-        [user.uid]: {
-          name: currentUser?.name || user.displayName || "User",
-          avatar: currentUser?.avatar || user.photoURL || "",
-          userId: currentUser?.userId || ""
-        },
-        [targetUser.uid]: {
-          name: targetUser.name || "Unknown",
-          avatar: targetUser.avatar || "",
-          userId: targetUser.userId || ""
-        }
-      },
-      createdAt: serverTimestamp(),
-      lastMessage: "",
-      lastMessageTime: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      deletedFor: [],
-      status: 'active',
-      blockedUsers: [] // ← THÊM DÒNG NÀY
-    }, { merge: true });
-    
-    router.push(`/chat/${chatId}`);
-  } catch (err: any) {
-    console.error("Lỗi tạo chat:", err);
-    toast.error(`Không thể mở cuộc trò chuyện: ${err.message}`);
-  } finally {
-    setActionLoading(false);
-  }
-};
   const levelTiers = [
     {
       range: "1 - 7",
