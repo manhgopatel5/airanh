@@ -587,31 +587,31 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
           >
             <FiMoreVertical size={20} />
             
-            {showMenu && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                <div className="absolute top-12 right-0 z-50 w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-                  <button 
-                    onClick={() => { setShowSearch(true); setShowMenu(false); }}
-                    className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800"
-                  >
-                    <FiSearch size={18} /> <span className="text-[15px]">Tìm tin nhắn</span>
-                  </button>
-                  <button 
-                    onClick={() => { setShowInvite(true); setShowMenu(false); loadAllUsers(); }}
-                    className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800"
-                  >
-                    <FiUserPlus size={18} /> <span className="text-[15px]">Mời bạn bè</span>
-                  </button>
-                  <button 
-                    onClick={() => { setShowPoll(true); setShowMenu(false); }}
-                    className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800"
-                  >
-                    <FiClipboard size={18} /> <span className="text-[15px]">Tạo bình chọn</span>
-                  </button>
-                </div>
-              </>
-            )}
+        {showMenu && (
+  <>
+    <div className="fixed inset-0 z-" onClick={() => setShowMenu(false)} />
+    <div className="absolute top-12 right-0 z-50 w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+      <button 
+        onClick={() => { setShowSearch(true); setShowMenu(false); }}
+        className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800"
+      >
+        <FiSearch size={18} /> <span className="text-">Tìm tin nhắn</span>
+      </button>
+      <button 
+        onClick={() => { setShowInvite(true); setShowMenu(false); loadAllUsers(); }}
+        className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800"
+      >
+        <FiUserPlus size={18} /> <span className="text-">Mời bạn bè</span>
+      </button>
+      <button 
+        onClick={() => { setShowPoll(true); setShowMenu(false); }}
+        className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800"
+      >
+        <FiClipboard size={18} /> <span className="text-">Tạo bình chọn</span>
+      </button>
+    </div>
+  </>
+)}
           </button>
         </div>
       </div>
@@ -637,7 +637,6 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
             const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
 
             // Render Poll
-// Render Poll
 if (msg.type === 'poll' && msg.pollData) {
   const totalVotes = msg.pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
   const isExpired = msg.pollData.endTime && msg.pollData.endTime.toDate() < new Date();
@@ -692,7 +691,7 @@ if (msg.type === 'poll' && msg.pollData) {
                   className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
                 >
                   <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                  <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
                     Thông tin cá nhân
                   </span>
                 </button>
@@ -702,9 +701,9 @@ if (msg.type === 'poll' && msg.pollData) {
         ) : <div className="w-8" />}
       </div>
       <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-        <div className="px-4 py-3 rounded-[18px] bg-zinc-100 dark:bg-zinc-800 w-full">
+        <div className="px-4 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 w-full">
           <div className="flex items-start justify-between mb-3">
-            <p className="text-[15px] font-semibold flex-1">📊 {msg.pollData.question}</p>
+            <p className="text-base font-semibold flex-1">📊 {msg.pollData.question}</p>
             {isCreator &&!isClosed && (
               <button
                 onClick={async () => {
@@ -713,7 +712,7 @@ if (msg.type === 'poll' && msg.pollData) {
                   await updateDoc(msgRef, { 'pollData.closed': true });
                   toast.success("Đã khóa bình chọn");
                 }}
-                className="text-[13px] text-red-500 active:opacity-60"
+                className="text-sm text-red-500 active:opacity-60"
               >
                 Khóa
               </button>
@@ -721,7 +720,7 @@ if (msg.type === 'poll' && msg.pollData) {
           </div>
           
           {msg.pollData.endTime && (
-            <p className="text-[13px] text-[#8e8e93] mb-2">
+            <p className="text-sm text-[#8e8e93] mb-2">
               {isExpired? 'Đã kết thúc' : `Kết thúc: ${format(msg.pollData.endTime.toDate(), 'HH:mm dd/MM', { locale: vi })}`}
             </p>
           )}
@@ -743,11 +742,11 @@ if (msg.type === 'poll' && msg.pollData) {
                   />
                   <div className="relative px-3 py-2.5">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[15px] flex items-center gap-2">
+                      <span className="text-sm flex items-center gap-2">
                         {voted && <FiCheck className="text-[#0a84ff]" size={16} />}
                         {opt.text}
                       </span>
-                      <span className="text-[13px] text-[#8e8e93] font-medium">{percent.toFixed(0)}%</span>
+                      <span className="text-sm text-[#8e8e93] font-medium">{percent.toFixed(0)}%</span>
                     </div>
                     {opt.votes.length > 0 && (
                       <div className="flex -space-x-1">
@@ -763,7 +762,7 @@ if (msg.type === 'poll' && msg.pollData) {
                           ) : null;
                         })}
                         {opt.votes.length > 5 && (
-                          <div className="w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-600 border border-white dark:border-zinc-800 flex items-center justify-center text-[11px] text-zinc-600 dark:text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-600 border border-white dark:border-zinc-800 flex items-center justify-center text-xs text-zinc-600 dark:text-zinc-300">
                             +{opt.votes.length - 5}
                           </div>
                         )}
@@ -774,12 +773,12 @@ if (msg.type === 'poll' && msg.pollData) {
               );
             })}
           </div>
-          <p className="text-[11px] text-[#8e8e93] mt-2">
+          <p className="text-xs text-[#8e8e93] mt-2">
             {totalVotes} lượt bình chọn{msg.pollData.allowMultiple? ' • Nhiều lựa chọn' : ''}
           </p>
         </div>
         {isLastInGroup && (
-          <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
+          <p className="text-xs text-[#8e8e93] mt-1 px-3">
             {formatMessageTime(msg.createdAt)}
           </p>
         )}
@@ -798,7 +797,7 @@ if (msg.type === 'poll' && msg.pollData) {
               className="flex items-center gap-2.5 px-4 py-2.5 active:bg-red-50 dark:active:bg-red-950/30 text-red-500 whitespace-nowrap"
             >
               <FiTrash2 size={18} />
-              <span className="text-[15px] font-medium">Xoá bình chọn</span>
+              <span className="text-sm font-medium">Xoá bình chọn</span>
             </button>
           </div>
         </>
@@ -806,8 +805,6 @@ if (msg.type === 'poll' && msg.pollData) {
     </div>
   );
 }
-
-// Render Text message
 return (
   <div 
     key={msg.id} 
