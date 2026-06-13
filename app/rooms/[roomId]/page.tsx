@@ -99,6 +99,11 @@ useEffect(() => {
     return () => document.removeEventListener('click', handleClickOutside);
   }
 }, [activePopupMsgId]);
+useEffect(() => {
+    return () => {
+      setActivePopupMsgId(null);
+    };
+  }, []);
   const isPublicRoom = typeof roomId === 'string' && roomId.startsWith('public_');
   const [searchFriend, setSearchFriend] = useState("");
   const handleScroll = useCallback(() => {
@@ -643,18 +648,18 @@ if (msg.type === 'poll' && msg.pollData) {
                 className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
                 onClick={(e) => e.stopPropagation()}
               >
-                <button
-                  onClick={() => {
-                    router.push(`/profile/${msg.senderId}`);
-                    setActivePopupMsgId(null);
-                  }}
-                  className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
-                >
-                  <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                  <span className="text- font-medium text-zinc-900 dark:text-white">
-                    Thông tin cá nhân
-                  </span>
-                </button>
+           <button
+  onClick={() => {
+    setActivePopupMsgId(null); // Thêm dòng này
+    router.push(`/profile/${msg.senderId}`);
+  }}
+  className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
+>
+  <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+  <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
+    Thông tin cá nhân
+  </span>
+</button>
               </div>
             )}
           </>
