@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { collection, setDoc, query, where, onSnapshot, doc, getDoc, addDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, getDoc, addDoc, serverTimestamp, deleteDoc, setDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
-import { FiUserPlus, FiX, FiUsers, FiMessageSquare } from "react-icons/fi";
+import { FiUserPlus, FiX, FiUsers, FiMessageSquare, FiCheck } from "react-icons/fi";
 import { toast, Toaster } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -135,7 +135,7 @@ export default function FriendsPage() {
     return () => unsub();
   }, [user?.uid, db]);
 
-  // 3. Load lời mời kết bạn
+  // 3. Load lời mời kết bạn - FIX FIELD "to"
   useEffect(() => {
     if (!user?.uid) return;
 
@@ -270,7 +270,7 @@ export default function FriendsPage() {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`px-4 h-8 rounded-full text-[14px] font-[550] transition-all ${
                   activeTab === tab.id
-                   ? "bg-[#0a84ff] text-white"
+                  ? "bg-[#0a84ff] text-white"
                     : "bg-gray-100 dark:bg-zinc-900 text-gray-600 dark:text-zinc-400"
                 }`}
               >
@@ -293,7 +293,7 @@ export default function FriendsPage() {
             ) : (
               requests.map((req) => (
                 <div key={req.id} className="flex items-center gap-3 py-3">
-<img src={req.fromAvatar} className="w-14 h-14 rounded-full object-cover" alt={req.fromName} />
+                  <img src={req.fromAvatar} className="w-14 h-14 rounded-full object-cover" alt={req.fromName} />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-[16px] truncate">{req.fromName}</p>
                     <p className="text-[13px] text-gray-500">{formatTime(req.createdAt)}</p>
@@ -303,13 +303,13 @@ export default function FriendsPage() {
                       onClick={() => acceptRequest(req)}
                       className="h-9 px-4 bg-[#0a84ff] text-white rounded-full text-[14px] font-medium active:scale-95"
                     >
-                      Chấp nhận
+                      <FiCheck size={18} />
                     </button>
                     <button
                       onClick={() => rejectRequest(req.id)}
                       className="h-9 px-4 bg-gray-200 dark:bg-zinc-800 rounded-full text-[14px] font-medium active:scale-95"
                     >
-                      Xóa
+                      <FiX size={18} />
                     </button>
                   </div>
                 </div>
@@ -334,7 +334,7 @@ export default function FriendsPage() {
                     className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
                     onClick={() => router.push(`/chat/${chat.id}`)}
                   >
-<img src={chat.user.avatar} className="w-14 h-14 rounded-full object-cover" alt={chat.user.name} />
+                    <img src={chat.user.avatar} className="w-14 h-14 rounded-full object-cover" alt={chat.user.name} />
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-[16px] truncate">{chat.user.name}</p>
                       <p className="text-[13px] text-gray-500 truncate">
@@ -381,7 +381,7 @@ export default function FriendsPage() {
                     onClick={() => router.push(`/chat/${[user.uid, friend.uid].sort().join("_")}`)}
                   >
                     <div className="relative">
-<img src={friend.avatar} className="w-14 h-14 rounded-full object-cover" alt={friend.name} />
+                      <img src={friend.avatar} className="w-14 h-14 rounded-full object-cover" alt={friend.name} />
                       {friend.isOnline && (
                         <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#30d158] rounded-full border-2 border-white dark:border-black" />
                       )}
