@@ -18,14 +18,19 @@ function isAdmin() {
     match /users/{userId} {
       allow read: if isSignedIn();
       allow write: if isOwner(userId);
+    }
 
-      match /friends/{friendId} {
-        allow read: if isOwner(userId);
-        allow create: if false;
-        allow update: if isSignedIn()
-          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'removedAt', 'updatedAt']);
-        allow delete: if isOwner(userId);
-      }
+    // ========== FRIENDS - THÊM MỚI ==========
+    match /friends/{friendId} {
+      allow read: if isSignedIn()
+        && (request.auth.uid == resource.data.userId
+            || request.auth.uid == resource.data.friendId);
+
+      allow create: if false;
+
+      allow delete: if isSignedIn()
+        && (request.auth.uid == resource.data.userId
+            || request.auth.uid == resource.data.friendId);
     }
 
     // ========== EVENTS - CHỈ ADMIN MỚI SỬA ĐƯỢC ==========
@@ -71,7 +76,7 @@ function isAdmin() {
         && request.auth.uid == resource.data.uid
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.diff(resource.data).changedKeys()
-     .hasOnly(['lastActive', 'current', 'ip', 'location', 'browser', 'os', 'userAgent', 'device']);
+    .hasOnly(['lastActive', 'current', 'ip', 'location', 'browser', 'os', 'userAgent', 'device']);
 
       allow delete: if isSignedIn() && request.auth.uid == resource.data.uid;
     }
@@ -84,7 +89,7 @@ function isAdmin() {
       allow update: if isSignedIn() && (
         request.auth.uid == resource.data.userId ||
         request.resource.data.diff(resource.data).changedKeys()
-     .hasOnly(['savedBy', 'likedBy', 'likeCount', 'commentCount', 'applicants', 'appliedCount'])
+    .hasOnly(['savedBy', 'likedBy', 'likeCount', 'commentCount', 'applicants', 'appliedCount'])
       );
 
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
@@ -97,23 +102,23 @@ function isAdmin() {
           (
             request.auth.uid == resource.data.userId &&
             request.resource.data.diff(resource.data).changedKeys()
-         .hasOnly(['text', 'edited', 'updatedAt'])
+        .hasOnly(['text', 'edited', 'updatedAt'])
           ) ||
           (
             request.resource.data.diff(resource.data).changedKeys()
-         .hasOnly(['likeCount', 'likedBy'])
+        .hasOnly(['likeCount', 'likedBy'])
           ) ||
           (
             request.auth.uid == resource.data.userId &&
             request.resource.data.diff(resource.data).changedKeys()
-         .hasOnly(['deleted', 'text', 'updatedAt']) &&
+        .hasOnly(['deleted', 'text', 'updatedAt']) &&
             request.resource.data.deleted == true
           ) ||
           (
             resource.data.parentId!= null &&
             get(/databases/$(database)/documents/tasks/$(taskId)/comments/$(resource.data.parentId)).data.userId == request.auth.uid &&
             request.resource.data.diff(resource.data).changedKeys()
-         .hasOnly(['deleted', 'text', 'updatedAt']) &&
+        .hasOnly(['deleted', 'text', 'updatedAt']) &&
             request.resource.data.deleted == true
           )
         );
@@ -211,7 +216,7 @@ function isAdmin() {
       }
     }
 
-    // ========== FRIEND REQUESTS - ĐÃ SỬA THEO SERVICE ==========
+    // ========== FRIEND REQUESTS ==========
     match /friendRequests/{reqId} {
       allow read: if isSignedIn()
         && (request.auth.uid == resource.data.fromUserId
@@ -227,7 +232,7 @@ function isAdmin() {
         && (request.auth.uid == resource.data.fromUserId
             || request.auth.uid == resource.data.toUserId)
         && request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly(['status', 'updatedAt']);
+         .hasOnly(['status', 'updatedAt']);
 
       allow delete: if isSignedIn()
         && (request.auth.uid == resource.data.fromUserId
@@ -260,7 +265,7 @@ function isAdmin() {
       allow update: if isSignedIn()
         && request.auth.uid in resource.data.members
         && request.resource.data.diff(resource.data).changedKeys()
-     .hasOnly(['messages', 'extended', 'expiresAt', 'reportedBy']);
+    .hasOnly(['messages', 'extended', 'expiresAt', 'reportedBy']);
       allow delete: if false;
     }
 
