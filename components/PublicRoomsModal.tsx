@@ -122,20 +122,29 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
         });
       }
 
-      await setDoc(
-        doc(db, "chats", room.id),
-        {
+      // FIX: Dùng array thường khi tạo mới, thêm status: 'active'
+      const chatRef = doc(db, "chats", room.id);
+      const chatSnap = await getDoc(chatRef);
+
+      if (!chatSnap.exists()) {
+        await setDoc(chatRef, {
           isGroup: true,
           isPublicRoom: true,
+          status: 'active', // Rules check field này
           groupName: room.name,
           groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
-          members: arrayUnion(user.uid),
+          members: [user.uid], // Dùng array thường khi tạo mới
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           lastMessage: `Bạn đã tham gia ${room.name}`,
-        },
-        { merge: true }
-      );
+          lastMessageTime: serverTimestamp(),
+        });
+      } else {
+        await updateDoc(chatRef, {
+          members: arrayUnion(user.uid),
+          updatedAt: serverTimestamp(),
+        });
+      }
 
       toast.success(`Đã vào phòng ${room.name}`);
       onClose();
@@ -159,6 +168,14 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
         memberCount: increment(-1),
         updatedAt: serverTimestamp(),
       });
+
+      // Xóa khỏi chats luôn
+      const chatRef = doc(db, "chats", room.id);
+      await updateDoc(chatRef, {
+        members: arrayRemove(user.uid),
+        updatedAt: serverTimestamp(),
+      });
+
       toast.success(`Đã rời ${room.name}`);
     } catch (error: any) {
       toast.error("Lỗi: " + error.message);
