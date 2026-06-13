@@ -844,43 +844,7 @@ return (
           </div>
         </div>
       )}
-{/* Popup mini khi bấm avatar */}
-{showUserPopup && selectedUserId && (
-  <>
-    <div 
-      className="fixed inset-0 z-40" 
-      onClick={() => setShowUserPopup(false)} 
-    />
-    <div 
-      className="fixed z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
-      style={{ 
-        top: `${popupPos.y}px`, 
-        left: `${popupPos.x}px`,
-        transform: 'translateX(-50%)'
-      }}
-    >
-      <button
-        onClick={() => {
-          router.push(`/profile/${selectedUserId}`);
-          setShowUserPopup(false);
-        }}
-        className="flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 min-w-[180px]"
-      >
-        <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-        <span className="text- font-medium text-zinc-900 dark:text-white">
-          Thông tin cá nhân
-        </span>
-      </button>
-      {/* Sau này thêm mục ở đây */}
-      {/* 
-      <button className="flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800">
-        <MessageCircle className="w-4 h-4 text-zinc-600" />
-        <span className="text- font-medium">Nhắn tin</span>
-      </button>
-      */}
-    </div>
-  </>
-)}
+
     </div>
   );
 }
