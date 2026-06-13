@@ -764,26 +764,34 @@ return (
           {currentResultIdx + 1}/{searchResults.length} kết quả
         </span>
         <div className="flex gap-2">
-          <button
-            onClick={() => {
-              const newIdx = currentResultIdx > 0? currentResultIdx - 1 : searchResults.length - 1;
-              setCurrentResultIdx(newIdx);
-              scrollToMessage(searchResults[newIdx].id, newIdx);
-            }}
-            className="px-3 py-1 text-[13px] text-[#0a84ff] active:opacity-60"
-          >
-            Trước
-          </button>
-          <button
-            onClick={() => {
-              const newIdx = currentResultIdx < searchResults.length - 1? currentResultIdx + 1 : 0;
-              setCurrentResultIdx(newIdx);
-              scrollToMessage(searchResults[newIdx].id, newIdx);
-            }}
-            className="px-3 py-1 text-[13px] text-[#0a84ff] active:opacity-60"
-          >
-            Sau
-          </button>
+       <button
+  onClick={() => {
+    if (searchResults.length === 0) return;
+    const newIdx = currentResultIdx > 0? currentResultIdx - 1 : searchResults.length - 1;
+    const result = searchResults[newIdx];
+    if (result) {
+      setCurrentResultIdx(newIdx);
+      scrollToMessage(result.id, newIdx);
+    }
+  }}
+  className="px-3 py-1 text- text-[#0a84ff] active:opacity-60"
+>
+  Trước
+</button>
+<button
+  onClick={() => {
+    if (searchResults.length === 0) return;
+    const newIdx = currentResultIdx < searchResults.length - 1? currentResultIdx + 1 : 0;
+    const result = searchResults[newIdx];
+    if (result) {
+      setCurrentResultIdx(newIdx);
+      scrollToMessage(result.id, newIdx);
+    }
+  }}
+  className="px-3 py-1 text- text-[#0a84ff] active:opacity-60"
+>
+  Sau
+</button>
         </div>
       </div>
     )}
