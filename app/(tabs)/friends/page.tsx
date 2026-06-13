@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { collection, query, where, onSnapshot, doc, getDoc, addDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { collection, deleteDoc, setDoc, query, where, onSnapshot, doc, getDoc, addDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
@@ -293,7 +293,7 @@ export default function FriendsPage() {
             ) : (
               requests.map((req) => (
                 <div key={req.id} className="flex items-center gap-3 py-3">
-                  <img src={req.fromAvatar} className="w-14 h-14 rounded-full object-cover" />
+<img src={req.fromAvatar} className="w-14 h-14 rounded-full object-cover" alt={req.fromName} />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-[16px] truncate">{req.fromName}</p>
                     <p className="text-[13px] text-gray-500">{formatTime(req.createdAt)}</p>
@@ -334,7 +334,7 @@ export default function FriendsPage() {
                     className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
                     onClick={() => router.push(`/chat/${chat.id}`)}
                   >
-                    <img src={chat.user.avatar} className="w-14 h-14 rounded-full object-cover" />
+<img src={chat.user.avatar} className="w-14 h-14 rounded-full object-cover" alt={chat.user.name} />
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-[16px] truncate">{chat.user.name}</p>
                       <p className="text-[13px] text-gray-500 truncate">
@@ -381,7 +381,7 @@ export default function FriendsPage() {
                     onClick={() => router.push(`/chat/${[user.uid, friend.uid].sort().join("_")}`)}
                   >
                     <div className="relative">
-                      <img src={friend.avatar} className="w-14 h-14 rounded-full object-cover" />
+<img src={friend.avatar} className="w-14 h-14 rounded-full object-cover" alt={friend.name} />
                       {friend.isOnline && (
                         <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#30d158] rounded-full border-2 border-white dark:border-black" />
                       )}
