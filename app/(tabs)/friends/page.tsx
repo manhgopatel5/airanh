@@ -1,6 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
-import { collection, query, where, onSnapshot, doc, getDoc } from "firebase/firestore";
+import { useState, useEffect, useRef } from "react";
+import { collection, query, where, onSnapshot, doc, getDoc, Unsubscribe, QuerySnapshot, DocumentData } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
@@ -49,11 +49,25 @@ export default function FriendsPage() {
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"all" | "requests" | "messages">("all");
+  const unsubChatsRef = useRef<Unsubscribe | null>(null);
+  const unsubFriendsRef = useRef<Unsubscribe | null>(null);
 
-  // 1. Load danh sách bạn bè
+  // 1. Load danh sách bạn bè - CHỈ KHI TAB "all"
   useEffect(() => {
     if (!user?.uid) return;
 
+    // CHỈ QUERY KHI Ở TAB "all"
+    if (activeTab!== "all") {
+      setFriends([]);
+      setLoading(false);
+      if (unsubFriendsRef.current) {
+        unsubFriendsRef.current();
+        unsubFriendsRef.current = null;
+      }
+      return;
+    }
+
+    setLoading(true);
     const friendsRef = collection(db, "users", user.uid, "friends");
     const unsub = onSnapshot(friendsRef, async (snap) => {
       const friendList: FriendItem[] = [];
@@ -83,82 +97,102 @@ export default function FriendsPage() {
 
       setFriends(friendList);
       setLoading(false);
+    }, (error) => {
+      console.error("Friends listener error:", error);
+      setLoading(false);
     });
 
-    return () => unsub();
-  }, [user?.uid, db]);
+    unsubFriendsRef.current = unsub;
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [user?.uid, db, activeTab]);
 
-// 2. Load DM từ người lạ - đã fix
-useEffect(() => {
-  if (!user?.uid) return;
-
-  const q = query(
-    collection(db, "chats"),
-    where("members", "array-contains", user.uid)
-    // Đã xóa where("type", "==", "dm")
-  );
-
-  const unsub = onSnapshot(q, async (snap) => {
-    const strangerList: StrangerChat[] = [];
-
-    for (const docSnap of snap.docs) {
-      try {
-        const data = docSnap.data();
-        
-        // THÊM 3 DÒNG NÀY ĐỂ BỎ QUA CHAT RÁC
-        if (!data.members || !Array.isArray(data.members)) continue;
-        if (data.isGroup === true || data.isPublicRoom === true) continue;
-        if (docSnap.id.startsWith('public_')) continue;
-
-        const otherUserId = data.members.find((id: string) => id!== user.uid);
-        if (!otherUserId) continue;
-
-        // Check xem có phải bạn bè không
-        const friendDoc = await getDoc(doc(db, "users", user.uid, "friends", otherUserId));
-
-        if (!friendDoc.exists() || friendDoc.data()?.status === "removed") {
-          const otherUserData = await getDoc(doc(db, "users", otherUserId));
-          if (otherUserData.exists()) {
-            const u = otherUserData.data();
-            strangerList.push({
-              id: docSnap.id,
-              user: {
-                id: otherUserId,
-                name: u.name || "User",
-                avatar: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=random`,
-                username: u.username || "",
-              },
-              lastMessage: typeof data.lastMessage === 'string'? data.lastMessage : data.lastMessage?.text || "",
-              updatedAt: data.updatedAt,
-            });
-          }
-        }
-      } catch (e) {
-        console.error("Lỗi xử lý chat:", docSnap.id, e);
-      }
-    }
-
-    strangerList.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
-    setStrangerChats(strangerList);
-  }, (error) => {
-    console.error("Lỗi load stranger chats:", error);
-  });
-
-  return () => unsub();
-}, [user?.uid, db]);
-
-  // 3. Load lời mời kết bạn - dùng listenFriendRequests từ service
+  // 2. Load DM từ người lạ - CHỈ KHI TAB "messages"
   useEffect(() => {
     if (!user?.uid) return;
 
+    // CHỈ QUERY KHI Ở TAB "messages"
+    if (activeTab!== "messages") {
+      setStrangerChats([]);
+      if (unsubChatsRef.current) {
+        unsubChatsRef.current();
+        unsubChatsRef.current = null;
+      }
+      return;
+    }
+
+    const q = query(
+      collection(db, "chats"),
+      where("members", "array-contains", user.uid)
+    );
+
+    const unsub = onSnapshot(q, async (snap) => {
+      const strangerList: StrangerChat[] = [];
+
+      for (const docSnap of snap.docs) {
+        try {
+          const data = docSnap.data();
+
+          if (!data.members ||!Array.isArray(data.members)) continue;
+          if (data.isGroup === true || data.isPublicRoom === true) continue;
+          if (docSnap.id.startsWith('public_')) continue;
+
+          const otherUserId = data.members.find((id: string) => id!== user.uid);
+          if (!otherUserId) continue;
+
+          const friendDoc = await getDoc(doc(db, "users", user.uid, "friends", otherUserId));
+
+          if (!friendDoc.exists() || friendDoc.data()?.status === "removed") {
+            const otherUserData = await getDoc(doc(db, "users", otherUserId));
+            if (otherUserData.exists()) {
+              const u = otherUserData.data();
+              strangerList.push({
+                id: docSnap.id,
+                user: {
+                  id: otherUserId,
+                  name: u.name || "User",
+                  avatar: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=random`,
+                  username: u.username || "",
+                },
+                lastMessage: typeof data.lastMessage === 'string'? data.lastMessage : data.lastMessage?.text || "",
+                updatedAt: data.updatedAt,
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Lỗi xử lý chat:", docSnap.id, e);
+        }
+      }
+
+      strangerList.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+      setStrangerChats(strangerList);
+    }, (error) => {
+      console.error("Lỗi load stranger chats:", error);
+    });
+
+    unsubChatsRef.current = unsub;
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [user?.uid, db, activeTab]);
+
+  // 3. Load lời mời kết bạn - CHỈ KHI TAB "requests"
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    if (activeTab!== "requests") {
+      setRequests([]);
+      return;
+    }
+
     const unsub = listenFriendRequests(user.uid, async (reqs) => {
-      // Map lại để có fromName, fromAvatar
       const reqList = await Promise.all(
         reqs.map(async (req) => {
           const fromUser = await getDoc(doc(db, "users", req.fromUserId));
           const u = fromUser.exists()? fromUser.data() : {};
           return {
-           ...req,
+          ...req,
             fromName: u.name || "User",
             fromAvatar: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || "U")}&background=random`,
           };
@@ -168,9 +202,8 @@ useEffect(() => {
     });
 
     return () => unsub();
-  }, [user?.uid, db]);
+  }, [user?.uid, db, activeTab]);
 
-  // Gửi lời mời kết bạn
   const handleSendFriendRequest = async (toUserId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) return;
@@ -183,7 +216,6 @@ useEffect(() => {
     }
   };
 
-  // Chấp nhận lời mời
   const handleAcceptRequest = async (req: any) => {
     if (!user) return;
     try {
@@ -194,7 +226,6 @@ useEffect(() => {
     }
   };
 
-  // Từ chối lời mời
   const handleRejectRequest = async (reqId: string) => {
     if (!user) return;
     try {
@@ -205,7 +236,6 @@ useEffect(() => {
     }
   };
 
-  // Xóa bạn
   const handleRemoveFriend = async (friendId: string, friendName: string) => {
     if (!user ||!confirm(`Xóa ${friendName} khỏi danh sách bạn bè?`)) return;
 
@@ -234,12 +264,10 @@ useEffect(() => {
     <div className="min-h-screen bg-white dark:bg-black pb-20">
       <Toaster richColors position="top-center" />
 
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-900">
         <div className="px-4 pt-3 pb-2">
           <h1 className="text-2xl font-bold mb-3">Bạn bè</h1>
 
-          {/* Tabs */}
           <div className="flex gap-2">
             {[
               { id: "all", label: "Tất cả", count: friends.length },
@@ -251,7 +279,7 @@ useEffect(() => {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`px-4 h-8 rounded-full text-[14px] font-[550] transition-all ${
                   activeTab === tab.id
-                 ? "bg-[#0a84ff] text-white"
+                ? "bg-[#0a84ff] text-white"
                     : "bg-gray-100 dark:bg-zinc-900 text-gray-600 dark:text-zinc-400"
                 }`}
               >
@@ -263,7 +291,6 @@ useEffect(() => {
       </div>
 
       <div className="px-4 pt-4">
-        {/* Tab: Lời mời kết bạn */}
         {activeTab === "requests" && (
           <div className="space-y-2">
             {requests.length === 0? (
@@ -299,7 +326,6 @@ useEffect(() => {
           </div>
         )}
 
-        {/* Tab: Tin nhắn từ người lạ */}
         {activeTab === "messages" && (
           <div className="space-y-2">
             {strangerChats.length === 0? (
@@ -335,7 +361,6 @@ useEffect(() => {
           </div>
         )}
 
-        {/* Tab: Tất cả bạn bè */}
         {activeTab === "all" && (
           <div className="space-y-2">
             {loading? (
