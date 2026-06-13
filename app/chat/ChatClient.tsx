@@ -558,152 +558,140 @@ useEffect(() => {
     };
   }, [user?.uid, activeTab, db]);
 
-  useEffect(() => {
+useEffect(() => {
   if (authLoading || !user?.uid) return;
   let retryCount = 0;
   let isMounted = true;
 
   const setupListener = (): Unsubscribe => {
     const chatsQuery = query(collection(db, "chats"), where("members", "array-contains", user.uid));
+    
+    // ✅ Thêm async ở đây để dùng await bên trong
     const unsubscribe = onSnapshot(chatsQuery, async (snapshot: QuerySnapshot<DocumentData>) => {
       retryCount = 0;
       if (!isMounted) return;
       setLoading(true);
       try {
         const rawChats: RawChat[] = [];
-const userIdsToFetch = new Set<string>();
+        const userIdsToFetch = new Set<string>();
 
-// Load danh sách bạn bè 1 lần duy nhất
-const friendsSnap = await getDocs(collection(db, "users", user.uid, "friends"));
-const friendIds = new Set(friendsSnap.docs.map(d => d.id));
+        // Load danh sách bạn bè 1 lần duy nhất
+        const friendsSnap = await getDocs(collection(db, "users", user.uid, "friends"));
+        const friendIds = new Set(friendsSnap.docs.map(d => d.id));
 
-snapshot.forEach((document) => {
-  const chatData = document.data();
+        snapshot.forEach((document) => {
+          const chatData = document.data();
 
-  // ẨN PHÒNG PUBLIC
-  if (document.id.startsWith('public_') || chatData.isPublicRoom === true) {
-    return;
-  }
-
-  const isGroupChat = Boolean(chatData.isGroup);
-  if (isGroupChat) {
-    rawChats.push({ id: document.id, c: chatData, isGroup: true });
-  } else {
-    const otherUserId = chatData.members?.find((memberId: string) => memberId !== user.uid);
-    if (!otherUserId) return;
-    
-    // Chỉ giữ DM nếu là bạn bè
-    if (!friendIds.has(otherUserId)) {
-      return; // Bỏ DM người lạ
-    }
-    
-    userIdsToFetch.add(otherUserId);
-    rawChats.push({ id: document.id, c: chatData, other: otherUserId, isGroup: false });
-  }
-});
-
-// Xóa hết đoạn filteredRawChats và finalRawChats, dùng thẳng rawChats
-const usersMap: Record<string, any> = {};
-if (userIdsToFetch.size > 0) {
-  const userIds = Array.from(userIdsToFetch);
-  const chunks: string[][] = [];
-  for (let i = 0; i < userIds.length; i += BATCH_SIZE) chunks.push(userIds.slice(i, i + BATCH_SIZE));
-  await Promise.all(chunks.map(async (chunk) => {
-    const userDocs = await Promise.all(chunk.map((userId) => getDoc(doc(db, "users", userId))));
-    userDocs.forEach((userDoc) => { if (userDoc.exists()) usersMap[userDoc.id] = userDoc.data(); });
-  }));
-}
-
-const chatList: ChatItem[] = rawChats.map((raw) => { // Dùng rawChats thay vì finalRawChats
-
-const chatList: ChatItem[] = finalRawChats.map((raw) => { // Đổi rawChats -> finalRawChats
-          const usersMap: Record<string, any> = {};
-          if (userIdsToFetch.size > 0) {
-            const userIds = Array.from(userIdsToFetch);
-            const chunks: string[][] = [];
-            for (let i = 0; i < userIds.length; i += BATCH_SIZE) chunks.push(userIds.slice(i, i + BATCH_SIZE));
-            await Promise.all(chunks.map(async (chunk) => {
-              const userDocs = await Promise.all(chunk.map((userId) => getDoc(doc(db, "users", userId))));
-              userDocs.forEach((userDoc) => { if (userDoc.exists()) usersMap[userDoc.id] = userDoc.data(); });
-            }));
+          // ẨN PHÒNG PUBLIC
+          if (document.id.startsWith('public_') || chatData.isPublicRoom === true) {
+            return;
           }
 
-          const chatList: ChatItem[] = rawChats.map((raw) => {
-            const chatData = raw.c;
-            if (raw.isGroup) {
-              return {
-                uid: raw.id, chatId: raw.id, name: chatData.groupName || "Nhóm", username: "",
-                avatar: chatData.groupAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.groupName || "N")}&background=${isPlan? "22c55e" : "0a84ff"}&color=fff&bold=true`,
-                userId: "",
-                lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
-                lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
-                lastSenderName: chatData.lastSenderName,
-                updatedAt: chatData.updatedAt, unreadCount: chatData.unread?.[user.uid] || 0,
-                isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId!== user.uid && Boolean(isTyping)),
-                isGroup: true, members: chatData.members || [], isOnline: false,
-                blockedUsers: chatData.blockedUsers || [],
-                deletedFor: chatData.deletedFor || [],
-              };
-            } else {
-              const userData = usersMap[raw.other || ""] || {};
-              return {
-                uid: raw.other || "", chatId: raw.id, name: userData.name || "User", username: userData.username || "",
-                avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || "U")}&background=random`,
-                userId: userData.userId || "",
-                lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
-                lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
-                lastSenderName: "",
-                updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
-                isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
-                blockedUsers: chatData.blockedUsers || [],
-                deletedFor: chatData.deletedFor || [],
-              };
+          const isGroupChat = Boolean(chatData.isGroup);
+          if (isGroupChat) {
+            rawChats.push({ id: document.id, c: chatData, isGroup: true });
+          } else {
+            const otherUserId = chatData.members?.find((memberId: string) => memberId !== user.uid);
+            if (!otherUserId) return;
+
+            // Chỉ giữ DM nếu là bạn bè
+            if (!friendIds.has(otherUserId)) {
+              return; // Bỏ DM người lạ
             }
-          });
 
-          const visibleChats = chatList.filter(chat =>!chat.deletedFor?.includes(user.uid));
-          const pinnedChats = JSON.parse(localStorage.getItem(PINNED_KEY) || "[]");
-          visibleChats.sort((a, b) => {
-            const aIsPinned = pinnedChats.includes(a.chatId)? 1 : 0;
-            const bIsPinned = pinnedChats.includes(b.chatId)? 1 : 0;
-            if (aIsPinned!== bIsPinned) return bIsPinned - aIsPinned;
-            const aTime = a.updatedAt?.seconds || 0;
-            const bTime = b.updatedAt?.seconds || 0;
-            return bTime - aTime;
-          });
+            userIdsToFetch.add(otherUserId);
+            rawChats.push({ id: document.id, c: chatData, other: otherUserId, isGroup: false });
+          }
+        });
 
-          if (isMounted) setItems(visibleChats);
-        } catch (error) {
-          console.error("Error processing chats:", error);
-          if (isMounted) toast.error("Lỗi tải danh sách chat");
-        } finally {
-          if (isMounted) setLoading(false);
+        const usersMap: Record<string, any> = {};
+        if (userIdsToFetch.size > 0) {
+          const userIds = Array.from(userIdsToFetch);
+          const chunks: string[][] = [];
+          for (let i = 0; i < userIds.length; i += BATCH_SIZE) chunks.push(userIds.slice(i, i + BATCH_SIZE));
+          
+          // ✅ await này giờ hợp lệ vì callback đã async
+          await Promise.all(chunks.map(async (chunk) => {
+            const userDocs = await Promise.all(chunk.map((userId) => getDoc(doc(db, "users", userId))));
+            userDocs.forEach((userDoc) => { if (userDoc.exists()) usersMap[userDoc.id] = userDoc.data(); });
+          }));
         }
-      }, (error) => {
-        console.error("Realtime listener error:", error);
-        if (!isMounted) return;
-        if (retryCount < MAX_RETRIES && error.code!== "permission-denied") {
-          retryCount++;
-          const delay = RETRY_DELAY * retryCount;
-          setTimeout(() => { if (isMounted) setupListener(); }, delay);
-        } else if (error.code!== "permission-denied") {
-          toast.error("Không thể kết nối realtime");
-        }
-        setLoading(false);
-      });
 
-      unsubRef.current = unsubscribe;
-      return unsubscribe;
-    };
+        const chatList: ChatItem[] = rawChats.map((raw) => {
+          const chatData = raw.c;
+          if (raw.isGroup) {
+            return {
+              uid: raw.id, chatId: raw.id, name: chatData.groupName || "Nhóm", username: "",
+              avatar: chatData.groupAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.groupName || "N")}&background=${isPlan ? "22c55e" : "0a84ff"}&color=fff&bold=true`,
+              userId: "",
+              lastMessage: typeof chatData.lastMessage === 'string' ? chatData.lastMessage : chatData.lastMessage?.text || "",
+              lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
+              lastSenderName: chatData.lastSenderName,
+              updatedAt: chatData.updatedAt, unreadCount: chatData.unread?.[user.uid] || 0,
+              isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId !== user.uid && Boolean(isTyping)),
+              isGroup: true, members: chatData.members || [], isOnline: false,
+              blockedUsers: chatData.blockedUsers || [],
+              deletedFor: chatData.deletedFor || [],
+            };
+          } else {
+            const userData = usersMap[raw.other || ""] || {};
+            return {
+              uid: raw.other || "", chatId: raw.id, name: userData.name || "User", username: userData.username || "",
+              avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || "U")}&background=random`,
+              userId: userData.userId || "",
+              lastMessage: typeof chatData.lastMessage === 'string' ? chatData.lastMessage : chatData.lastMessage?.text || "",
+              lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
+              lastSenderName: "",
+              updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
+              isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
+              blockedUsers: chatData.blockedUsers || [],
+              deletedFor: chatData.deletedFor || [],
+            };
+          }
+        });
 
-    const unsubscribe = setupListener();
-    return () => { 
-      isMounted = false; 
-      if (unsubscribe) unsubscribe(); 
-      if (unsubRef.current) unsubRef.current();
-    };
-  }, [user?.uid, authLoading, db, mode]); // đổi isPlan -> mode
+        const visibleChats = chatList.filter(chat => !chat.deletedFor?.includes(user.uid));
+        const pinnedChats = JSON.parse(localStorage.getItem(PINNED_KEY) || "[]");
+        visibleChats.sort((a, b) => {
+          const aIsPinned = pinnedChats.includes(a.chatId) ? 1 : 0;
+          const bIsPinned = pinnedChats.includes(b.chatId) ? 1 : 0;
+          if (aIsPinned !== bIsPinned) return bIsPinned - aIsPinned;
+          const aTime = a.updatedAt?.seconds || 0;
+          const bTime = b.updatedAt?.seconds || 0;
+          return bTime - aTime;
+        });
 
+        if (isMounted) setItems(visibleChats);
+      } catch (error) {
+        console.error("Error processing chats:", error);
+        if (isMounted) toast.error("Lỗi tải danh sách chat");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }, (error) => {
+      console.error("Realtime listener error:", error);
+      if (!isMounted) return;
+      if (retryCount < MAX_RETRIES && error.code !== "permission-denied") {
+        retryCount++;
+        const delay = RETRY_DELAY * retryCount;
+        setTimeout(() => { if (isMounted) setupListener(); }, delay);
+      } else if (error.code !== "permission-denied") {
+        toast.error("Không thể kết nối realtime");
+      }
+      setLoading(false);
+    });
+
+    unsubRef.current = unsubscribe;
+    return unsubscribe;
+  };
+
+  const unsubscribe = setupListener();
+  return () => { 
+    isMounted = false; 
+    if (unsubscribe) unsubscribe(); 
+    if (unsubRef.current) unsubRef.current();
+  };
+}, [user?.uid, authLoading, db, mode]);
   const createNotification = useCallback(async (targetUid: string, notif: Omit<NotificationItem, "id" | "createdAt" | "read">) => {
     try {
       const notifRef = doc(collection(db, "notifications", targetUid, "items"));
