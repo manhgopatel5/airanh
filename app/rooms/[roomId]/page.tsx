@@ -37,6 +37,9 @@ type PollData = {
   options: { text: string; votes: string[] }[];
   creatorId: string;
   createdAt: any;
+  allowMultiple: boolean; // Thêm
+  endTime?: any; // Thêm: deadline
+  closed?: boolean; // Thêm: khóa
 };
 
 type UserData = {
@@ -68,7 +71,10 @@ const [inviting, setInviting] = useState(false);
   const [searchResults, setSearchResults] = useState<Message[]>([]);
   const [showInvite, setShowInvite] = useState(false);
   const [allUsers, setAllUsers] = useState<UserData[]>([]);
-
+  const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
+const [pollHasDeadline, setPollHasDeadline] = useState(false);
+const [pollEndDate, setPollEndDate] = useState("");
+const [pollEndTime, setPollEndTime] = useState("");
   const [showPoll, setShowPoll] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
@@ -410,41 +416,53 @@ const inviteUsers = async () => {
 
   // Tạo bình chọn
   const createPoll = async () => {
-    if (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2) {
-      toast.error("Cần câu hỏi và ít nhất 2 lựa chọn");
-      return;
-    }
-    setSending(true);
-    try {
-      const userName = user?.displayName || user?.email?.split('@')[0] || "User";
-      const userAvatar = user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
+  if (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2) {
+    toast.error("Cần câu hỏi và ít nhất 2 lựa chọn");
+    return;
+  }
+  setSending(true);
+  try {
+    const userName = user?.displayName || user?.email?.split('@')[0] || "User";
+    const userAvatar = user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
 
-      const msgRef = doc(collection(db, "chats", roomId as string, "messages"));
-      await writeBatch(db).set(msgRef, {
-        text: `📊 ${pollQuestion}`,
-        senderId: user?.uid,
-        senderName: userName,
-        senderAvatar: userAvatar,
+    let endTimestamp = null;
+    if (pollHasDeadline && pollEndDate && pollEndTime) {
+      endTimestamp = new Date(`${pollEndDate}T${pollEndTime}`);
+    }
+
+    const msgRef = doc(collection(db, "chats", roomId as string, "messages"));
+    await writeBatch(db).set(msgRef, {
+      text: `📊 ${pollQuestion}`,
+      senderId: user?.uid,
+      senderName: userName,
+      senderAvatar: userAvatar,
+      createdAt: serverTimestamp(),
+      type: 'poll',
+      pollData: {
+        question: pollQuestion,
+        options: pollOptions.filter(o => o.trim()).map(o => ({ text: o, votes: [] })),
+        creatorId: user?.uid,
         createdAt: serverTimestamp(),
-        type: 'poll',
-        pollData: {
-          question: pollQuestion,
-          options: pollOptions.filter(o => o.trim()).map(o => ({ text: o, votes: [] })),
-          creatorId: user?.uid,
-          createdAt: serverTimestamp(),
-        }
-      }).commit();
+        allowMultiple: pollAllowMultiple,
+        endTime: endTimestamp,
+        closed: false,
+      }
+    }).commit();
 
-      setShowPoll(false);
-      setPollQuestion("");
-      setPollOptions(["", ""]);
-      toast.success("Đã tạo bình chọn");
-    } catch (e) {
-      toast.error("Lỗi tạo bình chọn");
-    } finally {
-      setSending(false);
-    }
-  };
+    setShowPoll(false);
+    setPollQuestion("");
+    setPollOptions(["", ""]);
+    setPollAllowMultiple(false);
+    setPollHasDeadline(false);
+    setPollEndDate("");
+    setPollEndTime("");
+    toast.success("Đã tạo bình chọn");
+  } catch (e) {
+    toast.error("Lỗi tạo bình chọn");
+  } finally {
+    setSending(false);
+  }
+};
 
   const votePoll = async (msgId: string, optionIdx: number) => {
   if (!user?.uid) return toast.error("Chưa đăng nhập");
@@ -457,29 +475,36 @@ const inviteUsers = async () => {
     const pollData = data.pollData;
     if (!pollData) return;
 
-    // Toggle vote: bấm lại thì bỏ vote, bấm option khác thì đổi vote
+    // Check khóa
+    if (pollData.closed) return toast.error("Bình chọn đã kết thúc");
+    
+    // Check deadline
+    if (pollData.endTime && pollData.endTime.toDate() < new Date()) {
+      return toast.error("Bình chọn đã hết hạn");
+    }
+
+    const allowMultiple = pollData.allowMultiple || false;
     const newOptions = pollData.options.map((opt: any, idx: number) => {
       const votes = opt.votes || [];
       const hasVoted = votes.includes(user.uid);
       
       if (idx === optionIdx) {
-        // Bấm vào option này: toggle
         return {
-          ...opt,
+        ...opt,
           votes: hasVoted 
-            ? votes.filter((v: string) => v !== user.uid) 
+           ? votes.filter((v: string) => v!== user.uid) 
             : [...votes, user.uid]
         };
-      } else {
-        // Option khác: bỏ vote nếu có
+      } else if (!allowMultiple) {
+        // Single vote: bỏ vote option khác
         return {
-          ...opt,
-          votes: votes.filter((v: string) => v !== user.uid)
+        ...opt,
+          votes: votes.filter((v: string) => v!== user.uid)
         };
       }
+      return opt;
     });
 
-    // Dùng updateDoc thay vì writeBatch
     const { updateDoc } = await import("firebase/firestore");
     await updateDoc(msgRef, {
       'pollData.options': newOptions
@@ -983,22 +1008,22 @@ return (
 )}
 
       {/* Modal Tạo bình chọn */}
-   {showPoll && (
+{showPoll && (
   <div 
     className="fixed inset-0 z-50 bg-black/50 flex items-end animate-in fade-in duration-200"
     onClick={() => setShowPoll(false)}
   >
     <div 
-      className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom-5 duration-300"
+      className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h- flex flex-col animate-in slide-in-from-bottom-5 duration-300"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/5">
-        <button onClick={() => setShowPoll(false)} className="text-[#0a84ff]">Huỷ</button>
-        <h3 className="text-[17px] font-semibold">Tạo bình chọn</h3>
+        <button onClick={() => setShowPoll(false)} className="text-[#0a84ff] active:opacity-60">Huỷ</button>
+        <h3 className="text- font-semibold">Tạo bình chọn</h3>
         <button 
           onClick={createPoll} 
           disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
-          className="text-[#0a84ff] font-semibold disabled:opacity-40"
+          className="text-[#0a84ff] font-semibold disabled:opacity-40 active:opacity-60"
         >
           Tạo
         </button>
@@ -1009,9 +1034,9 @@ return (
           value={pollQuestion}
           onChange={(e) => setPollQuestion(e.target.value)}
           placeholder="Đặt câu hỏi..."
-          className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-[15px] outline-none mb-4"
+          className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none mb-4"
         />
-        <p className="text-[13px] text-[#8e8e93] mb-2">Lựa chọn</p>
+        <p className="text- text-[#8e8e93] mb-2">Lựa chọn</p>
         {pollOptions.map((opt, idx) => (
           <div key={idx} className="flex items-center gap-2 mb-2">
             <input
@@ -1023,7 +1048,7 @@ return (
                 setPollOptions(newOpts);
               }}
               placeholder={`Lựa chọn ${idx + 1}`}
-              className="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-[15px] outline-none"
+              className="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none"
             />
             {pollOptions.length > 2 && (
               <button onClick={() => setPollOptions(pollOptions.filter((_, i) => i!== idx))}>
@@ -1034,14 +1059,180 @@ return (
         ))}
         <button 
           onClick={() => setPollOptions([...pollOptions, ""])}
-          className="flex items-center gap-2 text-[#0a84ff] mt-2"
+          className="flex items-center gap-2 text-[#0a84ff] mt-2 mb-4"
         >
-          <FiPlus size={20} /> <span className="text-[15px]">Thêm lựa chọn</span>
+          <FiPlus size={20} /> <span className="text-">Thêm lựa chọn</span>
         </button>
+
+        {/* Cài đặt */}
+        <div className="border-t border-black/5 dark:border-white/5 pt-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-">Cho phép chọn nhiều</span>
+            <button
+              onClick={() => setPollAllowMultiple(!pollAllowMultiple)}
+              className={`w-12 h-7 rounded-full transition-colors ${pollAllowMultiple? 'bg-[#0a84ff]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+            >
+              <div className={`w-6 h-6 bg-white rounded-full transition-transform ${pollAllowMultiple? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <span className="text-">Đặt thời hạn</span>
+            <button
+              onClick={() => setPollHasDeadline(!pollHasDeadline)}
+              className={`w-12 h-7 rounded-full transition-colors ${pollHasDeadline? 'bg-[#0a84ff]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+            >
+              <div className={`w-6 h-6 bg-white rounded-full transition-transform ${pollHasDeadline? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+          
+          {pollHasDeadline && (
+            <div className="flex gap-2 animate-in fade-in slide-in-from-top-2">
+              <input
+                type="date"
+                value={pollEndDate}
+                onChange={(e) => setPollEndDate(e.target.value)}
+                className="flex-1 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none"
+              />
+              <input
+                type="time"
+                value={pollEndTime}
+                onChange={(e) => setPollEndTime(e.target.value)}
+                className="flex-1 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none"
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   </div>
 )}
+// Render Poll
+if (msg.type === 'poll' && msg.pollData) {
+  const totalVotes = msg.pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
+  const isExpired = msg.pollData.endTime && msg.pollData.endTime.toDate() < new Date();
+  const isClosed = msg.pollData.closed || isExpired;
+  const isCreator = msg.pollData.creatorId === user?.uid;
+  
+  return (
+    <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
+      <div className="w-8 flex-shrink-0 self-end relative">
+        {isFirstInGroup? (
+          <>
+            <img
+              src={msg.senderAvatar}
+              alt={msg.senderName}
+              className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
+              referrerPolicy="no-referrer"
+              onClick={(e) => handleAvatarClick(e, msg.id)}
+            />
+            {activePopupMsgId === msg.id && (
+              <div 
+                className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => {
+                    router.push(`/profile/${msg.senderId}`);
+                    setActivePopupMsgId(null);
+                  }}
+                  className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
+                >
+                  <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                  <span className="text- font-medium text-zinc-900 dark:text-white">
+                    Thông tin cá nhân
+                  </span>
+                </button>
+              </div>
+            )}
+          </>
+        ) : <div className="w-8" />}
+      </div>
+      <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+        <div className="px-4 py-3 rounded- bg-zinc-100 dark:bg-zinc-800 w-full">
+          <div className="flex items-start justify-between mb-3">
+            <p className="text- font-semibold flex-1">📊 {msg.pollData.question}</p>
+            {isCreator &&!isClosed && (
+              <button
+                onClick={async () => {
+                  const msgRef = doc(db, "chats", roomId as string, "messages", msg.id);
+                  await updateDoc(msgRef, { 'pollData.closed': true });
+                  toast.success("Đã khóa bình chọn");
+                }}
+                className="text- text-red-500 active:opacity-60"
+              >
+                Khóa
+              </button>
+            )}
+          </div>
+          
+          {msg.pollData.endTime && (
+            <p className="text- text-[#8e8e93] mb-2">
+              {isExpired? 'Đã kết thúc' : `Kết thúc: ${format(msg.pollData.endTime.toDate(), 'HH:mm dd/MM', { locale: vi })}`}
+            </p>
+          )}
+          
+          <div className="space-y-2">
+            {msg.pollData.options.map((opt, optIdx) => {
+              const voted = opt.votes.includes(user?.uid || '');
+              const percent = totalVotes > 0? (opt.votes.length / totalVotes * 100) : 0;
+              return (
+                <button
+                  key={optIdx}
+                  onClick={() =>!isClosed && votePoll(msg.id, optIdx)}
+                  disabled={isClosed}
+                  className="w-full text-left relative overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700 active:opacity-70 disabled:opacity-60"
+                >
+                  <div 
+                    className="absolute inset-0 bg-[#0a84ff]/20 transition-all duration-300"
+                    style={{ width: `${percent}%` }}
+                  />
+                  <div className="relative px-3 py-2.5">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text- flex items-center gap-2">
+                        {voted && <FiCheck className="text-[#0a84ff]" size={16} />}
+                        {opt.text}
+                      </span>
+                      <span className="text- text-[#8e8e93] font-medium">{percent.toFixed(0)}%</span>
+                    </div>
+                    {opt.votes.length > 0 && (
+                      <div className="flex -space-x-1">
+                        {opt.votes.slice(0, 5).map((uid: string) => {
+                          const voter = allUsers.find(u => u.uid === uid);
+                          return voter? (
+                            <img 
+                              key={uid} 
+                              src={voter.photoURL} 
+                              className="w-5 h-5 rounded-full border border-white dark:border-zinc-800" 
+                              alt=""
+                            />
+                          ) : null;
+                        })}
+                        {opt.votes.length > 5 && (
+                          <div className="w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-600 border border-white dark:border-zinc-800 flex items-center justify-center text- text-zinc-600 dark:text-zinc-300">
+                            +{opt.votes.length - 5}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text- text-[#8e8e93] mt-2">
+            {totalVotes} lượt bình chọn{msg.pollData.allowMultiple? ' • Nhiều lựa chọn' : ''}
+          </p>
+        </div>
+        {isLastInGroup && (
+          <p className="text- text-[#8e8e93] mt-1 px-3">
+            {formatMessageTime(msg.createdAt)}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
     </div>
   );
