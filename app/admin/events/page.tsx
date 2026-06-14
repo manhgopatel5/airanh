@@ -50,7 +50,7 @@ export default function AdminEventsPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [ratingInput, setRatingInput] = useState("5");
-  const [showMapPicker, setShowMapPicker] = useState(false); // PHẢI ĐẶT TRONG NÀY
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   const [form, setForm] = useState<Partial<EventItem>>({
     title: "",
@@ -82,7 +82,7 @@ export default function AdminEventsPage() {
       );
       const data = await res.json();
       setForm({
-     ...form,
+    ...form,
         lat,
         lng,
         address: data.display_name || form.address,
@@ -208,7 +208,7 @@ export default function AdminEventsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-       ...formData,
+      ...formData,
           id: editingId,
           lat: Number(form.lat),
           lng: Number(form.lng),
@@ -271,7 +271,7 @@ export default function AdminEventsPage() {
               onClick={() => setShowInactive(!showInactive)}
               className={`px-4 h-10 rounded-xl font-semibold flex items-center gap-2 ${
                 showInactive
-               ? 'bg-amber-500 text-white'
+              ? 'bg-amber-500 text-white'
                   : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white'
               }`}
             >
@@ -292,8 +292,8 @@ export default function AdminEventsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {events
-         .filter(event => showInactive || event.isActive === true)
-         .map((event) => (
+        .filter(event => showInactive || event.isActive === true)
+        .map((event) => (
             <div
               key={event.id}
               className={`bg-white dark:bg-zinc-900 rounded-xl border-2 ${
@@ -425,7 +425,7 @@ export default function AdminEventsPage() {
                       onChange={(e) => {
                         const selectedTag = TAG_LIST.find(t => t.value === e.target.value);
                         setForm({
-                       ...form,
+                      ...form,
                           tag: e.target.value,
                           tagColor: selectedTag?.color || "from-blue-500 to-cyan-500"
                         });
@@ -536,6 +536,7 @@ export default function AdminEventsPage() {
                     className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
                   />
                 </div>
+              </div>
               <div>
                 <label className="text-sm font-semibold mb-1 block">Google Map URL</label>
                 <input
