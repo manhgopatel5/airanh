@@ -23,6 +23,22 @@ const PROVINCES = [
   "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
 ];
 
+const getDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
+const formatDistance = (km: number): string => {
+  return km < 1? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
+};
+
 type SortOption = "rating" | "reviews" | "distance" | "newest";
 type FilterState = {
   category: string | null;
@@ -38,6 +54,8 @@ export default function ExplorePage() {
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [showFilter, setShowFilter] = useState(false);
+  const [userLat, setUserLat] = useState<number | null>(null);
+  const [userLng, setUserLng] = useState<number | null>(null);
 
   const [filters, setFilters] = useState<FilterState>({
     category: null,
@@ -46,6 +64,15 @@ export default function ExplorePage() {
     sortBy: "rating",
     province: null
   });
+
+  useEffect(() => {
+    const lat = localStorage.getItem('userLat');
+    const lng = localStorage.getItem('userLng');
+    if (lat && lng) {
+      setUserLat(Number(lat));
+      setUserLng(Number(lng));
+    }
+  }, []);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -64,9 +91,9 @@ export default function ExplorePage() {
     fetchEvents();
   }, []);
 
-  const parseDistance = (distanceStr: string): number => {
-    const match = distanceStr?.match(/(\d+)/);
-    return match? parseInt(match[1] || "999") : 999;
+  const getEventDistance = (event: EventItem): number => {
+    if (!userLat ||!userLng ||!event.lat ||!event.lng) return 999;
+    return getDistanceKm(userLat, userLng, event.lat, event.lng);
   };
 
   const filteredEvents = useMemo(() => {
@@ -81,7 +108,7 @@ export default function ExplorePage() {
     }
 
     if (filters.maxDistance < 999) {
-      filtered = filtered.filter(e => parseDistance(e.distance) <= filters.maxDistance);
+      filtered = filtered.filter(e => getEventDistance(e) <= filters.maxDistance);
     }
 
     if (filters.province) {
@@ -95,7 +122,7 @@ export default function ExplorePage() {
         case "reviews":
           return (b.reviews || 0) - (a.reviews || 0);
         case "distance":
-          return parseDistance(a.distance) - parseDistance(b.distance);
+          return getEventDistance(a) - getEventDistance(b);
         case "newest":
           const bTime = b.updatedAt? new Date(b.updatedAt).getTime() : 0;
           const aTime = a.updatedAt? new Date(a.updatedAt).getTime() : 0;
@@ -106,7 +133,7 @@ export default function ExplorePage() {
     });
 
     return filtered;
-  }, [eventsData, filters]);
+  }, [eventsData, filters, userLat, userLng]);
 
   const resetFilters = () => {
     setFilters({
@@ -157,8 +184,8 @@ export default function ExplorePage() {
           <button
             onClick={() => setFilters(prev => ({...prev, category: null}))}
             className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
-           !filters.category
-             ? 'bg-[#0a84ff] text-white'
+          !filters.category
+            ? 'bg-[#0a84ff] text-white'
                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
             }`}
           >
@@ -170,7 +197,7 @@ export default function ExplorePage() {
               onClick={() => setFilters(prev => ({...prev, category: key}))}
               className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap flex items-center gap-1 ${
                 filters.category === key
-               ? 'bg-[#0a84ff] text-white'
+              ? 'bg-[#0a84ff] text-white'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
             >
@@ -192,7 +219,7 @@ export default function ExplorePage() {
               onClick={() => setFilters(prev => ({...prev, sortBy: sort.value as SortOption}))}
               className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
                 filters.sortBy === sort.value
-               ? 'bg-[#0a84ff] text-white'
+              ? 'bg-[#0a84ff] text-white'
                   : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
             >
@@ -248,7 +275,9 @@ export default function ExplorePage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <FiMapPin size={12} />
-                      {item.province}
+                      {item.province} • {userLat && userLng && item.lat && item.lng
+                     ? formatDistance(getEventDistance(item))
+                        : '?km'}
                     </span>
                   </div>
                 </div>
@@ -295,7 +324,7 @@ export default function ExplorePage() {
                       onClick={() => setFilters(prev => ({...prev, minRating: rating}))}
                       className={`flex-1 h-11 rounded-xl text-sm font-[600] ${
                         filters.minRating === rating
-                       ? 'bg-[#0a84ff] text-white'
+                      ? 'bg-[#0a84ff] text-white'
                           : 'bg-zinc-100 dark:bg-zinc-800'
                       }`}
                     >
@@ -314,7 +343,7 @@ export default function ExplorePage() {
                       onClick={() => setFilters(prev => ({...prev, maxDistance: km}))}
                       className={`w-full h-11 rounded-xl text-sm font-[600] text-left px-4 ${
                         filters.maxDistance === km
-                       ? 'bg-[#0a84ff] text-white'
+                      ? 'bg-[#0a84ff] text-white'
                           : 'bg-zinc-100 dark:bg-zinc-800'
                       }`}
                     >
