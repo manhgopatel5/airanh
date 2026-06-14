@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { doc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
-import { FiX, FiUsers, FiTrendingUp, FiLoader } from "react-icons/fi";
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp, onSnapshot, increment } from "firebase/firestore";
+import { FiX, FiUsers, FiTrendingUp, FiLoader, FiUnlock } from "react-icons/fi";
 import { toast } from "sonner";
 
 type PublicRoomItem = {
@@ -18,6 +18,7 @@ type PublicRoomItem = {
   memberCount: number;
   onlineCount: number;
   lastMessage?: string;
+  isJoined: boolean;
   isHot: boolean;
 };
 
@@ -40,9 +41,28 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [rooms, setRooms] = useState<PublicRoomItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [entering, setEntering] = useState<string | null>(null);
+  const [joining, setJoining] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user?.uid) {
+      const defaultRooms = PUBLIC_CITIES.map((city) => ({
+        id: `public_${city.id}`,
+        name: city.name,
+        city: city.id,
+        emoji: city.emoji,
+        color: city.color,
+        desc: city.desc,
+        memberCount: Math.floor(Math.random() * 500) + 50,
+        onlineCount: Math.floor(Math.random() * 80) + 10,
+        lastMessage: `Chào mừng đến ${city.name}!`,
+        isJoined: false,
+        isHot: Math.random() > 0.7,
+      }));
+      setRooms(defaultRooms);
+      setLoading(false);
+      return;
+    }
+
     const unsubs: (() => void)[] = [];
     PUBLIC_CITIES.forEach((city) => {
       const roomId = `public_${city.id}`;
@@ -57,9 +77,10 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
             emoji: city.emoji,
             color: city.color,
             desc: city.desc,
-            memberCount: data?.memberCount || 0,
-            onlineCount: data?.onlineCount || 0,
+            memberCount: data?.memberCount || Math.floor(Math.random() * 300) + 20,
+            onlineCount: data?.onlineCount || Math.floor(Math.random() * 50) + 5,
             lastMessage: data?.lastMessage || `Chào mừng đến ${city.name}!`,
+            isJoined: data?.members?.includes(user.uid) || false,
             isHot: (data?.onlineCount || 0) > 20,
           };
           return [...filtered, newRoom].sort((a, b) => b.onlineCount - a.onlineCount);
@@ -69,40 +90,78 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
       unsubs.push(unsub);
     });
     return () => unsubs.forEach((u) => u());
-  }, [db]);
+  }, [user?.uid, db]);
 
-  const handleEnterRoom = async (room: PublicRoomItem) => {
-    if (!user?.uid) {
-      toast.error("Vui lòng đăng nhập để chat");
-      return;
-    }
-    setEntering(room.id);
+  const handleJoinRoom = async (room: PublicRoomItem) => {
+    if (!user?.uid) return toast.error("Vui lòng đăng nhập");
+    setJoining(room.id);
 
     try {
-      const chatRef = doc(db, "chats", room.id);
-      
-      // Dùng setDoc + merge: true để không cần getDoc trước
-      // Nếu doc chưa có thì tạo, có rồi thì merge không đè field cũ
-      await setDoc(chatRef, {
-        isGroup: true,
-        isPublicRoom: true,
-        status: 'active',
-        groupName: room.name,
-        groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
-        members: [],
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        lastMessage: `Chào mừng đến ${room.name}`,
-        lastMessageTime: serverTimestamp(),
-      }, { merge: true });
+      const roomRef = doc(db, "public_rooms", room.id);
+      const roomSnap = await getDoc(roomRef);
 
+      if (!roomSnap.exists()) {
+        await setDoc(roomRef, {
+          name: room.name,
+          city: room.city,
+          emoji: room.emoji,
+          color: room.color,
+          desc: room.desc,
+          members: [user.uid],
+          memberCount: 1,
+          onlineCount: 1,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastMessage: `Chào mừng đến ${room.name}! 👋`,
+        });
+      } else {
+        await updateDoc(roomRef, {
+          members: arrayUnion(user.uid),
+          memberCount: increment(1),
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      await setDoc(
+        doc(db, "chats", room.id),
+        {
+          isGroup: true,
+          isPublicRoom: true,
+          groupName: room.name,
+          groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
+          members: arrayUnion(user.uid),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastMessage: `Bạn đã tham gia ${room.name}`,
+        },
+        { merge: true }
+      );
+
+      toast.success(`Đã vào phòng ${room.name}`);
       onClose();
       router.push(`/chat/${room.id}`);
     } catch (error: any) {
-      console.error("Enter room error:", error.code, error.message);
-      toast.error(`Lỗi: ${error.code}`);
+      console.error(error);
+      toast.error("Lỗi: " + error.message);
     } finally {
-      setEntering(null);
+      setJoining(null);
+    }
+  };
+
+  const handleLeaveRoom = async (room: PublicRoomItem) => {
+    if (!user?.uid) return;
+    if (!confirm(`Rời phòng ${room.name}?`)) return;
+
+    try {
+      const roomRef = doc(db, "public_rooms", room.id);
+      await updateDoc(roomRef, {
+        members: arrayRemove(user.uid),
+        memberCount: increment(-1),
+        updatedAt: serverTimestamp(),
+      });
+      toast.success(`Đã rời ${room.name}`);
+    } catch (error: any) {
+      toast.error("Lỗi: " + error.message);
     }
   };
 
@@ -116,7 +175,7 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-[20px] font-bold tracking-tight">Phòng Chat Công Cộng</h2>
-              <p className="text-[13px] text-[#8e8e93] mt-0.5">Bấm vào phòng để vào chat ngay</p>
+              <p className="text-[13px] text-[#8e8e93] mt-0.5">Kết nối với mọi người cùng thành phố</p>
             </div>
             <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-[#8e8e93] active:opacity-60">
               <FiX size={22} />
@@ -131,11 +190,9 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
             </div>
           ) : (
             rooms.map((room) => (
-              <button
+              <div
                 key={room.id}
-                onClick={() => handleEnterRoom(room)}
-                disabled={entering === room.id}
-                className="w-full bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 border border-black/5 dark:border-white/5 text-left active:scale-95 transition-transform disabled:opacity-50"
+                className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 border border-black/5 dark:border-white/5"
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-14 h-14 bg-gradient-to-br ${room.color} rounded-2xl flex items-center justify-center text-3xl shadow-lg flex-shrink-0`}>
@@ -150,7 +207,6 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
                           <span className="text-[10px] font-[800] text-white">HOT</span>
                         </span>
                       )}
-                      {entering === room.id && <FiLoader className="animate-spin" size={14} />}
                     </div>
                     <p className="text-[13px] text-[#8e8e93] mb-2 line-clamp-1">{room.desc}</p>
                     <div className="flex items-center gap-3 text-[12px] text-[#8e8e93]">
@@ -167,7 +223,47 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
                     </div>
                   </div>
                 </div>
-              </button>
+
+                <div className="mt-3 flex gap-2">
+                  {room.isJoined? (
+                    <>
+                      <button
+                        onClick={() => {
+                          onClose();
+                          router.push(`/chat/${room.id}`);
+                        }}
+                        className={`flex-1 h-10 bg-gradient-to-r ${room.color} text-white rounded-xl text-[14px] font-[600] active:scale-95 transition-transform`}
+                      >
+                        Vào chat
+                      </button>
+                      <button
+                        onClick={() => handleLeaveRoom(room)}
+                        className="h-10 px-4 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl text-[14px] font-[600] active:scale-95 transition-transform"
+                      >
+                        Rời
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => handleJoinRoom(room)}
+                      disabled={joining === room.id}
+                      className={`w-full h-10 bg-gradient-to-r ${room.color} text-white rounded-xl text-[14px] font-[600] active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2`}
+                    >
+                      {joining === room.id? (
+                        <>
+                          <FiLoader className="animate-spin" size={16} />
+                          Đang vào...
+                        </>
+                      ) : (
+                        <>
+                          <FiUnlock size={16} />
+                          Tham gia
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
             ))
           )}
         </div>
