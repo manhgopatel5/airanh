@@ -5,6 +5,7 @@ export type EventItem = {
   tag: string;
   tagColor: string;
   desc: string;
+  
   description?: string; // THÊM: API có thể trả description
   image: string;
   imageUrl?: string; // THÊM: URL từ Firebase Storage
@@ -15,6 +16,7 @@ export type EventItem = {
     | "phuot" | "bar" | "workshop" | "anuong" | "music"
     | "sports" | "shopping" | "coffee" | "photo" | "movie"
     | "festival" | "exhibition" | "nightlife" | "chill" | "dating";
+  province: string;
   address: string;
   openTime: string;
   price: string;
