@@ -1,5 +1,5 @@
 "use client";
-
+import GpsRequiredModal from "@/components/GpsRequiredModal";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -127,7 +127,39 @@ export default function ChatClient() {
 
   const mode = useAppStore((s) => s.mode);
   const isPlan = mode === "plan";
+  const [showGpsModal, setShowGpsModal] = useState(false);
+const [gpsLoading, setGpsLoading] = useState(false);
 
+const requestGPS = useCallback(async () => {
+  if (!navigator.geolocation) {
+    toast.error("Trình duyệt không hỗ trợ GPS");
+    return;
+  }
+  setGpsLoading(true);
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      localStorage.setItem('userLat', String(pos.coords.latitude));
+      localStorage.setItem('userLng', String(pos.coords.longitude));
+      setShowGpsModal(false);
+      setGpsLoading(false);
+    },
+    (err) => {
+      setGpsLoading(false);
+      if (err.code === 1) toast.error("Bạn đã từ chối quyền vị trí");
+      else toast.error("Không lấy được vị trí");
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}, []);
+
+// Check GPS khi vào trang
+useEffect(() => {
+  const hasLocation = localStorage.getItem('userLat') && localStorage.getItem('userLng');
+  if (!hasLocation && user?.uid) {
+    setShowGpsModal(true);
+    requestGPS(); // Tự động bật popup xin quyền
+  }
+}, [user?.uid, requestGPS]);
   const primaryBg = isPlan? "bg-green-500" : "bg-[#0a84ff]";
   const primaryHover = isPlan? "hover:bg-green-600" : "hover:bg-[#007aff]";
   const primaryActive = isPlan? "active:bg-green-700" : "active:bg-[#0051d5]";
@@ -2240,6 +2272,13 @@ return (
   </div>
 )}
 <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+<GpsRequiredModal 
+  open={showGpsModal} 
+  onClose={() => setShowGpsModal(false)} 
+  onRetry={requestGPS}
+  loading={gpsLoading}
+  mode="task" 
+/>
     </>
   );
 }
