@@ -236,7 +236,7 @@ const roomRef = doc(db, "chats", roomId as string);
   try {
     const userName = user.displayName || user.email?.split('@')[0] || "User";
     const userAvatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
-    const isPublic = typeof roomId === 'string' && roomId.startsWith('public_');
+
 
     const batch = writeBatch(db);
     const chatRef = doc(db, "chats", roomId as string);
