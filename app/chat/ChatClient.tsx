@@ -1472,19 +1472,19 @@ return (
                 </div>
               </div>
             </div>
-            <div className="p-3">
-              <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 line-clamp-2">{item.desc}</p>
-              <div className="flex items-center justify-between text-xs text-[#8e8e93]">
-                <span className="flex items-center gap-1">
-                  <FiUsers size={12} />
-                  {item.joined} người
-                </span>
-                <span className="flex items-center gap-1">
-                  <FiMapPin size={12} />
-                  {item.distance}
-                </span>
-              </div>
-            </div>
+         <div className="p-3">
+  <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 line-clamp-2">{item.desc}</p>
+  <div className="flex items-center justify-between text-xs text-[#8e8e93]">
+    <span className="flex items-center gap-1">
+      <FiUsers size={12} />
+      {item.joined} người
+    </span>
+    <span className="flex items-center gap-1">
+      <FiMapPin size={12} />
+      {item.province} • {item.distance}
+    </span>
+  </div>
+</div>
           </button>
         ))}
 </div>
