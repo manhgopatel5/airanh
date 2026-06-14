@@ -10,7 +10,7 @@ export type EventItem = {
   image: string;
   imageUrl?: string; // THÊM: URL từ Firebase Storage
   joined: number;
-  distance: string;
+  
   icon: string;
   category:
     | "phuot" | "bar" | "workshop" | "anuong" | "music"
