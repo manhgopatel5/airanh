@@ -41,7 +41,7 @@ service cloud.firestore {
     // ========== PUBLIC ROOMS ==========
     match /public_rooms/{roomId} {
       allow read: if true;
-      allow write: if false; // Chỉ tạo bằng console hoặc admin
+      allow write: if isAdmin(); // Chỉ admin sửa trên console
     }
 
     // ========== SESSIONS ==========
@@ -146,7 +146,7 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    // ========== CHATS - PUBLIC ROOM MỞ TOANG ==========
+    // ========== CHATS - PHÒNG CÔNG CỘNG TỰ DO ĐỌC/GHI ==========
     match /chats/{chatId} {
       // Đọc: phòng công cộng thì login là đọc được, không cần members
       allow get, list: if isSignedIn() && (
@@ -154,17 +154,25 @@ service cloud.firestore {
         request.auth.uid in resource.data.get('members', [])
       );
 
-      // Tạo: chặn tạo phòng công cộng từ client. Chỉ admin tạo trên console
-      allow create: if isSignedIn()
-        &&!request.resource.data.get('isPublicRoom', false)
-        && request.auth.uid in request.resource.data.get('members', [])
-        && request.resource.data.get('members', []).size() >= 2;
+      // Tạo: cho phép client tự tạo phòng công cộng lần đầu
+      allow create: if isSignedIn() && (
+        // Phòng riêng: phải có ít nhất 2 members và mình nằm trong đó
+        (!request.resource.data.get('isPublicRoom', false) && 
+         request.auth.uid in request.resource.data.get('members', []) &&
+         request.resource.data.get('members', []).size() >= 2) ||
+        // Phòng công cộng: cho tạo với chatId = public_*
+        (request.resource.data.get('isPublicRoom', false) == true &&
+         chatId.matches('public_.*') &&
+         request.resource.data.keys().hasAll(['isGroup', 'isPublicRoom', 'status', 'groupName', 'members']) &&
+         request.resource.data.isGroup == true &&
+         request.resource.data.status == 'active')
+      );
 
-      // Update: phòng công cộng cho update lastMessage, lastMessageTime. Không cho sửa members/isPublicRoom
+      // Update: phòng công cộng cho update lastMessage, lastMessageTime, updatedAt. Không cho sửa members/isPublicRoom
       allow update: if isSignedIn() && (
         // Phòng riêng: phải trong members
         (!resource.data.get('isPublicRoom', false) && request.auth.uid in resource.data.get('members', [])) ||
-        // Phòng công cộng: chỉ cho update 2 field này
+        // Phòng công cộng: chỉ cho update 3 field này
         (resource.data.get('isPublicRoom', false) == true && 
          request.resource.data.diff(resource.data).changedKeys().hasOnly(['lastMessage', 'lastMessageTime', 'updatedAt']))
       );
@@ -178,7 +186,7 @@ service cloud.firestore {
           request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('members', [])
         );
 
-        // Gửi tin: login + phòng active + không bị block
+        // Gửi tin: login + phòng active + không bị block. Phòng công cộng không cần members
         allow create: if isSignedIn()
           && request.auth.uid == request.resource.data.senderId
           && get(/databases/$(database)/documents/chats/$(chatId)).data.get('status', 'active') == 'active'
