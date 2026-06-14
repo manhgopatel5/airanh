@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { FiX, FiUsers, FiTrendingUp, FiLoader } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -79,30 +79,28 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
     setEntering(room.id);
 
     try {
-      // Tự tạo chats/public_xxx nếu chưa có
       const chatRef = doc(db, "chats", room.id);
-      const chatSnap = await getDoc(chatRef);
       
-      if (!chatSnap.exists()) {
-        await setDoc(chatRef, {
-          isGroup: true,
-          isPublicRoom: true,
-          status: 'active',
-          groupName: room.name,
-          groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
-          members: [], // Phòng công cộng không cần members
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          lastMessage: `Chào mừng đến ${room.name}`,
-          lastMessageTime: serverTimestamp(),
-        });
-      }
+      // Dùng setDoc + merge: true để không cần getDoc trước
+      // Nếu doc chưa có thì tạo, có rồi thì merge không đè field cũ
+      await setDoc(chatRef, {
+        isGroup: true,
+        isPublicRoom: true,
+        status: 'active',
+        groupName: room.name,
+        groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
+        members: [],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        lastMessage: `Chào mừng đến ${room.name}`,
+        lastMessageTime: serverTimestamp(),
+      }, { merge: true });
 
       onClose();
       router.push(`/chat/${room.id}`);
     } catch (error: any) {
-      console.error("Enter room error:", error);
-      toast.error("Lỗi: " + error.message);
+      console.error("Enter room error:", error.code, error.message);
+      toast.error(`Lỗi: ${error.code}`);
     } finally {
       setEntering(null);
     }
