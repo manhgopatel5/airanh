@@ -224,7 +224,7 @@ const roomRef = doc(db, "chats", roomId as string);
       unsubChatCheck();
       unsubMessages();
     };
-  }, [roomId, user?.uid, d, router]);
+  }, [roomId, user?.uid, db, router]);
 
   const handleSendMessage = async () => {
   if (!message.trim() ||!user?.uid ||!roomId || sending) return;
