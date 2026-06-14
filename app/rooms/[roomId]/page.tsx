@@ -116,7 +116,7 @@ const deleteMessage = async (msgId: string) => {
     toast.error("Lỗi xoá: " + e.message);
   }
 };
-  const isPublicRoom = typeof roomId === 'string' && roomId.startsWith('public_');
+
   const [searchFriend, setSearchFriend] = useState("");
   const handleScroll = useCallback(() => {
     if (!messagesContainerRef.current) return;
@@ -170,7 +170,7 @@ const deleteMessage = async (msgId: string) => {
     let unsubRoom: () => void = () => {};
     let unsubMessages: () => void = () => {};
 
-    const roomRef = doc(db, isPublicRoom? "public_rooms" : "chats", roomId as string);
+const roomRef = doc(db, "chats", roomId as string);
     unsubRoom = onSnapshot(roomRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
@@ -224,71 +224,72 @@ const deleteMessage = async (msgId: string) => {
       unsubChatCheck();
       unsubMessages();
     };
-  }, [roomId, user?.uid, db, isPublicRoom, router]);
+  }, [roomId, user?.uid, d, router]);
 
   const handleSendMessage = async () => {
-    if (!message.trim() ||!user?.uid ||!roomId || sending) return;
-    const text = message.trim();
-    setMessage("");
-    setSending(true);
-    setIsAtBottom(true);
+  if (!message.trim() ||!user?.uid ||!roomId || sending) return;
+  const text = message.trim();
+  setMessage("");
+  setSending(true);
+  setIsAtBottom(true);
 
-    try {
-      const userName = user.displayName || user.email?.split('@')[0] || "User";
-      const userAvatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
+  try {
+    const userName = user.displayName || user.email?.split('@')[0] || "User";
+    const userAvatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
+    const isPublic = typeof roomId === 'string' && roomId.startsWith('public_');
 
-      const batch = writeBatch(db);
-      const chatRef = doc(db, "chats", roomId as string);
-      const chatSnap = await getDoc(chatRef);
+    const batch = writeBatch(db);
+    const chatRef = doc(db, "chats", roomId as string);
+    const chatSnap = await getDoc(chatRef);
 
-      if (!chatSnap.exists()) {
-        batch.set(chatRef, {
-          isGroup: true,
-          isPublicRoom: isPublicRoom,
-          groupName: roomData?.name || "Phòng chat",
-          groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(roomData?.emoji || "💬")}&background=random&color=fff&bold=true&size=128`,
-          members: [user.uid],
-          memberCount: 1,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          lastMessage: text,
-          lastSenderId: user.uid,
-          lastSenderName: userName,
-        });
-      } else {
-        const currentMembers = chatSnap.data().members || [];
-        const isNewMember =!currentMembers.includes(user.uid);
-        batch.update(chatRef, {
-          members: arrayUnion(user.uid),
-          memberCount: isNewMember? currentMembers.length + 1 : currentMembers.length,
-          lastMessage: text,
-          lastSenderId: user.uid,
-          lastSenderName: userName,
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      const msgRef = doc(collection(db, "chats", roomId as string, "messages"));
-      batch.set(msgRef, {
-        text,
-        senderId: user.uid,
-        senderName: userName,
-        senderAvatar: userAvatar,
+    if (!chatSnap.exists()) {
+      batch.set(chatRef, {
+        isGroup: true,
+        
+        groupName: roomData?.name || "Phòng chat",
+        emoji: roomData?.emoji || "💬",
+        color: roomData?.color || "from-blue-500 to-cyan-500",
+        groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(roomData?.emoji || "💬")}&background=random&color=fff&bold=true&size=128`,
+        members: [user.uid],
+        memberCount: 1,
         createdAt: serverTimestamp(),
-        type: 'text',
+        updatedAt: serverTimestamp(),
+        lastMessage: text,
+        lastSenderId: user.uid,
+        lastSenderName: userName,
+        blockedUsers: [],
       });
-
-      await batch.commit();
-      if ("vibrate" in navigator) navigator.vibrate(10);
-    } catch (e: any) {
-      console.error(e);
-      toast.error("Lỗi gửi tin: " + e.message);
-      setMessage(text);
-    } finally {
-      setSending(false);
+    } else {
+      // Public room: auto add vào members, không check số lượng
+      batch.update(chatRef, {
+        members: arrayUnion(user.uid), // tự thêm nếu chưa có
+        lastMessage: text,
+        lastSenderId: user.uid,
+        lastSenderName: userName,
+        updatedAt: serverTimestamp(),
+      });
     }
-  };
 
+    const msgRef = doc(collection(db, "chats", roomId as string, "messages"));
+    batch.set(msgRef, {
+      text,
+      senderId: user.uid,
+      senderName: userName,
+      senderAvatar: userAvatar,
+      createdAt: serverTimestamp(),
+      type: 'text',
+    });
+
+    await batch.commit();
+    if ("vibrate" in navigator) navigator.vibrate(10);
+  } catch (e: any) {
+    console.error(e);
+    toast.error("Lỗi gửi tin: " + e.message);
+    setMessage(text);
+  } finally {
+    setSending(false);
+  }
+};
   // Tìm tin nhắn
   const handleSearch = useCallback(() => {
   if (!searchQuery.trim()) {
