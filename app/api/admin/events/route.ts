@@ -1,16 +1,15 @@
 import '@/lib/firebase-admin' // BẮT BUỘC ĐẦU TIÊN
 import { NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase-admin' // ĐỔI: import adminDb
+import { adminDb } from '@/lib/firebase-admin'
 import { FieldValue } from 'firebase-admin/firestore'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const db = adminDb(); // ĐỔI: dùng adminDb() thay vì getFirestore()
+    const db = adminDb();
     const snapshot = await db.collection('events')
       .where('isActive', '==', true)
-      // Bỏ orderBy để tránh lỗi thiếu index
       .get();
 
     const events = snapshot.docs.map(doc => {
@@ -29,15 +28,15 @@ export async function GET() {
         icon: data.icon || '🎉',
         category: data.category || 'other',
         joined: Number(data.joined) || 0,
-        distance: data.distance || 'Cách bạn 1km',
+        // distance: data.distance || 'Cách bạn 1km', // XÓA DÒNG NÀY
         address: data.address || '',
         openTime: data.openTime || '',
         price: data.price || 'Free',
         tips: data.tips || [],
         gallery: data.gallery || [],
         mapUrl: data.mapUrl || '',
-        lat: data.lat,
-        lng: data.lng,
+        lat: data.lat ? Number(data.lat) : null,
+        lng: data.lng ? Number(data.lng) : null,
         rating: Number(data.rating) || 4.5,
         reviews: Number(data.reviews) || 0,
         isActive: data.isActive ?? true,
@@ -46,7 +45,6 @@ export async function GET() {
         date: data.date?.toDate?.()?.toISOString() || null,
       }
     })
-    // Sort ở client thay cho orderBy
     .sort((a, b) => {
       const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
       const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
@@ -63,7 +61,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const db = adminDb(); // ĐỔI
+    const db = adminDb();
     const id = body.id || db.collection('events').doc().id;
 
     await db.collection('events').doc(id).set({
@@ -82,7 +80,7 @@ export async function POST(request: Request) {
       address: body.address || '',
       openTime: body.openTime || '',
       price: body.price || 'Free',
-      distance: body.distance || 'Cách bạn 1km',
+      // distance: body.distance || 'Cách bạn 1km', // XÓA DÒNG NÀY
       mapUrl: body.mapUrl || '',
       lat: body.lat ? Number(body.lat) : null,
       lng: body.lng ? Number(body.lng) : null,
@@ -109,7 +107,7 @@ export async function DELETE(request: Request) {
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
-    const db = adminDb(); // ĐỔI
+    const db = adminDb();
     await db.collection('events').doc(id).delete();
 
     return NextResponse.json({ success: true });
