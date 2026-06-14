@@ -112,7 +112,21 @@ type RawChat = {
   other?: string;
   isGroup: boolean;
 };
+const getDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
 
+const formatDistance = (km: number): string => {
+  return km < 1? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
+};
 const PINNED_KEY = "pinned_chats";
 const DEBOUNCE_DELAY = 200;
 const MAX_RETRIES = 3;
@@ -129,7 +143,17 @@ export default function ChatClient() {
   const isPlan = mode === "plan";
   const [showGpsModal, setShowGpsModal] = useState(false);
 const [gpsLoading, setGpsLoading] = useState(false);
+const [userLat, setUserLat] = useState<number | null>(null);
+  const [userLng, setUserLng] = useState<number | null>(null);
 
+  useEffect(() => {
+    const lat = localStorage.getItem('userLat');
+    const lng = localStorage.getItem('userLng');
+    if (lat && lng) {
+      setUserLat(Number(lat));
+      setUserLng(Number(lng));
+    }
+  }, []);
 const requestGPS = useCallback(async () => {
   if (!navigator.geolocation) {
     toast.error("Trình duyệt không hỗ trợ GPS");
@@ -1479,10 +1503,12 @@ return (
       <FiUsers size={12} />
       {item.joined} người
     </span>
-    <span className="flex items-center gap-1">
-      <FiMapPin size={12} />
-      {item.province} • {item.distance}
-    </span>
+  <span className="flex items-center gap-1">
+  <FiMapPin size={12} />
+  {item.province} • {userLat && userLng && item.lat && item.lng
+    ? formatDistance(getDistanceKm(userLat, userLng, item.lat, item.lng))
+    : '?km'}
+</span>
   </div>
 </div>
           </button>
