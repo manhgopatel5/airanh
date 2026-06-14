@@ -73,7 +73,7 @@ import {
   Lock,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
-  import { sendFriendRequest, cancelFriendRequest, unfriend } from "@/lib/friendService";
+
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -727,30 +727,23 @@ if (!friendSnap.exists()) {
     fetchUser();
   }, [fetchUser]);
 
-
-
-const handleConnect = async () => {
+  const handleConnect = async () => {
   if (!user || !targetUser || actionLoading) return;
 
   if (user.uid === targetUser?.uid) {
     return toast.error("Đây là bạn");
   }
 
+  if (isFriend) {
+    return toast.info("Các bạn đã là bạn bè");
+  }
+
   setActionLoading(true);
 
   try {
-    // 1. Đã là bạn bè -> hủy bạn
-    if (isFriend) {
-      await unfriend(user.uid, targetUser.uid);
-      setIsFriend(false);
-      toast.success("Đã hủy kết bạn");
-      if ("vibrate" in navigator) navigator.vibrate(8);
-      return;
-    }
-
-    // 2. Đã gửi lời mời -> hủy lời mời
-    if (hasSentRequest) {
-      await cancelFriendRequest(user.uid, targetUser.uid);
+    // Nếu đã gửi rồi thì hủy
+    if (hasSentRequest && _requestId) {
+      await deleteDoc(doc(db, "friendRequests", _requestId));
       setHasSentRequest(false);
       setRequestId(null);
       toast.success("Đã hủy lời mời kết bạn");
@@ -758,14 +751,34 @@ const handleConnect = async () => {
       return;
     }
 
-    // 3. Chưa gửi -> gửi lời mời mới
-    await sendFriendRequest(user.uid, targetUser.uid);
+    // Chưa gửi thì tạo request mới
+    const reqId = [user.uid, targetUser.uid].sort().join('_');
+    
+    await setDoc(
+      doc(db, "friendRequests", reqId),
+      {
+        from: user.uid,
+        to: targetUser.uid,
+        status: "pending",
+        createdAt: serverTimestamp(),
+        fromName: currentUserData?.name || user.displayName || "User",
+        fromAvatar: currentUserData?.avatar || user.photoURL || "",
+        fromShortId: currentUserData?.userId || "",
+        toName: targetUser.name,
+        toAvatar: targetUser.avatar,
+        toShortId: targetUser.userId,
+      }
+    );
+
     setHasSentRequest(true);
+    setRequestId(reqId);
     toast.success(`Đã gửi lời mời tới ${targetUser.name}`);
-    if ("vibrate" in navigator) navigator.vibrate(8);
-  } catch (err: any) {
+    if ("vibrate" in navigator) {
+      navigator.vibrate(8);
+    }
+  } catch (err) {
     console.error(err);
-    toast.error(err.message || "Thao tác thất bại");
+    toast.error("Thao tác thất bại");
   } finally {
     setActionLoading(false);
   }
@@ -819,7 +832,57 @@ const handleBlock = async () => {
     setActionLoading(false);
   }
 };
+const handleMessage = async () => {
+  if (!user || !targetUser || actionLoading) return;
+  if (user.uid === targetUser.uid) return toast.error("Không thể tự nhắn cho mình");
+  
+  setActionLoading(true);
+  try {
+    let currentUser = currentUserData;
+    if (!currentUser) {
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      if (!userSnap.exists()) {
+        toast.error("Không tìm thấy thông tin của bạn");
+        return;
+      }
+      currentUser = userSnap.data();
+      setCurrentUserData(currentUser);
+    }
 
+    const chatId = [user.uid, targetUser.uid].sort().join('_');
+    const chatRef = doc(db, "chats", chatId);
+    
+    await setDoc(chatRef, {
+      members: [user.uid, targetUser.uid],
+      membersInfo: {
+        [user.uid]: {
+          name: currentUser?.name || user.displayName || "User",
+          avatar: currentUser?.avatar || user.photoURL || "",
+          userId: currentUser?.userId || ""
+        },
+        [targetUser.uid]: {
+          name: targetUser.name || "Unknown",
+          avatar: targetUser.avatar || "",
+          userId: targetUser.userId || ""
+        }
+      },
+      createdAt: serverTimestamp(),
+      lastMessage: "",
+      lastMessageTime: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      deletedFor: [],
+      status: 'active',
+      blockedUsers: [] // ← THÊM DÒNG NÀY
+    }, { merge: true });
+    
+    router.push(`/chat/${chatId}`);
+  } catch (err: any) {
+    console.error("Lỗi tạo chat:", err);
+    toast.error(`Không thể mở cuộc trò chuyện: ${err.message}`);
+  } finally {
+    setActionLoading(false);
+  }
+};
   const levelTiers = [
     {
       range: "1 - 7",
@@ -862,48 +925,7 @@ const handleBlock = async () => {
       perks: "Biểu tượng uy tín của cộng đồng",
     },
   ];
-const handleMessage = async () => {
-  if (!user || !targetUser || actionLoading) return;
-  if (user.uid === targetUser.uid) return toast.error("Không thể tự nhắn cho mình");
-  
-  setActionLoading(true);
-  try {
-    const chatId = [user.uid, targetUser.uid].sort().join('_');
-    const chatRef = doc(db, "chats", chatId);
-    
-    // Tạo chat doc nếu chưa có
-    await setDoc(chatRef, {
-      members: [user.uid, targetUser.uid],
-      membersInfo: {
-        [user.uid]: {
-          name: currentUserData?.name || user.displayName || "User",
-          avatar: currentUserData?.avatar || user.photoURL || "",
-          userId: currentUserData?.userId || ""
-        },
-        [targetUser.uid]: {
-          name: targetUser.name || "Unknown",
-          avatar: targetUser.avatar || "",
-          userId: targetUser.userId || ""
-        }
-      },
-      type: "dm",
-      createdAt: serverTimestamp(),
-      lastMessage: "",
-      lastMessageTime: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      deletedFor: [],
-      status: 'active',
-      blockedUsers: []
-    }, { merge: true });
-    
-    router.push(`/chat/${chatId}`);
-  } catch (err: any) {
-    console.error("Lỗi tạo chat:", err);
-    toast.error(`Không thể mở cuộc trò chuyện: ${err.message}`);
-  } finally {
-    setActionLoading(false);
-  }
-};
+
   const handleShare = async () => {
     if (!targetUser) return;
 
@@ -1072,17 +1094,7 @@ return (
     </div>
   )}
 </div>
-{/* NÚT NHẮN TIN - CHỈ HIỆN KHI XEM PROFILE NGƯỜI KHÁC */}
-{!isOwnProfile && (
-  <button
-    onClick={handleMessage}
-    disabled={actionLoading}
-    className="mt-3 px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-500 to-sky-500 text-white font-semibold text-sm shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 mx-auto"
-  >
-    <MessageCircle className="w-4 h-4" />
-    {actionLoading ? "Đang mở..." : "Nhắn tin"}
-  </button>
-)}
+
     {/* BỎ USERID */}
 
     {/* RANK BADGE - INFO NÚT NHỎ GÓC PHẢI */}
