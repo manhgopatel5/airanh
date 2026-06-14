@@ -14,6 +14,22 @@ const ICON_LIST = [
   "✨", "💫", "⭐", "🌟", "💥", "🔥", "💎", "👑", "🎓", "📚"
 ];
 
+const PROVINCES = [
+  "Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ",
+  "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu",
+  "Bắc Ninh", "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước",
+  "Bình Thuận", "Cà Mau", "Cao Bằng", "Đắk Lắk", "Đắk Nông",
+  "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang",
+  "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang", "Hòa Bình",
+  "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu",
+  "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định",
+  "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên",
+  "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị",
+  "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên",
+  "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "Trà Vinh", "Tuyên Quang",
+  "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
+];
+
 const TAG_LIST = [
   { value: "NEW", label: "NEW", color: "from-blue-500 to-cyan-500" },
   { value: "HOT", label: "HOT", color: "from-red-500 to-orange-500" },
@@ -28,7 +44,7 @@ export default function AdminEventsPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
-const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
+  const [showInactive, setShowInactive] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -45,6 +61,7 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
     distance: "",
     icon: "🎉",
     category: "phuot",
+    province: "Hà Nội",
     address: "",
     openTime: "",
     price: "",
@@ -76,8 +93,6 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
     fetchEvents();
   }, []);
 
-
-
   const resetForm = () => {
     setForm({
       title: "",
@@ -89,6 +104,7 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
       distance: "",
       icon: "🎉",
       category: "phuot",
+      province: "Hà Nội",
       address: "",
       openTime: "",
       price: "",
@@ -108,7 +124,7 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
   const openEdit = (event: EventItem) => {
     setForm(event);
     setEditingId(event.id);
-    setRatingInput(String(event.rating || 5).replace('.', ',')); 
+    setRatingInput(String(event.rating || 5).replace('.', ','));
     setShowModal(true);
   };
 
@@ -132,33 +148,33 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
-  if (files.length > 3) {
-    toast.error("Chỉ được upload tối đa 3 ảnh");
-    return;
-  }
-  setUploadingGallery(true);
-  try {
-    const uploadedUrls: string[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]; // THÊM DÒNG NÀY
-      if (!file) continue; // THÊM DÒNG NÀY
-      const formData = new FormData();
-      formData.append('file', file); // ĐỔI files[i] THÀNH file
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
-      if (!res.ok) throw new Error('Upload failed');
-      const data = await res.json();
-      uploadedUrls.push(data.url);
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    if (files.length > 3) {
+      toast.error("Chỉ được upload tối đa 3 ảnh");
+      return;
     }
-    setForm((prev) => ({...prev, gallery: [...(prev.gallery || []),...uploadedUrls].slice(0, 3) }));
-    toast.success(`Đã upload ${uploadedUrls.length} ảnh`);
-  } catch (error) {
-    toast.error("Lỗi upload ảnh");
-  } finally {
-    setUploadingGallery(false);
-  }
-};
+    setUploadingGallery(true);
+    try {
+      const uploadedUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file) continue;
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
+        if (!res.ok) throw new Error('Upload failed');
+        const data = await res.json();
+        uploadedUrls.push(data.url);
+      }
+      setForm((prev) => ({...prev, gallery: [...(prev.gallery || []),...uploadedUrls].slice(0, 3) }));
+      toast.success(`Đã upload ${uploadedUrls.length} ảnh`);
+    } catch (error) {
+      toast.error("Lỗi upload ảnh");
+    } finally {
+      setUploadingGallery(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!form.title ||!form.desc ||!form.image) {
@@ -228,13 +244,13 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
             <button
               onClick={() => setShowInactive(!showInactive)}
               className={`px-4 h-10 rounded-xl font-semibold flex items-center gap-2 ${
-                showInactive 
-                  ? 'bg-amber-500 text-white' 
+                showInactive
+                 ? 'bg-amber-500 text-white'
                   : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white'
               }`}
             >
-              {showInactive ? <FiEye size={18} /> : <FiEyeOff size={18} />}
-              {showInactive ? 'Ẩn đã ẩn' : 'Hiện đã ẩn'}
+              {showInactive? <FiEye size={18} /> : <FiEyeOff size={18} />}
+              {showInactive? 'Ẩn đã ẩn' : 'Hiện đã ẩn'}
             </button>
             <button
               onClick={() => {
@@ -249,9 +265,9 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {events
-  .filter(event => showInactive || event.isActive === true)
-  .map((event) => (
+          {events
+           .filter(event => showInactive || event.isActive === true)
+           .map((event) => (
             <div
               key={event.id}
               className={`bg-white dark:bg-zinc-900 rounded-xl border-2 ${
@@ -259,19 +275,19 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
               } overflow-hidden`}
             >
               <div className="relative h-40">
-              <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
-{!event.isActive && (
-  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-    <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">ĐÃ ẨN</span>
-  </div>
-)}
+                <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
+                {!event.isActive && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">ĐÃ ẨN</span>
+                  </div>
+                )}
                 <div className="absolute top-2 right-2 flex gap-1">
                   <button
                     onClick={() => toggleActive(event)}
                     className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                       event.isActive? "bg-green-500" : "bg-zinc-500"
                     } text-white`}
-                    title={event.isActive ? "Ẩn event" : "Hiện event"}
+                    title={event.isActive? "Ẩn event" : "Hiện event"}
                   >
                     {event.isActive? <FiEye size={16} /> : <FiEyeOff size={16} />}
                   </button>
@@ -291,7 +307,6 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
                 <div className={`absolute bottom-2 left-2 px-2 py-1 bg-gradient-to-r ${event.tagColor} rounded-md`}>
                   <span className="text-xs font-bold text-white">{event.tag}</span>
                 </div>
-              </div>
               <div className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">{event.icon}</span>
@@ -299,7 +314,7 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
                 </div>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 mb-2">{event.desc}</p>
                 <div className="flex items-center justify-between text-xs text-zinc-500">
-                  <span>{event.category}</span>
+                  <span>{event.province}</span>
                   <span className="flex items-center gap-1">
                     <FiStar className="text-amber-500" size={12} fill="currentColor" />
                     {event.rating} ({event.reviews})
@@ -311,10 +326,10 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
         </div>
       </div>
 
-  {showModal && (
-  <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-8 overflow-y-auto">
-    <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setShowModal(false)} />
-    <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl mb-8">
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-8 overflow-y-auto">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setShowModal(false)} />
+          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl mb-8">
             <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between">
               <h2 className="text-xl font-bold">{editingId? "Sửa Event" : "Thêm Event"}</h2>
               <button onClick={() => setShowModal(false)} className="w-8 h-8 flex items-center justify-center">
@@ -353,6 +368,19 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
               </div>
 
               <div>
+                <label className="text-sm font-semibold mb-1 block">Tỉnh/Thành phố *</label>
+                <select
+                  value={form.province}
+                  onChange={(e) => setForm({...form, province: e.target.value })}
+                  className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
+                >
+                  {PROVINCES.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="text-sm font-semibold mb-1 block">Mô tả *</label>
                 <textarea
                   value={form.desc}
@@ -370,7 +398,7 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
                       onChange={(e) => {
                         const selectedTag = TAG_LIST.find(t => t.value === e.target.value);
                         setForm({
-                        ...form,
+                         ...form,
                           tag: e.target.value,
                           tagColor: selectedTag?.color || "from-blue-500 to-cyan-500"
                         });
@@ -482,16 +510,16 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
                   />
                 </div>
               </div>
-<div>
-  <label className="text-sm font-semibold mb-1 block">Google Map URL</label>
-  <input
-    type="text"
-    value={form.mapUrl || ''}
-    onChange={(e) => setForm({...form, mapUrl: e.target.value })}
-    placeholder="https://maps.google.com/..."
-    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-  />
-</div>
+              <div>
+                <label className="text-sm font-semibold mb-1 block">Google Map URL</label>
+                <input
+                  type="text"
+                  value={form.mapUrl || ''}
+                  onChange={(e) => setForm({...form, mapUrl: e.target.value })}
+                  placeholder="https://maps.google.com/..."
+                  className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold mb-1 block">Giá *</label>
@@ -514,43 +542,42 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
                 </div>
               </div>
 
-           <div className="grid grid-cols-2 gap-4">
-  <div>
-    <label className="text-sm font-semibold mb-1 block">Rating *</label>
-    <input
-      type="text"
-      value={ratingInput}
-      onChange={(e) => {
-        const val = e.target.value;
-        // Chỉ cho nhập: rỗng, số 0-5, 0-5, 0-5.0-9
-        if (/^[0-5]?[,.]?[0-9]?$/.test(val) || val === '') {
-          setRatingInput(val);
-          const num = parseFloat(val.replace(',', '.'));
-          if (!isNaN(num) && num >= 0 && num <= 5) {
-            setForm({...form, rating: num });
-          } else if (val === '') {
-            setForm({...form, rating: 0 });
-          }
-        }
-      }}
-      placeholder="4,9"
-      className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-    />
-  </div>
-  <div>
-    <label className="text-sm font-semibold mb-1 block">Reviews *</label>
-    <input
-      type="number"
-      min="0"
-      value={form.reviews || ''}
-      onChange={(e) => setForm({...form, reviews: Number(e.target.value) || 0 })}
-      placeholder="0"
-      className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-    />
-  </div>
-</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-semibold mb-1 block">Rating *</label>
+                  <input
+                    type="text"
+                    value={ratingInput}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^[0-5]?[,.]?[0-9]?$/.test(val) || val === '') {
+                        setRatingInput(val);
+                        const num = parseFloat(val.replace(',', '.'));
+                        if (!isNaN(num) && num >= 0 && num <= 5) {
+                          setForm({...form, rating: num });
+                        } else if (val === '') {
+                          setForm({...form, rating: 0 });
+                        }
+                      }
+                    }}
+                    placeholder="4,9"
+                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold mb-1 block">Reviews *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.reviews || ''}
+                    onChange={(e) => setForm({...form, reviews: Number(e.target.value) || 0 })}
+                    placeholder="0"
+                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
 
-<div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={form.isActive}
