@@ -581,43 +581,45 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
             </p>
           </div>
           
-          {/* Nút... Menu */}
-          <button 
-            onClick={() => setShowMenu(!showMenu)} 
-            className="w-9 h-9 flex items-center justify-center -mr-2 active:opacity-60 relative"
-          >
-            <FiMoreVertical size={20} />
-            
-        {showMenu && (
-  <>
-    <div className="fixed inset-0 z-" onClick={() => setShowMenu(false)} />
-    <div className="absolute top-12 right-0 z-50 w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-      <button 
-        onClick={() => { setShowSearch(true); setShowMenu(false); }}
-        className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800"
-      >
-        <FiSearch size={18} /> <span className="text-">Tìm tin nhắn</span>
-      </button>
-      <button 
-        onClick={() => { setShowInvite(true); setShowMenu(false); loadAllUsers(); }}
-        className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800"
-      >
-        <FiUserPlus size={18} /> <span className="text-">Mời bạn bè</span>
-      </button>
-      <button 
-        onClick={() => { setShowPoll(true); setShowMenu(false); }}
-        className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800"
-      >
-        <FiClipboard size={18} /> <span className="text-">Tạo bình chọn</span>
-      </button>
-    </div>
-  </>
-)}
-          </button>
-        </div>
+      {/* Nút... Menu */}
+<div className="relative">
+  <button 
+    onClick={() => setShowMenu(!showMenu)} 
+    className="w-9 h-9 flex items-center justify-center -mr-2 active:opacity-60"
+  >
+    <FiMoreVertical size={20} />
+  </button>
+  
+  {showMenu && (
+    <>
+      <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+      <div className="absolute top-12 right-0 z-50 w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+        <button 
+          onClick={() => { setShowSearch(true); setShowMenu(false); }}
+          className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 text-sm"
+        >
+          <FiSearch size={18} /> <span>Tìm tin nhắn</span>
+        </button>
+        <button 
+          onClick={() => { setShowInvite(true); setShowMenu(false); loadAllUsers(); }}
+          className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 text-sm"
+        >
+          <FiUserPlus size={18} /> <span>Mời bạn bè</span>
+        </button>
+        <button 
+          onClick={() => { setShowPoll(true); setShowMenu(false); }}
+          className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 text-sm"
+        >
+          <FiClipboard size={18} /> <span>Tạo bình chọn</span>
+        </button>
       </div>
+    </>
+  )}
+</div>
+</div>
+</div>
 
-      {/* Messages */}
+{/* Messages */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
