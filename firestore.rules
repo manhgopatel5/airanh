@@ -147,8 +147,8 @@ service cloud.firestore {
     );
 
   allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
+  }
 }
-
     // ========== FRIEND REQUESTS ==========
     match /friendRequests/{reqId} {
       allow read: if isSignedIn() && (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
