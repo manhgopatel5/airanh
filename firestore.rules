@@ -108,43 +108,46 @@ service cloud.firestore {
 
       allow delete: if false;
 
-      match /messages/{messageId} {
-        // Cho phép đọc messages của public_* kể cả khi chats doc chưa có
-        allow read: if isSignedIn() && (
-          chatId.matches('public_.*') ||
-          (exists(/databases/$(database)/documents/chats/$(chatId)) && (
-            get(/databases/$(database)/documents/chats/$(chatId)).data.get('isPublicRoom', false) == true ||
-            request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('members', [])
-          ))
-        );
+    match /messages/{messageId} {
+  allow read: if isSignedIn() && (
+    chatId.matches('public_.*') ||
+    (exists(/databases/$(database)/documents/chats/$(chatId)) && (
+      get(/databases/$(database)/documents/chats/$(chatId)).data.get('isPublicRoom', false) == true ||
+      request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('members', [])
+    ))
+  );
 
-        allow create: if isSignedIn()
-          && request.auth.uid == request.resource.data.senderId
-          && get(/databases/$(database)/documents/chats/$(chatId)).data.get('status', 'active') == 'active'
-          && (
-            chatId.matches('public_.*') ||
-            get(/databases/$(database)/documents/chats/$(chatId)).data.get('isPublicRoom', false) == true ||
-            request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('members', [])
-          )
-          &&!(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('blockedUsers', []));
+  // SỬA DÒNG NÀY: Đưa chatId.matches lên trước get()
+  allow create: if isSignedIn()
+    && request.auth.uid == request.resource.data.senderId
+    && (
+      chatId.matches('public_.*') || 
+      (
+        get(/databases/$(database)/documents/chats/$(chatId)).data.get('status', 'active') == 'active'
+        && (
+          get(/databases/$(database)/documents/chats/$(chatId)).data.get('isPublicRoom', false) == true ||
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('members', [])
+        )
+        &&!(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('blockedUsers', []))
+      )
+    );
 
-        allow update: if isSignedIn()
-          && (
-            chatId.matches('public_.*') ||
-            get(/databases/$(database)/documents/chats/$(chatId)).data.get('isPublicRoom', false) == true ||
-            request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('members', [])
-          )
-          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
-            'seenBy', 'reactions', 'text', 'editedAt', 'edited', 'pollData'
-          ])
-          && (
-            request.resource.data.senderId == request.auth.uid ||
-            request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenBy', 'reactions', 'pollData'])
-          );
+  allow update: if isSignedIn()
+    && (
+      chatId.matches('public_.*') ||
+      get(/databases/$(database)/documents/chats/$(chatId)).data.get('isPublicRoom', false) == true ||
+      request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('members', [])
+    )
+    && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+      'seenBy', 'reactions', 'text', 'editedAt', 'edited', 'pollData'
+    ])
+    && (
+      request.resource.data.senderId == request.auth.uid ||
+      request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenBy', 'reactions', 'pollData'])
+    );
 
-        allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
-      }
-    }
+  allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
+}
 
     // ========== FRIEND REQUESTS ==========
     match /friendRequests/{reqId} {
