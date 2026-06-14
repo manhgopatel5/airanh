@@ -581,7 +581,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
             </p>
           </div>
           
-      {/* Nút... Menu */}
+{/* Nút... Menu */}
 <div className="relative">
   <button 
     onClick={() => setShowMenu(!showMenu)} 
@@ -592,8 +592,8 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
   
   {showMenu && (
     <>
-      <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-      <div className="absolute top-12 right-0 z-50 w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+      <div className="fixed inset-0 z-[9998]" onClick={() => setShowMenu(false)} />
+      <div className="absolute top-12 right-0 z-[9999] w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
         <button 
           onClick={() => { setShowSearch(true); setShowMenu(false); }}
           className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 text-sm"
@@ -616,28 +616,26 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
     </>
   )}
 </div>
-</div>
-</div>
 
 {/* Messages */}
-      <div
-        ref={messagesContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3"
-      >
-        {messages.length === 0? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-20">
-            <div className="text-6xl mb-4">{roomData.emoji}</div>
-            <h3 className="text-[17px] font-semibold mb-1">Chào mừng đến {roomData.name}!</h3>
-            <p className="text-[15px] text-[#8e8e93]">Hãy là người đầu tiên gửi tin nhắn</p>
-          </div>
-        ) : (
-          messages.map((msg, idx) => {
-            const isMe = msg.senderId === user?.uid;
-            const prevMsg = messages[idx - 1];
-            const nextMsg = messages[idx + 1];
-            const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
-            const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
+<div
+  ref={messagesContainerRef}
+  onScroll={handleScroll}
+  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3"
+>
+  {messages.length === 0? (
+    <div className="flex flex-col items-center justify-center h-full text-center py-20">
+      <div className="text-6xl mb-4">{roomData.emoji}</div>
+      <h3 className="text-[17px] font-semibold mb-1">Chào mừng đến {roomData.name}!</h3>
+      <p className="text-[15px] text-[#8e8e93]">Hãy là người đầu tiên gửi tin nhắn</p>
+    </div>
+  ) : (
+    messages.map((msg, idx) => {
+      const isMe = msg.senderId === user?.uid;
+      const prevMsg = messages[idx - 1];
+      const nextMsg = messages[idx + 1];
+      const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
+      const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
 
             // Render Poll
 if (msg.type === 'poll' && msg.pollData) {
