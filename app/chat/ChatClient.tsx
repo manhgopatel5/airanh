@@ -1708,13 +1708,13 @@ return (
       </div>
     ) : filteredFriends.length === 0? (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
-        <div className="w-[72px] h-[72px] bg-[#f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
+        <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
           <FiUsers className="text-gray-400" size={30} strokeWidth={1.5} />
         </div>
         <h3 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white mb-1.5">
           {search? "Không tìm thấy" : "Chưa có bạn"}
         </h3>
-        <p className="text-[15px] leading-5 text-[#8e93] dark:text-zinc-500 max-w-[280px]">
+        <p className="text-[15px] leading-5 text-[#8e8e93] dark:text-zinc-500 max-w-[280px]">
           {search? "Thử tìm với từ khóa khác" : "Mời kết bạn để bắt đầu trò chuyện cùng nhau"}
         </p>
         {!search && (
