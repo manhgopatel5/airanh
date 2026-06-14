@@ -1246,39 +1246,44 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
   if (room.isJoined) return router.push(`/rooms/${room.id}`);
 
   try {
-const roomRef = doc(db, "chats", roomId as string);
+    const roomRef = doc(db, "chats", room.id);
     const roomSnap = await getDoc(roomRef);
 
     if (!roomSnap.exists()) {
-      // Tạo phòng mới nếu chưa có
+      // Tạo phòng mới nếu chưa có - đúng format collection chats
       await setDoc(roomRef, {
-        name: room.name,
+        isGroup: true,
+        isPublicRoom: true,
+        groupName: room.name,
         emoji: room.emoji,
         color: room.color,
+        groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
         members: [user.uid],
         memberCount: 1,
         onlineCount: 1,
+        lastMessage: `Chào mừng đến ${room.name}!`,
+        lastSenderId: "system",
+        lastSenderName: "Hệ thống",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        blockedUsers: [],
       });
     } else {
-      // Join phòng đã có
+      // Join phòng đã có - chỉ cần add vào members
       await updateDoc(roomRef, {
         members: arrayUnion(user.uid),
-        
         updatedAt: serverTimestamp(),
       });
     }
 
     if ("vibrate" in navigator) navigator.vibrate(10);
     toast.success(`Đã vào ${room.name}`, { icon: room.emoji });
-    router.push(`/rooms/${room.id}`); // ← Đúng rồi, dùng /rooms
+    router.push(`/rooms/${room.id}`);
   } catch (e: any) {
     console.error(e);
     toast.error("Lỗi vào phòng: " + e.message);
   }
 };
-
 if (authLoading) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
