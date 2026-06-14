@@ -581,7 +581,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
             </p>
           </div>
           
-{/* Nút... Menu */}
+      {/* Nút... Menu */}
 <div className="relative">
   <button 
     onClick={() => setShowMenu(!showMenu)} 
@@ -590,10 +590,10 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
     <FiMoreVertical size={20} />
   </button>
   
-  {showMenu && (
+ {showMenu && (
     <>
-      <div className="fixed inset-0 z-[9998]" onClick={() => setShowMenu(false)} />
-      <div className="absolute top-12 right-0 z-[9999] w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+      <div className="fixed inset-0 z-[38]" onClick={() => setShowMenu(false)} />
+      <div className="absolute top-12 right-0 z-[39] w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
         <button 
           onClick={() => { setShowSearch(true); setShowMenu(false); }}
           className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 text-sm"
@@ -615,6 +615,8 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
       </div>
     </>
   )}
+</div>
+</div>
 </div>
 
 {/* Messages */}
