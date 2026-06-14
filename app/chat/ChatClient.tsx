@@ -1489,7 +1489,7 @@ return (
           {room.isHot && (
             <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-red-500 rounded-md flex items-center gap-0.5">
               <FiTrendingUp size={10} className="text-white" />
-              <span className="text- font-[800] text-white">HOT</span>
+              <span className="text-sm font-[800] text-white">HOT</span>
             </div>
           )}
           {room.isJoined && (
@@ -1499,8 +1499,8 @@ return (
           )}
         </div>
         <div className="p-2.5">
-          <h4 className="text- font-[700] mb-1 tracking-tight">{room.name}</h4>
-        <div className="flex items-center justify-between text- text-[#8e8e93]">
+          <h4 className="text-sm font-[700] mb-1 tracking-tight">{room.name}</h4>
+        <div className="flex items-center justify-between text-sm text-[#8e8e93]">
   <span className="flex items-center gap-1">
     <FiUsers size={11} />
     <span className="font-[600]">{room.memberCount || 0}</span>
@@ -1952,10 +1952,10 @@ return (
 {showPoll && (
   <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/40 backdrop-blur-2xl" onClick={() => setShowPoll(false)} />
-    <div className="relative w-full sm:max-w- bg-white dark:bg-zinc-900 rounded-t- sm:rounded- shadow-2xl max-h- flex flex-col animate-in slide-in-from-bottom duration-300">
-      <div className="w- h- bg-black/15 dark:bg-white/15 rounded-full mx-auto mt-2.5 sm:hidden" />
+    <div className="relative w-full sm:max-w-md bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+      <div className="w-9 h-1 bg-black/15 dark:bg-white/15 rounded-full mx-auto mt-2.5 sm:hidden" />
       <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-black/5 dark:border-white/5">
-        <h2 className="text- font-semibold">Tạo bình chọn</h2>
+        <h2 className="text-xl font-semibold">Tạo bình chọn</h2>
         <button onClick={() => setShowPoll(false)} className="w-7 h-7 -mr-1 flex items-center justify-center text-[#8e8e93]">
           <FiX size={22} />
         </button>
@@ -1963,19 +1963,19 @@ return (
 
       <div className="flex-1 overflow-auto p-5 space-y-4">
         <div>
-          <label className="text- font-medium text-[#8e8e93] mb-2 block">Câu hỏi</label>
+          <label className="text-sm font-medium text-[#8e8e93] mb-2 block">Câu hỏi</label>
           <input
             type="text"
             value={pollQuestion}
-            onChange={(e) => setPollQuestion(e.target.value)}
+         onChange={(e) => setPollQuestion(e.target.value)}
             placeholder="Vd: Đi ăn ở đâu tối nay?"
-            className={`w-full h- px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none ${primaryBorder} focus:ring-4 ${primaryRing}`}
+            className={`w-full h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm outline-none ${primaryBorder} focus:ring-4 ${primaryRing}`}
             maxLength={100}
           />
         </div>
 
         <div>
-          <label className="text- font-medium text-[#8e8e93] mb-2 block">Lựa chọn</label>
+          <label className="text-sm font-medium text-[#8e8e93] mb-2 block">Lựa chọn</label>
           <div className="space-y-2">
             {pollOptions.map((opt, idx) => (
               <div key={idx} className="flex items-center gap-2">
@@ -1989,7 +1989,7 @@ return (
                   }}
                   placeholder={`Lựa chọn ${idx + 1}`}
                
-                  className="flex-1 h- px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none focus:ring-2 focus:ring-[#0a84ff]/20"
+                  className="flex-1 h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#0a84ff]/20"
                   maxLength={50}
                 />
                 {pollOptions.length > 2 && (
@@ -2006,7 +2006,7 @@ return (
           {pollOptions.length < 6 && (
             <button
               onClick={() => setPollOptions([...pollOptions, ""])}
-              className={`mt-2 text- ${primaryText} font-medium flex items-center gap-1`}
+              className={`mt-2 text-sm ${primaryText} font-medium flex items-center gap-1`}
             >
               <RiAddLine size={18} /> Thêm lựa chọn
             </button>
@@ -2018,7 +2018,7 @@ return (
         <button
           onClick={() => handleCreatePoll()}
           disabled={creatingPoll || !pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
-          className={`w-full h- ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded-xl text- font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2`}
+          className={`w-full h-11 ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded-xl text-sm font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2`}
         >
           {creatingPoll && <FiLoader className="animate-spin" size={18} />}
           {creatingPoll ? "Đang tạo..." : "Tạo bình chọn"}
@@ -2030,27 +2030,27 @@ return (
   {showStranger && (
   <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl" onClick={() => setShowStranger(false)} />
-    <div className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl max-h- flex flex-col">
+    <div className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl max-h-[85vh] flex flex-col">
       <div className="p-5 space-y-5 overflow-auto">
         <div className="text-center">
           <div className="w-20 h-20 mx-auto mb-3 bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 rounded-3xl flex items-center justify-center shadow-2xl shadow-pink-500/50">
             <FiZap className="text-white" size={36} />
           </div>
-          <h2 className="text- font-bold">Chat 1-1 Người Lạ</h2>
+          <h2 className="text-sm font-bold">Chat 1-1 Người Lạ</h2>
           <div className="flex items-center justify-center gap-2 mt-2">
             <FiStar className="text-amber-500" size={16} />
-            <span className="text- font-[600]">{userKarma} Karma</span>
+            <span className="text-sm font-[600]">{userKarma} Karma</span>
           </div>
         </div>
 
         {userKarma < 70 && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text- text-amber-700 dark:text-amber-400">
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-sm text-amber-700 dark:text-amber-400">
             Karma thấp! Chat tử tế để không bị cấm
           </div>
         )}
 
         <div>
-          <label className="text- font-[600] mb-2 block">Sở thích *</label>
+          <label className="text-sm font-[600] mb-2 block">Sở thích *</label>
           <div className="grid grid-cols-3 gap-2">
             {INTEREST_TAGS.map(tag => (
               <button
@@ -2058,7 +2058,7 @@ return (
                 onClick={() => setStrangerInterests(prev =>
                   prev.includes(tag)? prev.filter(t => t!== tag) : [...prev, tag].slice(0,5)
                 )}
-                className={`h-10 rounded-xl text- font-[550] ${
+                className={`h-10 rounded-xl text-sm font-[550] ${
                   strangerInterests.includes(tag)
                  ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white shadow-lg'
                     : 'bg-zinc-100 dark:bg-zinc-800'
@@ -2071,11 +2071,11 @@ return (
         </div>
 
         <div>
-          <label className="text- font-[600] mb-2 block">Độ tuổi</label>
+          <label className="text-sm font-[600] mb-2 block">Độ tuổi</label>
           <div className="grid grid-cols-3 gap-2">
             {["18-22", "23-27", "28+"].map(age => (
               <button key={age} onClick={() => setStrangerAgeRange(age as any)}
-                className={`h-11 rounded-xl text- font-[550] ${strangerAgeRange === age? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800'}`}>
+                className={`h-11 rounded-xl text-sm font-[550] ${strangerAgeRange === age? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800'}`}>
                 {age}
               </button>
             ))}
@@ -2104,12 +2104,12 @@ return (
   </div>
 </div>
         <div>
-          <label className="text- font-[600] mb-2 block">Lời chào 10s *</label>
+          <label className="text-sm font-[600] mb-2 block">Lời chào 10s *</label>
           {!voiceIntroBlob? (
             <button onTouchStart={startRecording} onTouchEnd={() => mediaRecorderRef.current?.stop()}
               onMouseDown={startRecording} onMouseUp={() => mediaRecorderRef.current?.stop()}
               className={`w-full h-14 rounded-xl border-2 border-dashed ${isRecording? 'border-red-500 bg-red-500/10' : 'border-zinc-300 dark:border-zinc-700'} flex items-center justify-center gap-2`}>
-              {isRecording? <><div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" /><span className="text- font-[600] text-red-500">Đang ghi...</span></> : <><FiMic size={20} /><span className="text- font-[600]">Nhấn giữ để ghi âm</span></>}
+              {isRecording? <><div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" /><span className="text-sm font-[600] text-red-500">Đang ghi...</span></> : <><FiMic size={20} /><span className="text-sm font-[600]">Nhấn giữ để ghi âm</span></>}
             </button>
           ) : (
             <div className="flex items-center gap-2">
@@ -2120,7 +2120,7 @@ return (
         </div>
 
         <button onClick={handleFindStranger} disabled={findingStranger || strangerInterests.length < 3 ||!voiceIntroBlob || userKarma < 50}
-          className="w-full h-14 bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 text-white rounded-xl text- font-[700] disabled:opacity-40 shadow-xl shadow-pink-500/30 flex items-center justify-center gap-2">
+          className="w-full h-14 bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 text-white rounded-xl text-sm font-[700] disabled:opacity-40 shadow-xl shadow-pink-500/30 flex items-center justify-center gap-2">
           {findingStranger && <FiLoader className="animate-spin" size={18} />}
           {findingStranger? "Đang tìm..." : "Tìm bạn ngay"}
         </button>
