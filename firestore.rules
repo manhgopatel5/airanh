@@ -19,7 +19,6 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSignedIn();
       allow write: if isOwner(userId);
-
       match /friends/{friendId} {
         allow read: if isOwner(userId);
         allow write: if isOwner(userId);
@@ -48,19 +47,8 @@ service cloud.firestore {
     match /sessions/{sessionId} {
       allow get: if isSignedIn() && request.auth.uid == resource.data.uid;
       allow list: if isSignedIn() && request.auth.uid == resource.data.uid;
-
-      allow create: if isSignedIn()
-        && request.auth.uid == request.resource.data.uid
-        && request.resource.data.keys().hasAll(['uid', 'device', 'browser', 'os', 'ip', 'location', 'userAgent', 'current', 'lastActive', 'createdAt'])
-        && request.resource.data.current is bool
-        && request.resource.data.uid is string;
-
-      allow update: if isSignedIn()
-        && request.auth.uid == resource.data.uid
-        && request.resource.data.uid == resource.data.uid
-        && request.resource.data.diff(resource.data).changedKeys()
-.hasOnly(['lastActive', 'current', 'ip', 'location', 'browser', 'os', 'userAgent', 'device']);
-
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.uid && request.resource.data.keys().hasAll(['uid', 'device', 'browser', 'os', 'ip', 'location', 'userAgent', 'current', 'lastActive', 'createdAt']) && request.resource.data.current is bool && request.resource.data.uid is string;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.uid && request.resource.data.uid == resource.data.uid && request.resource.data.diff(resource.data).changedKeys().hasOnly(['lastActive', 'current', 'ip', 'location', 'browser', 'os', 'userAgent', 'device']);
       allow delete: if isSignedIn() && request.auth.uid == resource.data.uid;
     }
 
@@ -68,44 +56,12 @@ service cloud.firestore {
     match /tasks/{taskId} {
       allow read: if true;
       allow create: if isSignedIn();
-
-      allow update: if isSignedIn() && (
-        request.auth.uid == resource.data.userId ||
-        request.resource.data.diff(resource.data).changedKeys()
-.hasOnly(['savedBy', 'likedBy', 'likeCount', 'commentCount', 'applicants', 'appliedCount'])
-      );
-
+      allow update: if isSignedIn() && (request.auth.uid == resource.data.userId || request.resource.data.diff(resource.data).changedKeys().hasOnly(['savedBy', 'likedBy', 'likeCount', 'commentCount', 'applicants', 'appliedCount']));
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
-
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isSignedIn();
-
-        allow update: if isSignedIn() && (
-          (
-            request.auth.uid == resource.data.userId &&
-            request.resource.data.diff(resource.data).changedKeys()
-    .hasOnly(['text', 'edited', 'updatedAt'])
-          ) ||
-          (
-            request.resource.data.diff(resource.data).changedKeys()
-    .hasOnly(['likeCount', 'likedBy'])
-          ) ||
-          (
-            request.auth.uid == resource.data.userId &&
-            request.resource.data.diff(resource.data).changedKeys()
-    .hasOnly(['deleted', 'text', 'updatedAt']) &&
-            request.resource.data.deleted == true
-          ) ||
-          (
-            resource.data.parentId!= null &&
-            get(/databases/$(database)/documents/tasks/$(taskId)/comments/$(resource.data.parentId)).data.userId == request.auth.uid &&
-            request.resource.data.diff(resource.data).changedKeys()
-    .hasOnly(['deleted', 'text', 'updatedAt']) &&
-            request.resource.data.deleted == true
-          )
-        );
-
+        allow update: if isSignedIn() && ((request.auth.uid == resource.data.userId && request.resource.data.diff(resource.data).changedKeys().hasOnly(['text', 'edited', 'updatedAt'])) || (request.resource.data.diff(resource.data).changedKeys().hasOnly(['likeCount', 'likedBy'])) || (request.auth.uid == resource.data.userId && request.resource.data.diff(resource.data).changedKeys().hasOnly(['deleted', 'text', 'updatedAt']) && request.resource.data.deleted == true) || (resource.data.parentId!= null && get(/databases/$(database)/documents/tasks/$(taskId)/comments/$(resource.data.parentId)).data.userId == request.auth.uid && request.resource.data.diff(resource.data).changedKeys().hasOnly(['deleted', 'text', 'updatedAt']) && request.resource.data.deleted == true));
         allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
       }
     }
@@ -113,53 +69,30 @@ service cloud.firestore {
     // ========== APPLICATIONS ==========
     match /applications/{appId} {
       allow read: if isSignedIn();
-
-      allow create: if isSignedIn()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.keys().hasAll(['userId', 'taskOwnerId', 'status', 'userName'])
-        && request.resource.data.status == 'pending';
-
-      allow update: if isSignedIn() && (
-        (request.auth.uid == resource.data.userId &&
-        request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'updatedAt']) &&
-        request.resource.data.status == 'cancelled') ||
-        (request.auth.uid == resource.data.taskOwnerId &&
-        request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'updatedAt']) &&
-        request.resource.data.status in ['accepted', 'rejected'])
-      );
-
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && request.resource.data.keys().hasAll(['userId', 'taskOwnerId', 'status', 'userName']) && request.resource.data.status == 'pending';
+      allow update: if isSignedIn() && ((request.auth.uid == resource.data.userId && request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'updatedAt']) && request.resource.data.status == 'cancelled') || (request.auth.uid == resource.data.taskOwnerId && request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'updatedAt']) && request.resource.data.status in ['accepted', 'rejected']));
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
     }
 
-    match /task_likes/{likeId} {
-      allow read: if true;
-      allow write: if isSignedIn();
-    }
+    match /task_likes/{likeId} { allow read: if true; allow write: if isSignedIn(); }
+    match /task_participants/{participantId} { allow read: if true; allow write: if isSignedIn(); }
+    match /shortIds/{shortId} { allow read: if true; allow write: if isSignedIn(); }
 
-    match /task_participants/{participantId} {
-      allow read: if true;
-      allow write: if isSignedIn();
-    }
-
-    match /shortIds/{shortId} {
-      allow read: if true;
-      allow write: if isSignedIn();
-    }
-
-    // ========== CHATS - ĐÃ FIX CHO PHÉP TẠO PHÒNG CÔNG CỘNG ==========
+    // ========== CHATS - FIX GET DOC CHƯA TỒN TẠI ==========
     match /chats/{chatId} {
+      // Cho phép get/list kể cả khi doc chưa tồn tại nếu id = public_*
       allow get, list: if isSignedIn() && (
-        resource.data.get('isPublicRoom', false) == true ||
-        request.auth.uid in resource.data.get('members', [])
+        chatId.matches('public_.*') ||
+        (resource != null && (
+          resource.data.get('isPublicRoom', false) == true ||
+          request.auth.uid in resource.data.get('members', [])
+        ))
       );
 
-      // Cho phép client tự tạo phòng công cộng lần đầu
       allow create: if isSignedIn() && (
-        // Phòng riêng: phải có ít nhất 2 members và mình nằm trong đó
         (!request.resource.data.get('isPublicRoom', false) && 
          request.auth.uid in request.resource.data.get('members', []) &&
          request.resource.data.get('members', []).size() >= 2) ||
-        // Phòng công cộng: chỉ cho tạo nếu id = public_*
         (request.resource.data.get('isPublicRoom', false) == true &&
          chatId.matches('public_.*') &&
          request.resource.data.keys().hasAll(['isGroup', 'isPublicRoom', 'status', 'groupName', 'members']) &&
@@ -176,15 +109,20 @@ service cloud.firestore {
       allow delete: if false;
 
       match /messages/{messageId} {
+        // Cho phép đọc messages của public_* kể cả khi chats doc chưa có
         allow read: if isSignedIn() && (
-          get(/databases/$(database)/documents/chats/$(chatId)).data.get('isPublicRoom', false) == true ||
-          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('members', [])
+          chatId.matches('public_.*') ||
+          (exists(/databases/$(database)/documents/chats/$(chatId)) && (
+            get(/databases/$(database)/documents/chats/$(chatId)).data.get('isPublicRoom', false) == true ||
+            request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('members', [])
+          ))
         );
 
         allow create: if isSignedIn()
           && request.auth.uid == request.resource.data.senderId
           && get(/databases/$(database)/documents/chats/$(chatId)).data.get('status', 'active') == 'active'
           && (
+            chatId.matches('public_.*') ||
             get(/databases/$(database)/documents/chats/$(chatId)).data.get('isPublicRoom', false) == true ||
             request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('members', [])
           )
@@ -192,6 +130,7 @@ service cloud.firestore {
 
         allow update: if isSignedIn()
           && (
+            chatId.matches('public_.*') ||
             get(/databases/$(database)/documents/chats/$(chatId)).data.get('isPublicRoom', false) == true ||
             request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('members', [])
           )
@@ -209,36 +148,16 @@ service cloud.firestore {
 
     // ========== FRIEND REQUESTS ==========
     match /friendRequests/{reqId} {
-      allow read: if isSignedIn()
-        && (request.auth.uid == resource.data.fromUserId
-            || request.auth.uid == resource.data.toUserId);
-
-      allow create: if isSignedIn()
-        && request.auth.uid == request.resource.data.fromUserId
-        && request.resource.data.toUserId is string
-        && request.resource.data.status == 'pending'
-        && request.resource.data.createdAt is timestamp;
-
-      allow update: if isSignedIn()
-        && (request.auth.uid == resource.data.fromUserId
-            || request.auth.uid == resource.data.toUserId)
-        && request.resource.data.diff(resource.data).changedKeys()
-     .hasOnly(['status', 'updatedAt']);
-
-      allow delete: if isSignedIn()
-        && (request.auth.uid == resource.data.fromUserId
-            || request.auth.uid == resource.data.toUserId);
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.fromUserId && request.resource.data.toUserId is string && request.resource.data.status == 'pending' && request.resource.data.createdAt is timestamp;
+      allow update: if isSignedIn() && (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId) && request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'updatedAt']);
+      allow delete: if isSignedIn() && (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
     }
 
     // ========== USERNAMES ==========
     match /usernames/{username} {
       allow read: if true;
-
-      allow create: if isSignedIn()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasAll(['uid', 'createdAt'])
-        &&!exists(/databases/$(database)/documents/usernames/$(username));
-
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid && request.resource.data.keys().hasAll(['uid', 'createdAt']) &&!exists(/databases/$(database)/documents/usernames/$(username));
       allow update, delete: if false;
     }
 
@@ -251,13 +170,9 @@ service cloud.firestore {
 
     // ========== STRANGER CHAT ==========
     match /stranger_chats/{chatId} {
-      allow read: if isSignedIn()
-        && request.auth.uid in resource.data.get('members', []);
+      allow read: if isSignedIn() && request.auth.uid in resource.data.get('members', []);
       allow create: if false;
-      allow update: if isSignedIn()
-        && request.auth.uid in resource.data.get('members', [])
-        && request.resource.data.diff(resource.data).changedKeys()
-.hasOnly(['messages', 'extended', 'expiresAt', 'reportedBy']);
+      allow update: if isSignedIn() && request.auth.uid in resource.data.get('members', []) && request.resource.data.diff(resource.data).changedKeys().hasOnly(['messages', 'extended', 'expiresAt', 'reportedBy']);
       allow delete: if false;
     }
 
