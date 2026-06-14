@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiStar, FiChevronDown } from "react-icons/fi";
 import { toast } from "sonner";
+import { FiMap } from "react-icons/fi"; // thêm vào import
 
+const [showMapPicker, setShowMapPicker] = useState(false);
 const ICON_LIST = [
   "🎉", "🎊", "🎈", "🎁", "🎂", "🎯", "🎨", "🎭", "🎪", "🎸",
   "🎵", "🎶", "🎤", "🎧", "🎬", "🎮", "🏆", "🥇", "🏅", "🎖️",
@@ -51,6 +53,26 @@ export default function AdminEventsPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [ratingInput, setRatingInput] = useState("5");
+  const handleMapSelect = async (lat: number, lng: number) => {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+    );
+    const data = await res.json();
+    setForm({
+    ...form,
+      lat,
+      lng,
+      address: data.display_name || form.address,
+    });
+    setShowMapPicker(false);
+    toast.success("Đã lấy tọa độ");
+  } catch (e) {
+    setForm({...form, lat, lng });
+    setShowMapPicker(false);
+    toast.success("Đã lấy tọa độ");
+  }
+};
   const [form, setForm] = useState<Partial<EventItem>>({
     title: "",
     tag: "NEW",
@@ -58,7 +80,7 @@ export default function AdminEventsPage() {
     desc: "",
     image: "",
     joined: 0,
-    distance: "",
+    
     icon: "🎉",
     category: "phuot",
     province: "Hà Nội",
@@ -101,7 +123,7 @@ export default function AdminEventsPage() {
       desc: "",
       image: "",
       joined: 0,
-      distance: "",
+      
       icon: "🎉",
       category: "phuot",
       province: "Hà Nội",
@@ -531,16 +553,27 @@ export default function AdminEventsPage() {
                     className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-semibold mb-1 block">Distance</label>
-                  <input
-                    type="text"
-                    value={form.distance}
-                    onChange={(e) => setForm({...form, distance: e.target.value })}
-                    placeholder="Cách bạn 5km"
-                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                  />
-                </div>
+         <div>
+  <label className="text-sm font-semibold mb-1 block">Tọa độ GPS</label>
+  <div className="flex gap-2">
+    <input
+      type="text"
+      value={form.lat && form.lng? `${form.lat.toFixed(6)}, ${form.lng.toFixed(6)}` : ''}
+      placeholder="Chưa có tọa độ"
+      readOnly
+      className="flex-1 h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
+    />
+    <button
+      type="button"
+      onClick={() => setShowMapPicker(true)}
+      className="px-4 h-10 bg-blue-500 text-white rounded-lg flex items-center gap-2"
+    >
+      <FiMap size={16} />
+      Chọn Map
+    </button>
+  </div>
+  <p className="text-xs text-[#8e8e93] mt-1">Nhập địa chỉ ở trên rồi bấm Map để lấy tọa độ</p>
+</div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -608,6 +641,48 @@ export default function AdminEventsPage() {
           </div>
         </div>
       )}
+{showMapPicker && (
+  <div className="fixed inset-0 z-[60] bg-black/60" onClick={() => setShowMapPicker(false)}>
+    <div className="absolute inset-4 bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden flex-col" onClick={e => e.stopPropagation()}>
+      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+        <h3 className="font-bold">Chọn vị trí</h3>
+        <button onClick={() => setShowMapPicker(false)}><FiX size={20} /></button>
+      </div>
+      <div className="flex-1 p-4 space-y-3">
+        <p className="text-sm text-[#8e8e93]">Nhập tọa độ từ Google Maps:</p>
+        <input
+          type="text"
+          placeholder="21.028511, 105.804817"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              const [lat, lng] = e.currentTarget.value.split(',').map(Number);
+              if (lat && lng) handleMapSelect(lat, lng);
+            }
+          }}
+          className="w-full h-11 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm"
+        />
+        <button
+          onClick={() => {
+            const input = document.querySelector('input[placeholder*="21.028511"]') as HTMLInputElement;
+            const [lat, lng] = input.value.split(',').map(Number);
+            if (lat && lng) handleMapSelect(lat, lng);
+            else toast.error("Nhập đúng format: lat,lng");
+          }}
+          className="w-full h-11 bg-[#0a84ff] text-white rounded-xl font-semibold"
+        >
+          Xác nhận
+        </button>
+        <a
+          href="https://www.google.com/maps"
+          target="_blank"
+          className="block text-center text-sm text-[#0a84ff]"
+        >
+          Mở Google Maps để lấy tọa độ →
+        </a>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
