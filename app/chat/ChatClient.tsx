@@ -324,8 +324,8 @@ useEffect(() => {
     name: city.name,
     emoji: city.emoji,
     color: city.color,
-    memberCount: 0, // ← Mặc định 0
-    onlineCount: 0, // ← Mặc định 0
+    memberCount: 0,
+    onlineCount: 0,
     lastMessage: `Chào mừng đến ${city.name}!`,
     isJoined: false,
     isHot: false,
@@ -339,18 +339,19 @@ useEffect(() => {
   const unsubs: (() => void)[] = [];
   PUBLIC_CITIES.forEach((city) => {
     const roomId = `public_${city.id}`;
-    const unsub = onSnapshot(doc(db, "public_rooms", roomId), (snap) => {
+    // ĐỔI DÒNG NÀY: "public_rooms" -> "chats"
+    const unsub = onSnapshot(doc(db, "chats", roomId), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setPublicRooms((prev) => {
-          const filtered = prev.filter((r) => r.id!== roomId);
+          const filtered = prev.filter((r) => r.id !== roomId);
           const newRoom: PublicRoomItem = {
             id: roomId,
             name: city.name,
             emoji: city.emoji,
             color: city.color,
-            memberCount: data.memberCount || 0, // ← Fallback 0 nếu null
-            onlineCount: data.onlineCount || 0, // ← Fallback 0 nếu null
+            memberCount: data.memberCount || data.members?.length || 0, // fallback thêm
+            onlineCount: data.onlineCount || 0,
             lastMessage: data.lastMessage || `Chào mừng đến ${city.name}!`,
             isJoined: data.members?.includes(user.uid) || false,
             isHot: (data.onlineCount || 0) > 20,
@@ -1245,7 +1246,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
   if (room.isJoined) return router.push(`/rooms/${room.id}`);
 
   try {
-    const roomRef = doc(db, "public_rooms", room.id);
+const roomRef = doc(db, "chats", roomId as string);
     const roomSnap = await getDoc(roomRef);
 
     if (!roomSnap.exists()) {
