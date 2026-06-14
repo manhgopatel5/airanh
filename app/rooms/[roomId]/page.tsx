@@ -557,9 +557,9 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
 
   return (
     <div className="fixed inset-0 bg-white dark:bg-black flex flex-col">
-      {/* Header */}
-      <div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-black/5 dark:border-white/5 pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center gap-3 px-4 py-3">
+ {/* Header */}
+<div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-black/5 dark:border-white/5 pt-[env(safe-area-inset-top)] relative z-50">
+  <div className="flex items-center gap-3 px-4 py-3">
           <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center -ml-2 active:opacity-60">
             <FiArrowLeft size={22} />
           </button>
@@ -581,32 +581,32 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
             </p>
           </div>
           
-      {/* Nút... Menu */}
+   {/* Nút... Menu */}
 <div className="relative">
-  <button 
-    onClick={() => setShowMenu(!showMenu)} 
+  <button
+    onClick={() => setShowMenu(!showMenu)}
     className="w-9 h-9 flex items-center justify-center -mr-2 active:opacity-60"
   >
     <FiMoreVertical size={20} />
   </button>
-  
- {showMenu && (
+
+  {showMenu && (
     <>
-      <div className="fixed inset-0 z-[38]" onClick={() => setShowMenu(false)} />
-      <div className="absolute top-12 right-0 z-[39] w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-        <button 
+      <div className="fixed inset-0 z-[9998]" onClick={() => setShowMenu(false)} />
+      <div className="fixed top-[calc(env(safe-area-inset-top)+60px)] right-4 z-[9999] w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+        <button
           onClick={() => { setShowSearch(true); setShowMenu(false); }}
           className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 text-sm"
         >
           <FiSearch size={18} /> <span>Tìm tin nhắn</span>
         </button>
-        <button 
+        <button
           onClick={() => { setShowInvite(true); setShowMenu(false); loadAllUsers(); }}
           className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 text-sm"
         >
           <FiUserPlus size={18} /> <span>Mời bạn bè</span>
         </button>
-        <button 
+        <button
           onClick={() => { setShowPoll(true); setShowMenu(false); }}
           className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 text-sm"
         >
