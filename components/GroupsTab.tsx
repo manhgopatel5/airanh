@@ -102,19 +102,19 @@ export default function GroupsTab({
       </div>
 
       {/* My Groups */}
-      {filteredGroups.length === 0? (
-        <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-[#0a84ff]/10 to-purple-500/10 rounded-3xl flex items-center justify-center mb-4">
-            <FiUsers className="text-[#0a84ff]" size={36} strokeWidth={1.5} />
-          </div>
-          <h3 className="text- font-[700] mb-1.5">
-            {search? "Không tìm thấy" : "Chưa có nhóm nào"}
-          </h3>
-          <p className="text- text-[#8e8e93] leading-5 max-w-[280px]">
-            {search? "Thử tìm với từ khóa khác" : "Tạo nhóm để trò chuyện với bạn bè"}
-          </p>
-        </div>
-      ) : (
+  {filteredGroups.length === 0? (
+  <div className="flex flex-col items-center px-8 text-center mt-12">
+    <div className="w-20 h-20 bg-gradient-to-br from-[#0a84ff]/10 to-purple-500/10 rounded-3xl flex items-center justify-center mb-4">
+      <FiUsers className="text-[#0a84ff]" size={36} strokeWidth={1.5} />
+    </div>
+    <h3 className="text- font-[700] mb-1.5">
+      {search? "Không tìm thấy" : "Chưa có nhóm nào"}
+    </h3>
+    <p className="text- text-[#8e8e93] leading-5 max-w-[280px]">
+      {search? "Thử tìm với từ khóa khác" : "Tạo nhóm để trò chuyện với bạn bè"}
+    </p>
+  </div>
+) : (
         <div>
           {pinnedGroups.length > 0 && (
             <div className="mb-3">
