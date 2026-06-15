@@ -8,16 +8,18 @@ import { useRouter } from "next/navigation";
 
 export default function EventDetailModal({
   event,
-  onClose
+  onClose,
+  onCheckinSuccess // THÊM PROP NÀY
 }: {
   event: EventItem | null;
   onClose: () => void;
+  onCheckinSuccess?: () => void; // THÊM
 }) {
   const router = useRouter();
   const [checking, setChecking] = useState(false);
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
+  const [localJoined, setLocalJoined] = useState(event?.joined || 0); // THÊM STATE RIÊNG
 
-  // Tạo userId riêng cho từng browser
   const getUserId = () => {
     let uid = localStorage.getItem('userId');
     if (!uid) {
@@ -29,6 +31,8 @@ export default function EventDetailModal({
 
   useEffect(() => {
     if (!event) return;
+    setLocalJoined(event.joined || 0); // Sync khi event thay đổi
+
     const userId = getUserId();
     const checkedInToday = localStorage.getItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`);
     setHasCheckedIn(!!checkedInToday);
@@ -55,9 +59,10 @@ export default function EventDetailModal({
       }
 
       setHasCheckedIn(true);
+      setLocalJoined(prev => prev + 1); // UPDATE NGAY UI
       localStorage.setItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`, '1');
       toast.success("Check-in thành công! 🎉");
-      router.refresh(); // Reload data từ server
+      onCheckinSuccess?.(); // GỌI CALLBACK ĐỂ REFRESH LIST
     } catch (error) {
       toast.error("Lỗi mạng");
     } finally {
@@ -86,9 +91,10 @@ export default function EventDetailModal({
       }
 
       setHasCheckedIn(false);
+      setLocalJoined(prev => Math.max(0, prev - 1)); // UPDATE NGAY UI
       localStorage.removeItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`);
       toast.success("Đã bỏ check-in");
-      router.refresh(); // Reload data từ server
+      onCheckinSuccess?.(); // GỌI CALLBACK ĐỂ REFRESH LIST
     } catch (error) {
       toast.error("Lỗi mạng");
     } finally {
@@ -163,7 +169,6 @@ export default function EventDetailModal({
                       <p className="font-[550]">Giờ mở cửa</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.openTime}</p>
                     </div>
-                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiDollarSign className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div>
@@ -178,7 +183,7 @@ export default function EventDetailModal({
                         <div>
                           <p className="font-[550]">Lượt check-in</p>
                           <p className="text-[#8e8e93] text-xs mt-0.5">
-                            {event.joined || 0} người
+                            {localJoined} người
                           </p>
                         </div>
                         <button
@@ -186,7 +191,7 @@ export default function EventDetailModal({
                           disabled={checking}
                           className={`px-3 h-8 rounded-lg text-xs font-[600] flex items-center gap-1.5 ${
                             hasCheckedIn
-                    ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
+                   ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
                             : 'bg-[#0a84ff] text-white active:scale-95'
                           } disabled:opacity-50 transition-transform`}
                         >
@@ -237,7 +242,7 @@ export default function EventDetailModal({
             </div>
 
             {/* Buttons */}
-            <div className="p-4 border-t border-black/5 dark:border-white/5 grid grid-cols-2 gap-3 flex-shrink-0">
+            <div className="p-4 border-t border-black/5 dark:border-white/5 grid-cols-2 gap-3 flex-shrink-0">
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(`${event.title} - ${event.address}`);
