@@ -156,6 +156,7 @@ export default function EventDetailModal({
                       <p className="font-[550]">Địa chỉ</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.address}</p>
                     </div>
+                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiClock className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div>
@@ -185,7 +186,7 @@ export default function EventDetailModal({
                           disabled={checking}
                           className={`px-3 h-8 rounded-lg text-xs font-[600] flex items-center gap-1.5 ${
                             hasCheckedIn
-                      ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
+                    ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
                             : 'bg-[#0a84ff] text-white active:scale-95'
                           } disabled:opacity-50 transition-transform`}
                         >
