@@ -1483,12 +1483,14 @@ return (
               <div className={`absolute top-2 left-2 px-2 py-0.5 bg-gradient-to-r ${item.tagColor} rounded-md`}>
                 <span className="text-[10px] font-[800] text-white">{item.tag}</span>
               </div>
-              {item.rating && (
-                <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-md flex items-center gap-1">
-                  <FiStar className="text-amber-400" size={10} fill="currentColor" />
-                  <span className="text-[10px] font-[700] text-white">{item.rating}</span>
-                </div>
-              )}
+          {(item.rating || 0) > 0 && (
+  <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-md flex items-center gap-1">
+    <FiStar className="text-amber-400" size={10} fill="currentColor" />
+    <span className="text-xs font-[700] text-white">
+      {item.rating}{(item.reviews || 0) > 0 && ` (${item.reviews})`}
+    </span>
+  </div>
+)}
               <div className="absolute bottom-2 left-3 right-3">
                 <div className="flex items-center gap-1.5 text-white">
                   <span className="text-lg">{item.icon}</span>
