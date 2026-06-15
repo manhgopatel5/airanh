@@ -7,7 +7,7 @@ import {
   serverTimestamp, updateDoc, deleteDoc, arrayRemove
 } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
-import { FiImage, FiChevronLeft, FiSend, FiMoreVertical, FiTrash2, FiUsers, FiCopy, FiLogOut, FiEdit2 } from "react-icons/fi";
+import { FiImage, FiChevronLeft, FiSend, FiMoreVertical, FiTrash2, FiUsers, FiCopy, FiLogOut } from "react-icons/fi";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import { vi } from "date-fns/locale";
