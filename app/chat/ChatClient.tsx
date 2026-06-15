@@ -3,8 +3,8 @@ import GpsRequiredModal from "@/components/GpsRequiredModal";
 import GroupsTab from "@/components/GroupsTab";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/AuthContext";
 import CreateGroupModal from "@/components/CreateGroupModal";
+import { useAuth } from "@/lib/AuthContext";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
@@ -1914,7 +1914,14 @@ return (
   </div>
 )}
 
-
+{showCreateGroup && (
+  <CreateGroupModal
+    open={showCreateGroup}
+    onClose={() => setShowCreateGroup(false)}
+    onCreated={(chatId) => {
+      setShowCreateGroup(false);
+      router.push(`/rooms/${chatId}`);
+    }}
         {showAdd && (
           <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 p-4">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-2xl" onClick={() => setShowAdd(false)} />
@@ -2318,16 +2325,6 @@ return (
   loading={gpsLoading}
   mode="task" 
 />
-         {showCreateGroup && (
-        <CreateGroupModal
-          open={showCreateGroup}
-          onClose={() => setShowCreateGroup(false)}
-          onCreated={(chatId) => {
-            setShowCreateGroup(false);
-            router.push(`/rooms/${chatId}`);
-          }}
-        />
-      )}
-    </div>
+    </>
   );
 }
