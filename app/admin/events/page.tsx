@@ -137,7 +137,7 @@ export default function AdminEventsPage() {
 reviews: 0,
       isActive: true,
     });
-    setRatingInput("5");
+    
     setEditingId(null);
   };
 
