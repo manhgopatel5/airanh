@@ -25,12 +25,15 @@ export default function EventDetailModal({
   const [checking, setChecking] = useState(false);
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
   const [localJoined, setLocalJoined] = useState(event?.joined || 0);
+  const [localRating, setLocalRating] = useState(event?.rating || 0);
+  const [localReviews, setLocalReviews] = useState(event?.reviews || 0);
   const [showReviews, setShowReviews] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [myRating, setMyRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
   const [savingReview, setSavingReview] = useState(false);
+  const [showCommentBox, setShowCommentBox] = useState(false);
 
   const getUserId = () => {
     let uid = localStorage.getItem('userId');
@@ -52,7 +55,13 @@ export default function EventDetailModal({
         if (myReview) {
           setMyRating(myReview.rating);
           setComment(myReview.comment);
+          setShowCommentBox(true);
         }
+        // Update local rating + count
+        const total = data.reviews?.reduce((sum: number, r: Review) => sum + r.rating, 0) || 0;
+        const count = data.reviews?.length || 0;
+        setLocalRating(count > 0? Number((total / count).toFixed(1)) : 0);
+        setLocalReviews(count);
       }
     } catch (err) {
       console.error(err);
@@ -62,6 +71,8 @@ export default function EventDetailModal({
   useEffect(() => {
     if (!event) return;
     setLocalJoined(event.joined || 0);
+    setLocalRating(event.rating || 0);
+    setLocalReviews(event.reviews || 0);
     fetchReviews();
 
     const userId = getUserId();
@@ -123,6 +134,11 @@ export default function EventDetailModal({
     }
   };
 
+  const handleSelectStar = (star: number) => {
+    setMyRating(star);
+    setShowCommentBox(true);
+  };
+
   const handleSubmitReview = async () => {
     if (!event || myRating === 0 || savingReview) return;
     setSavingReview(true);
@@ -138,8 +154,8 @@ export default function EventDetailModal({
         return;
       }
       toast.success("Đã gửi đánh giá");
-      fetchReviews();
-      onCheckinSuccess?.(); // Refresh để update avg rating
+      await fetchReviews(); // Fetch lại để update localRating + localReviews
+      onCheckinSuccess?.(); // Refresh list ngoài
     } catch (err) {
       toast.error("Lỗi mạng");
     } finally {
@@ -179,13 +195,13 @@ export default function EventDetailModal({
               <div className={`absolute top-3 left-4 px-2.5 py-1 bg-gradient-to-r ${event.tagColor} rounded-lg`}>
                 <span className="text-xs font-[800] text-white">{event.tag}</span>
               </div>
-{(event.rating || 0) > 0 && (
-  <div className="absolute top-3 right-14 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-lg flex items-center gap-1">
-    <FiStar className="text-amber-400" size={12} fill="currentColor" />
-    <span className="text-xs font-[700] text-white">{event.rating}</span>
-    {(event.reviews || 0) > 0 && <span className="text-xs text-white/70">({event.reviews})</span>}
-  </div>
-)}
+              {(localRating || 0) > 0 && (
+                <div className="absolute top-3 right-14 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-lg flex items-center gap-1">
+                  <FiStar className="text-amber-400" size={12} fill="currentColor" />
+                  <span className="text-xs font-[700] text-white">{localRating}</span>
+                  {(localReviews || 0) > 0 && <span className="text-xs text-white/70">({localReviews})</span>}
+                </div>
+              )}
             </div>
 
             <div className="flex-1 overflow-auto">
@@ -205,20 +221,17 @@ export default function EventDetailModal({
                       <p className="font-[550]">Địa chỉ</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.address}</p>
                     </div>
-                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiClock className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div>
                       <p className="font-[550]">Giờ mở cửa</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.openTime}</p>
                     </div>
-                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiDollarSign className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div>
                       <p className="font-[550]">Giá vé</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.price}</p>
-                    </div>
                     </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiUsers className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
@@ -235,7 +248,7 @@ export default function EventDetailModal({
                           disabled={checking}
                           className={`px-3 h-8 rounded-lg text-xs font-[600] flex items-center gap-1.5 ${
                             hasCheckedIn
-                             ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
                               : 'bg-[#0a84ff] text-white active:scale-95'
                           } disabled:opacity-50 transition-transform`}
                         >
@@ -244,68 +257,75 @@ export default function EventDetailModal({
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Đánh giá */}
-                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-3 mb-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-[600]">Đánh giá của bạn</p>
-                    <div className="flex gap-1">
-                      {[1,2,3,4,5].map(star => (
-                        <button
-                          key={star}
-                          onClick={() => setMyRating(star)}
-                          onMouseEnter={() => setHoverRating(star)}
-                          onMouseLeave={() => setHoverRating(0)}
-                        >
-                          <FiStar
-                            size={24}
-                            className={star <= (hoverRating || myRating)
-                             ? 'text-amber-400 fill-amber-400'
-                              : 'text-zinc-300 dark:text-zinc-600'
-                            }
+                  {/* Đánh giá của bạn - cùng style với mấy row trên */}
+                  <div className="flex items-start gap-3 text-sm">
+                    <FiStar className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
+                    <div className="flex-1">
+                      <p className="font-[550] mb-2">Đánh giá của bạn</p>
+                      <div className="flex gap-1 mb-2">
+                        {[1,2,3,4,5].map(star => (
+                          <button
+                            key={star}
+                            onClick={() => handleSelectStar(star)}
+                            onMouseEnter={() => setHoverRating(star)}
+                            onMouseLeave={() => setHoverRating(0)}
+                          >
+                            <FiStar
+                              size={28}
+                              className={star <= (hoverRating || myRating)
+                              ? 'text-amber-400 fill-amber-400'
+                                : 'text-zinc-300 dark:text-zinc-600'
+                              }
+                            />
+                          </button>
+                        ))}
+                      </div>
+                      {showCommentBox && (
+                        <div className="space-y-2">
+                          <textarea
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            placeholder="Viết cảm nhận..."
+                            className="w-full h-20 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm outline-none resize-none"
                           />
-                        </button>
-                      ))}
+                          <button
+                            onClick={handleSubmitReview}
+                            disabled={myRating === 0 || savingReview}
+                            className="w-full h-9 bg-[#0a84ff] text-white rounded-lg text-sm font-[600] disabled:opacity-50 active:scale-95 transition-transform"
+                          >
+                            {savingReview? "Đang gửi..." : "Gửi đánh giá"}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Viết cảm nhận..."
-                    className="w-full h-20 px-3 py-2 bg-white dark:bg-zinc-900 rounded-lg text-sm outline-none resize-none"
-                  />
+
+                  {/* Bài đánh giá - cùng style với mấy row trên */}
                   <button
-                    onClick={handleSubmitReview}
-                    disabled={myRating === 0 || savingReview}
-                    className="mt-2 w-full h-9 bg-[#0a84ff] text-white rounded-lg text-sm font-[600] disabled:opacity-50 active:scale-95 transition-transform"
+                    onClick={() => setShowReviews(!showReviews)}
+                    className="flex items-start gap-3 text-sm w-full text-left active:opacity-60"
                   >
-                    {savingReview? "Đang gửi..." : "Gửi đánh giá"}
+                    <FiMessageSquare className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-[550]">Bài đánh giá</p>
+                          <p className="text-[#8e8e93] text-xs mt-0.5">{localReviews} đánh giá</p>
+                        </div>
+                        <FiX className={`transform transition-transform text-[#8e8e93] ${showReviews? 'rotate-0' : 'rotate-45'}`} size={18} />
+                      </div>
+                    </div>
                   </button>
                 </div>
 
-                {/* Bài đánh giá */}
-                <button
-                  onClick={() => setShowReviews(!showReviews)}
-                  className="w-full flex items-center justify-between p-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl mb-5 active:scale-95 transition-transform"
-                >
-                  <div className="flex items-center gap-2">
-                    <FiMessageSquare className="text-[#0a84ff]" size={18} />
-                    <div className="text-left">
-                      <p className="text-sm font-[600]">Bài đánh giá</p>
-                      <p className="text-xs text-[#8e8e93]">{event.reviews || 0} đánh giá</p>
-                    </div>
-                  </div>
-                  <FiX className={`transform transition-transform ${showReviews? 'rotate-0' : 'rotate-45'}`} size={20} />
-                </button>
-
                 {showReviews && (
-                  <div className="space-y-3 mb-5">
+                  <div className="space-y-3 mb-5 pl-8">
                     {reviews.length === 0? (
                       <p className="text-sm text-center text-[#8e8e93] py-4">Chưa có đánh giá nào</p>
                     ) : (
                       reviews.map(r => (
-                        <div key={r.id} className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+                        <div key={r.id} className="pb-3 border-b border-zinc-200 dark:border-zinc-800 last:border-0">
                           <div className="flex items-center gap-2 mb-1">
                             <div className="flex">
                               {[...Array(5)].map((_, i) => (
@@ -320,7 +340,7 @@ export default function EventDetailModal({
                               {new Date(r.createdAt).toLocaleDateString('vi-VN')}
                             </span>
                           </div>
-                          {r.comment && <p className="text-sm">{r.comment}</p>}
+                          {r.comment && <p className="text-sm text-zinc-700 dark:text-zinc-300">{r.comment}</p>}
                         </div>
                       ))
                     )}
