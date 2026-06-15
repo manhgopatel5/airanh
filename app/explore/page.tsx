@@ -237,8 +237,8 @@ export default function ExplorePage() {
           <button
             onClick={() => setFilters(prev => ({...prev, category: null}))}
             className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
-         !filters.category
-           ? 'bg-[#0a84ff] text-white'
+       !filters.category
+         ? 'bg-[#0a84ff] text-white'
                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
             }`}
           >
@@ -250,7 +250,7 @@ export default function ExplorePage() {
               onClick={() => setFilters(prev => ({...prev, category: key}))}
               className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap flex items-center gap-1 ${
                 filters.category === key
-             ? 'bg-[#0a84ff] text-white'
+           ? 'bg-[#0a84ff] text-white'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
             >
@@ -272,7 +272,7 @@ export default function ExplorePage() {
               onClick={() => setFilters(prev => ({...prev, sortBy: sort.value as SortOption}))}
               className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
                 filters.sortBy === sort.value
-             ? 'bg-[#0a84ff] text-white'
+           ? 'bg-[#0a84ff] text-white'
                   : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
             >
@@ -294,18 +294,20 @@ export default function ExplorePage() {
               </button>
             </div>
           ) : (
-            filteredEvents.map((item) => (
-              <ExploreCard
-                key={item.id}
-                item={item}
-                onClick={() => setSelectedEvent(item)}
-                distance={
-                  userLat && userLng && item.lat && item.lng
-                 ? formatDistance(getEventDistance(item))
-                    : undefined
-                }
-              />
-            ))
+            filteredEvents.map((item) => {
+              const distance = userLat && userLng && item.lat && item.lng
+           ? formatDistance(getEventDistance(item))
+                : undefined;
+
+              return (
+                <ExploreCard
+                  key={item.id}
+                  item={item}
+                  onClick={() => setSelectedEvent(item)}
+                  {...(distance && { distance })}
+                />
+              );
+            })
           )}
         </div>
       </div>
@@ -347,7 +349,7 @@ export default function ExplorePage() {
                       onClick={() => setFilters(prev => ({...prev, minRating: rating}))}
                       className={`flex-1 h-11 rounded-xl text-sm font-[600] ${
                         filters.minRating === rating
-                     ? 'bg-[#0a84ff] text-white'
+                   ? 'bg-[#0a84ff] text-white'
                           : 'bg-zinc-100 dark:bg-zinc-800'
                       }`}
                     >
@@ -366,7 +368,7 @@ export default function ExplorePage() {
                       onClick={() => setFilters(prev => ({...prev, maxDistance: km}))}
                       className={`w-full h-11 rounded-xl text-sm font-[600] text-left px-4 ${
                         filters.maxDistance === km
-                     ? 'bg-[#0a84ff] text-white'
+                   ? 'bg-[#0a84ff] text-white'
                           : 'bg-zinc-100 dark:bg-zinc-800'
                       }`}
                     >
