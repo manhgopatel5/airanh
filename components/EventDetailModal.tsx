@@ -50,16 +50,21 @@ export default function EventDetailModal({
       const res = await fetch(`/api/admin/reviews?eventId=${event.id}`);
       const data = await res.json();
       if (res.ok) {
-        setReviews(data.reviews || []);
-        const myReview = data.reviews?.find((r: Review) => r.userId === getUserId());
+        const reviewList = data.reviews || [];
+        setReviews(reviewList);
+        const myReview = reviewList.find((r: Review) => r.userId === getUserId());
         if (myReview) {
           setMyRating(myReview.rating);
-          setComment(myReview.comment);
+          setComment(myReview.comment || '');
           setShowCommentBox(true);
+        } else {
+          setMyRating(0);
+          setComment('');
+          setShowCommentBox(false);
         }
         // Update local rating + count
-        const total = data.reviews?.reduce((sum: number, r: Review) => sum + r.rating, 0) || 0;
-        const count = data.reviews?.length || 0;
+        const total = reviewList.reduce((sum: number, r: Review) => sum + r.rating, 0);
+        const count = reviewList.length;
         setLocalRating(count > 0? Number((total / count).toFixed(1)) : 0);
         setLocalReviews(count);
       }
@@ -154,7 +159,7 @@ export default function EventDetailModal({
         return;
       }
       toast.success("Đã gửi đánh giá");
-      await fetchReviews(); // Fetch lại để update localRating + localReviews
+      await fetchReviews(); // Update localRating + localReviews ngay
       onCheckinSuccess?.(); // Refresh list ngoài
     } catch (err) {
       toast.error("Lỗi mạng");
@@ -221,21 +226,21 @@ export default function EventDetailModal({
                       <p className="font-[550]">Địa chỉ</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.address}</p>
                     </div>
-</div> 
+                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiClock className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div>
                       <p className="font-[550]">Giờ mở cửa</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.openTime}</p>
                     </div>
-</div> 
+                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiDollarSign className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div>
                       <p className="font-[550]">Giá vé</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.price}</p>
                     </div>
-</div> 
+                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiUsers className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div className="flex-1">
@@ -251,7 +256,7 @@ export default function EventDetailModal({
                           disabled={checking}
                           className={`px-3 h-8 rounded-lg text-xs font-[600] flex items-center gap-1.5 ${
                             hasCheckedIn
-                            ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
+                           ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
                               : 'bg-[#0a84ff] text-white active:scale-95'
                           } disabled:opacity-50 transition-transform`}
                         >
@@ -261,7 +266,7 @@ export default function EventDetailModal({
                     </div>
                   </div>
 
-                  {/* Đánh giá của bạn - cùng style với mấy row trên */}
+                  {/* Đánh giá của bạn - bỏ bg xám, giống row trên */}
                   <div className="flex items-start gap-3 text-sm">
                     <FiStar className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div className="flex-1">
@@ -277,7 +282,7 @@ export default function EventDetailModal({
                             <FiStar
                               size={28}
                               className={star <= (hoverRating || myRating)
-                              ? 'text-amber-400 fill-amber-400'
+                             ? 'text-amber-400 fill-amber-400'
                                 : 'text-zinc-300 dark:text-zinc-600'
                               }
                             />
@@ -304,7 +309,7 @@ export default function EventDetailModal({
                     </div>
                   </div>
 
-                  {/* Bài đánh giá - cùng style với mấy row trên */}
+                  {/* Bài đánh giá - bỏ bg xám, giống row trên */}
                   <button
                     onClick={() => setShowReviews(!showReviews)}
                     className="flex items-start gap-3 text-sm w-full text-left active:opacity-60"
