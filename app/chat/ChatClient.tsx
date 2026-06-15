@@ -2291,7 +2291,7 @@ return (
           onTogglePin={handleTogglePin}
           onCreateGroup={() => setShowAdd(true)}
           loading={loading}
-          userVip={userVip}
+          
         />
       )}
 {showPublicRooms && (
