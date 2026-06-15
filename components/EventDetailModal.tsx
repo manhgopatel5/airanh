@@ -4,7 +4,7 @@ import { EventItem } from "@/data/events";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+
 
 export default function EventDetailModal({
   event,
