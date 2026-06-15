@@ -2280,7 +2280,8 @@ return (
         })}
       </div>
 
-              <p className="text-[11px] text-center text-[#8e8e93] leading-4">
+      <div className="px-5 pb-5 pt-2">
+        <p className="text-[11px] text-center text-[#8e8e93] leading-4">
           Tự động gia hạn. Hủy bất cứ lúc nào trong Cài đặt.
           <br />Bằng việc mua, bạn đồng ý với Điều khoản VIP.
         </p>
@@ -2288,8 +2289,8 @@ return (
     </div>
   </div>
 )}
-    </div>
   </div>
+</div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
 {activeTab === "group" && (
   <div className="pt-3">
