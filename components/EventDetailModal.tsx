@@ -167,7 +167,7 @@ export default function EventDetailModal({
                         <div>
                           <p className="font-[550]">Lượt check-in</p>
                           <p className="text-[#8e8e93] text-xs mt-0.5">
-                            {loadingCount? 'Đang tải...' : `${checkinCount} người tuần này`}
+                            {loadingCount? 'Đang tải...' : `${checkinCount} người`}
                           </p>
                         </div>
                         <button
@@ -175,7 +175,7 @@ export default function EventDetailModal({
                           disabled={checking || hasCheckedIn}
                           className={`px-3 h-8 rounded-lg text-xs font-[600] flex items-center gap-1.5 ${
                             hasCheckedIn
-                         ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
                             : 'bg-[#0a84ff] text-white active:scale-95'
                           } disabled:opacity-50 transition-transform`}
                         >
