@@ -2288,6 +2288,8 @@ return (
     </div>
   </div>
 )}
+    </div>
+  </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
 {activeTab === "group" && (
   <div className="pt-3">
