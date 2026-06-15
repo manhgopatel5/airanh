@@ -4,10 +4,10 @@ import { useParams, useRouter } from "next/navigation";
 import { getFirebaseDB } from "@/lib/firebase";
 import {
   doc, onSnapshot, collection, query, orderBy, limit, addDoc,
-  serverTimestamp, updateDoc, deleteDoc
+  serverTimestamp, updateDoc, deleteDoc, arrayRemove
 } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
-import { FiImage, FiChevronLeft, FiSend, FiMoreVertical, FiTrash2 } from "react-icons/fi";
+import { FiImage, FiChevronLeft, FiSend, FiMoreVertical, FiTrash2, FiUsers, FiCopy, FiLogOut, FiEdit2 } from "react-icons/fi";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -51,6 +51,7 @@ export default function GroupChatPage() {
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [longPressMsg, setLongPressMsg] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -95,7 +96,6 @@ export default function GroupChatPage() {
       const msgs = snap.docs.map(d => ({ id: d.id,...d.data() } as Message));
       setMessages(msgs.reverse());
 
-      // Update seen
       if (user?.uid) {
         updateDoc(groupRef, {
           [`seen.${user.uid}`]: serverTimestamp()
@@ -191,6 +191,43 @@ export default function GroupChatPage() {
     setLongPressMsg(null);
   };
 
+  const handleLeaveGroup = async () => {
+    if (!user?.uid ||!group) return;
+    if (!confirm("Rời nhóm này?")) return;
+
+    try {
+      await updateDoc(doc(db, "groups", groupId), {
+        members: arrayRemove(user.uid),
+        updatedAt: serverTimestamp()
+      });
+      toast.success("Đã rời nhóm");
+      router.push("/inbox");
+    } catch {
+      toast.error("Lỗi rời nhóm");
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!user?.uid ||!group) return;
+    if (group.createdBy!== user.uid) return toast.error("Chỉ chủ nhóm mới xóa được");
+    if (!confirm("Xóa vĩnh viễn nhóm này?")) return;
+
+    try {
+      await deleteDoc(doc(db, "groups", groupId));
+      toast.success("Đã xóa nhóm");
+      router.push("/inbox");
+    } catch {
+      toast.error("Lỗi xóa nhóm");
+    }
+  };
+
+  const copyGroupCode = () => {
+    if (!group?.groupCode) return;
+    navigator.clipboard.writeText(group.groupCode);
+    toast.success(`Đã copy mã: ${group.groupCode}`);
+    setShowMenu(false);
+  };
+
   const handleLongPressStart = (msgId: string) => {
     longPressTimer.current = setTimeout(() => {
       setLongPressMsg(msgId);
@@ -223,6 +260,9 @@ export default function GroupChatPage() {
 
   if (!group) return <div className="p-4 text-center">Nhóm không tồn tại</div>;
 
+  const isAdmin = group.admins.includes(user?.uid || "");
+  const isOwner = group.createdBy === user?.uid;
+
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-black">
       {/* Header */}
@@ -238,9 +278,60 @@ export default function GroupChatPage() {
           <h1 className="text-base font-[600] truncate">{group.name}</h1>
           <p className="text-xs text-[#8e8e93]">{group.members.length} thành viên</p>
         </div>
-        <button className="w-8 h-8 flex items-center justify-center active:opacity-60">
-          <FiMoreVertical size={20} className="text-[#8e8e93]" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="w-8 h-8 flex items-center justify-center active:opacity-60"
+          >
+            <FiMoreVertical size={20} className="text-[#8e8e93]" />
+          </button>
+
+          {showMenu && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+              <div className="absolute right-0 top-10 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-black/10 dark:border-white/10 py-2 z-20">
+                <button
+                  onClick={copyGroupCode}
+                  className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-black/5 dark:hover:bg-white/5 text-left"
+                >
+                  <FiCopy size={18} />
+                  <div>
+                    <p className="text-sm font-medium">Copy mã nhóm</p>
+                    <p className="text-xs text-[#8e8e93]">{group.groupCode}</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => { setShowMenu(false); toast.info("Sắp ra mắt"); }}
+                  className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-black/5 dark:hover:bg-white/5 text-left"
+                >
+                  <FiUsers size={18} />
+                  <p className="text-sm font-medium">Thành viên</p>
+                </button>
+
+                <div className="h-px bg-black/10 dark:bg-white/10 my-1" />
+
+                <button
+                  onClick={handleLeaveGroup}
+                  className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-red-500/10 text-left text-red-500"
+                >
+                  <FiLogOut size={18} />
+                  <p className="text-sm font-medium">Rời nhóm</p>
+                </button>
+
+                {isOwner && (
+                  <button
+                    onClick={handleDeleteGroup}
+                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-red-500/10 text-left text-red-500"
+                  >
+                    <FiTrash2 size={18} />
+                    <p className="text-sm font-medium">Xóa nhóm</p>
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
@@ -274,7 +365,7 @@ export default function GroupChatPage() {
 
                 <div className="flex flex-col gap-0.5">
                   {showName && (
-                    <span className="text-xs text-[#8e8e93] px-3 font-medium">{msg.senderName}</span>
+                    <span className="text-xs text-[#8e93] px-3 font-medium">{msg.senderName}</span>
                   )}
 
                   {msg.replyTo && (
@@ -285,9 +376,9 @@ export default function GroupChatPage() {
                   )}
 
                   <div
-                    className={`relative px-3 py-2 rounded-[18px] ${
+                    className={`relative px-3 py-2 rounded- ${
                       isMe
-                      ? 'bg-[#0a84ff] text-white'
+                     ? 'bg-[#0a84ff] text-white'
                         : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white'
                     } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
                     onPointerDown={() => isMe && handleLongPressStart(msg.id)}
@@ -297,7 +388,7 @@ export default function GroupChatPage() {
                     {msg.imageUrl? (
                       <img src={msg.imageUrl} className="rounded-xl max-w-[240px] max-h-[240px] object-cover" />
                     ) : (
-                      <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
+                      <p className="text- leading- whitespace-pre-wrap break-words">{msg.text}</p>
                     )}
 
                     {longPressMsg === msg.id && isMe && (
@@ -317,7 +408,7 @@ export default function GroupChatPage() {
                       </div>
                     )}
                   </div>
-                  <span className={`text-[11px] text-[#8e8e93] px-3 ${isMe? 'text-right' : ''}`}>
+                  <span className={`text- text-[#8e8e93] px-3 ${isMe? 'text-right' : ''}`}>
                     {formatTime(msg.createdAt)}
                   </span>
                 </div>
@@ -330,7 +421,7 @@ export default function GroupChatPage() {
 
       {/* Input */}
       {replyTo && (
-        <div className="px-4 pt-2 flex items-center justify-between bg-[#f2f2f7] dark:bg-zinc-900">
+        <div className="px-4 pt-2 flex items-center justify-between bg-[#f2f7] dark:bg-zinc-900">
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-[#0a84ff]">Đang trả lời {replyTo.senderName}</p>
             <p className="text-xs text-[#8e8e93] truncate">{replyTo.text || "[Ảnh]"}</p>
@@ -363,7 +454,7 @@ export default function GroupChatPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Nhắn tin..."
-            className="flex-1 h-9 px-4 bg-[#f2f2f7] dark:bg-zinc-800 rounded-full text-[15px] outline-none placeholder:text-[#8e8e93]"
+            className="flex-1 h-9 px-4 bg-[#f2f2f7] dark:bg-zinc-800 rounded-full text- outline-none placeholder:text-[#8e8e93]"
             disabled={sending || uploading}
           />
           <button
