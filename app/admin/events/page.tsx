@@ -557,30 +557,30 @@ export default function AdminEventsPage() {
                     className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-semibold mb-1 block">Tọa độ GPS *</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={form.lat && form.lng? `${form.lat.toFixed(6)}, ${form.lng.toFixed(6)}` : ''}
-                      placeholder="Chưa có tọa độ"
-                      readOnly
-                      className="flex-1 h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowMapPicker(true)}
-                      className="px-4 h-10 bg-blue-500 text-white rounded-lg flex items-center gap-2"
-                    >
-                      <FiMap size={16} />
-                      Chọn Map
-                    </button>
-                  </div>
-                  <p className="text-xs text-[#8e8e93] mt-1">Nhập địa chỉ ở trên rồi bấm Map để lấy tọa độ</p>
-                </div>
-              </div>
+             <div>
+  <label className="text-sm font-semibold mb-1 block">Tọa độ GPS *</label>
+  <div className="flex gap-2">
+    <input
+      type="text"
+      value={form.lat && form.lng? `${form.lat.toFixed(6)}, ${form.lng.toFixed(6)}` : ''}
+      placeholder="Chưa có tọa độ"
+      readOnly
+      className="flex-1 h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
+    />
+    <button
+      type="button"
+      onClick={() => setShowMapPicker(true)}
+      className="w-10 h-10 bg-[#0a84ff] text-white rounded-lg flex items-center justify-center shrink-0"
+      title="Chọn trên bản đồ"
+    >
+      <FiMap size={18} />
+    </button>
+  </div>
+  <p className="text-xs text-[#8e8e93] mt-1">Bấm icon map để lấy tọa độ</p>
+</div>
+</div>
 
-              <div className="grid grid-cols-2 gap-4">
+<div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold mb-1 block">Rating *</label>
                   <input
