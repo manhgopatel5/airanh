@@ -1606,7 +1606,7 @@ return (
       </div>
     ) : notifications.length === 0? (
               <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
-                <div className="w-[72px] h-[72px] bg-[#f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
+                <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
                   <FiBell className="text-gray-400" size={30} strokeWidth={1.5} />
                 </div>
                 <h3 className="text-[20px] font-semibold mb-1.5">Chưa có thông báo</h3>
@@ -1639,7 +1639,7 @@ return (
             {notif.type === "friend_request" &&!notif.read && (
               <div className="flex items-center gap-2 mt-2.5">
                 <button onClick={() => handleAcceptFriendRequest(notif)} className={`h-7 px-4 ${primaryBg} ${primaryHover} text-white rounded-full text-[13px] font-medium`}>Chấp nhận</button>
-                <button onClick={() => handleDeclineFriendRequest(notif)} className="h-7 px-4 bg-[#f2f7] dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full text-[13px] font-medium">Từ chối</button>
+                <button onClick={() => handleDeclineFriendRequest(notif)} className="h-7 px-4 bg-[#f2f2f7] dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full text-[13px] font-medium">Từ chối</button>
               </div>
             )}
             {(notif.type === "group_invite" || notif.type === "mention") && notif.chatId && (
