@@ -1,5 +1,5 @@
 "use client";
-import { FiX, FiMapPin, FiClock, FiDollarSign, FiUsers, FiShare2, FiNavigation, FiStar, FiCheckCircle } from "react-icons/fi";
+import { FiX, FiMapPin, FiClock, FiDollarSign, FiUsers, FiShare2, FiNavigation, FiStar } from "react-icons/fi";
 import { EventItem } from "@/data/events";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
