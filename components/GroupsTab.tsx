@@ -1,8 +1,7 @@
 "use client";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { FiSearch, FiPlus, FiUsers, FiLoader, FiTrendingUp, FiLock, FiCheck, FiChevronRight } from "react-icons/fi";
 import { RiPushpinFill, RiCompass3Line } from "react-icons/ri";
-import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
