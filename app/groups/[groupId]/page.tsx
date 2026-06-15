@@ -503,7 +503,7 @@ const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
 const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
 const showAvatar =!isMe && isLastInGroup; // Hiện avatar ở tin cuối cụm
 const showName =!isMe && isFirstInGroup; // Hiện tên ở tin đầu cụm
-          const showName =!isMe && showAvatar;
+          
 
           return (
             <div
