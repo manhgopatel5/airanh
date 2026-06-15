@@ -2216,7 +2216,24 @@ return (
         <h2 className="text-[22px] font-bold tracking-tight">Nâng cấp VIP</h2>
         <p className="text-[14px] text-[#8e8e93] mt-1">Mở khóa tính năng cao cấp</p>
       </div>
-
+{showPublicRooms && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="absolute inset-0 bg-black/40" onClick={() => setShowPublicRooms(false)} />
+    <div className="relative bg-white dark:bg-zinc-900 rounded-2xl p-5 max-w-md w-full">
+      <h3 className="text-lg font-bold mb-3">Tất cả phòng công cộng</h3>
+      <div className="space-y-2 max-h-96 overflow-auto">
+        {publicRooms.map(room => (
+          <button key={room.id} onClick={() => handleJoinPublicRoom(room)} 
+            className="w-full p-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-left">
+            {room.emoji} {room.name} - {room.onlineCount} online
+          </button>
+        ))}
+      </div>
+      <button onClick={() => setShowPublicRooms(false)} 
+        className="mt-3 w-full h-10 bg-zinc-200 dark:bg-zinc-700 rounded-xl">Đóng</button>
+    </div>
+  </div>
+)}
 {userVip && userVip.tier!== 'free' && (
   <div className="mx-5 mb-3 px-4 py-2.5 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl">
     <p className="text-[13px] font-medium text-emerald-600 dark:text-emerald-400">
@@ -2305,24 +2322,7 @@ return (
   loading={loading}
 />
       )}
-{showPublicRooms && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div className="absolute inset-0 bg-black/40" onClick={() => setShowPublicRooms(false)} />
-    <div className="relative bg-white dark:bg-zinc-900 rounded-2xl p-5 max-w-md w-full">
-      <h3 className="text-lg font-bold mb-3">Tất cả phòng công cộng</h3>
-      <div className="space-y-2 max-h-96 overflow-auto">
-        {publicRooms.map(room => (
-          <button key={room.id} onClick={() => handleJoinPublicRoom(room)} 
-            className="w-full p-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-left">
-            {room.emoji} {room.name} - {room.onlineCount} online
-          </button>
-        ))}
-      </div>
-      <button onClick={() => setShowPublicRooms(false)} 
-        className="mt-3 w-full h-10 bg-zinc-200 dark:bg-zinc-700 rounded-xl">Đóng</button>
-    </div>
-  </div>
-)}
+
 <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
 <GpsRequiredModal 
   open={showGpsModal} 
