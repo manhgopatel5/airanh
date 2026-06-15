@@ -329,6 +329,45 @@ const [eventsData, setEventsData] = useState<EventItem[]>([]);
 const [eventsLoading, setEventsLoading] = useState<boolean>(true);
 // THÊM DÒNG NÀY
 const [publicRooms, setPublicRooms] = useState<PublicRoomItem[]>([]);
+const [groupItems, setGroupItems] = useState<ChatItem[]>([]);
+
+// Query groups riêng
+useEffect(() => {
+  if (authLoading || !user?.uid) return;
+  
+  const q = query(
+    collection(db, "groups"),
+    where("members", "array-contains", user.uid)
+  );
+
+  const unsub = onSnapshot(q, (snap) => {
+    const list: ChatItem[] = snap.docs.map(d => {
+      const data = d.data();
+      return {
+        uid: d.id,
+        chatId: d.id,
+        name: data.name || "Nhóm",
+        username: "",
+        avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}&background=0a84ff&color=fff&bold=true`,
+        userId: "",
+        lastMessage: data.lastMessage || "",
+        lastSenderId: data.lastSenderId || "",
+        lastSenderName: data.lastSenderName || "",
+        updatedAt: data.updatedAt,
+        unreadCount: data.unreadCount?.[user.uid] || 0,
+        isGroup: true,
+        members: data.members || [],
+        hasPassword: data.hasPassword || false,
+        groupCode: data.groupCode || "",
+      };
+    });
+    setGroupItems(list);
+  }, (err) => {
+    console.error("Groups error:", err);
+  });
+
+  return () => unsub();
+}, [user?.uid, authLoading, db]);
 const [publicRoomsLoading, setPublicRoomsLoading] = useState(true);
 const [showPublicRooms, setShowPublicRooms] = useState(false);
 
@@ -1580,17 +1619,17 @@ return (
      </div> 
 )} 
 
-  {activeTab === "group" && ( 
-    <div className="pt-3">
-      <GroupsTab
-        groups={items.filter(i => i.isGroup)}
-        pinned={pinned}
-        onTogglePin={handleTogglePin}
-        onCreateGroup={() => setShowCreateGroup(true)}
-        loading={loading}
-      />
-    </div>
-  )}
+ {activeTab === "group" && ( 
+  <div className="pt-3">
+    <GroupsTab
+      groups={groupItems} // Dùng groupItems thay vì items.filter
+      pinned={pinned}
+      onTogglePin={handleTogglePin}
+      onCreateGroup={() => setShowCreateGroup(true)}
+      loading={loading}
+    />
+  </div>
+)}
   {activeTab === "notifications"? (
     notifLoading? (
       <div className="px-4 pt-4 space-y-3">
