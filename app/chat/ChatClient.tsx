@@ -1,5 +1,6 @@
 "use client";
 import GpsRequiredModal from "@/components/GpsRequiredModal";
+import GroupsTab from "@/components/GroupsTab";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -2281,6 +2282,18 @@ return (
   </div>
 </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
+  {activeTab === "group" && (
+        <GroupsTab
+          groups={items.filter(i => i.isGroup)}
+          publicRooms={publicRooms}
+          publicRoomsLoading={publicRoomsLoading}
+          pinned={pinned}
+          onTogglePin={handleTogglePin}
+          onCreateGroup={() => setShowAdd(true)}
+          loading={loading}
+          userVip={userVip}
+        />
+      )}
 {showPublicRooms && (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/40" onClick={() => setShowPublicRooms(false)} />
