@@ -1,8 +1,9 @@
 "use client";
-import { FiX, FiMapPin, FiClock, FiDollarSign, FiUsers, FiShare2, FiNavigation, FiStar } from "react-icons/fi";
+import { FiX, FiMapPin, FiClock, FiDollarSign, FiUsers, FiShare2, FiNavigation, FiStar, FiCheckCircle } from "react-icons/fi";
 import { EventItem } from "@/data/events";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 
 export default function EventDetailModal({
   event,
@@ -11,6 +12,54 @@ export default function EventDetailModal({
   event: EventItem | null;
   onClose: () => void;
 }) {
+  const [checkinCount, setCheckinCount] = useState(0);
+  const [checking, setChecking] = useState(false);
+  const [hasCheckedIn, setHasCheckedIn] = useState(false);
+
+  useEffect(() => {
+    if (!event) return;
+
+    fetch(`/api/admin/checkin?eventId=${event.id}`)
+    .then(res => res.json())
+    .then(data => setCheckinCount(data.count || 0));
+
+    const userId = localStorage.getItem('userId') || 'anonymous';
+    const checkedInToday = localStorage.getItem(`checked_${event.id}_${new Date().toDateString()}`);
+    setHasCheckedIn(!!checkedInToday);
+  }, [event]);
+
+  const handleCheckin = async () => {
+    if (!event || checking || hasCheckedIn) return;
+
+    setChecking(true);
+    const userId = localStorage.getItem('userId') || `guest_${Date.now()}`;
+    localStorage.setItem('userId', userId);
+
+    try {
+      const res = await fetch('/api/admin/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: event.id, userId })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Check-in thất bại");
+        return;
+      }
+
+      setCheckinCount(prev => prev + 1);
+      setHasCheckedIn(true);
+      localStorage.setItem(`checked_${event.id}_${new Date().toDateString()}`, '1');
+      toast.success("Check-in thành công! 🎉");
+    } catch (error) {
+      toast.error("Lỗi mạng");
+    } finally {
+      setChecking(false);
+    }
+  };
+
   if (!event) return null;
 
   return (
@@ -85,12 +134,35 @@ className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-3x
                       <p className="font-[550]">Giá vé</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.price}</p>
                     </div>
-                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiUsers className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
-                    <div>
-                      <p className="font-[550]">Lượt check-in</p>
-                      <p className="text-[#8e8e93] text-xs mt-0.5">{event.joined} người tuần này</p>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-[550]">Lượt check-in</p>
+                          <p className="text-[#8e8e93] text-xs mt-0.5">{checkinCount} người tuần này</p>
+                        </div>
+                        <button
+                          onClick={handleCheckin}
+                          disabled={checking || hasCheckedIn}
+                          className={`px-3 h-8 rounded-lg text-xs font-[600] flex items-center gap-1.5 ${
+                            hasCheckedIn
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                              : 'bg-[#0a84ff] text-white active:scale-95'
+                          } disabled:opacity-50 transition-transform`}
+                        >
+                          {hasCheckedIn? (
+                            <>
+                              <FiCheckCircle size={14} />
+                              Đã check-in
+                            </>
+                          ) : checking? (
+                            "Đang xử lý..."
+                          ) : (
+                            "Check-in"
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
