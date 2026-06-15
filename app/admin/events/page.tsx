@@ -49,7 +49,7 @@ export default function AdminEventsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
-  const [ratingInput, setRatingInput] = useState("5");
+
   const [showMapPicker, setShowMapPicker] = useState(false);
 
   const [form, setForm] = useState<Partial<EventItem>>({
@@ -133,8 +133,8 @@ export default function AdminEventsPage() {
       mapUrl: "",
       lat: 0,
       lng: 0,
-      rating: 5,
-      reviews: 0,
+    rating: 0,
+reviews: 0,
       isActive: true,
     });
     setRatingInput("5");
@@ -144,7 +144,7 @@ export default function AdminEventsPage() {
   const openEdit = (event: EventItem) => {
     setForm(event);
     setEditingId(event.id);
-    setRatingInput(String(event.rating || 5).replace('.', ','));
+
     setShowModal(true);
   };
 
@@ -197,34 +197,36 @@ export default function AdminEventsPage() {
   };
 
   const handleSave = async () => {
-    if (!form.title ||!form.desc ||!form.image ||!form.address ||!form.lat ||!form.lng) {
-      toast.error("Điền đầy đủ: Tên, Mô tả, Ảnh, Địa chỉ, Tọa độ");
-      return;
-    }
-    setSaving(true);
-    try {
-      const { distance,...formData } = form as any;
-      const res = await fetch('/api/admin/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-      ...formData,
-          id: editingId,
-          lat: Number(form.lat),
-          lng: Number(form.lng),
-        })
-      });
-      if (!res.ok) throw new Error('Failed');
-      toast.success(editingId? "Đã cập nhật" : "Đã thêm event");
-      setShowModal(false);
-      resetForm();
-      fetchEvents();
-    } catch (error) {
-      toast.error("Lỗi lưu dữ liệu");
-    } finally {
-      setSaving(false);
-    }
-  };
+  if (!form.title ||!form.desc ||!form.image ||!form.address ||!form.lat ||!form.lng) {
+    toast.error("Điền đầy đủ: Tên, Mô tả, Ảnh, Địa chỉ, Tọa độ");
+    return;
+  }
+  setSaving(true);
+  try {
+    const { distance,...formData } = form as any;
+    const res = await fetch('/api/admin/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+    ...formData,
+        id: editingId,
+        lat: Number(form.lat),
+        lng: Number(form.lng),
+        rating: editingId? form.rating : 0, // Giữ rating cũ nếu edit, tạo mới = 0
+        reviews: editingId? form.reviews : 0, // Giữ reviews cũ nếu edit, tạo mới = 0
+      })
+    });
+    if (!res.ok) throw new Error('Failed');
+    toast.success(editingId? "Đã cập nhật" : "Đã thêm event");
+    setShowModal(false);
+    resetForm();
+    fetchEvents();
+  } catch (error) {
+    toast.error("Lỗi lưu dữ liệu");
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleDelete = async (id: string) => {
     if (!confirm("Xóa event này?")) return;
@@ -580,40 +582,7 @@ export default function AdminEventsPage() {
 </div>
 </div>
 
-<div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-semibold mb-1 block">Rating *</label>
-                  <input
-                    type="text"
-                    value={ratingInput}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (/^[0-5]?[,.]?[0-9]?$/.test(val) || val === '') {
-                        setRatingInput(val);
-                        const num = parseFloat(val.replace(',', '.'));
-                        if (!isNaN(num) && num >= 0 && num <= 5) {
-                          setForm({...form, rating: num });
-                        } else if (val === '') {
-                          setForm({...form, rating: 0 });
-                        }
-                      }
-                    }}
-                    placeholder="4,9"
-                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-semibold mb-1 block">Reviews *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.reviews || ''}
-                    onChange={(e) => setForm({...form, reviews: Number(e.target.value) || 0 })}
-                    placeholder="0"
-                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                  />
-                </div>
-              </div>
+
 
               <div className="flex items-center gap-2">
                 <input
