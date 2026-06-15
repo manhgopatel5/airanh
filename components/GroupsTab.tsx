@@ -181,7 +181,7 @@ function GroupItem({
   return (
     <div className={`flex items-center gap-3 px-4 py-3 active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors ${!isLast? 'border-b border-black/[0.06] dark:border-white/[0.06]' : ''}`}>
       <Link
-        href={`/rooms/${group.chatId}`}
+        href={`/groups/${group.chatId}`}
         className="flex items-center gap-3 flex-1 min-w-0"
       >
         <div className="relative flex-shrink-0">
