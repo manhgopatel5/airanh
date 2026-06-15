@@ -4,11 +4,10 @@ import { useParams, useRouter } from "next/navigation";
 import { getFirebaseDB } from "@/lib/firebase";
 import {
   doc, onSnapshot, collection, query, orderBy, limit, addDoc,
-  serverTimestamp, updateDoc, getDoc, deleteDoc, setDoc
+  serverTimestamp, updateDoc, deleteDoc
 } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
-import { FiArrowLeft, FiSend, FiImage, FiMoreVertical, FiTrash2, FiUsers, FiCopy, FiChevronLeft } from "react-icons/fi";
-import { RiPushpinFill } from "react-icons/ri";
+import { FiImage, FiChevronLeft, FiSend, FiMoreVertical, FiTrash2 } from "react-icons/fi";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -97,9 +96,11 @@ export default function GroupChatPage() {
       setMessages(msgs.reverse());
 
       // Update seen
-      updateDoc(groupRef, {
-        [`seen.${user.uid}`]: serverTimestamp()
-      }).catch(() => {});
+      if (user?.uid) {
+        updateDoc(groupRef, {
+          [`seen.${user.uid}`]: serverTimestamp()
+        }).catch(() => {});
+      }
     });
 
     return () => {
@@ -244,6 +245,11 @@ export default function GroupChatPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1" onClick={() => setLongPressMsg(null)}>
+        {messages.length === 0 && (
+          <div className="h-full flex items-center justify-center text-[#8e8e93] text-sm">
+            Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!
+          </div>
+        )}
         {messages.map((msg, idx) => {
           const isMe = msg.senderId === user?.uid;
           const prevMsg = messages[idx - 1];
@@ -281,7 +287,7 @@ export default function GroupChatPage() {
                   <div
                     className={`relative px-3 py-2 rounded-[18px] ${
                       isMe
-                       ? 'bg-[#0a84ff] text-white'
+                      ? 'bg-[#0a84ff] text-white'
                         : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white'
                     } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
                     onPointerDown={() => isMe && handleLongPressStart(msg.id)}
