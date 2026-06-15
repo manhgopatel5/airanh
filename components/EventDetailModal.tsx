@@ -310,26 +310,26 @@ useEffect(() => {
                   </div>
 
                   {/* Bài đánh giá - bỏ bg xám, giống row trên */}
-    <button
+<div
   onClick={async () => {
     if (!showReviews) {
-      await fetchReviews(); // Chỉ fetch khi mở
+      await fetchReviews();
     }
     setShowReviews(!showReviews);
   }}
-  className="flex items-start gap-3 text-sm w-full text-left active:opacity-60"
+  className="flex items-start gap-3 text-sm w-full text-left active:opacity-60 cursor-pointer"
 >
   <FiMessageSquare className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
   <div className="flex-1">
     <div className="flex items-center justify-between">
       <div>
-        <p className="font-[550]">Bài đánh giá</p>
-<p className="text-[#8e8e93] text-xs mt-0.5">{localReviews} đánh giá</p>
+        <p className="font-[550] font-sans">Bài đánh giá</p>
+        <p className="text-[#8e8e93] text-xs mt-0.5 font-sans">{localReviews} đánh giá</p>
       </div>
       <FiX className={`transform transition-transform text-[#8e8e93] ${showReviews? 'rotate-0' : 'rotate-45'}`} size={18} />
     </div>
   </div>
-</button>
+</div>
                 </div>
 
             {showReviews && (
