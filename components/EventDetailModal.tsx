@@ -289,23 +289,23 @@ useEffect(() => {
                           </button>
                         ))}
                       </div>
-                      {showCommentBox && (
-                        <div className="space-y-2">
-                          <textarea
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                            placeholder="Viết cảm nhận..."
-                            className="w-full h-20 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm outline-none resize-none"
-                          />
-                          <button
-                            onClick={handleSubmitReview}
-                            disabled={myRating === 0 || savingReview}
-                            className="w-full h-9 bg-[#0a84ff] text-white rounded-lg text-sm font-[600] disabled:opacity-50 active:scale-95 transition-transform"
-                          >
-                            {savingReview? "Đang gửi..." : "Gửi đánh giá"}
-                          </button>
-                        </div>
-                      )}
+                     {showCommentBox && (
+  <div className="space-y-2">
+    <textarea
+      value={comment}
+      onChange={(e) => setComment(e.target.value)}
+      placeholder="Viết cảm nhận..."
+      className="w-full h-20 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm outline-none resize-none font-sans"
+    />
+    <button
+      onClick={handleSubmitReview}
+      disabled={myRating === 0 || savingReview}
+      className="w-full h-9 bg-[#0a84ff] text-white rounded-lg text-sm font-[600] disabled:opacity-50 active:scale-95 transition-transform"
+    >
+      {savingReview? "Đang gửi..." : reviews.find(r => r.userId === getUserId())? "Cập nhật đánh giá" : "Gửi đánh giá"}
+    </button>
+  </div>
+)}
                     </div>
                   </div>
 
@@ -324,7 +324,7 @@ useEffect(() => {
     <div className="flex items-center justify-between">
       <div>
         <p className="font-[550]">Bài đánh giá</p>
-        <p className="text-[#8e93] text-xs mt-0.5">{localReviews} đánh giá</p>
+<p className="text-[#8e8e93] text-xs mt-0.5">{localReviews} đánh giá</p>
       </div>
       <FiX className={`transform transition-transform text-[#8e8e93] ${showReviews? 'rotate-0' : 'rotate-45'}`} size={18} />
     </div>
@@ -332,48 +332,64 @@ useEffect(() => {
 </button>
                 </div>
 
-                {showReviews && (
-                  <div className="space-y-3 mb-5 pl-8">
-                    {reviews.length === 0? (
-                      <p className="text-sm text-center text-[#8e8e93] py-4">Chưa có đánh giá nào</p>
-                    ) : (
-                      reviews.map(r => (
-                        <div key={r.id} className="pb-3 border-b border-zinc-200 dark:border-zinc-800 last:border-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="flex">
-                              {[...Array(5)].map((_, i) => (
-                                <FiStar
-                                  key={i}
-                                  size={14}
-                                  className={i < r.rating? 'text-amber-400 fill-amber-400' : 'text-zinc-300 dark:text-zinc-600'}
-                                />
-                              ))}
-                            </div>
-                            <span className="text-xs text-[#8e8e93]">
-                              {new Date(r.createdAt).toLocaleDateString('vi-VN')}
-                            </span>
-                          </div>
-                          {r.comment && <p className="text-sm text-zinc-700 dark:text-zinc-300">{r.comment}</p>}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
+            {showReviews && (
+  <div className="space-y-3 mb-5 pl-8">
+    {reviews.length === 0? (
+      <p className="text-sm text-center text-[#8e8e93] py-4 font-sans">Chưa có đánh giá nào</p>
+    ) : (
+      reviews.map(r => {
+        const isMine = r.userId === getUserId();
+        return (
+          <div key={r.id} className={`pb-3 border-b border-zinc-200 dark:border-zinc-800 last:border-0 ${isMine? 'bg-blue-50/50 dark:bg-blue-950/20 -mx-2 px-2 rounded-lg' : ''}`}>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <div className="flex">
+                  {[...Array(5)].map((_, i) => (
+                    <FiStar
+                      key={i}
+                      size={14}
+                      className={i < r.rating? 'text-amber-400 fill-amber-400' : 'text-zinc-300 dark:text-zinc-600'}
+                    />
+                  ))}
+                </div>
+                <span className="text-xs text-[#8e8e93] font-sans">
+                  {new Date(r.createdAt).toLocaleDateString('vi-VN')}
+                </span>
+                {isMine && <span className="text-xs text-[#0a84ff] font-[600] font-sans">Bạn</span>}
+              </div>
+              {isMine && (
+                <button
+                  onClick={() => {
+                    setShowCommentBox(true);
+                    setShowReviews(false);
+                  }}
+                  className="text-xs text-[#0a84ff] font-[600] active:opacity-60 font-sans"
+                >
+                  Sửa
+                </button>
+              )}
+            </div>
+            {r.comment && <p className="text-sm text-zinc-700 dark:text-zinc-300 font-sans">{r.comment}</p>}
+          </div>
+        )
+      })
+    )}
+  </div>
+)}
 
-                {event.tips?.length > 0 && (
-                  <div className="bg-amber-500/10 border border-amber-500/20 dark:border-amber-500/30 rounded-xl p-3 mb-5">
-                    <p className="text-xs font-[700] text-amber-700 dark:text-amber-400 mb-2">💡 Tips từ cộng đồng</p>
-                    <ul className="space-y-1.5">
-                      {event.tips.map((tip, i) => (
-                        <li key={i} className="text-sm text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
-                          <span className="text-amber-500 mt-0.5">•</span>
-                          <span>{tip}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
+{event.tips?.length > 0 && (
+  <div className="bg-amber-500/10 border border-amber-500/20 dark:border-amber-500/30 rounded-xl p-3 mb-5">
+    <p className="text-xs font-[700] text-amber-700 dark:text-amber-400 mb-2 font-sans">💡 Tips từ cộng đồng</p>
+    <ul className="space-y-1.5">
+      {event.tips.map((tip, i) => (
+        <li key={i} className="text-sm text-zinc-700 dark:text-zinc-300 flex items-start gap-2 font-sans">
+          <span className="text-amber-500 mt-0.5">•</span>
+          <span>{tip}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
                 {event.gallery?.length > 0 && (
                   <div>
                     <h3 className="text-sm font-[600] mb-2">Ảnh từ cộng đồng</h3>
