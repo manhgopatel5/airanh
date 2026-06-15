@@ -1926,11 +1926,11 @@ return (
 )}
 
 <CreateGroupModal
-  open={open}
-  onClose={() => setOpen(false)}
+  open={showCreateGroup}
+  onClose={() => setShowCreateGroup(false)}
   onCreated={(groupId) => {
-    router.push(`/groups/${groupId}`); // Phải là /groups/
-    setOpen(false);
+    router.push(`/groups/${groupId}`);
+    setShowCreateGroup(false);
   }}
 />
 
