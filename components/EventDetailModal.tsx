@@ -9,16 +9,16 @@ import { useRouter } from "next/navigation";
 export default function EventDetailModal({
   event,
   onClose,
-  onCheckinSuccess // THÊM PROP NÀY
+  onCheckinSuccess
 }: {
   event: EventItem | null;
   onClose: () => void;
-  onCheckinSuccess?: () => void; // THÊM
+  onCheckinSuccess?: () => void;
 }) {
   const router = useRouter();
   const [checking, setChecking] = useState(false);
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
-  const [localJoined, setLocalJoined] = useState(event?.joined || 0); // THÊM STATE RIÊNG
+  const [localJoined, setLocalJoined] = useState(event?.joined || 0);
 
   const getUserId = () => {
     let uid = localStorage.getItem('userId');
@@ -31,7 +31,7 @@ export default function EventDetailModal({
 
   useEffect(() => {
     if (!event) return;
-    setLocalJoined(event.joined || 0); // Sync khi event thay đổi
+    setLocalJoined(event.joined || 0);
 
     const userId = getUserId();
     const checkedInToday = localStorage.getItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`);
@@ -59,10 +59,10 @@ export default function EventDetailModal({
       }
 
       setHasCheckedIn(true);
-      setLocalJoined(prev => prev + 1); // UPDATE NGAY UI
+      setLocalJoined(prev => prev + 1);
       localStorage.setItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`, '1');
       toast.success("Check-in thành công! 🎉");
-      onCheckinSuccess?.(); // GỌI CALLBACK ĐỂ REFRESH LIST
+      onCheckinSuccess?.();
     } catch (error) {
       toast.error("Lỗi mạng");
     } finally {
@@ -91,10 +91,10 @@ export default function EventDetailModal({
       }
 
       setHasCheckedIn(false);
-      setLocalJoined(prev => Math.max(0, prev - 1)); // UPDATE NGAY UI
+      setLocalJoined(prev => Math.max(0, prev - 1));
       localStorage.removeItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`);
       toast.success("Đã bỏ check-in");
-      onCheckinSuccess?.(); // GỌI CALLBACK ĐỂ REFRESH LIST
+      onCheckinSuccess?.();
     } catch (error) {
       toast.error("Lỗi mạng");
     } finally {
@@ -191,8 +191,8 @@ export default function EventDetailModal({
                           disabled={checking}
                           className={`px-3 h-8 rounded-lg text-xs font-[600] flex items-center gap-1.5 ${
                             hasCheckedIn
-                   ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
-                            : 'bg-[#0a84ff] text-white active:scale-95'
+                             ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
+                              : 'bg-[#0a84ff] text-white active:scale-95'
                           } disabled:opacity-50 transition-transform`}
                         >
                           {checking? (
@@ -242,7 +242,7 @@ export default function EventDetailModal({
             </div>
 
             {/* Buttons */}
-            <div className="p-4 border-t border-black/5 dark:border-white/5 grid-cols-2 gap-3 flex-shrink-0">
+            <div className="p-4 border-t border-black/5 dark:border-white/5 grid grid-cols-2 gap-3 flex-shrink-0">
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(`${event.title} - ${event.address}`);
