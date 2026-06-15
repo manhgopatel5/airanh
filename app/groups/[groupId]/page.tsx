@@ -260,7 +260,6 @@ export default function GroupChatPage() {
 
   if (!group) return <div className="p-4 text-center">Nhóm không tồn tại</div>;
 
-  const isAdmin = group.admins.includes(user?.uid || "");
   const isOwner = group.createdBy === user?.uid;
 
   return (
@@ -272,6 +271,7 @@ export default function GroupChatPage() {
         </button>
         <img
           src={group.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.name)}&background=0a84ff&color=fff&bold=true`}
+          alt={group.name}
           className="w-9 h-9 rounded-full object-cover"
         />
         <div className="flex-1 min-w-0">
@@ -357,15 +357,18 @@ export default function GroupChatPage() {
                 {!isMe && (
                   <div className="w-7 h-7 flex-shrink-0">
                     {showAvatar && (
-                      <img src={msg.senderAvatar || `https://ui-avatars.com/api/?name=${msg.senderName}`}
-                           className="w-7 h-7 rounded-full object-cover" />
+                      <img
+                        src={msg.senderAvatar || `https://ui-avatars.com/api/?name=${msg.senderName}`}
+                        alt={msg.senderName}
+                        className="w-7 h-7 rounded-full object-cover"
+                      />
                     )}
                   </div>
                 )}
 
                 <div className="flex flex-col gap-0.5">
                   {showName && (
-                    <span className="text-xs text-[#8e93] px-3 font-medium">{msg.senderName}</span>
+                    <span className="text-xs text-[#8e8e93] px-3 font-medium">{msg.senderName}</span>
                   )}
 
                   {msg.replyTo && (
@@ -378,7 +381,7 @@ export default function GroupChatPage() {
                   <div
                     className={`relative px-3 py-2 rounded- ${
                       isMe
-                     ? 'bg-[#0a84ff] text-white'
+                    ? 'bg-[#0a84ff] text-white'
                         : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white'
                     } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
                     onPointerDown={() => isMe && handleLongPressStart(msg.id)}
@@ -386,7 +389,7 @@ export default function GroupChatPage() {
                     onPointerLeave={handleLongPressEnd}
                   >
                     {msg.imageUrl? (
-                      <img src={msg.imageUrl} className="rounded-xl max-w-[240px] max-h-[240px] object-cover" />
+                      <img src={msg.imageUrl} alt="Ảnh" className="rounded-xl max-w-[240px] max-h-[240px] object-cover" />
                     ) : (
                       <p className="text- leading- whitespace-pre-wrap break-words">{msg.text}</p>
                     )}
