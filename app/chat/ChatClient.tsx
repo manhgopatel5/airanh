@@ -1580,7 +1580,7 @@ return (
      </div> 
 )} 
 
-  {activeTab === "group" && (  {/* DÁN VÀO ĐÂY */}
+  {activeTab === "group" && ( 
     <div className="pt-3">
       <GroupsTab
         groups={items.filter(i => i.isGroup)}
