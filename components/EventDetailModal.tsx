@@ -20,10 +20,9 @@ export default function EventDetailModal({
     if (!event) return;
 
     fetch(`/api/admin/checkin?eventId=${event.id}`)
-    .then(res => res.json())
-    .then(data => setCheckinCount(data.count || 0));
+   .then(res => res.json())
+   .then(data => setCheckinCount(data.count || 0));
 
-    const userId = localStorage.getItem('userId') || 'anonymous';
     const checkedInToday = localStorage.getItem(`checked_${event.id}_${new Date().toDateString()}`);
     setHasCheckedIn(!!checkedInToday);
   }, [event]);
@@ -65,7 +64,7 @@ export default function EventDetailModal({
   return (
     <AnimatePresence>
       {event && (
-<div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -74,14 +73,14 @@ export default function EventDetailModal({
             onClick={onClose}
           />
           <motion.div
-initial={{ y: "-100%", opacity: 0 }}
+            initial={{ y: "-100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-exit={{ y: "-100%", opacity: 0 }}
+            exit={{ y: "-100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-3xl max-h-[calc(100vh-160px)] flex flex-col shadow-2xl overflow-hidden"
+            className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-3xl max-h-[calc(100vh-160px)] flex flex-col shadow-2xl overflow-hidden"
           >
             {/* Cover */}
-<div className="relative h-48 flex-shrink-0 rounded-t-3xl overflow-hidden">
+            <div className="relative h-48 flex-shrink-0 rounded-t-3xl overflow-hidden">
               <img src={event.image} className="w-full h-full object-cover" alt={event.title} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               <button
@@ -90,11 +89,11 @@ className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-3x
               >
                 <FiX className="text-white" size={20} />
               </button>
-<div className={`absolute top-3 left-4 px-2.5 py-1 bg-gradient-to-r ${event.tagColor} rounded-lg`}>
+              <div className={`absolute top-3 left-4 px-2.5 py-1 bg-gradient-to-r ${event.tagColor} rounded-lg`}>
                 <span className="text-xs font-[800] text-white">{event.tag}</span>
               </div>
               {event.rating && (
-<div className="absolute top-3 right-14 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-lg flex items-center gap-1">
+                <div className="absolute top-3 right-14 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-lg flex items-center gap-1">
                   <FiStar className="text-amber-400" size={12} fill="currentColor" />
                   <span className="text-xs font-[700] text-white">{event.rating}</span>
                   {event.reviews && <span className="text-xs text-white/70">({event.reviews})</span>}
@@ -134,6 +133,7 @@ className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-3x
                       <p className="font-[550]">Giá vé</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.price}</p>
                     </div>
+                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiUsers className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div className="flex-1">
@@ -147,8 +147,8 @@ className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-3x
                           disabled={checking || hasCheckedIn}
                           className={`px-3 h-8 rounded-lg text-xs font-[600] flex items-center gap-1.5 ${
                             hasCheckedIn
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                              : 'bg-[#0a84ff] text-white active:scale-95'
+                           ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                            : 'bg-[#0a84ff] text-white active:scale-95'
                           } disabled:opacity-50 transition-transform`}
                         >
                           {hasCheckedIn? (
