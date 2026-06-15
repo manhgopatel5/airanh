@@ -169,6 +169,7 @@ export default function EventDetailModal({
                       <p className="font-[550]">Giờ mở cửa</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.openTime}</p>
                     </div>
+                    </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiDollarSign className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div>
