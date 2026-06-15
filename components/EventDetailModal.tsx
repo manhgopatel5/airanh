@@ -15,7 +15,7 @@ export default function EventDetailModal({
   onClose: () => void;
   onCheckinSuccess?: () => void;
 }) {
-  const router = useRouter();
+ 
   const [checking, setChecking] = useState(false);
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
   const [localJoined, setLocalJoined] = useState(event?.joined || 0);
