@@ -72,31 +72,37 @@ export default function GroupsTab({
   };
 
   const handleFindByCode = async () => {
-    if (searchCode.length!== 6) return toast.error("Mã nhóm phải 6 số");
+  if (searchCode.length!== 6) return toast.error("Mã nhóm phải 6 số");
 
-    setFinding(true);
-    try {
-      const q = query(
-        collection(db, "groups"),
-        where("groupCode", "==", searchCode)
-      );
-      const snap = await getDocs(q);
+  setFinding(true);
+  try {
+    const q = query(
+      collection(db, "groups"),
+      where("groupCode", "==", searchCode)
+    );
+    const snap = await getDocs(q);
 
-      if (snap.empty) {
-        toast.error("Không tìm thấy nhóm");
-        return;
-      }
-
-      const groupId = snap.docs[0].id;
-      router.push(`/groups/${groupId}`);
-      setSearchCode("");
-    } catch (e: any) {
-      console.error(e);
-      toast.error("Lỗi: " + e.message);
-    } finally {
-      setFinding(false);
+    if (snap.empty) {
+      toast.error("Không tìm thấy nhóm");
+      return;
     }
-  };
+
+    // Thêm dấu? để check undefined
+    const groupId = snap.docs[0]?.id;
+    if (!groupId) {
+      toast.error("Không tìm thấy nhóm");
+      return;
+    }
+
+    router.push(`/groups/${groupId}`);
+    setSearchCode("");
+  } catch (e: any) {
+    console.error(e);
+    toast.error("Lỗi: " + e.message);
+  } finally {
+    setFinding(false);
+  }
+};
 
   if (loading) {
     return (
