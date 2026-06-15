@@ -179,13 +179,13 @@ export default function EventDetailModal({
               <div className={`absolute top-3 left-4 px-2.5 py-1 bg-gradient-to-r ${event.tagColor} rounded-lg`}>
                 <span className="text-xs font-[800] text-white">{event.tag}</span>
               </div>
-              {event.rating > 0 && (
-                <div className="absolute top-3 right-14 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-lg flex items-center gap-1">
-                  <FiStar className="text-amber-400" size={12} fill="currentColor" />
-                  <span className="text-xs font-[700] text-white">{event.rating}</span>
-                  {event.reviews > 0 && <span className="text-xs text-white/70">({event.reviews})</span>}
-                </div>
-              )}
+  {(event.rating || 0) > 0 && (
+  <div className="absolute top-3 right-14 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-lg flex items-center gap-1">
+    <FiStar className="text-amber-400" size={12} fill="currentColor" />
+    <span className="text-xs font-[700] text-white">{event.rating}</span>
+    {event.reviews > 0 && <span className="text-xs text-white/70">({event.reviews})</span>}
+  </div>
+)}
             </div>
 
             <div className="flex-1 overflow-auto">
