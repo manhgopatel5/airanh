@@ -532,12 +532,12 @@ export default function GroupChatPage() {
                     </div>
                   )}
 
-                  <div
-                    className={`relative px-3 py-2 rounded- ${
-                      isMe
-                    ? 'bg-[#0a84ff] text-white'
-                        : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white'
-                    } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
+<div
+  className={`relative px-3.5 py-2.5 ${
+    isMe
+ ? 'bg-[#0a84ff] text-white rounded-[18px] rounded-br-[4px]'
+    : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white rounded-[18px] rounded-bl-[4px]'
+} ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
                     onPointerDown={() => isMe && handleLongPressStart(msg.id)}
                     onPointerUp={handleLongPressEnd}
                     onPointerLeave={handleLongPressEnd}
@@ -546,9 +546,9 @@ export default function GroupChatPage() {
                       <audio controls src={msg.audioUrl} className="max-w-[240px]" />
                     ) : msg.imageUrl? (
                       <img src={msg.imageUrl} alt="Ảnh" className="rounded-xl max-w-[240px] max-h-[240px] object-cover" />
-                    ) : (
-                      <p className="text- leading- whitespace-pre-wrap break-words">{msg.text}</p>
-                    )}
+  ) : (
+  <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
+)}
 
                     {longPressMsg === msg.id && isMe && (
                       <div className="absolute -top-10 right-0 flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1">
@@ -604,75 +604,80 @@ export default function GroupChatPage() {
         </div>
       )}
 
-      <form onSubmit={handleSend} className="p-2 border-t border-black/10 dark:border-white/10 bg-white dark:bg-black relative">
-        {showMentions && group?.membersInfo && (
-          <div className="absolute bottom-12 left-2 right-14 bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-black/10 dark:border-white/10 py-1 max-h-40 overflow-y-auto z-20">
-            {group.members.map(uid => {
-              const info = group.membersInfo?.[uid];
-              if (!info) return null;
-              return (
-                <button
-                  key={uid}
-                  type="button"
-                  onClick={() => selectMention(info.name)}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 w-full text-left"
-                >
-                  <img src={info.avatar} alt="" className="w-7 h-7 rounded-full" />
-                  <div>
-                    <p className="text-sm font-medium">{info.name}</p>
-                    <p className="text-xs text-[#8e8e93]">@{info.username}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="flex items-center gap-2">
+<form
+  onSubmit={handleSend}
+  className="pb-[env(safe-area-inset-bottom)] px-2 pt-2 border-t border-black/10 dark:border-white/10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl relative"
+>
+  {showMentions && group?.membersInfo && (
+    <div className="absolute bottom-14 left-2 right-14 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 py-1 max-h-40 overflow-y-auto z-20">
+      {group.members.map(uid => {
+        const info = group.membersInfo?.[uid];
+        if (!info || uid === user?.uid) return null;
+        return (
           <button
+            key={uid}
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40"
+            onClick={() => selectMention(info.name)}
+            className="flex items-center gap-2 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 w-full text-left"
           >
-            <FiImage size={22} />
+            <img src={info.avatar} alt="" className="w-7 h-7 rounded-full" />
+            <div>
+              <p className="text-sm font-medium">{info.name}</p>
+              <p className="text-xs text-[#8e8e93]">@{info.username}</p>
+            </div>
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleSendImage}
-          />
-          <input
-            ref={inputRef}
-            value={text}
-            onChange={handleInputChange}
-            placeholder="Nhắn tin..."
-            className="flex-1 h-9 px-4 bg-[#f2f2f7] dark:bg-zinc-800 rounded-full text- outline-none placeholder:text-[#8e8e93]"
-            disabled={sending || uploading || recording}
-          />
-          {text.trim()? (
-            <button
-              type="submit"
-              disabled={sending}
-              className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 disabled:text-[#8e8e93]"
-            >
-              <FiSend size={20} />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onPointerDown={startRecording}
-              onPointerUp={stopRecording}
-              onPointerLeave={stopRecording}
-              className={`w-8 h-8 flex items-center justify-center active:opacity-60 ${recording? 'text-red-500' : 'text-[#0a84ff]'}`}
-            >
-              <FiMic size={20} />
-            </button>
-          )}
-        </div>
-      </form>
+        );
+      })}
+    </div>
+  )}
+
+  <div className="flex items-end gap-2">
+    <button
+      type="button"
+      onClick={() => fileInputRef.current?.click()}
+      disabled={uploading}
+      className="w-9 h-9 mb-[2px] flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40"
+    >
+      <FiImage size={22} />
+    </button>
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={handleSendImage}
+    />
+    <div className="flex-1 min-h-[36px] max-h-[120px] flex items-center bg-[#f2f2f7] dark:bg-zinc-800 rounded-[20px] px-4">
+      <input
+        ref={inputRef}
+        value={text}
+        onChange={handleInputChange}
+        placeholder="Nhắn tin..."
+        className="flex-1 py-[8px] bg-transparent text-[15px] outline-none placeholder:text-[#8e8e93]"
+        disabled={sending || uploading || recording}
+      />
+    </div>
+    {text.trim()? (
+      <button
+        type="submit"
+        disabled={sending}
+        className="w-9 h-9 mb-[2px] flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 disabled:text-[#8e8e93]"
+      >
+        <FiSend size={20} />
+      </button>
+    ) : (
+      <button
+        type="button"
+        onPointerDown={startRecording}
+        onPointerUp={stopRecording}
+        onPointerLeave={stopRecording}
+        className={`w-9 h-9 mb-[2px] flex items-center justify-center active:opacity-60 ${recording? 'text-red-500' : 'text-[#0a84ff]'}`}
+      >
+        <FiMic size={20} />
+      </button>
+    )}
+  </div>
+</form>
     </div>
   );
 }
