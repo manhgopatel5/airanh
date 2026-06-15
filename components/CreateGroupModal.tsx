@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { FiX, FiUsers } from "react-icons/fi";
+import { FiX } from "react-icons/fi";
 import { toast } from "sonner";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
