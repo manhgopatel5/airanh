@@ -2292,15 +2292,17 @@ return (
   </div>
 </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
-  {activeTab === "group" && (
-<GroupsTab
-  groups={items.filter(i => i.isGroup)}
-  pinned={pinned}
-  onTogglePin={handleTogglePin}
-  onCreateGroup={() => setShowCreateGroup(true)}
-  loading={loading}
-/>
-      )}
+{activeTab === "group" && (
+  <div className="pt-3">
+    <GroupsTab
+      groups={items.filter(i => i.isGroup)}
+      pinned={pinned}
+      onTogglePin={handleTogglePin}
+      onCreateGroup={() => setShowCreateGroup(true)}
+      loading={loading}
+    />
+  </div>
+)}
 {showPublicRooms && (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/40" onClick={() => setShowPublicRooms(false)} />
