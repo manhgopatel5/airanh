@@ -39,7 +39,7 @@ service cloud.firestore {
     match /checkins/{checkinId} {
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if false; // Không cho sửa/xóa check-in
+      allow update, delete: if false;
     }
 
     // ========== PROVINCES ==========
@@ -150,29 +150,72 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
+    // ========== GROUPS - MỚI THÊM CHO TẠO NHÓM CÓ PASS ==========
+    match /groups/{groupId} {
+      // Đọc: phải là thành viên HOẶC query theo groupCode để tìm nhóm
+      allow read: if isSignedIn() && (
+        request.auth.uid in resource.data.members ||
+        request.query.where.groupCode != null
+      );
+      
+      // Tạo: chỉ cần đăng nhập, phải là owner và trong members
+      allow create: if isSignedIn()
+        && request.auth.uid == request.resource.data.ownerId
+        && request.auth.uid in request.resource.data.members
+        && request.resource.data.members.size() == 1
+        && request.resource.data.memberCount == 1
+        && request.resource.data.groupCode is string
+        && request.resource.data.groupCode.matches('^[0-9]{6}$');
+      
+      // Update: admin update được, member chỉ update members/memberCount/unreadCount khi join
+      allow update: if isSignedIn() && (
+        request.auth.uid in resource.data.admins ||
+        (
+          request.auth.uid in request.resource.data.members &&
+          request.resource.data.diff(resource.data).changedKeys()
+            .hasOnly(['members', 'memberCount', 'unreadCount', 'lastMessage', 'lastSenderId', 'updatedAt'])
+        )
+      );
+      
+      // Xóa: chỉ owner
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.ownerId;
+
+      // Messages trong nhóm
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && 
+          request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members;
+        
+        allow create: if isSignedIn()
+          && request.auth.uid == request.resource.data.senderId
+          && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members;
+        
+        allow update: if isSignedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members
+          && request.resource.data.diff(resource.data).changedKeys()
+            .hasOnly(['seenBy', 'reactions', 'text', 'editedAt', 'edited']);
+        
+        allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
+      }
+    }
+
     // ========== CHATS - ĐÃ SỬA CHO PUBLIC ROOM ==========
     match /chats/{chatId} {
-      // Đọc: public thì ai cũng đọc, private thì phải trong members
       allow read: if isSignedIn() && (isPublic(chatId) || request.auth.uid in resource.data.members);
 
-      // Tạo: public thì 1 người cũng tạo được, private cần >= 2 members
       allow create: if isSignedIn() 
         && request.auth.uid in request.resource.data.members
         && (isPublic(chatId) || request.resource.data.members.size() >= 2);
 
-      // Update: public thì ai cũng update được lastMessage, private thì phải trong members
       allow update: if isSignedIn() && (isPublic(chatId) || request.auth.uid in resource.data.members);
 
       allow delete: if false;
 
       match /messages/{messageId} {
-        // Đọc: public thì ai cũng đọc
         allow read: if isSignedIn() && (
           isPublic(chatId) || 
           request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
         );
 
-        // Tạo: public thì không cần check members, private thì phải có trong members
         allow create: if isSignedIn()
           && request.auth.uid == request.resource.data.senderId
           && (
@@ -180,9 +223,8 @@ service cloud.firestore {
             request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
           )
           && get(/databases/$(database)/documents/chats/$(chatId)).data.get('status', 'active') == 'active'
-          &&!(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('blockedUsers', []));
+          && !(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('blockedUsers', []));
 
-        // Update: public thì cho phép update seenBy/reactions/pollData
         allow update: if isSignedIn()
           && (
             isPublic(chatId) || 
@@ -220,7 +262,7 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasAll(['uid', 'createdAt'])
-        &&!exists(/databases/$(database)/documents/usernames/$(username));
+        && !exists(/databases/$(database)/documents/usernames/$(username));
 
       allow update, delete: if false;
     }
