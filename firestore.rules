@@ -150,24 +150,34 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    // ========== GROUPS - MỚI THÊM CHO TẠO NHÓM CÓ PASS ==========
+    // ========== GROUPS - FIX HOÀN CHỈNH ==========
     match /groups/{groupId} {
-      // Đọc: phải là thành viên HOẶC query theo groupCode để tìm nhóm
+      // Đọc: phải là thành viên HOẶC đang query theo groupCode để tìm nhóm
       allow read: if isSignedIn() && (
         request.auth.uid in resource.data.members ||
         request.query.where.groupCode != null
       );
       
-      // Tạo: chỉ cần đăng nhập, phải là owner và trong members
+      // Tạo: check đủ field bắt buộc
       allow create: if isSignedIn()
+        && request.resource.data.keys().hasAll([
+          'name', 'groupCode', 'members', 'admins', 'ownerId', 
+          'createdBy', 'createdAt', 'updatedAt', 'isGroup', 
+          'memberCount', 'hasPassword'
+        ])
         && request.auth.uid == request.resource.data.ownerId
         && request.auth.uid in request.resource.data.members
         && request.resource.data.members.size() == 1
         && request.resource.data.memberCount == 1
+        && request.resource.data.isGroup == true
         && request.resource.data.groupCode is string
-        && request.resource.data.groupCode.matches('^[0-9]{6}$');
+        && request.resource.data.groupCode.matches('^[0-9]{6}$')
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 3
+        && request.resource.data.hasPassword is bool
+        && (!request.resource.data.hasPassword || request.resource.data.passwordHash is string);
       
-      // Update: admin update được, member chỉ update members/memberCount/unreadCount khi join
+      // Update: admin full quyền, member chỉ join được
       allow update: if isSignedIn() && (
         request.auth.uid in resource.data.admins ||
         (
