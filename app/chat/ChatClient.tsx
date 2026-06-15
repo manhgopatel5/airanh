@@ -4,6 +4,7 @@ import GroupsTab from "@/components/GroupsTab";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import CreateGroupModal from "@/components/CreateGroupModal";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
@@ -2317,6 +2318,19 @@ return (
   loading={gpsLoading}
   mode="task" 
 />
+     {showCreateGroup && (
+        <CreateGroupModal
+          open={showCreateGroup}
+          onClose={() => setShowCreateGroup(false)}
+          onCreated={(chatId) => {
+            setShowCreateGroup(false);
+            router.push(`/rooms/${chatId}`);
+          }}
+        />
+      )}
+    </div>
+  );
+}
     </>
   );
 }
