@@ -19,26 +19,21 @@ export async function POST(request: NextRequest) {
     today.setHours(0, 0, 0, 0);
 
     const existed = await db.collection('checkins')
-    .where('eventId', '==', eventId)
-    .where('userId', '==', userId)
-    .where('timestamp', '>=', today)
-    .get();
+      .where('eventId', '==', eventId)
+      .where('userId', '==', userId)
+      .where('timestamp', '>=', today)
+      .get();
 
     if (!existed.empty) {
       return NextResponse.json({ error: 'Đã check-in hôm nay rồi' }, { status: 400 });
     }
 
-    // Lưu check-in
+    // Chỉ lưu check-in, KHÔNG update joined nữa
     await db.collection('checkins').add({
       eventId,
       userId,
       timestamp: FieldValue.serverTimestamp(),
     });
-
-    // Tăng count - dùng set merge để tránh lỗi doc chưa tồn tại
-    await db.collection('events').doc(eventId).set({
-      joined: FieldValue.increment(1)
-    }, { merge: true });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
@@ -59,26 +54,20 @@ export async function DELETE(request: NextRequest) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Tìm check-in hôm nay
     const snapshot = await db.collection('checkins')
-    .where('eventId', '==', eventId)
-    .where('userId', '==', userId)
-    .where('timestamp', '>=', today)
-    .get();
+      .where('eventId', '==', eventId)
+      .where('userId', '==', userId)
+      .where('timestamp', '>=', today)
+      .get();
 
     if (snapshot.empty) {
       return NextResponse.json({ error: 'Chưa check-in hôm nay' }, { status: 400 });
     }
 
-    // Xóa doc check-in
+    // Chỉ xóa doc check-in, KHÔNG update joined nữa
     const batch = db.batch();
     snapshot.docs.forEach(doc => batch.delete(doc.ref));
     await batch.commit();
-
-    // Giảm count
-    await db.collection('events').doc(eventId).set({
-      joined: FieldValue.increment(-1)
-    }, { merge: true });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
@@ -98,10 +87,10 @@ export async function GET(request: NextRequest) {
 
     const db = adminDb();
 
-    // Đếm toàn bộ thời gian, không filter 7 ngày nữa
+    // Đếm trực tiếp từ checkins - đây là nguồn duy nhất
     const snapshot = await db.collection('checkins')
-    .where('eventId', '==', eventId)
-    .get();
+      .where('eventId', '==', eventId)
+      .get();
 
     return NextResponse.json({ count: snapshot.size });
   } catch (error: any) {
