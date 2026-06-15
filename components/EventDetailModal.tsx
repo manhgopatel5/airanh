@@ -73,17 +73,17 @@ export default function EventDetailModal({
     }
   };
 
-  useEffect(() => {
-    if (!event) return;
-    setLocalJoined(event.joined || 0);
-    setLocalRating(event.rating || 0);
-    setLocalReviews(event.reviews || 0);
-    fetchReviews();
+useEffect(() => {
+  if (!event) return;
+  setLocalJoined(event.joined || 0);
+  setLocalRating(event.rating || 0); // Lấy từ prop, khỏi fetch
+  setLocalReviews(event.reviews || 0); // Lấy từ prop, khỏi fetch
+  // XÓA DÒNG NÀY: fetchReviews();
 
-    const userId = getUserId();
-    const checkedInToday = localStorage.getItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`);
-    setHasCheckedIn(!!checkedInToday);
-  }, [event]);
+  const userId = getUserId();
+  const checkedInToday = localStorage.getItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`);
+  setHasCheckedIn(!!checkedInToday);
+}, [event]);
 
   const handleCheckin = async () => {
     if (!event || checking || hasCheckedIn) return;
@@ -310,21 +310,26 @@ export default function EventDetailModal({
                   </div>
 
                   {/* Bài đánh giá - bỏ bg xám, giống row trên */}
-                  <button
-                    onClick={() => setShowReviews(!showReviews)}
-                    className="flex items-start gap-3 text-sm w-full text-left active:opacity-60"
-                  >
-                    <FiMessageSquare className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-[550]">Bài đánh giá</p>
-                          <p className="text-[#8e8e93] text-xs mt-0.5">{localReviews} đánh giá</p>
-                        </div>
-                        <FiX className={`transform transition-transform text-[#8e8e93] ${showReviews? 'rotate-0' : 'rotate-45'}`} size={18} />
-                      </div>
-                    </div>
-                  </button>
+    <button
+  onClick={async () => {
+    if (!showReviews) {
+      await fetchReviews(); // Chỉ fetch khi mở
+    }
+    setShowReviews(!showReviews);
+  }}
+  className="flex items-start gap-3 text-sm w-full text-left active:opacity-60"
+>
+  <FiMessageSquare className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
+  <div className="flex-1">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="font-[550]">Bài đánh giá</p>
+        <p className="text-[#8e93] text-xs mt-0.5">{localReviews} đánh giá</p>
+      </div>
+      <FiX className={`transform transition-transform text-[#8e8e93] ${showReviews? 'rotate-0' : 'rotate-45'}`} size={18} />
+    </div>
+  </div>
+</button>
                 </div>
 
                 {showReviews && (
