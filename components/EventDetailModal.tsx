@@ -4,6 +4,7 @@ import { EventItem } from "@/data/events";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function EventDetailModal({
   event,
@@ -12,43 +13,22 @@ export default function EventDetailModal({
   event: EventItem | null;
   onClose: () => void;
 }) {
-  const [checkinCount, setCheckinCount] = useState(0);
+  const router = useRouter();
   const [checking, setChecking] = useState(false);
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
-  const [loadingCount, setLoadingCount] = useState(true);
 
   // Tạo userId riêng cho từng browser
   const getUserId = () => {
     let uid = localStorage.getItem('userId');
     if (!uid) {
-      uid = `guest_${crypto.randomUUID()}`; // Dùng UUID cho unique
+      uid = `guest_${crypto.randomUUID()}`;
       localStorage.setItem('userId', uid);
     }
     return uid;
   };
 
-  const fetchCheckinCount = async () => {
-    if (!event) return;
-    setLoadingCount(true);
-    try {
-      const res = await fetch(`/api/admin/checkin?eventId=${event.id}`);
-      const data = await res.json();
-      if (res.ok) {
-        setCheckinCount(data.count || 0);
-      } else {
-        setCheckinCount(event.joined || 0);
-      }
-    } catch (error) {
-      setCheckinCount(event.joined || 0);
-    } finally {
-      setLoadingCount(false);
-    }
-  };
-
   useEffect(() => {
     if (!event) return;
-    fetchCheckinCount();
-
     const userId = getUserId();
     const checkedInToday = localStorage.getItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`);
     setHasCheckedIn(!!checkedInToday);
@@ -74,10 +54,10 @@ export default function EventDetailModal({
         return;
       }
 
-      await fetchCheckinCount();
       setHasCheckedIn(true);
       localStorage.setItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`, '1');
       toast.success("Check-in thành công! 🎉");
+      router.refresh(); // Reload data từ server
     } catch (error) {
       toast.error("Lỗi mạng");
     } finally {
@@ -105,10 +85,10 @@ export default function EventDetailModal({
         return;
       }
 
-      await fetchCheckinCount();
       setHasCheckedIn(false);
       localStorage.removeItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`);
       toast.success("Đã bỏ check-in");
+      router.refresh(); // Reload data từ server
     } catch (error) {
       toast.error("Lỗi mạng");
     } finally {
@@ -176,7 +156,6 @@ export default function EventDetailModal({
                       <p className="font-[550]">Địa chỉ</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.address}</p>
                     </div>
-                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiClock className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div>
@@ -198,7 +177,7 @@ export default function EventDetailModal({
                         <div>
                           <p className="font-[550]">Lượt check-in</p>
                           <p className="text-[#8e8e93] text-xs mt-0.5">
-                            {loadingCount? 'Đang tải...' : `${checkinCount} người`}
+                            {event.joined || 0} người
                           </p>
                         </div>
                         <button
@@ -206,7 +185,7 @@ export default function EventDetailModal({
                           disabled={checking}
                           className={`px-3 h-8 rounded-lg text-xs font-[600] flex items-center gap-1.5 ${
                             hasCheckedIn
-                       ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
+                      ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
                             : 'bg-[#0a84ff] text-white active:scale-95'
                           } disabled:opacity-50 transition-transform`}
                         >
