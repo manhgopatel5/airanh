@@ -279,40 +279,59 @@ function GroupItem({
   isLast: boolean;
 }) {
   return (
-    <Link
-      href={`/rooms/${group.chatId}`}
-      className={`flex items-center gap-3 px-4 py-3 active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors ${!isLast? 'border-b border-black/[0.06] dark:border-white/[0.06]' : ''}`}
-    >
-      <div className="relative flex-shrink-0">
-        <img
-          src={group.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.name)}&background=0a84ff&color=fff&bold=true`}
-          alt={group.name}
-          className="w-14 h-14 rounded-2xl object-cover bg-zinc-100 dark:bg-zinc-800"
-        />
-        {group.unreadCount && group.unreadCount > 0 && (
-          <div className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 bg-red-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
-            <span className="text-[11px] font-[700] text-white">{group.unreadCount > 99? '99+' : group.unreadCount}</span>
-          </div>
-        )}
-      </div>
+  <div className={`flex items-center gap-3 px-4 py-3 active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors ${!isLast? 'border-b border-black/[0.06] dark:border-white/[0.06]' : ''}`}>
+  <Link
+    href={`/rooms/${group.chatId}`}
+    className="flex items-center gap-3 flex-1 min-w-0"
+  >
+    <div className="relative flex-shrink-0">
+      <img
+        src={group.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.name)}&background=0a84ff&color=fff&bold=true`}
+        alt={group.name}
+        className="w-14 h-14 rounded-2xl object-cover bg-zinc-100 dark:bg-zinc-800"
+      />
+      {group.unreadCount && group.unreadCount > 0 && (
+        <div className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 bg-red-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
+          <span className="text-[11px] font-[700] text-white">{group.unreadCount > 99? '99+' : group.unreadCount}</span>
+        </div>
+      )}
+    </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2 mb-0.5">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <p className="text-[16px] font-[600] truncate">{group.name}</p>
-            {isPinned && <RiPushpinFill size={13} className="text-[#8e8e93] flex-shrink-0" />}
-            <FiLock size={12} className="text-[#8e8e93] flex-shrink-0" />
-          </div>
-          <span className="text-[13px] text-[#8e8e93] flex-shrink-0 tabular-nums">{formatTime(group.updatedAt)}</span>
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center justify-between gap-2 mb-0.5">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <p className="text-[16px] font-[600] truncate">{group.name}</p>
+          {isPinned && <RiPushpinFill size={13} className="text-[#0a84ff] flex-shrink-0" />}
+          <FiLock size={12} className="text-[#8e8e93] flex-shrink-0" />
         </div>
-        <div className="flex items-center gap-1.5">
-          <p className="text-[14px] text-[#8e8e93] truncate flex-1">
-            {group.lastSenderName && group.lastSenderName!== "Bạn"? `${group.lastSenderName}: ` : ""}
-            {group.lastMessage || "Chưa có tin nhắn"}
-          </p>
-          <FiChevronRight size={16} className="text-[#8e8e93] flex-shrink-0" />
-        </div>
+        <span className="text-[13px] text-[#8e8e93] flex-shrink-0 tabular-nums">{formatTime(group.updatedAt)}</span>
       </div>
-    </Link>
+      <div className="flex items-center gap-1.5">
+        <p className="text-[14px] text-[#8e8e93] truncate flex-1">
+          {group.lastSenderName && group.lastSenderName!== "Bạn"? `${group.lastSenderName}: ` : ""}
+          {group.lastMessage || "Chưa có tin nhắn"}
+        </p>
+      </div>
+    </div>
+  </Link>
+
+  <div className="flex items-center gap-1 flex-shrink-0">
+    <button
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onTogglePin(group.chatId);
+        if ("vibrate" in navigator) navigator.vibrate(10);
+      }}
+      className="w-8 h-8 flex items-center justify-center active:bg-black/5 dark:active:bg-white/5 rounded-lg transition-colors"
+    >
+      <RiPushpinFill 
+        size={18} 
+        className={isPinned? 'text-[#0a84ff]' : 'text-[#8e8e93]'} 
+      />
+    </button>
+    <FiChevronRight size={16} className="text-[#8e8e93]" />
+  </div>
+</div>
   );
 }
