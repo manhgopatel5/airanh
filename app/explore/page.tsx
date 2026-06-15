@@ -6,6 +6,7 @@ import { CATEGORY_INFO, EventItem } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
 import { FiArrowLeft, FiUsers, FiMapPin, FiStar, FiFilter, FiX } from "react-icons/fi";
 import { RiEqualizerLine } from "react-icons/ri";
+import { useCheckinCount } from "@/hooks/useCheckinCount";
 
 const PROVINCES = [
   "Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ",
@@ -47,6 +48,58 @@ type FilterState = {
   sortBy: SortOption;
   province: string | null;
 };
+
+function ExploreCard({
+  item,
+  onClick,
+  distance
+}: {
+  item: EventItem;
+  onClick: () => void;
+  distance?: string;
+}) {
+  const { count, loading } = useCheckinCount(item.id);
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
+    >
+      <div className="relative h-32">
+        <img src={item.imageUrl || item.image} className="w-full h-full object-cover" loading="lazy" alt={item.name || item.title} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
+        <div className={`absolute top-2 left-2 px-2 py-0.5 bg-gradient-to-r ${item.tagColor} rounded-md`}>
+          <span className="text-xs font-[800] text-white">{item.tag}</span>
+        </div>
+        {item.rating && (
+          <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-md flex items-center gap-1">
+            <FiStar className="text-amber-400" size={10} fill="currentColor" />
+            <span className="text-xs font-[700] text-white">{item.rating}</span>
+          </div>
+        )}
+        <div className="absolute bottom-2 left-3 right-3">
+          <div className="flex items-center gap-1.5 text-white">
+            <span className="text-lg">{item.icon}</span>
+            <h4 className="text-base font-[700] drop-shadow-lg">{item.name || item.title}</h4>
+          </div>
+        </div>
+      </div>
+      <div className="p-3">
+        <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 line-clamp-2">{item.desc || item.description}</p>
+        <div className="flex items-center justify-between text-xs text-[#8e8e93]">
+          <span className="flex items-center gap-1">
+            <FiUsers size={12} />
+            {loading? '...' : `${count} người`}
+          </span>
+          <span className="flex items-center gap-1">
+            <FiMapPin size={12} />
+            {item.province} • {distance || '?km'}
+          </span>
+        </div>
+      </div>
+    </button>
+  );
+}
 
 export default function ExplorePage() {
   const router = useRouter();
@@ -184,8 +237,8 @@ export default function ExplorePage() {
           <button
             onClick={() => setFilters(prev => ({...prev, category: null}))}
             className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
-          !filters.category
-            ? 'bg-[#0a84ff] text-white'
+         !filters.category
+           ? 'bg-[#0a84ff] text-white'
                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
             }`}
           >
@@ -197,7 +250,7 @@ export default function ExplorePage() {
               onClick={() => setFilters(prev => ({...prev, category: key}))}
               className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap flex items-center gap-1 ${
                 filters.category === key
-              ? 'bg-[#0a84ff] text-white'
+             ? 'bg-[#0a84ff] text-white'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
             >
@@ -219,7 +272,7 @@ export default function ExplorePage() {
               onClick={() => setFilters(prev => ({...prev, sortBy: sort.value as SortOption}))}
               className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
                 filters.sortBy === sort.value
-              ? 'bg-[#0a84ff] text-white'
+             ? 'bg-[#0a84ff] text-white'
                   : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
             >
@@ -242,46 +295,16 @@ export default function ExplorePage() {
             </div>
           ) : (
             filteredEvents.map((item) => (
-              <button
+              <ExploreCard
                 key={item.id}
+                item={item}
                 onClick={() => setSelectedEvent(item)}
-                className="w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
-              >
-                <div className="relative h-32">
-                  <img src={item.imageUrl || item.image} className="w-full h-full object-cover" loading="lazy" alt={item.name || item.title} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
-                  <div className={`absolute top-2 left-2 px-2 py-0.5 bg-gradient-to-r ${item.tagColor} rounded-md`}>
-                    <span className="text- font-[800] text-white">{item.tag}</span>
-                  </div>
-                  {item.rating && (
-                    <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-md flex items-center gap-1">
-                      <FiStar className="text-amber-400" size={10} fill="currentColor" />
-                      <span className="text- font-[700] text-white">{item.rating}</span>
-                    </div>
-                  )}
-                  <div className="absolute bottom-2 left-3 right-3">
-                    <div className="flex items-center gap-1.5 text-white">
-                      <span className="text-lg">{item.icon}</span>
-                      <h4 className="text-base font-[700] drop-shadow-lg">{item.name || item.title}</h4>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-3">
-                  <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 line-clamp-2">{item.desc || item.description}</p>
-                  <div className="flex items-center justify-between text-xs text-[#8e8e93]">
-                    <span className="flex items-center gap-1">
-                      <FiUsers size={12} />
-                      {item.joined} người
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <FiMapPin size={12} />
-                      {item.province} • {userLat && userLng && item.lat && item.lng
-                     ? formatDistance(getEventDistance(item))
-                        : '?km'}
-                    </span>
-                  </div>
-                </div>
-              </button>
+                distance={
+                  userLat && userLng && item.lat && item.lng
+                 ? formatDistance(getEventDistance(item))
+                    : undefined
+                }
+              />
             ))
           )}
         </div>
@@ -290,7 +313,7 @@ export default function ExplorePage() {
       {showFilter && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-2xl" onClick={() => setShowFilter(false)} />
-          <div className="relative w-full sm:max-w-[400px] bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h- flex-col">
+          <div className="relative w-full sm:max-w-[400px] bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] flex flex-col">
             <div className="w-9 h-1 bg-black/15 dark:bg-white/15 rounded-full mx-auto mt-2.5 sm:hidden" />
 
             <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-black/5 dark:border-white/5">
@@ -324,7 +347,7 @@ export default function ExplorePage() {
                       onClick={() => setFilters(prev => ({...prev, minRating: rating}))}
                       className={`flex-1 h-11 rounded-xl text-sm font-[600] ${
                         filters.minRating === rating
-                      ? 'bg-[#0a84ff] text-white'
+                     ? 'bg-[#0a84ff] text-white'
                           : 'bg-zinc-100 dark:bg-zinc-800'
                       }`}
                     >
@@ -343,7 +366,7 @@ export default function ExplorePage() {
                       onClick={() => setFilters(prev => ({...prev, maxDistance: km}))}
                       className={`w-full h-11 rounded-xl text-sm font-[600] text-left px-4 ${
                         filters.maxDistance === km
-                      ? 'bg-[#0a84ff] text-white'
+                     ? 'bg-[#0a84ff] text-white'
                           : 'bg-zinc-100 dark:bg-zinc-800'
                       }`}
                     >
