@@ -12,6 +12,7 @@ import { EventItem, CATEGORY_INFO } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAppStore } from "@/store/app";
+import CreateGroupModal from "@/components/CreateGroupModal";
 import {
   collection,
   query,
@@ -2189,6 +2190,19 @@ return (
     </div>
   </div>
 )}
+ {showCreateGroup && (
+        <CreateGroupModal
+          open={showCreateGroup}
+          onClose={() => setShowCreateGroup(false)}
+          onCreated={(chatId) => {
+            setShowCreateGroup(false);
+            router.push(`/rooms/${chatId}`);
+          }}
+        />
+      )}
+    </div>
+  );
+}
 {showVip && (
   <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/40 backdrop-blur-2xl" onClick={() => setShowVip(false)} />
