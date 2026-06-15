@@ -41,7 +41,7 @@ interface GroupsTabProps {
   onTogglePin: (chatId: string) => void;
   onCreateGroup: () => void;
   loading: boolean;
-  userVip: { tier: 'free' | 'pro' | 'elite' } | null;
+
 }
 
 export default function GroupsTab({
@@ -51,8 +51,7 @@ export default function GroupsTab({
   pinned,
   onTogglePin,
   onCreateGroup,
-  loading,
-  userVip
+  loading
 }: GroupsTabProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -227,7 +226,7 @@ export default function GroupsTab({
                     isPinned={true}
                     onTogglePin={onTogglePin}
                     formatTime={formatTime}
-                    userVip={userVip}
+                    
                     isLast={idx === pinnedGroups.length - 1 && normalGroups.length === 0}
                   />
                 ))}
@@ -250,7 +249,7 @@ export default function GroupsTab({
                     isPinned={false}
                     onTogglePin={onTogglePin}
                     formatTime={formatTime}
-                    userVip={userVip}
+                    
                     isLast={idx === normalGroups.length - 1}
                   />
                 ))}
@@ -268,14 +267,14 @@ function GroupItem({
   isPinned,
   onTogglePin,
   formatTime,
-  userVip,
+  
   isLast
 }: {
   group: ChatItem;
   isPinned: boolean;
   onTogglePin: (id: string) => void;
   formatTime: (t?: any) => string;
-  userVip: { tier: 'free' | 'pro' | 'elite' } | null;
+
   isLast: boolean;
 }) {
   return (
