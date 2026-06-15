@@ -139,7 +139,7 @@ export default function ChatClient() {
   const db = getFirebaseDB();
   const router = useRouter();
   const unsubRef = useRef<Unsubscribe | null>(null);
-
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
   const mode = useAppStore((s) => s.mode);
   const isPlan = mode === "plan";
   const [showGpsModal, setShowGpsModal] = useState(false);
