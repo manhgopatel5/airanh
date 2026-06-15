@@ -3,7 +3,7 @@ import { useState } from "react";
 import { FiX, FiLock, FiEye, FiEyeOff, FiHash } from "react-icons/fi";
 import { toast } from "sonner";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function CreateGroupModal({
@@ -31,19 +31,11 @@ export default function CreateGroupModal({
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
 
-  // Tạo mã nhóm 6 số random, check trùng
-  const generateGroupCode = async (): Promise<string> => {
-    const db = getFirebaseDB();
-    let code = "";
-    let exists = true;
-    
-    while (exists) {
-      code = Math.floor(100000 + Math.random() * 900000).toString();
-      const q = query(collection(db, "groups"), where("groupCode", "==", code));
-      const snapshot = await getDocs(q);
-      exists = !snapshot.empty;
-    }
-    return code;
+  // Tạo mã nhóm 6 số - không query để tránh lỗi permission
+  const generateGroupCode = () => {
+    const time = Date.now().toString().slice(-4); // 4 số cuối timestamp
+    const random = Math.floor(10 + Math.random() * 90).toString(); // 2 số random
+    return time + random;
   };
 
   const resetForm = () => {
@@ -74,10 +66,10 @@ export default function CreateGroupModal({
 
     setCreating(true);
     try {
-      const groupCode = await generateGroupCode();
+      const groupCode = generateGroupCode();
       const groupData: any = {
         name: trimmedName,
-        groupCode, // MÃ NHÓM 6 SỐ
+        groupCode,
         members: [user.uid],
         admins: [user.uid],
         ownerId: user.uid,
@@ -111,7 +103,7 @@ export default function CreateGroupModal({
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !creating) {
+    if (e.key === 'Enter' &&!creating) {
       handleCreate();
     }
   };
@@ -171,11 +163,11 @@ export default function CreateGroupModal({
                 setPassword("");
               }}
               className={`relative w-12 h-7 rounded-full transition-colors ${
-                enablePassword ? 'bg-[#0a84ff]' : 'bg-[#d1d1d6] dark:bg-zinc-700'
+                enablePassword? 'bg-[#0a84ff]' : 'bg-[#d1d1d6] dark:bg-zinc-700'
               }`}
             >
               <div className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform ${
-                enablePassword ? 'translate-x-5' : 'translate-x-0.5'
+                enablePassword? 'translate-x-5' : 'translate-x-0.5'
               }`} />
             </button>
           </div>
@@ -187,7 +179,7 @@ export default function CreateGroupModal({
               </label>
               <div className="relative">
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyPress={handleKeyPress}
@@ -200,7 +192,7 @@ export default function CreateGroupModal({
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5"
                 >
-                  {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                  {showPassword? <FiEyeOff size={18} /> : <FiEye size={18} />}
                 </button>
               </div>
               <div className="text-[11px] text-[#8e8e93] dark:text-zinc-500 mt-1">
@@ -211,10 +203,10 @@ export default function CreateGroupModal({
 
           <button
             onClick={handleCreate}
-            disabled={creating || !name.trim() || (enablePassword && !password)}
+            disabled={creating ||!name.trim() || (enablePassword &&!password)}
             className="w-full h-12 bg-[#0a84ff] hover:bg-[#0a84ff]/90 text-white rounded-xl font-[600] text-[15px] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
           >
-            {creating ? "Đang tạo..." : "Tạo nhóm"}
+            {creating? "Đang tạo..." : "Tạo nhóm"}
           </button>
         </div>
       </div>
