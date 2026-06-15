@@ -1,11 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { adminDb, FieldValue } from '@/lib/firebase-admin';
+import { NextRequest, NextResponse } from 'next/server'
+import { adminDb } from '@/lib/firebase-admin'
+import { FieldValue } from 'firebase-admin/firestore'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
     const { eventId, userId } = await request.json();
 
-    if (!eventId ||!userId) {
+    if (!eventId || !userId) {
       return NextResponse.json({ error: 'Missing data' }, { status: 400 });
     }
 
@@ -16,10 +19,10 @@ export async function POST(request: NextRequest) {
     today.setHours(0, 0, 0, 0);
 
     const existed = await db.collection('checkins')
-     .where('eventId', '==', eventId)
-     .where('userId', '==', userId)
-     .where('timestamp', '>=', today)
-     .get();
+    .where('eventId', '==', eventId)
+    .where('userId', '==', userId)
+    .where('timestamp', '>=', today)
+    .get();
 
     if (!existed.empty) {
       return NextResponse.json({ error: 'Đã check-in hôm nay rồi' }, { status: 400 });
@@ -38,8 +41,9 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+  } catch (error: any) {
+    console.error('POST /api/admin/checkin error:', error);
+    return NextResponse.json({ error: 'Failed', detail: error.message }, { status: 500 });
   }
 }
 
@@ -57,12 +61,13 @@ export async function GET(request: NextRequest) {
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
     const snapshot = await db.collection('checkins')
-     .where('eventId', '==', eventId)
-     .where('timestamp', '>=', oneWeekAgo)
-     .get();
+    .where('eventId', '==', eventId)
+    .where('timestamp', '>=', oneWeekAgo)
+    .get();
 
     return NextResponse.json({ count: snapshot.size });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+  } catch (error: any) {
+    console.error('GET /api/admin/checkin error:', error);
+    return NextResponse.json({ error: 'Failed', detail: error.message }, { status: 500 });
   }
 }
