@@ -78,9 +78,9 @@ export default function GroupsTab({
   }
 
   return (
-    <div className="pb-24">
-      {/* Search + Create - Sticky */}
-      <div className="sticky top-0 z-10 bg-[#F7FAFF] dark:bg-[#05070A] px-4 pt-4 pb-3 space-y-3">
+    <div>
+      {/* Search + Create */}
+      <div className="px-4 pt-4 pb-3 space-y-3">
         <div className="relative">
           <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={18} />
           <input
