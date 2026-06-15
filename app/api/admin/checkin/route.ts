@@ -47,6 +47,46 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function DELETE(request: NextRequest) {
+  try {
+    const { eventId, userId } = await request.json();
+
+    if (!eventId || !userId) {
+      return NextResponse.json({ error: 'Missing data' }, { status: 400 });
+    }
+
+    const db = adminDb();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Tìm check-in hôm nay
+    const snapshot = await db.collection('checkins')
+    .where('eventId', '==', eventId)
+    .where('userId', '==', userId)
+    .where('timestamp', '>=', today)
+    .get();
+
+    if (snapshot.empty) {
+      return NextResponse.json({ error: 'Chưa check-in hôm nay' }, { status: 400 });
+    }
+
+    // Xóa doc check-in
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+
+    // Giảm count
+    await db.collection('events').doc(eventId).set({
+      joined: FieldValue.increment(-1)
+    }, { merge: true });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('DELETE /api/admin/checkin error:', error);
+    return NextResponse.json({ error: 'Failed', detail: error.message }, { status: 500 });
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
