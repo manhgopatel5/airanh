@@ -373,9 +373,13 @@ export default function ExplorePage() {
             </div>
           </div>
         </div>
-      )}
+            )}
 
-      <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+      <EventDetailModal
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        onCheckinSuccess={() => router.refresh()}
+      />
 
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}`}</style>
     </div>
