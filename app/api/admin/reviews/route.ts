@@ -1,36 +1,3 @@
-import '@/lib/firebase-admin'
-import { NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase-admin'
-import { FieldValue } from 'firebase-admin/firestore'
-
-export const dynamic = 'force-dynamic'
-
-// GET: Lấy review của 1 event
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const eventId = searchParams.get('eventId');
-    if (!eventId) return NextResponse.json({ error: 'Missing eventId' }, { status: 400 });
-
-    const db = adminDb();
-    const snap = await db.collection('reviews')
-    .where('eventId', '==', eventId)
-    .orderBy('createdAt', 'desc')
-    .get();
-
-    const reviews = snap.docs.map(doc => ({
-      id: doc.id,
-    ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
-    }));
-
-    return NextResponse.json({ reviews });
-  } catch (err: any) {
-    return NextResponse.json({ error: 'Failed', detail: err.message }, { status: 500 });
-  }
-}
-
-// POST: Thêm/sửa review
 export async function POST(request: Request) {
   try {
     const { eventId, userId, rating, comment } = await request.json();
@@ -38,18 +5,54 @@ export async function POST(request: Request) {
 
     const db = adminDb();
     const reviewId = `${eventId}_${userId}`;
+    const eventRef = db.collection('events').doc(eventId);
 
-    await db.collection('reviews').doc(reviewId).set({
-      eventId,
-      userId,
-      rating: Number(rating),
-      comment: comment || '',
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
+    // Dùng transaction để update atomic
+    await db.runTransaction(async (t) => {
+      const eventSnap = await t.get(eventRef);
+      if (!eventSnap.exists) throw new Error('Event not found');
+
+      const reviewRef = db.collection('reviews').doc(reviewId);
+      const oldReviewSnap = await t.get(reviewRef);
+      const oldRating = oldReviewSnap.exists? oldReviewSnap.data()?.rating : 0;
+
+      const data = eventSnap.data() || {};
+      const currentTotal = (data.rating || 0) * (data.reviews || 0);
+      const currentCount = data.reviews || 0;
+
+      let newCount = currentCount;
+      let newTotal = currentTotal;
+
+      if (oldRating > 0) {
+        // Update: trừ rating cũ, cộng rating mới
+        newTotal = newTotal - oldRating + Number(rating);
+      } else {
+        // New: cộng rating mới, tăng count
+        newTotal = newTotal + Number(rating);
+        newCount = newCount + 1;
+      }
+
+      const newAvg = newCount > 0? Number((newTotal / newCount).toFixed(1)) : 0;
+
+      t.set(reviewRef, {
+        eventId,
+        userId,
+        rating: Number(rating),
+        comment: comment || '',
+        createdAt: oldReviewSnap.exists? oldReviewSnap.data()?.createdAt : FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+      t.update(eventRef, {
+        rating: newAvg,
+        reviews: newCount,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
+    console.error('POST /api/admin/reviews error:', err);
     return NextResponse.json({ error: 'Failed', detail: err.message }, { status: 500 });
   }
 }
