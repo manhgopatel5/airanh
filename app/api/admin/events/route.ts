@@ -11,25 +11,37 @@ export async function GET() {
 
     // 1. Lấy events active
     const eventsSnap = await db.collection('events')
-     .where('isActive', '==', true)
-     .get();
+   .where('isActive', '==', true)
+   .get();
 
     // 2. Lấy toàn bộ checkins 1 lần
     const checkinsSnap = await db.collection('checkins').get();
-
-    // 3. Map đếm check-in theo eventId
     const countMap: Record<string, number> = {};
     checkinsSnap.docs.forEach(doc => {
       const eventId = doc.data().eventId;
       countMap[eventId] = (countMap[eventId] || 0) + 1;
     });
 
+    // 3. Lấy reviews và tính rating trung bình
+    const reviewsSnap = await db.collection('reviews').get();
+    const ratingMap: Record<string, { total: number; count: number }> = {};
+    reviewsSnap.docs.forEach(doc => {
+      const { eventId, rating } = doc.data();
+      if (!ratingMap[eventId]) ratingMap[eventId] = { total: 0, count: 0 };
+      ratingMap[eventId].total += Number(rating) || 0;
+      ratingMap[eventId].count += 1;
+    });
+
     // 4. Merge vào events
     const events = eventsSnap.docs.map(doc => {
       const data = doc.data();
+      const ratingData = ratingMap[doc.id];
+      const avgRating = ratingData? Number((ratingData.total / ratingData.count).toFixed(1)) : 0;
+      const reviewCount = ratingData?.count || 0;
+
       return {
         id: doc.id,
-       ...data,
+     ...data,
         title: data.title || data.name || '',
         name: data.name || data.title || '',
         desc: data.desc || data.description || '',
@@ -40,7 +52,9 @@ export async function GET() {
         tagColor: data.tagColor || 'from-blue-500 to-cyan-500',
         icon: data.icon || '🎉',
         category: data.category || 'other',
-        joined: countMap[doc.id] || 0, // DÙNG COUNT TỪ CHECKINS, BỎ data.joined
+        joined: countMap[doc.id] || 0,
+        rating: avgRating, // TÍNH TỪ REVIEWS
+        reviews: reviewCount, // ĐẾM TỪ REVIEWS
         address: data.address || '',
         openTime: data.openTime || '',
         price: data.price || 'Free',
@@ -49,15 +63,13 @@ export async function GET() {
         mapUrl: data.mapUrl || '',
         lat: data.lat? Number(data.lat) : null,
         lng: data.lng? Number(data.lng) : null,
-        rating: Number(data.rating) || 4.5,
-        reviews: Number(data.reviews) || 0,
         isActive: data.isActive?? true,
         createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
         updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
         date: data.date?.toDate?.()?.toISOString() || null,
       }
     })
-   .sort((a, b) => {
+ .sort((a, b) => {
       const dateA = a.updatedAt? new Date(a.updatedAt).getTime() : 0;
       const dateB = b.updatedAt? new Date(b.updatedAt).getTime() : 0;
       return dateB - dateA;
@@ -77,7 +89,7 @@ export async function POST(request: Request) {
     const id = body.id || db.collection('events').doc().id;
 
     await db.collection('events').doc(id).set({
-     ...body,
+   ...body,
       id,
       title: body.title || body.name || '',
       name: body.name || body.title || '',
@@ -95,9 +107,8 @@ export async function POST(request: Request) {
       mapUrl: body.mapUrl || '',
       lat: body.lat? Number(body.lat) : null,
       lng: body.lng? Number(body.lng) : null,
-      rating: Number(body.rating) || 4.5,
-      reviews: Number(body.reviews) || 0,
-      // joined: Number(body.joined) || 0, // BỎ DÒNG NÀY, KHÔNG LƯU NỮA
+      // rating: Number(body.rating) || 4.5, // BỎ, TÍNH TỪ REVIEWS
+      // reviews: Number(body.reviews) || 0, // BỎ, ĐẾM TỪ REVIEWS
       tips: Array.isArray(body.tips)? body.tips : [],
       gallery: Array.isArray(body.gallery)? body.gallery : [],
       isActive: body.isActive?? true,
