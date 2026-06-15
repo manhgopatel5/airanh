@@ -1925,14 +1925,13 @@ return (
   </div>
 )}
 
-{showCreateGroup && (
-  <CreateGroupModal
-    open={showCreateGroup}
-    onClose={() => setShowCreateGroup(false)}
-    onCreated={(chatId) => {
-      setShowCreateGroup(false);
-      router.push(`/rooms/${chatId}`);
-    }}
+<CreateGroupModal
+  open={open}
+  onClose={() => setOpen(false)}
+  onCreated={(groupId) => {
+    router.push(`/groups/${groupId}`); // Phải là /groups/
+    setOpen(false);
+  }}
 />
 )}
         {showAdd && (
