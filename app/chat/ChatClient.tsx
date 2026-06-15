@@ -2318,7 +2318,7 @@ return (
   loading={gpsLoading}
   mode="task" 
 />
-     {showCreateGroup && (
+      {showCreateGroup && (
         <CreateGroupModal
           open={showCreateGroup}
           onClose={() => setShowCreateGroup(false)}
@@ -2328,9 +2328,6 @@ return (
           }}
         />
       )}
-    </div>
-  );
-}
-    </>
-  );
-}
+    </div>  // Đóng div chính
+  );        // Đóng return
+}           // Đóng function ChatClient - KẾT THÚC FILE
