@@ -35,10 +35,10 @@ export async function POST(request: NextRequest) {
       timestamp: FieldValue.serverTimestamp(),
     });
 
-    // Tăng count
-    await db.collection('events').doc(eventId).update({
+    // Tăng count - dùng set merge để tránh lỗi doc chưa tồn tại
+    await db.collection('events').doc(eventId).set({
       joined: FieldValue.increment(1)
-    });
+    }, { merge: true });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
@@ -57,12 +57,10 @@ export async function GET(request: NextRequest) {
     }
 
     const db = adminDb();
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
+    // Đếm toàn bộ thời gian, không filter 7 ngày nữa
     const snapshot = await db.collection('checkins')
     .where('eventId', '==', eventId)
-    .where('timestamp', '>=', oneWeekAgo)
     .get();
 
     return NextResponse.json({ count: snapshot.size });
