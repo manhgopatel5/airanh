@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { getFirebaseDB } from "@/lib/firebase";
-import { doc, setDoc, updateDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
 
 type ChatItem = {
