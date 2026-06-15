@@ -85,6 +85,37 @@ export default function EventDetailModal({
     }
   };
 
+  const handleUncheckin = async () => {
+    if (!event || checking ||!hasCheckedIn) return;
+
+    setChecking(true);
+    const userId = getUserId();
+
+    try {
+      const res = await fetch('/api/admin/checkin', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: event.id, userId })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Bỏ check-in thất bại");
+        return;
+      }
+
+      await fetchCheckinCount();
+      setHasCheckedIn(false);
+      localStorage.removeItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`);
+      toast.success("Đã bỏ check-in");
+    } catch (error) {
+      toast.error("Lỗi mạng");
+    } finally {
+      setChecking(false);
+    }
+  };
+
   if (!event) return null;
 
   return (
@@ -171,21 +202,18 @@ export default function EventDetailModal({
                           </p>
                         </div>
                         <button
-                          onClick={handleCheckin}
-                          disabled={checking || hasCheckedIn}
+                          onClick={hasCheckedIn? handleUncheckin : handleCheckin}
+                          disabled={checking}
                           className={`px-3 h-8 rounded-lg text-xs font-[600] flex items-center gap-1.5 ${
                             hasCheckedIn
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                       ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
                             : 'bg-[#0a84ff] text-white active:scale-95'
                           } disabled:opacity-50 transition-transform`}
                         >
-                          {hasCheckedIn? (
-                            <>
-                              <FiCheckCircle size={14} />
-                              Đã check-in
-                            </>
-                          ) : checking? (
+                          {checking? (
                             "Đang xử lý..."
+                          ) : hasCheckedIn? (
+                            "Bỏ check-in"
                           ) : (
                             "Check-in"
                           )}
