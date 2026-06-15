@@ -489,7 +489,7 @@ export default function GroupChatPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1 flex flex-col justify-end" onClick={() => setLongPressMsg(null)}>
+<div className="flex-1 overflow-y-auto px-3 py-3 pb-20 space-y-1" onClick={() => setLongPressMsg(null)}>
         {messages.length === 0 && (
           <div className="h-full flex items-center justify-center text-[#8e8e93] text-sm">
             Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!
@@ -497,8 +497,12 @@ export default function GroupChatPage() {
         )}
         {messages.map((msg, idx) => {
           const isMe = msg.senderId === user?.uid;
-          const prevMsg = messages[idx - 1];
-          const showAvatar =!isMe && (!prevMsg || prevMsg.senderId!== msg.senderId);
+ const prevMsg = messages[idx - 1];
+const nextMsg = messages[idx + 1];
+const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
+const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
+const showAvatar =!isMe && isLastInGroup; // Hiện avatar ở tin cuối cụm
+const showName =!isMe && isFirstInGroup; // Hiện tên ở tin đầu cụm
           const showName =!isMe && showAvatar;
 
           return (
@@ -606,7 +610,7 @@ export default function GroupChatPage() {
 
 <form
   onSubmit={handleSend}
-  className="pb-[env(safe-area-inset-bottom)] px-2 pt-2 border-t border-black/10 dark:border-white/10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl relative"
+  className="fixed bottom-0 left-0 right-0 pb-[env(safe-area-inset-bottom)] px-2 pt-2 border-t border-black/10 dark:border-white/10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl"
 >
   {showMentions && group?.membersInfo && (
     <div className="absolute bottom-14 left-2 right-14 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 py-1 max-h-40 overflow-y-auto z-20">
@@ -636,7 +640,7 @@ export default function GroupChatPage() {
       type="button"
       onClick={() => fileInputRef.current?.click()}
       disabled={uploading}
-      className="w-9 h-9 mb-[2px] flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40"
+      className="w-9 h-9 mb-[2px] flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 flex-shrink-0"
     >
       <FiImage size={22} />
     </button>
@@ -653,7 +657,7 @@ export default function GroupChatPage() {
         value={text}
         onChange={handleInputChange}
         placeholder="Nhắn tin..."
-        className="flex-1 py-[8px] bg-transparent text-[15px] outline-none placeholder:text-[#8e8e93]"
+        className="flex-1 py-[8px] bg-transparent text-[15px] outline-none border-none placeholder:text-[#8e8e93]"
         disabled={sending || uploading || recording}
       />
     </div>
@@ -661,7 +665,7 @@ export default function GroupChatPage() {
       <button
         type="submit"
         disabled={sending}
-        className="w-9 h-9 mb-[2px] flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 disabled:text-[#8e8e93]"
+        className="w-9 h-9 mb-[2px] flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 disabled:text-[#8e8e93] flex-shrink-0"
       >
         <FiSend size={20} />
       </button>
@@ -671,7 +675,7 @@ export default function GroupChatPage() {
         onPointerDown={startRecording}
         onPointerUp={stopRecording}
         onPointerLeave={stopRecording}
-        className={`w-9 h-9 mb-[2px] flex items-center justify-center active:opacity-60 ${recording? 'text-red-500' : 'text-[#0a84ff]'}`}
+        className={`w-9 h-9 mb-[2px] flex items-center justify-center active:opacity-60 flex-shrink-0 ${recording? 'text-red-500' : 'text-[#0a84ff]'}`}
       >
         <FiMic size={20} />
       </button>
