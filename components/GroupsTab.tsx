@@ -88,13 +88,13 @@ export default function GroupsTab({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm nhóm..."
-            className="w-full h-11 pl-10 pr-3.5 bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 rounded-xl text- outline-none focus:ring-4 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff]"
+            className="w-full h-11 pl-10 pr-3.5 bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 rounded-xl text-sm outline-none focus:ring-4 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff]"
           />
         </div>
 
         <button
           onClick={onCreateGroup}
-          className="w-full h-12 bg-gradient-to-r from-[#0a84ff] to-purple-500 text-white rounded-xl text- font-[600] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg shadow-[#0a84ff]/20"
+          className="w-full h-12 bg-gradient-to-r from-[#0a84ff] to-purple-500 text-white rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg shadow-[#0a84ff]/20"
         >
           <FiPlus size={20} strokeWidth={2.5} />
           Tạo nhóm mới
@@ -107,10 +107,10 @@ export default function GroupsTab({
     <div className="w-20 h-20 bg-gradient-to-br from-[#0a84ff]/10 to-purple-500/10 rounded-3xl flex items-center justify-center mb-4">
       <FiUsers className="text-[#0a84ff]" size={36} strokeWidth={1.5} />
     </div>
-    <h3 className="text- font-[700] mb-1.5">
+    <h3 className="text-sm font-[700] mb-1.5">
       {search? "Không tìm thấy" : "Chưa có nhóm nào"}
     </h3>
-    <p className="text- text-[#8e8e93] leading-5 max-w-[280px]">
+    <p className="text-sm text-[#8e8e93] leading-5 max-w-[280px]">
       {search? "Thử tìm với từ khóa khác" : "Tạo nhóm để trò chuyện với bạn bè"}
     </p>
   </div>
@@ -119,7 +119,7 @@ export default function GroupsTab({
           {pinnedGroups.length > 0 && (
             <div className="mb-3">
               <div className="px-4 py-2">
-                <p className="text- font-[700] text-[#8e8e93] uppercase tracking-wider">Đã ghim</p>
+                <p className="text-sm font-[700] text-[#8e8e93] uppercase tracking-wider">Đã ghim</p>
               </div>
               <div className="bg-white dark:bg-zinc-900">
                 {pinnedGroups.map((group, idx) => (
@@ -140,7 +140,7 @@ export default function GroupsTab({
             <div>
               {pinnedGroups.length > 0 && (
                 <div className="px-4 py-2">
-                  <p className="text- font-[700] text-[#8e8e93] uppercase tracking-wider">
+                  <p className="text-sm font-[700] text-[#8e8e93] uppercase tracking-wider">
                     Nhóm của tôi ({normalGroups.length})
                   </p>
                 </div>
@@ -192,7 +192,7 @@ function GroupItem({
           />
           {group.unreadCount && group.unreadCount > 0 && (
             <div className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 bg-red-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
-              <span className="text- font-[700] text-white">{group.unreadCount > 99? '99+' : group.unreadCount}</span>
+              <span className="text-sm font-[700] text-white">{group.unreadCount > 99? '99+' : group.unreadCount}</span>
             </div>
           )}
         </div>
@@ -200,18 +200,18 @@ function GroupItem({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-0.5">
             <div className="flex items-center gap-1.5 min-w-0">
-              <p className="text- font-[600] truncate">{group.name}</p>
+              <p className="text-sm font-[600] truncate">{group.name}</p>
               {isPinned && <RiPushpinFill size={13} className="text-[#0a84ff] flex-shrink-0" />}
               <FiLock size={12} className="text-[#8e8e93] flex-shrink-0" />
             </div>
-            <span className="text- text-[#8e8e93] flex-shrink-0 tabular-nums">{formatTime(group.updatedAt)}</span>
+            <span className="text-sm text-[#8e8e93] flex-shrink-0 tabular-nums">{formatTime(group.updatedAt)}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <p className="text- text-[#8e8e93] truncate flex-1">
+            <p className="text-sm text-[#8e8e93] truncate flex-1">
               {group.lastSenderName && group.lastSenderName!== "Bạn"? `${group.lastSenderName}: ` : ""}
               {group.lastMessage || "Chưa có tin nhắn"}
             </p>
-            <span className="text- text-[#8e8e93] flex items-center gap-1 flex-shrink-0">
+            <span className="text-sm text-[#8e8e93] flex items-center gap-1 flex-shrink-0">
               <FiUsers size={11} />
               {group.members?.length || 0}
             </span>
