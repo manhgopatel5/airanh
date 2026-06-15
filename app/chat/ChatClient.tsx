@@ -1922,6 +1922,7 @@ return (
       setShowCreateGroup(false);
       router.push(`/rooms/${chatId}`);
     }}
+/>
         {showAdd && (
           <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 p-4">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-2xl" onClick={() => setShowAdd(false)} />
