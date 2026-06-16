@@ -10,7 +10,7 @@ import { FiArrowLeft, FiUser, FiUsers, FiSend, FiLoader, FiMoreVertical, FiSearc
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import { vi } from "date-fns/locale";
-import { isSameDay } from "date-fns";
+
 type RoomData = {
   id: string;
   name: string;
@@ -66,7 +66,6 @@ export default function ChatRoom() {
 const [inviting, setInviting] = useState(false);
   // Menu + Modal states
   const [showMenu, setShowMenu] = useState(false);
- 
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Message[]>([]);
@@ -539,49 +538,20 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
   setActivePopupMsgId(prev => prev === msgId? null : msgId);
 };
 
-
-
-const shouldShowTimeDivider = (
-
-  msg: Message,
-
-  prevMsg?: Message
-
-) => {
-
-  if (!msg.createdAt?.toDate) return false;
-
-  if (!prevMsg?.createdAt?.toDate) return true;
-
+const shouldShowTimeDivider = (msg: Message, prevMsg: Message | undefined) => {
+  if (!prevMsg?.createdAt ||!msg.createdAt) return true;
   const prev = prevMsg.createdAt.toDate();
-
   const curr = msg.createdAt.toDate();
-
-  // Khác ngày → hiện
-
-  if (!isSameDay(prev, curr)) return true;
-
-  // Cách nhau trên 30 phút → hiện
-
-  return curr.getTime() - prev.getTime() > 30 * 60 * 1000;
+  const diff = curr.getTime() - prev.getTime();
+  return diff > 10 * 60 * 1000; // Đổi từ 5 → 10 phút
 };
 
 const formatTimeDivider = (timestamp: any) => {
   if (!timestamp?.toDate) return "";
-
   const date = timestamp.toDate();
-
-  if (isToday(date)) {
-    return `Hôm nay ${format(date, "HH:mm")}`;
-  }
-
-  if (isYesterday(date)) {
-    return `Hôm qua ${format(date, "HH:mm")}`;
-  }
-
-  return format(date, "dd/MM/yyyy HH:mm", {
-    locale: vi,
-  });
+  if (isToday(date)) return format(date, "HH:mm");
+  if (isYesterday(date)) return "Hôm qua " + format(date, "HH:mm");
+  return format(date, "dd/MM/yyyy HH:mm", { locale: vi });
 };
   if (loading) {
     return (
@@ -670,17 +640,11 @@ const formatTimeDivider = (timestamp: any) => {
       <p className="text-[15px] text-[#8e8e93]">Hãy là người đầu tiên gửi tin nhắn</p>
     </div>
   ) : (
- messages.map((msg, idx) => {
-  const isMe = msg.senderId === user?.uid;
-
-  const prevMsg = messages[idx - 1];
-  const nextMsg = messages[idx + 1];
-
-  const isFirstInGroup =
-    !prevMsg || prevMsg.senderId !== msg.senderId;
-
-  const isLastInGroup =
-    !nextMsg || nextMsg.senderId !== msg.senderId;
+    messages.map((msg, idx) => {
+      const isMe = msg.senderId === user?.uid;
+      const prevMsg = messages[idx - 1];
+      
+      const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
 
       const showTimeDivider = shouldShowTimeDivider(msg, prevMsg);
 
@@ -695,19 +659,11 @@ const formatTimeDivider = (timestamp: any) => {
           <div key={msg.id}>
             {/* Time Divider căn giữa - chỉ hiện khi cách >5 phút */}
             {showTimeDivider && (
-           <div className="flex justify-center my-6">
-  <div className="
-    px-4 py-1.5
-    rounded-full
-    bg-zinc-100/90 dark:bg-zinc-800/90
-    backdrop-blur-sm
-    text-[12px]
-    text-zinc-500 dark:text-zinc-400
-    font-medium
-  ">
-    {formatTimeDivider(msg.createdAt)}
-  </div>
-</div>
+              <div className="flex justify-center my-4">
+                <span className="text-[13px] text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+                  {formatTimeDivider(msg.createdAt)}
+                </span>
+              </div>
             )}
 
             <div
@@ -878,20 +834,11 @@ const formatTimeDivider = (timestamp: any) => {
         <div key={msg.id}>
           {/* Time Divider căn giữa - chỉ hiện khi cách >5 phút */}
           {showTimeDivider && (
-          <div className="flex justify-center py-5">
-  <div
-    className="
-      px-4 py-1.5
-      rounded-full
-      bg-zinc-100 dark:bg-zinc-800
-      text-[13px]
-      text-zinc-500 dark:text-zinc-400
-      font-medium
-    "
-  >
-    {formatTimeDivider(msg.createdAt)}
-  </div>
-</div>
+            <div className="flex justify-center my-4">
+              <span className="text-[13px] text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+                {formatTimeDivider(msg.createdAt)}
+              </span>
+            </div>
           )}
 
           <div
@@ -959,26 +906,11 @@ const formatTimeDivider = (timestamp: any) => {
               )}
 
               {/* Bubble bo tròn full giống Messenger */}
-<div
-  className={`
-    px-4 py-2.5
-    ${
-      isMe
-        ? "bg-[#0a84ff] text-white"
-        : "bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white"
-    }
-
-    ${
-      isMe
-        ? isLastInGroup
-          ? "rounded-[24px] rounded-br-[8px]"
-          : "rounded-[24px] rounded-br-[8px]"
-        : isLastInGroup
-          ? "rounded-[24px] rounded-bl-[8px]"
-          : "rounded-[24px] rounded-bl-[8px]"
-    }
-  `}
->
+<div className={`px-4 py-2.5 ${
+  isMe
+  ? 'bg-[#0a84ff] text-white'
+    : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+} rounded-[18px]`}>
                 <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
               </div>
               {/* Đã xoá time ở đây - Messenger không hiện time dưới mỗi tin */}
