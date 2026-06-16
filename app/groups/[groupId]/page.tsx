@@ -173,7 +173,7 @@ const openEditModal = () => {
 };
 
 const handleUpdateGroup = async () => {
-  if (!user?.uid ||!group || group.createdBy!== user.uid) return;
+  if (!user?.uid || !group || group.createdBy !== user.uid) return;
   if (!editName.trim()) return toast.error("Tên nhóm không được để trống");
 
   setUpdatingGroup(true);
@@ -181,8 +181,13 @@ const handleUpdateGroup = async () => {
     let avatarUrl = group.avatar;
 
     if (editAvatar) {
-      const avatarRef = ref(storage, `group_avatars/${groupId}/${Date.now()}_${editAvatar.name}`);
-      await uploadBytes(avatarRef, editAvatar);
+      // Đổi sang group_images cho khớp rules, thêm prefix avatar_ để dễ phân biệt
+      const avatarRef = ref(storage, `group_images/${groupId}/avatar_${Date.now()}_${editAvatar.name}`);
+      
+      // Thêm metadata để check contentType
+      await uploadBytes(avatarRef, editAvatar, {
+        contentType: editAvatar.type,
+      });
       avatarUrl = await getDownloadURL(avatarRef);
     }
 
@@ -195,13 +200,18 @@ const handleUpdateGroup = async () => {
     toast.success("Đã cập nhật nhóm");
     setShowEditModal(false);
     setEditAvatar(null);
+    setEditAvatarPreview("");
   } catch (err: any) {
-    toast.error("Lỗi cập nhật: " + err.message);
+    console.error("Update group error:", err);
+    if (err.code === 'storage/unauthorized') {
+      toast.error("Không có quyền upload. Kiểm tra Storage Rules");
+    } else {
+      toast.error("Lỗi cập nhật: " + err.message);
+    }
   } finally {
     setUpdatingGroup(false);
   }
 };
-
 const handleEditAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
