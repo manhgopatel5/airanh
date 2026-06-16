@@ -675,65 +675,67 @@ return (
   )}
 {/* Edit Group Modal */}
 {showEditModal && (
-  <>
+  <div className="fixed inset-0 z-40">
     <div
-      className="fixed inset-0 bg-black/50 z-40"
+      className="absolute inset-0 bg-black/50"
       onClick={() => setShowEditModal(false)}
     />
-    <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-32px)] max-w-md bg-white dark:bg-zinc-900 rounded-2xl p-5 z-50">
-      <h2 className="text-lg font-[600] mb-4 text-center">Chỉnh sửa nhóm</h2>
+    <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+      <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl p-5 pointer-events-auto">
+        <h2 className="text-lg font-[600] mb-4 text-center">Chỉnh sửa nhóm</h2>
 
-      <div className="flex flex-col items-center gap-4 mb-4">
-        <button
-          onClick={() => editAvatarInputRef.current?.click()}
-          className="relative"
-        >
-          <img
-            src={editAvatarPreview || `https://ui-avatars.com/api/?name=${encodeURIComponent(editName)}&background=0a84ff&color=fff&bold=true`}
-            alt="Avatar"
-            className="w-20 h-20 rounded-full object-cover"
+        <div className="flex flex-col items-center gap-4 mb-4">
+          <button
+            onClick={() => editAvatarInputRef.current?.click()}
+            className="relative"
+          >
+            <img
+              src={editAvatarPreview || `https://ui-avatars.com/api/?name=${encodeURIComponent(editName)}&background=0a84ff&color=fff&bold=true`}
+              alt="Avatar"
+              className="w-20 h-20 rounded-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+              <FiImage size={24} className="text-white" />
+            </div>
+          </button>
+          <input
+            ref={editAvatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleEditAvatarChange}
           />
-          <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-            <FiImage size={24} className="text-white" />
-          </div>
-        </button>
+          <p className="text-xs text-[#8e8e93]">Bấm để đổi ảnh đại diện</p>
+        </div>
+
         <input
-          ref={editAvatarInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleEditAvatarChange}
+          type="text"
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          placeholder="Tên nhóm"
+          maxLength={50}
+          className="w-full px-4 py-2.5 bg-[#f2f2f7] dark:bg-zinc-800 rounded-xl outline-none border-0 focus:ring-2 focus:ring-[#0a84ff] mb-4 text-base"
         />
-        <p className="text-xs text-[#8e8e93]">Bấm để đổi ảnh đại diện</p>
-      </div>
 
-      <input
-        type="text"
-        value={editName}
-        onChange={(e) => setEditName(e.target.value)}
-        placeholder="Tên nhóm"
-        maxLength={50}
-        className="w-full px-4 py-2.5 bg-[#f2f2f7] dark:bg-zinc-800 rounded-xl outline-none border-0 focus:ring-2 focus:ring-[#0a84ff] mb-4 text-base"
-      />
-
-      <div className="flex gap-2">
-        <button
-          onClick={() => setShowEditModal(false)}
-          disabled={updatingGroup}
-          className="flex-1 py-2.5 rounded-xl bg-[#f2f2f7] dark:bg-zinc-800 font-medium active:opacity-60 disabled:opacity-40"
-        >
-          Hủy
-        </button>
-        <button
-          onClick={handleUpdateGroup}
-          disabled={updatingGroup ||!editName.trim()}
-          className="flex-1 py-2.5 rounded-xl bg-[#0a84ff] text-white font-medium active:opacity-60 disabled:opacity-40"
-        >
-          {updatingGroup? "Đang lưu..." : "Lưu"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowEditModal(false)}
+            disabled={updatingGroup}
+            className="flex-1 py-2.5 rounded-xl bg-[#f2f2f7] dark:bg-zinc-800 font-medium active:opacity-60 disabled:opacity-40"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={handleUpdateGroup}
+            disabled={updatingGroup ||!editName.trim()}
+            className="flex-1 py-2.5 rounded-xl bg-[#0a84ff] text-white font-medium active:opacity-60 disabled:opacity-40"
+          >
+            {updatingGroup? "Đang lưu..." : "Lưu"}
+          </button>
+        </div>
       </div>
     </div>
-  </>
+  </div>
 )}
   {showMentions && group?.membersInfo && (
     <div className="absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 py-1 max-h-40 overflow-y-auto z-20">
