@@ -405,10 +405,10 @@ export default function GroupChatPage() {
 
   const isOwner = group.createdBy === user?.uid;
 
-  return (
-    <div className="flex flex-col h-dvh bg-white dark:bg-black overflow-hidden">
-      {/* Header - fixed top */}
-      <div className="flex-shrink-0 flex flex-col border-b border-black/10 dark:border-white/10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl z-30">
+return (
+  <div className="fixed inset-0 flex flex-col bg-white dark:bg-black overflow-hidden">
+{/* Header - fixed top */}
+<div className="flex-shrink-0 flex flex-col border-b border-black/10 dark:border-white/10 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl z-30">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => router.back()} className="w-8 h-8 flex items-center justify-center -ml-2 active:opacity-60">
             <FiChevronLeft size={24} className="text-[#0a84ff]" strokeWidth={2.5} />
@@ -493,8 +493,8 @@ export default function GroupChatPage() {
         )}
       </div>
 
-      {/* Messages - scrollable only this */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 relative z-0" onClick={() => setLongPressMsg(null)}>
+{/* Messages - scrollable only this */}
+<div className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-3 pb-4 relative z-0" onClick={() => setLongPressMsg(null)}>
         {messages.length === 0? (
           <div className="h-full flex items-center justify-center text-[#8e8e93] text-sm">
             Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!
@@ -598,103 +598,103 @@ export default function GroupChatPage() {
         </div>
       )}
 
-      {/* Input - fixed bottom */}
-      <form
-        onSubmit={handleSend}
-        className="flex-shrink-0 px-3 pt-2 pb-[calc(8px+env(safe-area-inset-bottom))] bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-t border-black/10 dark:border-white/10 relative"
-      >
-        {replyTo && (
-          <div className="flex items-center justify-between mb-2 px-3 py-2 bg-black/5 dark:bg-white/5 rounded-xl">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-[#0a84ff]">Đang trả lời {replyTo.senderName}</p>
-              <p className="text-xs text-[#8e8e93] truncate">{replyTo.text || "[Ảnh]"}</p>
-            </div>
-            <button onClick={() => setReplyTo(null)} className="w-6 h-6 flex items-center justify-center">
-              <FiTrash2 size={14} className="text-[#8e8e93]" />
-            </button>
-          </div>
-        )}
+    {/* Input - fixed bottom */}
+<form
+  onSubmit={handleSend}
+  className="flex-shrink-0 px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-t border-black/10 dark:border-white/10 relative"
+>
+  {replyTo && (
+    <div className="flex items-center justify-between mb-2 px-3 py-2 bg-black/5 dark:bg-white/5 rounded-xl">
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-[#0a84ff]">Đang trả lời {replyTo.senderName}</p>
+        <p className="text-xs text-[#8e8e93] truncate">{replyTo.text || "[Ảnh]"}</p>
+      </div>
+      <button onClick={() => setReplyTo(null)} className="w-6 h-6 flex items-center justify-center">
+        <FiTrash2 size={14} className="text-[#8e93]" />
+      </button>
+    </div>
+  )}
 
-        {showMentions && group?.membersInfo && (
-          <div className="absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 py-1 max-h-40 overflow-y-auto z-20">
-            {group.members.map(uid => {
-              const info = group.membersInfo?.[uid];
-              if (!info || uid === user?.uid) return null;
-              return (
-                <button
-                  key={uid}
-                  type="button"
-                  onClick={() => selectMention(info.name)}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 w-full text-left"
-                >
-                  <img src={info.avatar} alt="" className="w-7 h-7 rounded-full" />
-                  <div>
-                    <p className="text-sm font-medium">{info.name}</p>
-                    <p className="text-xs text-[#8e8e93]">@{info.username}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="flex items-end gap-1.5 bg-[#f2f2f7] dark:bg-zinc-800 rounded- px-2 py-1.5">
+  {showMentions && group?.membersInfo && (
+    <div className="absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 py-1 max-h-40 overflow-y-auto z-20">
+      {group.members.map(uid => {
+        const info = group.membersInfo?.[uid];
+        if (!info || uid === user?.uid) return null;
+        return (
           <button
+            key={uid}
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 flex-shrink-0"
+            onClick={() => selectMention(info.name)}
+            className="flex items-center gap-2 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 w-full text-left"
           >
-            <FiImage size={22} />
+            <img src={info.avatar} alt="" className="w-7 h-7 rounded-full" />
+            <div>
+              <p className="text-sm font-medium">{info.name}</p>
+              <p className="text-xs text-[#8e8e93]">@{info.username}</p>
+            </div>
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleSendImage}
-          />
-          <textarea
-            ref={inputRef}
-            value={text}
-            onChange={(e) => handleInputChange(e)}
-            placeholder="Nhắn tin..."
-            rows={1}
-            className="flex-1 bg-transparent text- resize-none outline-none border-0 ring-0 focus:ring-0 focus:outline-none placeholder:text-[#8e8e93] max-h-[100px] py-[6px] px-1"
-            disabled={sending || uploading || recording}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = target.scrollHeight + 'px';
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' &&!e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-          />
-          {text.trim()? (
-            <button
-              type="submit"
-              disabled={sending}
-              className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 disabled:text-[#8e8e93] flex-shrink-0"
-            >
-              <FiSend size={20} />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onPointerDown={startRecording}
-              onPointerUp={stopRecording}
-              onPointerLeave={stopRecording}
-              className={`w-8 h-8 flex items-center justify-center active:opacity-60 flex-shrink-0 ${recording? 'text-red-500' : 'text-[#0a84ff]'}`}
-            >
-              <FiMic size={20} />
-            </button>
-          )}
-        </div>
-      </form>
+        );
+      })}
+    </div>
+  )}
+
+  <div className="flex items-end gap-1.5 bg-[#f2f2f7] dark:bg-zinc-800 rounded- px-2 py-1.5">
+    <button
+      type="button"
+      onClick={() => fileInputRef.current?.click()}
+      disabled={uploading}
+      className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 flex-shrink-0"
+    >
+      <FiImage size={22} />
+    </button>
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={handleSendImage}
+    />
+    <textarea
+      ref={inputRef}
+      value={text}
+      onChange={(e) => handleInputChange(e)}
+      placeholder="Nhắn tin..."
+      rows={1}
+      className="flex-1 bg-transparent text- resize-none outline-none border-0 ring-0 focus:ring-0 focus:outline-none placeholder:text-[#8e8e93] max-h-[100px] py-[6px] px-1"
+      disabled={sending || uploading || recording}
+      onInput={(e) => {
+        const target = e.target as HTMLTextAreaElement;
+        target.style.height = 'auto';
+        target.style.height = target.scrollHeight + 'px';
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' &&!e.shiftKey) {
+          e.preventDefault();
+          handleSend();
+        }
+      }}
+    />
+    {text.trim()? (
+      <button
+        type="submit"
+        disabled={sending}
+        className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 disabled:text-[#8e8e93] flex-shrink-0"
+      >
+        <FiSend size={20} />
+      </button>
+    ) : (
+      <button
+        type="button"
+        onPointerDown={startRecording}
+        onPointerUp={stopRecording}
+        onPointerLeave={stopRecording}
+        className={`w-8 h-8 flex items-center justify-center active:opacity-60 flex-shrink-0 ${recording? 'text-red-500' : 'text-[#0a84ff]'}`}
+      >
+        <FiMic size={20} />
+      </button>
+    )}
+  </div>
+</form>
     </div>
   );
 }
