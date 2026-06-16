@@ -9,6 +9,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
 import { getApp } from "firebase/app";
+import LeaderboardModal from "@/components/LeaderboardModal";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
 import { getFunctions, httpsCallable } from "firebase/functions";
@@ -147,7 +148,7 @@ export default function ChatClient() {
 const [gpsLoading, setGpsLoading] = useState(false);
 const [userLat, setUserLat] = useState<number | null>(null);
   const [userLng, setUserLng] = useState<number | null>(null);
-
+const [showLeaderboard, setShowLeaderboard] = useState(false);
   useEffect(() => {
     const lat = localStorage.getItem('userLat');
     const lng = localStorage.getItem('userLng');
@@ -1441,7 +1442,7 @@ return (
           { label: "Bình chọn", icon: Vote, color: "bg-gradient-to-br from-indigo-500 to-purple-500", onClick: () => setShowPoll(true) },
           { label: "VIP", icon: Crown, color: "bg-gradient-to-br from-amber-400 to-orange-500", onClick: () => setShowVip(true) },
           { label: "Người lạ", icon: FiZap, color: "bg-gradient-to-br from-pink-500 to-rose-500", onClick: () => setShowStranger(true) },
-          { label: "Quỹ chung", icon: Wallet, color: "bg-gradient-to-br from-orange-500 to-pink-500", onClick: () => toast.info("Sắp ra mắt") },
++ { label: "Thành Tích", icon: FiAward, color: "bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500", onClick: () => setShowLeaderboard(true) },
         ].map((item) => (
           <button
             key={item.label}
@@ -2368,6 +2369,7 @@ return (
   loading={gpsLoading}
   mode="task" 
 />
+{showLeaderboard && <LeaderboardModal onClose={() => setShowLeaderboard(false)} currentUserId={user?.uid} />}
     </>
   );
 }
