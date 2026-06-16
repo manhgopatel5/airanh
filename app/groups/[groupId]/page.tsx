@@ -396,7 +396,21 @@ const handleEditAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       toast.error("Lỗi rời nhóm");
     }
   };
+const shouldShowTimeDivider = (msg: Message, prevMsg: Message | undefined) => {
+  if (!prevMsg?.createdAt || !msg.createdAt) return true;
+  const prev = prevMsg.createdAt.toDate();
+  const curr = msg.createdAt.toDate();
+  const diff = curr.getTime() - prev.getTime();
+  return diff > 5 * 60 * 1000; // Cách 5 phút
+};
 
+const formatTimeDivider = (timestamp: any) => {
+  if (!timestamp?.toDate) return "";
+  const date = timestamp.toDate();
+  if (isToday(date)) return format(date, "HH:mm");
+  if (isYesterday(date)) return "Hôm qua " + format(date, "HH:mm");
+  return format(date, "dd/MM/yyyy HH:mm", { locale: vi });
+};
   const handleDeleteGroup = async () => {
     if (!user?.uid ||!group) return;
     if (group.createdBy!== user.uid) return toast.error("Chỉ chủ nhóm mới xóa được");
@@ -564,118 +578,124 @@ return (
 
 {/* Messages - scrollable only this */}
 <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-3 pb-4 relative z-0" onClick={() => setLongPressMsg(null)}>
-     {messages.length === 0? (
-  <div className="h-full flex items-center justify-center text-[#8e8e93] text-sm">
-    Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!
-  </div>
-) : (
-  <div className="space-y-1">
-    {messages.map((msg, idx) => {
-      const isMe = msg.senderId === user?.uid;
-      const prevMsg = messages[idx - 1];
-      const nextMsg = messages[idx + 1];
-      const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
-      const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
-      const showAvatar = isLastInGroup;
-      const showName = isFirstInGroup &&!isMe;
+  {messages.length === 0? (
+    <div className="h-full flex items-center justify-center text-[#8e8e93] text-sm">
+      Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!
+    </div>
+  ) : (
+    <div className="space-y-">
+      {messages.map((msg, idx) => {
+        const isMe = msg.senderId === user?.uid;
+        const prevMsg = messages[idx - 1];
+        const nextMsg = messages[idx + 1];
+        const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
+        const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
+        const showAvatar = isLastInGroup;
+        const showName = isFirstInGroup &&!isMe;
+        const showTimeDivider = shouldShowTimeDivider(msg, prevMsg);
 
-      return (
-        <div
-          key={msg.id}
-          className={`flex items-end gap-2 ${isMe? 'justify-end' : 'justify-start'} ${isFirstInGroup? 'mt-3' : 'mt-0.5'}`}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          {!isMe && (
-            <div className="w-7 h-7 flex-shrink-0">
-              {showAvatar? (
-                <img
-                  src={msg.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}`}
-                  alt={msg.senderName}
-                  className="w-7 h-7 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-7 h-7" />
-              )}
-            </div>
-          )}
-
-          <div className={`flex flex-col gap-0.5 max-w-[75%] ${isMe? "items-end" : "items-start"}`}>
-            {showName && (
-              <span className="px-3 text-xs font-medium text-[#8e8e93]">
-                {msg.senderName}
-              </span>
-            )}
-
-            {msg.replyTo && (
-              <div className="px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-xl border-l-2 border-[#0a84ff] mb-1 max-w-full">
-                <p className="text-xs font-medium text-[#0a84ff]">{msg.replyTo.senderName}</p>
-                <p className="text-xs text-[#8e8e93] truncate">{msg.replyTo.text}</p>
+        return (
+          <div key={msg.id}>
+            {/* Time Divider căn giữa - chỉ hiện khi cách >5 phút */}
+            {showTimeDivider && (
+              <div className="flex justify-center my-4">
+                <span className="text- text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+                  {formatTimeDivider(msg.createdAt)}
+                </span>
               </div>
             )}
 
             <div
-              className={`relative px-3.5 py-2.5 ${
-                isMe
-              ? 'bg-[#0a84ff] text-white rounded-[18px] rounded-br-[4px]'
-                  : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white rounded-[18px] rounded-bl-[4px]'
-              } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
-              onPointerDown={() => isMe && handleLongPressStart(msg.id)}
-              onPointerUp={handleLongPressEnd}
-              onPointerLeave={handleLongPressEnd}
+              className={`flex items-end gap-2 ${isMe? 'justify-end' : 'justify-start'} ${isFirstInGroup? 'mt-3' : 'mt-0.5'}`}
+              onContextMenu={(e) => e.preventDefault()}
             >
-              {msg.audioUrl? (
-                <audio controls src={msg.audioUrl} className="max-w-[240px]" />
-              ) : msg.imageUrl? (
-                <img src={msg.imageUrl} alt="Ảnh" className="rounded-xl max-w-[240px] max-h-[240px] object-cover" />
-              ) : (
-                <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
-              )}
-
-              {longPressMsg === msg.id && isMe && (
-                <div className="absolute -top-10 right-0 flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1 z-10">
-                  <button
-                    onClick={() => { setReplyTo(msg); setLongPressMsg(null); }}
-                    className="px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 rounded"
-                  >
-                    Trả lời
-                  </button>
-                  <button
-                    onClick={() => handlePinMessage(msg)}
-                    className="px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 rounded"
-                  >
-                    Ghim
-                  </button>
-                  <button
-                    onClick={() => handleDeleteMsg(msg.id)}
-                    className="px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 rounded"
-                  >
-                    Xóa
-                  </button>
+              {!isMe && (
+                <div className="w-7 h-7 flex-shrink-0">
+                  {showAvatar? (
+                    <img
+                      src={msg.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}`}
+                      alt={msg.senderName}
+                      className="w-7 h-7 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-7 h-7" />
+                  )}
                 </div>
               )}
-            </div>
 
-            {/* TIME DƯỚI MỖI BUBBLE - GIỐNG ẢNH */}
-            <span className="text-[13px] text-[#8e8e93] px-3">
-              {formatTime(msg.createdAt)}
-            </span>
+              <div className={`flex flex-col gap-0.5 max-w-[75%] ${isMe? "items-end" : "items-start"}`}>
+                {showName && (
+                  <span className="px-3 text-xs font-medium text-[#8e8e93]">
+                    {msg.senderName}
+                  </span>
+                )}
+
+                {msg.replyTo && (
+                  <div className="px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-xl border-l-2 border-[#0a84ff] mb-1 max-w-full">
+                    <p className="text-xs font-medium text-[#0a84ff]">{msg.replyTo.senderName}</p>
+                    <p className="text-xs text-[#8e8e93] truncate">{msg.replyTo.text}</p>
+                  </div>
+                )}
+
+                <div
+                  className={`relative px-3.5 py-2.5 ${
+                    isMe
+                     ? 'bg-[#0a84ff] text-white rounded-[18px] rounded-br-[4px]'
+                      : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white rounded-[18px] rounded-bl-[4px]'
+                  } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
+                  onPointerDown={() => isMe && handleLongPressStart(msg.id)}
+                  onPointerUp={handleLongPressEnd}
+                  onPointerLeave={handleLongPressEnd}
+                >
+                  {msg.audioUrl? (
+                    <audio controls src={msg.audioUrl} className="max-w-[240px]" />
+                  ) : msg.imageUrl? (
+                    <img src={msg.imageUrl} alt="Ảnh" className="rounded-xl max-w-[240px] max-h-[240px] object-cover" />
+                  ) : (
+                    <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
+                  )}
+
+                  {longPressMsg === msg.id && isMe && (
+                    <div className="absolute -top-10 right-0 flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1 z-10">
+                      <button
+                        onClick={() => { setReplyTo(msg); setLongPressMsg(null); }}
+                        className="px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 rounded"
+                      >
+                        Trả lời
+                      </button>
+                      <button
+                        onClick={() => handlePinMessage(msg)}
+                        className="px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 rounded"
+                      >
+                        Ghim
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMsg(msg.id)}
+                        className="px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 rounded"
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      );
-    })}
-    <div ref={messagesEndRef} />
+        );
+      })}
+      <div ref={messagesEndRef} />
+    </div>
+  )}
+</div>
+
+{/* Typing indicator */}
+{typingUsers.length > 0 && (
+  <div className="px-4 pb-1 text-xs text-[#8e8e93] italic bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl">
+    {typingUsers.join(", ")} đang nhập...
   </div>
 )}
-      </div>
 
-      {/* Typing indicator */}
-      {typingUsers.length > 0 && (
-        <div className="px-4 pb-1 text-xs text-[#8e8e93] italic bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl">
-          {typingUsers.join(", ")} đang nhập...
-        </div>
-      )}
-
-    {/* Input - fixed bottom */}
+{/* Input - fixed bottom */}
 <form
   onSubmit={handleSend}
   className="flex-shrink-0 px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl relative"
@@ -687,7 +707,7 @@ return (
         <p className="text-xs text-[#8e8e93] truncate">{replyTo.text || "[Ảnh]"}</p>
       </div>
       <button onClick={() => setReplyTo(null)} className="w-6 h-6 flex items-center justify-center">
-        <FiTrash2 size={14} className="text-[#8e93]" />
+        <FiTrash2 size={14} className="text-[#8e8e93]" />
       </button>
     </div>
   )}
@@ -715,7 +735,7 @@ return (
     </div>
   )}
 
-<div className="flex items-end gap-1.5 bg-white dark:bg-zinc-900 border border-[#0a84ff] rounded-full px-3 py-1.5">
+  <div className="flex items-end gap-1.5 bg-white dark:bg-zinc-900 border border-[#0a84ff] rounded-full px-3 py-1.5">
     <button
       type="button"
       onClick={() => fileInputRef.current?.click()}
