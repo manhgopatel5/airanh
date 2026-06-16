@@ -631,7 +631,7 @@ const formatTimeDivider = (timestamp: any) => {
 <div
   ref={messagesContainerRef}
   onScroll={handleScroll}
-  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-0.5"
+  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-[2px]"
 >
   {messages.length === 0? (
     <div className="flex flex-col items-center justify-center h-full text-center py-20">
@@ -1060,7 +1060,7 @@ const formatTimeDivider = (timestamp: any) => {
       <div className="flex items-center gap-2 mb-1.5">
         <img src={msg.senderAvatar} className="w-6 h-6 rounded-full" alt="" />
         <p className="text-sm font-medium text-zinc-900 dark:text-white">{msg.senderName}</p>
-<p className="text- text-[#8e8e93]">• {formatTimeDivider(msg.createdAt)}</p>
+<p className="text-sm text-[#8e8e93]">• {formatTimeDivider(msg.createdAt)}</p>
       </div>
       <div className="pl-8">
         <p className="text-sm text-zinc-900 dark:text-white line-clamp-2">
