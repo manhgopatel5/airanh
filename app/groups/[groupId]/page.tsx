@@ -46,7 +46,12 @@ export default function GroupChatPage() {
   const db = getFirebaseDB();
   const router = useRouter();
   const storage = getStorage();
-
+const [showEditModal, setShowEditModal] = useState(false);
+const [editName, setEditName] = useState("");
+const [editAvatar, setEditAvatar] = useState<File | null>(null);
+const [editAvatarPreview, setEditAvatarPreview] = useState("");
+const [updatingGroup, setUpdatingGroup] = useState(false);
+const editAvatarInputRef = useRef<HTMLInputElement>(null);
   const [group, setGroup] = useState<Group | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,7 +164,51 @@ export default function GroupChatPage() {
       unsubMsg();
     };
   }, [groupId, user?.uid, db, router]);
+const openEditModal = () => {
+  if (group?.createdBy!== user?.uid) return toast.error("Chỉ chủ nhóm mới đổi được");
+  setEditName(group?.name || "");
+  setEditAvatarPreview(group?.avatar || "");
+  setShowEditModal(true);
+  setShowMenu(false);
+};
 
+const handleUpdateGroup = async () => {
+  if (!user?.uid ||!group || group.createdBy!== user.uid) return;
+  if (!editName.trim()) return toast.error("Tên nhóm không được để trống");
+
+  setUpdatingGroup(true);
+  try {
+    let avatarUrl = group.avatar;
+
+    if (editAvatar) {
+      const avatarRef = ref(storage, `group_avatars/${groupId}/${Date.now()}_${editAvatar.name}`);
+      await uploadBytes(avatarRef, editAvatar);
+      avatarUrl = await getDownloadURL(avatarRef);
+    }
+
+    await updateDoc(doc(db, "groups", groupId), {
+      name: editName.trim(),
+      avatar: avatarUrl,
+      updatedAt: serverTimestamp()
+    });
+
+    toast.success("Đã cập nhật nhóm");
+    setShowEditModal(false);
+    setEditAvatar(null);
+  } catch (err: any) {
+    toast.error("Lỗi cập nhật: " + err.message);
+  } finally {
+    setUpdatingGroup(false);
+  }
+};
+
+const handleEditAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) return toast.error("Ảnh tối đa 5MB");
+  setEditAvatar(file);
+  setEditAvatarPreview(URL.createObjectURL(file));
+};
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!text.trim() ||!user?.uid || sending ||!group) return;
@@ -406,92 +455,102 @@ export default function GroupChatPage() {
   const isOwner = group.createdBy === user?.uid;
 
 return (
-  <div className="fixed inset-0 flex flex-col bg-white dark:bg-black overflow-hidden">
+  <div
+    className="fixed inset-0 flex flex-col bg-white dark:bg-black overflow-hidden"
+    onClick={() => setShowMenu(false)}
+  >
 {/* Header - fixed top */}
-<div className="flex-shrink-0 flex flex-col border-b border-black/10 dark:border-white/10 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl z-30 pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center gap-3 px-4 h-14">
-          <button onClick={() => router.back()} className="w-8 h-8 flex items-center justify-center -ml-2 active:opacity-60">
-            <FiChevronLeft size={24} className="text-[#0a84ff]" strokeWidth={2.5} />
-          </button>
-          <img
-            src={group.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.name)}&background=0a84ff&color=fff&bold=true`}
-            alt={group.name}
-            className="w-9 h-9 rounded-full object-cover"
-          />
-          <div className="flex-1 min-w-0">
-            <h1 className="text-base font-[600] truncate">{group.name}</h1>
-            <p className="text-xs text-[#8e8e93]">{group.members.length} thành viên</p>
-          </div>
-          <div className="relative">
+<div className="flex-shrink-0 flex flex-col bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl z-30 pt-[env(safe-area-inset-top)]">
+  <div className="flex items-center gap-3 px-4 h-14">
+    <button onClick={() => router.back()} className="w-8 h-8 flex items-center justify-center -ml-2 active:opacity-60">
+      <FiChevronLeft size={24} className="text-[#0a84ff]" strokeWidth={2.5} />
+    </button>
+
+    <button
+      onClick={openEditModal}
+      className="flex items-center gap-3 flex-1 min-w-0 active:opacity-60 text-left"
+    >
+      <img
+        src={group.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.name)}&background=0a84ff&color=fff&bold=true`}
+        alt={group.name}
+        className="w-9 h-9 rounded-full object-cover"
+      />
+      <div className="flex-1 min-w-0">
+        <h1 className="text-base font-[600] truncate">{group.name}</h1>
+        <p className="text-xs text-[#8e8e93]">{group.members.length} thành viên</p>
+      </div>
+    </button>
+
+    <div className="relative">
+      <button
+        onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+        className="w-8 h-8 flex items-center justify-center active:opacity-60"
+      >
+        <FiMoreVertical size={20} className="text-[#8e8e93]" />
+      </button>
+
+      {showMenu && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+          <div className="absolute right-0 top-10 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-black/10 dark:border-white/10 py-2 z-20">
             <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="w-8 h-8 flex items-center justify-center active:opacity-60"
+              onClick={copyGroupCode}
+              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-black/5 dark:hover:bg-white/5 text-left"
             >
-              <FiMoreVertical size={20} className="text-[#8e8e93]" />
+              <FiCopy size={18} />
+              <div>
+                <p className="text-sm font-medium">Copy mã nhóm</p>
+                <p className="text-xs text-[#8e8e93]">{group.groupCode}</p>
+              </div>
             </button>
 
-            {showMenu && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-10 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border-black/10 dark:border-white/10 py-2 z-20">
-                  <button
-                    onClick={copyGroupCode}
-                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-black/5 dark:hover:bg-white/5 text-left"
-                  >
-                    <FiCopy size={18} />
-                    <div>
-                      <p className="text-sm font-medium">Copy mã nhóm</p>
-                      <p className="text-xs text-[#8e8e93]">{group.groupCode}</p>
-                    </div>
-                  </button>
+            <button
+              onClick={() => { setShowMenu(false); toast.info("Sắp ra mắt"); }}
+              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-black/5 dark:hover:bg-white/5 text-left"
+            >
+              <FiUsers size={18} />
+              <p className="text-sm font-medium">Thành viên</p>
+            </button>
 
-                  <button
-                    onClick={() => { setShowMenu(false); toast.info("Sắp ra mắt"); }}
-                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-black/5 dark:hover:bg-white/5 text-left"
-                  >
-                    <FiUsers size={18} />
-                    <p className="text-sm font-medium">Thành viên</p>
-                  </button>
+            <div className="h-px bg-black/10 dark:bg-white/10 my-1" />
 
-                  <div className="h-px bg-black/10 dark:bg-white/10 my-1" />
+            <button
+              onClick={handleLeaveGroup}
+              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-red-500/10 text-left text-red-500"
+            >
+              <FiLogOut size={18} />
+              <p className="text-sm font-medium">Rời nhóm</p>
+            </button>
 
-                  <button
-                    onClick={handleLeaveGroup}
-                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-red-500/10 text-left text-red-500"
-                  >
-                    <FiLogOut size={18} />
-                    <p className="text-sm font-medium">Rời nhóm</p>
-                  </button>
-
-                  {isOwner && (
-                    <button
-                      onClick={handleDeleteGroup}
-                      className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-red-500/10 text-left text-red-500"
-                    >
-                      <FiTrash2 size={18} />
-                      <p className="text-sm font-medium">Xóa nhóm</p>
-                    </button>
-                  )}
-                </div>
-              </>
+            {isOwner && (
+              <button
+                onClick={handleDeleteGroup}
+                className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-red-500/10 text-left text-red-500"
+              >
+                <FiTrash2 size={18} />
+                <p className="text-sm font-medium">Xóa nhóm</p>
+              </button>
             )}
           </div>
-        </div>
+        </>
+      )}
+    </div>
+  </div>
 
-        {/* Pinned Message */}
-        {group.pinnedMessage && (
-          <button
-            onClick={handleUnpinMessage}
-            className="flex items-center gap-2 px-4 py-2 bg-[#0a84ff]/10 border-t border-[#0a84ff]/20 text-left w-full hover:bg-[#0a84ff]/15"
-          >
-            <RiPushpinFill className="text-[#0a84ff] flex-shrink-0" size={16} />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-[#0a84ff]">{group.pinnedMessage.senderName}</p>
-              <p className="text-xs text-[#8e8e93] truncate">{group.pinnedMessage.text}</p>
-            </div>
-          </button>
-        )}
+  {/* Pinned Message */}
+  {group.pinnedMessage && (
+    <button
+      onClick={handleUnpinMessage}
+      className="flex items-center gap-2 px-4 py-2 bg-[#0a84ff]/10 border-t border-[#0a84ff]/20 text-left w-full hover:bg-[#0a84ff]/15"
+    >
+      <RiPushpinFill className="text-[#0a84ff] flex-shrink-0" size={16} />
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-[#0a84ff]">{group.pinnedMessage.senderName}</p>
+        <p className="text-xs text-[#8e8e93] truncate">{group.pinnedMessage.text}</p>
       </div>
+    </button>
+  )}
+</div>
 
 {/* Messages - scrollable only this */}
 <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-3 pb-4 relative z-0" onClick={() => setLongPressMsg(null)}>
@@ -601,7 +660,7 @@ return (
     {/* Input - fixed bottom */}
 <form
   onSubmit={handleSend}
-  className="flex-shrink-0 px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-t border-black/10 dark:border-white/10 relative"
+  className="flex-shrink-0 px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl relative"
 >
   {replyTo && (
     <div className="flex items-center justify-between mb-2 px-3 py-2 bg-black/5 dark:bg-white/5 rounded-xl">
@@ -614,7 +673,68 @@ return (
       </button>
     </div>
   )}
+{/* Edit Group Modal */}
+{showEditModal && (
+  <>
+    <div
+      className="fixed inset-0 bg-black/50 z-40"
+      onClick={() => setShowEditModal(false)}
+    />
+    <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 rounded-2xl p-5 z-50 max-w-md mx-auto">
+      <h2 className="text-lg font-[600] mb-4">Chỉnh sửa nhóm</h2>
 
+      <div className="flex flex-col items-center gap-4 mb-4">
+        <button
+          onClick={() => editAvatarInputRef.current?.click()}
+          className="relative"
+        >
+          <img
+            src={editAvatarPreview || `https://ui-avatars.com/api/?name=${encodeURIComponent(editName)}&background=0a84ff&color=fff&bold=true`}
+            alt="Avatar"
+            className="w-20 h-20 rounded-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+            <FiImage size={24} className="text-white" />
+          </div>
+        </button>
+        <input
+          ref={editAvatarInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleEditAvatarChange}
+        />
+        <p className="text-xs text-[#8e8e93]">Bấm để đổi ảnh đại diện</p>
+      </div>
+
+      <input
+        type="text"
+        value={editName}
+        onChange={(e) => setEditName(e.target.value)}
+        placeholder="Tên nhóm"
+        maxLength={50}
+        className="w-full px-4 py-2.5 bg-[#f2f7] dark:bg-zinc-800 rounded-xl outline-none border-0 focus:ring-2 focus:ring-[#0a84ff] mb-4"
+      />
+
+      <div className="flex gap-2">
+        <button
+          onClick={() => setShowEditModal(false)}
+          disabled={updatingGroup}
+          className="flex-1 py-2.5 rounded-xl bg-[#f2f2f7] dark:bg-zinc-800 font-medium active:opacity-60 disabled:opacity-40"
+        >
+          Hủy
+        </button>
+        <button
+          onClick={handleUpdateGroup}
+          disabled={updatingGroup ||!editName.trim()}
+          className="flex-1 py-2.5 rounded-xl bg-[#0a84ff] text-white font-medium active:opacity-60 disabled:opacity-40"
+        >
+          {updatingGroup? "Đang lưu..." : "Lưu"}
+        </button>
+      </div>
+    </div>
+  </>
+)}
   {showMentions && group?.membersInfo && (
     <div className="absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 py-1 max-h-40 overflow-y-auto z-20">
       {group.members.map(uid => {
