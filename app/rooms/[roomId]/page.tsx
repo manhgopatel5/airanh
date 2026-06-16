@@ -537,13 +537,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
   e.stopPropagation();
   setActivePopupMsgId(prev => prev === msgId? null : msgId);
 };
-  const formatMessageTime = (timestamp: any) => {
-    if (!timestamp?.toDate) return "";
-    const date = timestamp.toDate();
-    if (isToday(date)) return format(date, 'HH:mm');
-    if (isYesterday(date)) return 'Hôm qua ' + format(date, 'HH:mm');
-    return format(date, 'dd/MM HH:mm', { locale: vi });
-  };
+
 const shouldShowTimeDivider = (msg: Message, prevMsg: Message | undefined) => {
   if (!prevMsg?.createdAt ||!msg.createdAt) return true;
   const prev = prevMsg.createdAt.toDate();
@@ -637,7 +631,7 @@ const formatTimeDivider = (timestamp: any) => {
 <div
   ref={messagesContainerRef}
   onScroll={handleScroll}
-  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-1"
+  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-0.5"
 >
   {messages.length === 0? (
     <div className="flex flex-col items-center justify-center h-full text-center py-20">
@@ -663,10 +657,10 @@ const formatTimeDivider = (timestamp: any) => {
 
         return (
           <div key={msg.id}>
-            {/* Time Divider căn giữa */}
+            {/* Time Divider căn giữa - chỉ hiện khi cách >5 phút */}
             {showTimeDivider && (
               <div className="flex justify-center my-4">
-                <span className="text-sm text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+                <span className="text-[13px] text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
                   {formatTimeDivider(msg.createdAt)}
                 </span>
               </div>
@@ -718,7 +712,7 @@ const formatTimeDivider = (timestamp: any) => {
                           className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
                         >
                           <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                          <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                          <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
                             Thông tin cá nhân
                           </span>
                         </button>
@@ -730,7 +724,7 @@ const formatTimeDivider = (timestamp: any) => {
 
               <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
                 {isFirstInGroup &&!isMe && (
-                  <span className="text-sm text-[#8e8e93] px-3 mb-0.5 font-medium">{msg.senderName}</span>
+                  <span className="text-[13px] text-[#8e8e93] px-3 mb-0.5 font-medium">{msg.senderName}</span>
                 )}
 
                 {/* Poll bo tròn full giống Messenger */}
@@ -738,7 +732,7 @@ const formatTimeDivider = (timestamp: any) => {
                   isLastInGroup? (isMe? 'rounded-br-[4px]' : 'rounded-bl-[4px]') : ''
                 }`}>
                   <div className="flex items-start justify-between mb-3">
-                    <p className="text-sm font-semibold flex-1">📊 {msg.pollData.question}</p>
+                    <p className="text-[15px] font-semibold flex-1">📊 {msg.pollData.question}</p>
                     {isCreator &&!isClosed && (
                       <button
                         onClick={async () => {
@@ -747,7 +741,7 @@ const formatTimeDivider = (timestamp: any) => {
                           await updateDoc(msgRef, { 'pollData.closed': true });
                           toast.success("Đã khóa bình chọn");
                         }}
-                        className="text-sm text-red-500 active:opacity-60 ml-2"
+                        className="text-[13px] text-red-500 active:opacity-60 ml-2"
                       >
                         Khóa
                       </button>
@@ -755,7 +749,7 @@ const formatTimeDivider = (timestamp: any) => {
                   </div>
 
                   {msg.pollData.endTime && (
-                    <p className="text-sm text-[#8e8e93] mb-2">
+                    <p className="text-[13px] text-[#8e8e93] mb-2">
                       {isExpired? 'Đã kết thúc' : `Kết thúc: ${format(msg.pollData.endTime.toDate(), 'HH:mm dd/MM', { locale: vi })}`}
                     </p>
                   )}
@@ -777,11 +771,11 @@ const formatTimeDivider = (timestamp: any) => {
                           />
                           <div className="relative px-3 py-2.5">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm flex items-center gap-2">
+                              <span className="text-[15px] flex items-center gap-2">
                                 {voted && <FiCheck className="text-[#0a84ff]" size={16} />}
                                 {opt.text}
                               </span>
-                              <span className="text-sm text-[#8e8e93] font-medium">{percent.toFixed(0)}%</span>
+                              <span className="text-[13px] text-[#8e8e93] font-medium">{percent.toFixed(0)}%</span>
                             </div>
                             {opt.votes.length > 0 && (
                               <div className="flex -space-x-1">
@@ -797,7 +791,7 @@ const formatTimeDivider = (timestamp: any) => {
                                   ) : null;
                                 })}
                                 {opt.votes.length > 5 && (
-                                  <div className="w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-600 border border-white dark:border-zinc-800 flex items-center justify-center text-sm text-zinc-600 dark:text-zinc-300">
+                                  <div className="w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-600 border border-white dark:border-zinc-800 flex items-center justify-center text-[11px] text-zinc-600 dark:text-zinc-300">
                                     +{opt.votes.length - 5}
                                   </div>
                                 )}
@@ -808,7 +802,7 @@ const formatTimeDivider = (timestamp: any) => {
                       );
                     })}
                   </div>
-                  <p className="text-sm text-[#8e8e93] mt-2">
+                  <p className="text-[13px] text-[#8e8e93] mt-2">
                     {totalVotes} lượt bình chọn{msg.pollData.allowMultiple? ' • Nhiều lựa chọn' : ''}
                   </p>
                 </div>
@@ -827,7 +821,7 @@ const formatTimeDivider = (timestamp: any) => {
                       className="flex items-center gap-2.5 px-4 py-2.5 active:bg-red-50 dark:active:bg-red-950/30 text-red-500 whitespace-nowrap"
                     >
                       <FiTrash2 size={18} />
-                      <span className="text-sm font-medium">Xoá bình chọn</span>
+                      <span className="text-[15px] font-medium">Xoá bình chọn</span>
                     </button>
                   </div>
                 </>
@@ -843,7 +837,7 @@ const formatTimeDivider = (timestamp: any) => {
           {/* Time Divider căn giữa - chỉ hiện khi cách >5 phút */}
           {showTimeDivider && (
             <div className="flex justify-center my-4">
-              <span className="text-sm text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+              <span className="text-[13px] text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
                 {formatTimeDivider(msg.createdAt)}
               </span>
             </div>
@@ -910,20 +904,20 @@ const formatTimeDivider = (timestamp: any) => {
 
             <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
               {isFirstInGroup &&!isMe && (
-                <span className="text-sm text-[#8e8e93] px-3 mb-0.5 font-medium">{msg.senderName}</span>
+                <span className="text-[13px] text-[#8e8e93] px-3 mb-0.5 font-medium">{msg.senderName}</span>
               )}
 
               {/* Bubble bo tròn full giống Messenger */}
               <div className={`px-4 py-2.5 ${
                 isMe
-                ? 'bg-[#0a84ff] text-white'
+               ? 'bg-[#0a84ff] text-white'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
               } rounded-[18px] ${
                 isLastInGroup? (isMe? 'rounded-br-[4px]' : 'rounded-bl-[4px]') : ''
               }`}>
                 <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
               </div>
-              {/* Đã xoá time ở đây */}
+              {/* Đã xoá time ở đây - Messenger không hiện time dưới mỗi tin */}
             </div>
 
             {/* Popup xoá */}
@@ -1066,7 +1060,7 @@ const formatTimeDivider = (timestamp: any) => {
       <div className="flex items-center gap-2 mb-1.5">
         <img src={msg.senderAvatar} className="w-6 h-6 rounded-full" alt="" />
         <p className="text-sm font-medium text-zinc-900 dark:text-white">{msg.senderName}</p>
-        <p className="text-sm text-[#8e8e93]">• {formatMessageTime(msg.createdAt)}</p>
+<p className="text- text-[#8e8e93]">• {formatTimeDivider(msg.createdAt)}</p>
       </div>
       <div className="pl-8">
         <p className="text-sm text-zinc-900 dark:text-white line-clamp-2">
@@ -1085,7 +1079,7 @@ const formatTimeDivider = (timestamp: any) => {
     onClick={() => { setShowInvite(false); setSearchFriend(""); setSelectedInviteIds([]); }}
   >
     <div 
-      className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h- flex flex-col animate-in slide-in-from-bottom-5 duration-300"
+className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom-5 duration-300"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/5">
@@ -1210,7 +1204,7 @@ const formatTimeDivider = (timestamp: any) => {
     onClick={() => setShowPoll(false)}
   >
     <div 
-      className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h- flex flex-col animate-in slide-in-from-bottom-5 duration-300"
+className="bg-white dark:bg-zinc-900 w-full rounded-t-3xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom-5 duration-300"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/5">
