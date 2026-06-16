@@ -637,7 +637,7 @@ const formatTimeDivider = (timestamp: any) => {
 <div
   ref={messagesContainerRef}
   onScroll={handleScroll}
-  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3"
+  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-1"
 >
   {messages.length === 0? (
     <div className="flex flex-col items-center justify-center h-full text-center py-20">
@@ -652,287 +652,303 @@ const formatTimeDivider = (timestamp: any) => {
       const nextMsg = messages[idx + 1];
       const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
       const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
+      const showTimeDivider = shouldShowTimeDivider(msg, prevMsg);
 
-            // Render Poll
-// Render Poll
-if (msg.type === 'poll' && msg.pollData) {
-  const totalVotes = msg.pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
-  const isExpired = msg.pollData.endTime && msg.pollData.endTime.toDate() < new Date();
-  const isClosed = msg.pollData.closed || isExpired;
-  const isCreator = msg.pollData.creatorId === user?.uid;
-  const showTimeDivider = shouldShowTimeDivider(msg, prevMsg);
-  
-  return (
-    <div key={msg.id}>
-      {/* Time Divider căn giữa */}
-      {showTimeDivider && (
-        <div className="flex justify-center my-3">
-          <span className="text- text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
-            {formatTimeDivider(msg.createdAt)}
-          </span>
-        </div>
-      )}
+      // Render Poll
+      if (msg.type === 'poll' && msg.pollData) {
+        const totalVotes = msg.pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
+        const isExpired = msg.pollData.endTime && msg.pollData.endTime.toDate() < new Date();
+        const isClosed = msg.pollData.closed || isExpired;
+        const isCreator = msg.pollData.creatorId === user?.uid;
 
-      <div 
-        id={`msg-${msg.id}`} 
-        className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''} ${isFirstInGroup? 'mt-2' : 'mt-0.5'}`}
-        onTouchStart={() => {
-          if (!isCreator) return;
-          longPressTimer.current = setTimeout(() => {
-            setDeleteMsgId(msg.id);
-            if ("vibrate" in navigator) navigator.vibrate(50);
-          }, 500);
-        }}
-        onTouchEnd={() => {
-          if (longPressTimer.current) {
-            clearTimeout(longPressTimer.current);
-            longPressTimer.current = null;
-          }
-        }}
-        onTouchMove={() => {
-          if (longPressTimer.current) {
-            clearTimeout(longPressTimer.current);
-            longPressTimer.current = null;
-          }
-        }}
-      >
-        <div className="w-8 flex-shrink-0 self-end relative">
-          {isFirstInGroup? (
-            <>
-              <img
-                src={msg.senderAvatar}
-                alt={msg.senderName}
-                className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
-                referrerPolicy="no-referrer"
-                onClick={(e) => handleAvatarClick(e, msg.id)}
-              />
-              {activePopupMsgId === msg.id && (
-                <div 
-                  className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    onClick={() => {
-                      setActivePopupMsgId(null);
-                      router.push(`/profile/${msg.senderId}`);
+        return (
+          <div key={msg.id}>
+            {/* Time Divider căn giữa */}
+            {showTimeDivider && (
+              <div className="flex justify-center my-4">
+                <span className="text-sm text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+                  {formatTimeDivider(msg.createdAt)}
+                </span>
+              </div>
+            )}
+
+            <div
+              id={`msg-${msg.id}`}
+              className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''} ${isFirstInGroup? 'mt-2' : 'mt-0.5'}`}
+              onTouchStart={() => {
+                if (!isCreator) return;
+                longPressTimer.current = setTimeout(() => {
+                  setDeleteMsgId(msg.id);
+                  if ("vibrate" in navigator) navigator.vibrate(50);
+                }, 500);
+              }}
+              onTouchEnd={() => {
+                if (longPressTimer.current) {
+                  clearTimeout(longPressTimer.current);
+                  longPressTimer.current = null;
+                }
+              }}
+              onTouchMove={() => {
+                if (longPressTimer.current) {
+                  clearTimeout(longPressTimer.current);
+                  longPressTimer.current = null;
+                }
+              }}
+            >
+              <div className="w-8 flex-shrink-0 self-end relative">
+                {isFirstInGroup? (
+                  <>
+                    <img
+                      src={msg.senderAvatar}
+                      alt={msg.senderName}
+                      className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
+                      referrerPolicy="no-referrer"
+                      onClick={(e) => handleAvatarClick(e, msg.id)}
+                    />
+                    {activePopupMsgId === msg.id && (
+                      <div
+                        className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={() => {
+                            setActivePopupMsgId(null);
+                            router.push(`/profile/${msg.senderId}`);
+                          }}
+                          className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
+                        >
+                          <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                          <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                            Thông tin cá nhân
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : <div className="w-8" />}
+              </div>
+
+              <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+                {isFirstInGroup &&!isMe && (
+                  <span className="text-sm text-[#8e8e93] px-3 mb-0.5 font-medium">{msg.senderName}</span>
+                )}
+
+                {/* Poll bo tròn full giống Messenger */}
+                <div className={`px-4 py-3 bg-zinc-100 dark:bg-zinc-800 w-full rounded-[18px] ${
+                  isLastInGroup? (isMe? 'rounded-br-[4px]' : 'rounded-bl-[4px]') : ''
+                }`}>
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-sm font-semibold flex-1">📊 {msg.pollData.question}</p>
+                    {isCreator &&!isClosed && (
+                      <button
+                        onClick={async () => {
+                          const { updateDoc } = await import("firebase/firestore");
+                          const msgRef = doc(db, "chats", roomId as string, "messages", msg.id);
+                          await updateDoc(msgRef, { 'pollData.closed': true });
+                          toast.success("Đã khóa bình chọn");
+                        }}
+                        className="text-sm text-red-500 active:opacity-60 ml-2"
+                      >
+                        Khóa
+                      </button>
+                    )}
+                  </div>
+
+                  {msg.pollData.endTime && (
+                    <p className="text-sm text-[#8e8e93] mb-2">
+                      {isExpired? 'Đã kết thúc' : `Kết thúc: ${format(msg.pollData.endTime.toDate(), 'HH:mm dd/MM', { locale: vi })}`}
+                    </p>
+                  )}
+
+                  <div className="space-y-2">
+                    {msg.pollData.options.map((opt, optIdx) => {
+                      const voted = opt.votes.includes(user?.uid || '');
+                      const percent = totalVotes > 0? (opt.votes.length / totalVotes * 100) : 0;
+                      return (
+                        <button
+                          key={optIdx}
+                          onClick={() =>!isClosed && votePoll(msg.id, optIdx)}
+                          disabled={isClosed}
+                          className="w-full text-left relative overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700 active:opacity-70 disabled:opacity-60"
+                        >
+                          <div
+                            className="absolute inset-0 bg-[#0a84ff]/20 transition-all duration-300"
+                            style={{ width: `${percent}%` }}
+                          />
+                          <div className="relative px-3 py-2.5">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm flex items-center gap-2">
+                                {voted && <FiCheck className="text-[#0a84ff]" size={16} />}
+                                {opt.text}
+                              </span>
+                              <span className="text-sm text-[#8e8e93] font-medium">{percent.toFixed(0)}%</span>
+                            </div>
+                            {opt.votes.length > 0 && (
+                              <div className="flex -space-x-1">
+                                {opt.votes.slice(0, 5).map((uid: string) => {
+                                  const voter = allUsers.find(u => u.uid === uid);
+                                  return voter? (
+                                    <img
+                                      key={uid}
+                                      src={voter.photoURL}
+                                      className="w-5 h-5 rounded-full border border-white dark:border-zinc-800"
+                                      alt=""
+                                    />
+                                  ) : null;
+                                })}
+                                {opt.votes.length > 5 && (
+                                  <div className="w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-600 border border-white dark:border-zinc-800 flex items-center justify-center text-sm text-zinc-600 dark:text-zinc-300">
+                                    +{opt.votes.length - 5}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-sm text-[#8e8e93] mt-2">
+                    {totalVotes} lượt bình chọn{msg.pollData.allowMultiple? ' • Nhiều lựa chọn' : ''}
+                  </p>
+                </div>
+              </div>
+
+              {/* Popup xoá */}
+              {deleteMsgId === msg.id && isCreator && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setDeleteMsgId(null)}
+                  />
+                  <div className="absolute z-50 top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95">
+                    <button
+                      onClick={() => deleteMessage(msg.id)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 active:bg-red-50 dark:active:bg-red-950/30 text-red-500 whitespace-nowrap"
+                    >
+                      <FiTrash2 size={18} />
+                      <span className="text-sm font-medium">Xoá bình chọn</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // Tin nhắn text thường
+      return (
+        <div key={msg.id}>
+          {/* Time Divider căn giữa - chỉ hiện khi cách >5 phút */}
+          {showTimeDivider && (
+            <div className="flex justify-center my-4">
+              <span className="text-sm text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+                {formatTimeDivider(msg.createdAt)}
+              </span>
+            </div>
+          )}
+
+          <div
+            id={`msg-${msg.id}`}
+            className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''} ${isFirstInGroup? 'mt-2' : 'mt-0.5'}`}
+            onTouchStart={() => {
+              if (!isMe) return;
+              longPressTimer.current = setTimeout(() => {
+                setDeleteMsgId(msg.id);
+                if ("vibrate" in navigator) navigator.vibrate(50);
+              }, 500);
+            }}
+            onTouchEnd={() => {
+              if (longPressTimer.current) {
+                clearTimeout(longPressTimer.current);
+                longPressTimer.current = null;
+              }
+            }}
+            onTouchMove={() => {
+              if (longPressTimer.current) {
+                clearTimeout(longPressTimer.current);
+                longPressTimer.current = null;
+              }
+            }}
+          >
+            <div className="w-8 flex-shrink-0 self-end relative">
+              {isFirstInGroup? (
+                <>
+                  <img
+                    src={msg.senderAvatar}
+                    alt={msg.senderName}
+                    className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
+                    referrerPolicy="no-referrer"
+                    onClick={(e) => handleAvatarClick(e, msg.id)}
+                    onError={(e) => {
+                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
                     }}
-                    className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
+                  />
+                  {activePopupMsgId === msg.id && (
+                    <div
+                      className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() => {
+                          setActivePopupMsgId(null);
+                          router.push(`/profile/${msg.senderId}`);
+                        }}
+                        className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
+                      >
+                        <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                        <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
+                          Thông tin cá nhân
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : <div className="w-8" />}
+            </div>
+
+            <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+              {isFirstInGroup &&!isMe && (
+                <span className="text-sm text-[#8e8e93] px-3 mb-0.5 font-medium">{msg.senderName}</span>
+              )}
+
+              {/* Bubble bo tròn full giống Messenger */}
+              <div className={`px-4 py-2.5 ${
+                isMe
+                ? 'bg-[#0a84ff] text-white'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+              } rounded-[18px] ${
+                isLastInGroup? (isMe? 'rounded-br-[4px]' : 'rounded-bl-[4px]') : ''
+              }`}>
+                <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
+              </div>
+              {/* Đã xoá time ở đây */}
+            </div>
+
+            {/* Popup xoá */}
+            {deleteMsgId === msg.id && isMe && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setDeleteMsgId(null)}
+                />
+                <div className="absolute z-50 top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95">
+                  <button
+                    onClick={() => deleteMessage(msg.id)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 active:bg-red-50 dark:active:bg-red-950/30 text-red-500 whitespace-nowrap"
                   >
-                    <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                    <span className="text- font-medium text-zinc-900 dark:text-white">
-                      Thông tin cá nhân
-                    </span>
+                    <FiTrash2 size={18} />
+                    <span className="text-[15px] font-medium">Xoá tin nhắn</span>
                   </button>
                 </div>
-              )}
-            </>
-          ) : <div className="w-8" />}
-        </div>
-        
-        <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-          {isFirstInGroup &&!isMe && (
-            <span className="text- text-[#8e8e93] px-3 mb-0.5 font-medium">{msg.senderName}</span>
-          )}
-          
-          {/* Poll bo tròn full */}
-          <div className="px-4 py-3 rounded- bg-zinc-100 dark:bg-zinc-800 w-full">
-            <div className="flex items-start justify-between mb-3">
-              <p className="text- font-semibold flex-1">📊 {msg.pollData.question}</p>
-              {isCreator &&!isClosed && (
-                <button
-                  onClick={async () => {
-                    const { updateDoc } = await import("firebase/firestore");
-                    const msgRef = doc(db, "chats", roomId as string, "messages", msg.id);
-                    await updateDoc(msgRef, { 'pollData.closed': true });
-                    toast.success("Đã khóa bình chọn");
-                  }}
-                  className="text- text-red-500 active:opacity-60 ml-2"
-                >
-                  Khóa
-                </button>
-              )}
-            </div>
-            
-            {msg.pollData.endTime && (
-              <p className="text- text-[#8e8e93] mb-2">
-                {isExpired? 'Đã kết thúc' : `Kết thúc: ${format(msg.pollData.endTime.toDate(), 'HH:mm dd/MM', { locale: vi })}`}
-              </p>
+              </>
             )}
-            
-            <div className="space-y-2">
-              {msg.pollData.options.map((opt, optIdx) => {
-                const voted = opt.votes.includes(user?.uid || '');
-                const percent = totalVotes > 0? (opt.votes.length / totalVotes * 100) : 0;
-                return (
-                  <button
-                    key={optIdx}
-                    onClick={() =>!isClosed && votePoll(msg.id, optIdx)}
-                    disabled={isClosed}
-                    className="w-full text-left relative overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700 active:opacity-70 disabled:opacity-60"
-                  >
-                    <div 
-                      className="absolute inset-0 bg-[#0a84ff]/20 transition-all duration-300"
-                      style={{ width: `${percent}%` }}
-                    />
-                    <div className="relative px-3 py-2.5">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text- flex items-center gap-2">
-                          {voted && <FiCheck className="text-[#0a84ff]" size={16} />}
-                          {opt.text}
-                        </span>
-                        <span className="text- text-[#8e8e93] font-medium">{percent.toFixed(0)}%</span>
-                      </div>
-                      {opt.votes.length > 0 && (
-                        <div className="flex -space-x-1">
-                          {opt.votes.slice(0, 5).map((uid: string) => {
-                            const voter = allUsers.find(u => u.uid === uid);
-                            return voter? (
-                              <img 
-                                key={uid} 
-                                src={voter.photoURL} 
-                                className="w-5 h-5 rounded-full border border-white dark:border-zinc-800" 
-                                alt=""
-                              />
-                            ) : null;
-                          })}
-                          {opt.votes.length > 5 && (
-                            <div className="w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-600 border border-white dark:border-zinc-800 flex items-center justify-center text- text-zinc-600 dark:text-zinc-300">
-                              +{opt.votes.length - 5}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text- text-[#8e8e93] mt-2">
-              {totalVotes} lượt bình chọn{msg.pollData.allowMultiple? ' • Nhiều lựa chọn' : ''}
-            </p>
           </div>
         </div>
-
-        {/* Popup xoá */}
-        {deleteMsgId === msg.id && isCreator && (
-          <>
-            <div 
-              className="fixed inset-0 z-40" 
-              onClick={() => setDeleteMsgId(null)} 
-            />
-            <div className="absolute z-50 top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95">
-              <button
-                onClick={() => deleteMessage(msg.id)}
-                className="flex items-center gap-2.5 px-4 py-2.5 active:bg-red-50 dark:active:bg-red-950/30 text-red-500 whitespace-nowrap"
-              >
-                <FiTrash2 size={18} />
-                <span className="text- font-medium">Xoá bình chọn</span>
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-return (
-  <div 
-    key={msg.id} 
-    id={`msg-${msg.id}`} 
-    className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''} relative`}
-    onTouchStart={() => {
-      if (!isMe) return;
-      longPressTimer.current = setTimeout(() => {
-        setDeleteMsgId(msg.id);
-        if ("vibrate" in navigator) navigator.vibrate(50);
-      }, 500);
-    }}
-    onTouchEnd={() => {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-      }
-    }}
-    onTouchMove={() => {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-      }
-    }}
-  >
-    <div className="w-8 flex-shrink-0 self-end relative">
-      {isFirstInGroup? (
-        <>
-          <img
-            src={msg.senderAvatar}
-            alt={msg.senderName}
-            className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
-            referrerPolicy="no-referrer"
-            onClick={(e) => handleAvatarClick(e, msg.id)}
-            onError={(e) => {
-              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
-            }}
-          />
-          {activePopupMsgId === msg.id && (
-            <div 
-              className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => {
-                  setActivePopupMsgId(null);
-                  router.push(`/profile/${msg.senderId}`);
-                }}
-                className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
-              >
-                <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
-                  Thông tin cá nhân
-                </span>
-              </button>
-            </div>
-          )}
-        </>
-      ) : <div className="w-8" />}
-    </div>
-
-    <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-      <div className={`px-4 py-2.5 rounded-[18px] ${
-        isMe
-? 'bg-[#0a84ff] text-white'
-        : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-      } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
-        <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
-      </div>
-      {isLastInGroup && (
-        <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
-          {formatMessageTime(msg.createdAt)}
-        </p>
-      )}
-    </div>
-
-    {/* Popup xoá */}
-    {deleteMsgId === msg.id && isMe && (
-      <>
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setDeleteMsgId(null)} 
-        />
-        <div className="absolute z-50 top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95">
-          <button
-            onClick={() => deleteMessage(msg.id)}
-            className="flex items-center gap-2.5 px-4 py-2.5 active:bg-red-50 dark:active:bg-red-950/30 text-red-500 whitespace-nowrap"
-          >
-            <FiTrash2 size={18} />
-            <span className="text-[15px] font-medium">Xoá tin nhắn</span>
-          </button>
-        </div>
-      </>
-    )}
-  </div>
-);
-})
-)}
+      );
+    })
+  )}
 </div>
 
 {/* Input */}
@@ -997,7 +1013,7 @@ return (
 {/* Counter + Prev/Next */}
 {searchResults.length > 0 && (
   <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900 border-b border-black/5 dark:border-white/5">
-    <span className="text- text-[#8e8e93] font-medium">
+    <span className="text-sm text-[#8e8e93] font-medium">
       {currentResultIdx + 1}/{searchResults.length} kết quả
     </span>
     <div className="flex gap-2">
@@ -1037,7 +1053,7 @@ return (
   {searchQuery && searchResults.length === 0 &&!searching? (
     <div className="flex flex-col items-center justify-center h-full py-20">
       <FiSearch size={48} className="text-zinc-300 dark:text-zinc-700 mb-3" />
-      <p className="text- text-[#8e8e93]">Không tìm thấy "{searchQuery}"</p>
+      <p className="text-sm text-[#8e8e93]">Không tìm thấy "{searchQuery}"</p>
     </div>
   ) : searchResults.map((msg, idx) => (
     <button
@@ -1049,11 +1065,11 @@ return (
     >
       <div className="flex items-center gap-2 mb-1.5">
         <img src={msg.senderAvatar} className="w-6 h-6 rounded-full" alt="" />
-        <p className="text- font-medium text-zinc-900 dark:text-white">{msg.senderName}</p>
-        <p className="text- text-[#8e8e93]">• {formatMessageTime(msg.createdAt)}</p>
+        <p className="text-sm font-medium text-zinc-900 dark:text-white">{msg.senderName}</p>
+        <p className="text-sm text-[#8e8e93]">• {formatMessageTime(msg.createdAt)}</p>
       </div>
       <div className="pl-8">
-        <p className="text- text-zinc-900 dark:text-white line-clamp-2">
+        <p className="text-sm text-zinc-900 dark:text-white line-clamp-2">
           {msg.type === 'poll'? `📊 ${msg.pollData?.question}` : highlightText(msg.text, searchQuery)}
         </p>
       </div>
@@ -1079,7 +1095,7 @@ return (
         >
           Hủy
         </button>
-        <h3 className="text- font-semibold">Mời bạn bè</h3>
+        <h3 className="text-sm font-semibold">Mời bạn bè</h3>
         <button 
           onClick={inviteUsers}
           disabled={selectedInviteIds.length === 0 || inviting}
@@ -1097,7 +1113,7 @@ return (
             value={searchFriend}
             onChange={(e) => setSearchFriend(e.target.value)}
             placeholder="Tìm bạn bè..."
-            className="flex-1 bg-transparent text- outline-none placeholder:text-[#8e8e93]"
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-[#8e8e93]"
           />
           {searchFriend && (
             <button onClick={() => setSearchFriend("")}>
@@ -1144,7 +1160,7 @@ return (
           return filtered.length === 0? (
             <div className="flex flex-col items-center justify-center py-20">
               <FiUserPlus size={48} className="text-zinc-300 dark:text-zinc-700 mb-3" />
-              <p className="text- text-[#8e8e93]">
+              <p className="text-sm text-[#8e8e93]">
                 {searchFriend? "Không tìm thấy bạn bè" : "Không có bạn bè để mời"}
               </p>
             </div>
@@ -1167,8 +1183,8 @@ return (
                 >
                   <img src={user.photoURL} className="w-12 h-12 rounded-full" alt="" />
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text- font-medium truncate">{user.displayName}</p>
-                    <p className="text- text-[#8e8e93] truncate">
+                    <p className="text-sm font-medium truncate">{user.displayName}</p>
+                    <p className="text-sm text-[#8e8e93] truncate">
                       {isInRoom? "Đã tham gia" : user.email}
                     </p>
                   </div>
@@ -1199,7 +1215,7 @@ return (
     >
       <div className="flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/5">
         <button onClick={() => setShowPoll(false)} className="text-[#0a84ff] active:opacity-60">Huỷ</button>
-        <h3 className="text- font-semibold">Tạo bình chọn</h3>
+        <h3 className="text-sm font-semibold">Tạo bình chọn</h3>
         <button 
           onClick={createPoll} 
           disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
@@ -1214,9 +1230,9 @@ return (
           value={pollQuestion}
           onChange={(e) => setPollQuestion(e.target.value)}
           placeholder="Đặt câu hỏi..."
-          className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none mb-4"
+          className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm outline-none mb-4"
         />
-        <p className="text- text-[#8e8e93] mb-2">Lựa chọn</p>
+        <p className="text-sm text-[#8e8e93] mb-2">Lựa chọn</p>
         {pollOptions.map((opt, idx) => (
           <div key={idx} className="flex items-center gap-2 mb-2">
             <input
@@ -1228,7 +1244,7 @@ return (
                 setPollOptions(newOpts);
               }}
               placeholder={`Lựa chọn ${idx + 1}`}
-              className="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none"
+              className="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm outline-none"
             />
             {pollOptions.length > 2 && (
               <button onClick={() => setPollOptions(pollOptions.filter((_, i) => i!== idx))}>
@@ -1272,13 +1288,13 @@ return (
                 type="date"
                 value={pollEndDate}
                 onChange={(e) => setPollEndDate(e.target.value)}
-                className="flex-1 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none"
+                className="flex-1 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm outline-none"
               />
               <input
                 type="time"
                 value={pollEndTime}
                 onChange={(e) => setPollEndTime(e.target.value)}
-                className="flex-1 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none"
+                className="flex-1 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm outline-none"
               />
             </div>
           )}
