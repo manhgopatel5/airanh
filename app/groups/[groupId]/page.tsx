@@ -400,10 +400,10 @@ export default function GroupChatPage() {
 
   const isOwner = group.createdBy === user?.uid;
 
-  return (
-    <div className="flex flex-col h-dvh bg-white dark:bg-black">
-      {/* Header - sticky top */}
-      <div className="flex flex-col border-b border-black/10 dark:border-white/10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl sticky top-0 z-20">
+return (
+  <div className="flex flex-col h-dvh bg-white dark:bg-black overflow-hidden">
+{/* Header */}
+<div className="flex flex-col border-b border-black/10 dark:border-white/10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl sticky top-0 z-30">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => router.back()} className="w-8 h-8 flex items-center justify-center -ml-2 active:opacity-60">
             <FiChevronLeft size={24} className="text-[#0a84ff]" strokeWidth={2.5} />
@@ -488,103 +488,103 @@ export default function GroupChatPage() {
         )}
       </div>
 
-      {/* Messages - scroll area */}
-      <div className="flex-1 overflow-y-auto px-3 py-3" onClick={() => setLongPressMsg(null)}>
-        {messages.length === 0? (
-          <div className="h-full flex items-center justify-center text-[#8e8e93] text-sm">
-            Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {messages.map((msg, idx) => {
-              const isMe = msg.senderId === user?.uid;
-              const prevMsg = messages[idx - 1];
-              const nextMsg = messages[idx + 1];
-              const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
-              const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
-              const showAvatar = isLastInGroup;
-              const showName = isFirstInGroup &&!isMe;
+   {/* Messages */}
+<div className="flex-1 overflow-y-auto px-3 pt-3 pb-2 relative z-0" onClick={() => setLongPressMsg(null)}>
+  {messages.length === 0? (
+    <div className="h-full flex items-center justify-center text-[#8e8e93] text-sm">
+      Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!
+    </div>
+  ) : (
+    <div className="space-y-1">
+      {messages.map((msg, idx) => {
+        const isMe = msg.senderId === user?.uid;
+        const prevMsg = messages[idx - 1];
+        const nextMsg = messages[idx + 1];
+        const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
+        const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
+        const showAvatar = isLastInGroup;
+        const showName = isFirstInGroup &&!isMe;
 
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex items-end gap-2 ${isMe? 'justify-end' : 'justify-start'} ${isFirstInGroup? 'mt-3' : 'mt-0.5'}`}
-                  onContextMenu={(e) => e.preventDefault()}
-                >
-                  <div className={`w-7 h-7 flex-shrink-0 ${isMe? 'order-2' : 'order-1'}`}>
-                    {showAvatar && (
-                      <img
-                        src={msg.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}`}
-                        alt={msg.senderName}
-                        className="w-7 h-7 rounded-full object-cover"
-                      />
-                    )}
-                  </div>
+        return (
+          <div
+            key={msg.id}
+            className={`flex items-end gap-2 ${isMe? 'justify-end' : 'justify-start'} ${isFirstInGroup? 'mt-3' : 'mt-0.5'}`}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <div className={`w-7 h-7 flex-shrink-0 ${isMe? 'order-2' : 'order-1'}`}>
+              {showAvatar && (
+                <img
+                  src={msg.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}`}
+                  alt={msg.senderName}
+                  className="w-7 h-7 rounded-full object-cover"
+                />
+              )}
+            </div>
 
-                  <div className={`flex flex-col gap-0.5 max-w-[75%] ${isMe? 'order-1 items-end' : 'order-2 items-start'}`}>
-                    {showName && (
-                      <span className="text-xs text-[#8e8e93] px-3 font-medium">{msg.senderName}</span>
-                    )}
+            <div className={`flex flex-col gap-0.5 max-w-[75%] ${isMe? 'order-1 items-end' : 'order-2 items-start'}`}>
+              {showName && (
+                <span className="text-xs text-[#8e8e93] px-3 font-medium">{msg.senderName}</span>
+              )}
 
-                    {msg.replyTo && (
-                      <div className="px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-xl border-l-2 border-[#0a84ff] mb-1 max-w-full">
-                        <p className="text-xs font-medium text-[#0a84ff]">{msg.replyTo.senderName}</p>
-                        <p className="text-xs text-[#8e8e93] truncate">{msg.replyTo.text}</p>
-                      </div>
-                    )}
-
-                    <div
-                      className={`relative px-3.5 py-2.5 ${
-                        isMe
-                        ? 'bg-[#0a84ff] text-white rounded- rounded-br-[4px]'
-                          : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white rounded- rounded-bl-[4px]'
-                      } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
-                      onPointerDown={() => isMe && handleLongPressStart(msg.id)}
-                      onPointerUp={handleLongPressEnd}
-                      onPointerLeave={handleLongPressEnd}
-                    >
-                      {msg.audioUrl? (
-                        <audio controls src={msg.audioUrl} className="max-w-[240px]" />
-                      ) : msg.imageUrl? (
-                        <img src={msg.imageUrl} alt="Ảnh" className="rounded-xl max-w-[240px] max-h-[240px] object-cover" />
-                      ) : (
-                        <p className="text- leading- whitespace-pre-wrap break-words">{msg.text}</p>
-                      )}
-
-                      {longPressMsg === msg.id && isMe && (
-                        <div className="absolute -top-10 right-0 flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1 z-10">
-                          <button
-                            onClick={() => { setReplyTo(msg); setLongPressMsg(null); }}
-                            className="px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 rounded"
-                          >
-                            Trả lời
-                          </button>
-                          <button
-                            onClick={() => handlePinMessage(msg)}
-                            className="px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 rounded"
-                          >
-                            Ghim
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMsg(msg.id)}
-                            className="px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 rounded"
-                          >
-                            Xóa
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <span className="text- text-[#8e8e93] px-3">
-                      {formatTime(msg.createdAt)}
-                    </span>
-                  </div>
+              {msg.replyTo && (
+                <div className="px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-xl border-l-2 border-[#0a84ff] mb-1 max-w-full">
+                  <p className="text-xs font-medium text-[#0a84ff]">{msg.replyTo.senderName}</p>
+                  <p className="text-xs text-[#8e8e93] truncate">{msg.replyTo.text}</p>
                 </div>
-              );
-            })}
-            <div ref={messagesEndRef} />
+              )}
+
+              <div
+                className={`relative px-3.5 py-2.5 ${
+                  isMe
+                  ? 'bg-[#0a84ff] text-white rounded- rounded-br-[4px]'
+                    : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white rounded- rounded-bl-[4px]'
+                } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
+                onPointerDown={() => isMe && handleLongPressStart(msg.id)}
+                onPointerUp={handleLongPressEnd}
+                onPointerLeave={handleLongPressEnd}
+              >
+                {msg.audioUrl? (
+                  <audio controls src={msg.audioUrl} className="max-w-[240px]" />
+                ) : msg.imageUrl? (
+                  <img src={msg.imageUrl} alt="Ảnh" className="rounded-xl max-w-[240px] max-h-[240px] object-cover" />
+                ) : (
+                  <p className="text- leading- whitespace-pre-wrap break-words">{msg.text}</p>
+                )}
+
+                {longPressMsg === msg.id && isMe && (
+                  <div className="absolute -top-10 right-0 flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1 z-10">
+                    <button
+                      onClick={() => { setReplyTo(msg); setLongPressMsg(null); }}
+                      className="px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 rounded"
+                    >
+                      Trả lời
+                    </button>
+                    <button
+                      onClick={() => handlePinMessage(msg)}
+                      className="px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 rounded"
+                    >
+                      Ghim
+                    </button>
+                    <button
+                      onClick={() => handleDeleteMsg(msg.id)}
+                      className="px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 rounded"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                )}
+              </div>
+              <span className="text- text-[#8e8e93] px-3">
+                {formatTime(msg.createdAt)}
+              </span>
+            </div>
           </div>
-        )}
-      </div>
+        );
+      })}
+      <div ref={messagesEndRef} />
+    </div>
+  )}
+</div>
 
       {/* Typing indicator */}
       {typingUsers.length > 0 && (
@@ -593,103 +593,103 @@ export default function GroupChatPage() {
         </div>
       )}
 
-      {/* Input - sticky bottom */}
-      <form
-        onSubmit={handleSend}
-        className="sticky bottom-0 px-2 pt-2 pb-[calc(8px+env(safe-area-inset-bottom))] bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-t border-black/10 dark:border-white/10"
-      >
-        {replyTo && (
-          <div className="flex items-center justify-between mb-2 px-3 py-2 bg-black/5 dark:bg-white/5 rounded-xl">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-[#0a84ff]">Đang trả lời {replyTo.senderName}</p>
-              <p className="text-xs text-[#8e8e93] truncate">{replyTo.text || "[Ảnh]"}</p>
-            </div>
-            <button onClick={() => setReplyTo(null)} className="w-6 h-6 flex items-center justify-center">
-              <FiTrash2 size={14} className="text-[#8e8e93]" />
-            </button>
-          </div>
-        )}
+ {/* Input - fixed bottom */} 
+<form
+  onSubmit={handleSend}
+  className="px-3 pt-2 pb-[calc(8px+env(safe-area-inset-bottom))] bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-t border-black/10 dark:border-white/10"
+>
+  {replyTo && (
+    <div className="flex items-center justify-between mb-2 px-3 py-2 bg-black/5 dark:bg-white/5 rounded-xl">
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-[#0a84ff]">Đang trả lời {replyTo.senderName}</p>
+        <p className="text-xs text-[#8e8e93] truncate">{replyTo.text || "[Ảnh]"}</p>
+      </div>
+      <button onClick={() => setReplyTo(null)} className="w-6 h-6 flex items-center justify-center">
+        <FiTrash2 size={14} className="text-[#8e8e93]" />
+      </button>
+    </div>
+  )}
 
-        {showMentions && group?.membersInfo && (
-          <div className="absolute bottom-full left-2 right-2 mb-2 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 py-1 max-h-40 overflow-y-auto z-20">
-            {group.members.map(uid => {
-              const info = group.membersInfo?.[uid];
-              if (!info || uid === user?.uid) return null;
-              return (
-                <button
-                  key={uid}
-                  type="button"
-                  onClick={() => selectMention(info.name)}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 w-full text-left"
-                >
-                  <img src={info.avatar} alt="" className="w-7 h-7 rounded-full" />
-                  <div>
-                    <p className="text-sm font-medium">{info.name}</p>
-                    <p className="text-xs text-[#8e8e93]">@{info.username}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="flex items-end gap-2 bg-[#f2f2f7] dark:bg-zinc-800 rounded- px-1.5 py-1.5">
+  {showMentions && group?.membersInfo && (
+    <div className="absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border-black/10 dark:border-white/10 py-1 max-h-40 overflow-y-auto z-20">
+      {group.members.map(uid => {
+        const info = group.membersInfo?.[uid];
+        if (!info || uid === user?.uid) return null;
+        return (
           <button
+            key={uid}
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 flex-shrink-0"
+            onClick={() => selectMention(info.name)}
+            className="flex items-center gap-2 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 w-full text-left"
           >
-            <FiImage size={22} />
+            <img src={info.avatar} alt="" className="w-7 h-7 rounded-full" />
+            <div>
+              <p className="text-sm font-medium">{info.name}</p>
+              <p className="text-xs text-[#8e8e93]">@{info.username}</p>
+            </div>
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleSendImage}
-          />
-          <textarea
-            ref={inputRef}
-            value={text}
-            onChange={(e) => handleInputChange(e)}
-            placeholder="Nhắn tin..."
-            rows={1}
-            className="flex-1 bg-transparent text- resize-none outline-none border-0 ring-0 focus:ring-0 focus:outline-none placeholder:text-[#8e8e93] max-h-[100px] py-[6px]"
-            disabled={sending || uploading || recording}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = target.scrollHeight + 'px';
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' &&!e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-          />
-          {text.trim()? (
-            <button
-              type="submit"
-              disabled={sending}
-              className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 disabled:text-[#8e8e93] flex-shrink-0"
-            >
-              <FiSend size={20} />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onPointerDown={startRecording}
-              onPointerUp={stopRecording}
-              onPointerLeave={stopRecording}
-              className={`w-8 h-8 flex items-center justify-center active:opacity-60 flex-shrink-0 ${recording? 'text-red-500' : 'text-[#0a84ff]'}`}
-            >
-              <FiMic size={20} />
-            </button>
-          )}
-        </div>
-      </form>
+        );
+      })}
+    </div>
+  )}
+
+  <div className="flex items-end gap-1 bg-[#f2f2f7] dark:bg-zinc-800 rounded- px-2 py-1.5">
+    <button
+      type="button"
+      onClick={() => fileInputRef.current?.click()}
+      disabled={uploading}
+      className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 flex-shrink-0"
+    >
+      <FiImage size={22} />
+    </button>
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={handleSendImage}
+    />
+    <textarea
+      ref={inputRef}
+      value={text}
+      onChange={(e) => handleInputChange(e)}
+      placeholder="Nhắn tin..."
+      rows={1}
+      className="flex-1 bg-transparent text- resize-none outline-none border-0 ring-0 focus:ring-0 focus:outline-none placeholder:text-[#8e8e93] max-h-[100px] py-[6px] px-1"
+      disabled={sending || uploading || recording}
+      onInput={(e) => {
+        const target = e.target as HTMLTextAreaElement;
+        target.style.height = 'auto';
+        target.style.height = target.scrollHeight + 'px';
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' &&!e.shiftKey) {
+          e.preventDefault();
+          handleSend();
+        }
+      }}
+    />
+    {text.trim()? (
+      <button
+        type="submit"
+        disabled={sending}
+        className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 disabled:text-[#8e8e93] flex-shrink-0"
+      >
+        <FiSend size={20} />
+      </button>
+    ) : (
+      <button
+        type="button"
+        onPointerDown={startRecording}
+        onPointerUp={stopRecording}
+        onPointerLeave={stopRecording}
+        className={`w-8 h-8 flex items-center justify-center active:opacity-60 flex-shrink-0 ${recording? 'text-red-500' : 'text-[#0a84ff]'}`}
+      >
+        <FiMic size={20} />
+      </button>
+    )}
+  </div>
+</form>
     </div>
   );
 }
