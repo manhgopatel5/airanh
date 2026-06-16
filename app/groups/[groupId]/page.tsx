@@ -459,13 +459,7 @@ const formatTimeDivider = (timestamp: any) => {
     setShowMentions(false);
     inputRef.current?.focus();
   };
-const formatTime = (timestamp: any) => {
-  if (!timestamp?.toDate) return "";
-  const date = timestamp.toDate();
-  if (isToday(date)) return format(date, "HH:mm");
-  if (isYesterday(date)) return "Hôm qua " + format(date, "HH:mm");
-  return format(date, "dd/MM/yyyy HH:mm", { locale: vi });
-};
+
   if (loading) {
     return (
       <div className="h-dvh flex items-center justify-center bg-white dark:bg-black">
