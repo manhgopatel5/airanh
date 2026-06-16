@@ -8,7 +8,7 @@ import { doc, getDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query
 import { ref, onValue, set, onDisconnect } from "firebase/database";
 import { FiArrowLeft, FiUser, FiUsers, FiSend, FiLoader, FiMoreVertical, FiSearch, FiChevronUp, FiTrash2, FiChevronDown, FiUserPlus, FiClipboard, FiX, FiPlus, FiCheck } from "react-icons/fi";
 import { toast } from "sonner";
-import { format, isToday, isYesterday } from "date-fns";
+
 import { vi } from "date-fns/locale";
 
 type RoomData = {
@@ -538,20 +538,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
   setActivePopupMsgId(prev => prev === msgId? null : msgId);
 };
 
-const shouldShowTimeDivider = (msg: Message, prevMsg: Message | undefined) => {
-  if (!prevMsg?.createdAt ||!msg.createdAt) return true;
-  const prev = prevMsg.createdAt.toDate();
-  const curr = msg.createdAt.toDate();
-  const diff = curr.getTime() - prev.getTime();
-  return diff > 10 * 60 * 1000; // Đổi từ 5 → 10 phút
-};
 
-const formatTimeDivider = (timestamp: any) => {
-  if (!timestamp?.toDate) return "";
-  const date = timestamp.toDate();
-  if (isToday(date)) return format(date, "HH:mm");
-  if (isYesterday(date)) return "Hôm qua " + format(date, "HH:mm");
-  return format(date, "dd/MM/yyyy HH:mm", { locale: vi });
 };
   if (loading) {
     return (
@@ -646,7 +633,7 @@ const formatTimeDivider = (timestamp: any) => {
       
       const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
 
-      const showTimeDivider = shouldShowTimeDivider(msg, prevMsg);
+
 
       // Render Poll
       if (msg.type === 'poll' && msg.pollData) {
@@ -829,116 +816,106 @@ const formatTimeDivider = (timestamp: any) => {
         );
       }
 
-      // Tin nhắn text thường
-      return (
-        <div key={msg.id}>
-          {/* Time Divider căn giữa - chỉ hiện khi cách >5 phút */}
-          {showTimeDivider && (
-            <div className="flex justify-center my-4">
-              <span className="text-[13px] text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
-                {formatTimeDivider(msg.createdAt)}
-              </span>
-            </div>
-          )}
-
-          <div
-            id={`msg-${msg.id}`}
-            className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''} ${isFirstInGroup? 'mt-2' : 'mt-0.5'}`}
-            onTouchStart={() => {
-              if (!isMe) return;
-              longPressTimer.current = setTimeout(() => {
-                setDeleteMsgId(msg.id);
-                if ("vibrate" in navigator) navigator.vibrate(50);
-              }, 500);
-            }}
-            onTouchEnd={() => {
-              if (longPressTimer.current) {
-                clearTimeout(longPressTimer.current);
-                longPressTimer.current = null;
-              }
-            }}
-            onTouchMove={() => {
-              if (longPressTimer.current) {
-                clearTimeout(longPressTimer.current);
-                longPressTimer.current = null;
-              }
-            }}
-          >
-            <div className="w-8 flex-shrink-0 self-end relative">
-              {isFirstInGroup? (
-                <>
-                  <img
-                    src={msg.senderAvatar}
-                    alt={msg.senderName}
-                    className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
-                    referrerPolicy="no-referrer"
-                    onClick={(e) => handleAvatarClick(e, msg.id)}
-                    onError={(e) => {
-                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
-                    }}
-                  />
-                  {activePopupMsgId === msg.id && (
-                    <div
-                      className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={() => {
-                          setActivePopupMsgId(null);
-                          router.push(`/profile/${msg.senderId}`);
-                        }}
-                        className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
-                      >
-                        <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                        <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
-                          Thông tin cá nhân
-                        </span>
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : <div className="w-8" />}
-            </div>
-
-            <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-              {isFirstInGroup &&!isMe && (
-                <span className="text-[13px] text-[#8e8e93] px-3 mb-0.5 font-medium">{msg.senderName}</span>
-              )}
-
-              {/* Bubble bo tròn full giống Messenger */}
-<div className={`px-4 py-2.5 ${
-  isMe
-  ? 'bg-[#0a84ff] text-white'
-    : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-} rounded-[18px]`}>
-                <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
+// Tin nhắn text thường
+return (
+  <div key={msg.id}>
+    <div
+      id={`msg-${msg.id}`}
+      className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''} ${isFirstInGroup? 'mt-2' : 'mt-0.5'}`}
+      onTouchStart={() => {
+        if (!isMe) return;
+        longPressTimer.current = setTimeout(() => {
+          setDeleteMsgId(msg.id);
+          if ("vibrate" in navigator) navigator.vibrate(50);
+        }, 500);
+      }}
+      onTouchEnd={() => {
+        if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+        }
+      }}
+      onTouchMove={() => {
+        if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+        }
+      }}
+    >
+      <div className="w-8 flex-shrink-0 self-end relative">
+        {isFirstInGroup? (
+          <>
+            <img
+              src={msg.senderAvatar}
+              alt={msg.senderName}
+              className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
+              referrerPolicy="no-referrer"
+              onClick={(e) => handleAvatarClick(e, msg.id)}
+              onError={(e) => {
+                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
+              }}
+            />
+            {activePopupMsgId === msg.id && (
+              <div
+                className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => {
+                    setActivePopupMsgId(null);
+                    router.push(`/profile/${msg.senderId}`);
+                  }}
+                  className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
+                >
+                  <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                  <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
+                    Thông tin cá nhân
+                  </span>
+                </button>
               </div>
-              {/* Đã xoá time ở đây - Messenger không hiện time dưới mỗi tin */}
-            </div>
-
-            {/* Popup xoá */}
-            {deleteMsgId === msg.id && isMe && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setDeleteMsgId(null)}
-                />
-                <div className="absolute z-50 top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95">
-                  <button
-                    onClick={() => deleteMessage(msg.id)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 active:bg-red-50 dark:active:bg-red-950/30 text-red-500 whitespace-nowrap"
-                  >
-                    <FiTrash2 size={18} />
-                    <span className="text-[15px] font-medium">Xoá tin nhắn</span>
-                  </button>
-                </div>
-              </>
             )}
-          </div>
+          </>
+        ) : <div className="w-8" />}
+      </div>
+
+      <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+        {isFirstInGroup &&!isMe && (
+          <span className="text-[13px] text-[#8e8e93] px-3 mb-0.5 font-medium">{msg.senderName}</span>
+        )}
+
+        {/* Bubble bo tròn full giống Messenger */}
+        <div className={`px-4 py-2.5 ${
+          isMe
+         ? 'bg-[#0a84ff] text-white'
+            : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+        } rounded-[18px]`}>
+          <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
         </div>
-      );
-    })
-  )}
+      </div>
+
+      {/* Popup xoá */}
+      {deleteMsgId === msg.id && isMe && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setDeleteMsgId(null)}
+          />
+          <div className="absolute z-50 top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95">
+            <button
+              onClick={() => deleteMessage(msg.id)}
+              className="flex items-center gap-2.5 px-4 py-2.5 active:bg-red-50 dark:active:bg-red-950/30 text-red-500 whitespace-nowrap"
+            >
+              <FiTrash2 size={18} />
+              <span className="text-[15px] font-medium">Xoá tin nhắn</span>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  </div>
+);
+})
+)}
 </div>
 
 {/* Input */}
