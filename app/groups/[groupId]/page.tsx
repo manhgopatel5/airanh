@@ -488,14 +488,14 @@ export default function GroupChatPage() {
         )}
       </div>
 
-    {/* Messages */}
-<div className="flex-1 overflow-y-auto px-3 py-3 pb-20" onClick={() => setLongPressMsg(null)}>
+ {/* Messages */}
+<div className="flex-1 overflow-y-auto px-3 py-3 pb-2" onClick={() => setLongPressMsg(null)}>
   {messages.length === 0? (
     <div className="h-full flex items-center justify-center text-[#8e8e93] text-sm">
       Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!
     </div>
   ) : (
-    <div className="flex flex-col justify-end min-h-full space-y-1">
+    <div className="space-y-1">
       {messages.map((msg, idx) => {
         const isMe = msg.senderId === user?.uid;
         const prevMsg = messages[idx - 1];
@@ -536,8 +536,8 @@ export default function GroupChatPage() {
               <div
                 className={`relative px-3.5 py-2.5 ${
                   isMe
-                   ? 'bg-[#0a84ff] text-white rounded-[18px] rounded-br-[4px]'
-                    : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white rounded-[18px] rounded-bl-[4px]'
+                  ? 'bg-[#0a84ff] text-white rounded- rounded-br-[4px]'
+                    : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white rounded- rounded-bl-[4px]'
                 } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
                 onPointerDown={() => isMe && handleLongPressStart(msg.id)}
                 onPointerUp={handleLongPressEnd}
@@ -548,7 +548,7 @@ export default function GroupChatPage() {
                 ) : msg.imageUrl? (
                   <img src={msg.imageUrl} alt="Ảnh" className="rounded-xl max-w-[240px] max-h-[240px] object-cover" />
                 ) : (
-                  <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
+                  <p className="text- leading- whitespace-pre-wrap break-words">{msg.text}</p>
                 )}
 
                 {longPressMsg === msg.id && isMe && (
@@ -574,7 +574,7 @@ export default function GroupChatPage() {
                   </div>
                 )}
               </div>
-              <span className="text-[11px] text-[#8e8e93] px-3">
+              <span className="text- text-[#8e8e93] px-3">
                 {formatTime(msg.createdAt)}
               </span>
             </div>
@@ -593,25 +593,13 @@ export default function GroupChatPage() {
         </div>
       )}
 
-      {/* Input */}
-      {replyTo && (
-        <div className="px-4 pt-2 flex items-center justify-between bg-[#f2f7] dark:bg-zinc-900">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-[#0a84ff]">Đang trả lời {replyTo.senderName}</p>
-            <p className="text-xs text-[#8e8e93] truncate">{replyTo.text || "[Ảnh]"}</p>
-          </div>
-          <button onClick={() => setReplyTo(null)} className="w-6 h-6 flex items-center justify-center">
-            <FiTrash2 size={14} className="text-[#8e8e93]" />
-          </button>
-        </div>
-      )}
-
+  {/* Input */}
 <form
   onSubmit={handleSend}
-  className="fixed bottom-0 left-0 right-0 pb-[env(safe-area-inset-bottom)] px-2 pt-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-t border-black/10 dark:border-white/10"
+  className="px-2 pt-2 pb-[calc(8px+env(safe-area-inset-bottom))] bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-t border-black/10 dark:border-white/10"
 >
   {showMentions && group?.membersInfo && (
-    <div className="absolute bottom-14 left-2 right-14 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 py-1 max-h-40 overflow-y-auto z-20">
+    <div className="absolute bottom-full left-2 right-2 mb-2 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 py-1 max-h-40 overflow-y-auto z-20">
       {group.members.map(uid => {
         const info = group.membersInfo?.[uid];
         if (!info || uid === user?.uid) return null;
@@ -633,12 +621,12 @@ export default function GroupChatPage() {
     </div>
   )}
 
-  <div className="flex items-end gap-2">
+  <div className="flex items-end gap-2 bg-[#f2f2f7] dark:bg-zinc-800 rounded- px-1.5 py-1.5">
     <button
       type="button"
       onClick={() => fileInputRef.current?.click()}
       disabled={uploading}
-      className="w-9 h-9 mb-[2px] flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 flex-shrink-0"
+      className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 flex-shrink-0"
     >
       <FiImage size={22} />
     </button>
@@ -649,27 +637,31 @@ export default function GroupChatPage() {
       className="hidden"
       onChange={handleSendImage}
     />
-    <div className="flex-1 min-h- max-h-[120px] flex items-end bg-[#f2f2f7] dark:bg-zinc-800 rounded- px-4 py-[6px]">
-      <textarea
-        ref={inputRef as any}
-        value={text}
-        onChange={(e) => handleInputChange(e as any)}
-        placeholder="Nhắn tin..."
-        rows={1}
-        className="flex-1 bg-transparent text- resize-none outline-none border-0 ring-0 focus:ring-0 focus:outline-none placeholder:text-[#8e8e93] max-h-[100px]"
-        disabled={sending || uploading || recording}
-        onInput={(e) => {
-          const target = e.target as HTMLTextAreaElement;
-          target.style.height = 'auto';
-          target.style.height = target.scrollHeight + 'px';
-        }}
-      />
-    </div>
+    <textarea
+      ref={inputRef as any}
+      value={text}
+      onChange={(e) => handleInputChange(e as any)}
+      placeholder="Nhắn tin..."
+      rows={1}
+      className="flex-1 bg-transparent text- resize-none outline-none border-0 ring-0 focus:ring-0 focus:outline-none placeholder:text-[#8e8e93] max-h-[100px] py-[6px]"
+      disabled={sending || uploading || recording}
+      onInput={(e) => {
+        const target = e.target as HTMLTextAreaElement;
+        target.style.height = 'auto';
+        target.style.height = target.scrollHeight + 'px';
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' &&!e.shiftKey) {
+          e.preventDefault();
+          handleSend();
+        }
+      }}
+    />
     {text.trim()? (
       <button
         type="submit"
         disabled={sending}
-        className="w-9 h-9 mb-[2px] flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 disabled:text-[#8e8e93] flex-shrink-0"
+        className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 disabled:opacity-40 disabled:text-[#8e8e93] flex-shrink-0"
       >
         <FiSend size={20} />
       </button>
@@ -679,7 +671,7 @@ export default function GroupChatPage() {
         onPointerDown={startRecording}
         onPointerUp={stopRecording}
         onPointerLeave={stopRecording}
-        className={`w-9 h-9 mb-[2px] flex items-center justify-center active:opacity-60 flex-shrink-0 ${recording? 'text-red-500' : 'text-[#0a84ff]'}`}
+        className={`w-8 h-8 flex items-center justify-center active:opacity-60 flex-shrink-0 ${recording? 'text-red-500' : 'text-[#0a84ff]'}`}
       >
         <FiMic size={20} />
       </button>
