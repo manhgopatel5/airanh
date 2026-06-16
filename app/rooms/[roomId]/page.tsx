@@ -643,7 +643,7 @@ const formatTimeDivider = (timestamp: any) => {
     messages.map((msg, idx) => {
       const isMe = msg.senderId === user?.uid;
       const prevMsg = messages[idx - 1];
-      const nextMsg = messages[idx + 1];
+      
       const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
 
       const showTimeDivider = shouldShowTimeDivider(msg, prevMsg);
