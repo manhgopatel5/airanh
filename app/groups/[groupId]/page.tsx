@@ -376,11 +376,11 @@ export default function GroupChatPage() {
     return format(date, "dd/MM HH:mm", { locale: vi });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setText(val);
-    setShowMentions(val.endsWith("@"));
-  };
+ const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const val = e.target.value;
+  setText(val);
+  setShowMentions(val.endsWith("@"));
+};
 
   const selectMention = (name: string) => {
     setText(text + name + " ");
@@ -501,8 +501,8 @@ export default function GroupChatPage() {
 const nextMsg = messages[idx + 1];
 const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
 const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
-const showAvatar =!isMe && isLastInGroup; // Hiện avatar ở tin cuối cụm
-const showName =!isMe && isFirstInGroup; // Hiện tên ở tin đầu cụm
+const showAvatar = isLastInGroup; // Bỏ !isMe đi
+const showName = isFirstInGroup;
           
 
           return (
@@ -512,17 +512,15 @@ const showName =!isMe && isFirstInGroup; // Hiện tên ở tin đầu cụm
               onContextMenu={(e) => e.preventDefault()}
             >
               <div className={`flex items-end gap-2 max-w-[75%] ${isMe? 'flex-row-reverse' : ''}`}>
-                {!isMe && (
-                  <div className="w-7 h-7 flex-shrink-0">
-                    {showAvatar && (
-                      <img
-                        src={msg.senderAvatar || `https://ui-avatars.com/api/?name=${msg.senderName}`}
-                        alt={msg.senderName}
-                        className="w-7 h-7 rounded-full object-cover"
-                      />
-                    )}
-                  </div>
-                )}
+           <div className="w-7 h-7 flex-shrink-0">
+  {showAvatar && (
+    <img
+      src={msg.senderAvatar || `https://ui-avatars.com/api/?name=${msg.senderName}`}
+      alt={msg.senderName}
+      className="w-7 h-7 rounded-full object-cover"
+    />
+  )}
+</div>
 
                 <div className="flex flex-col gap-0.5">
                   {showName && (
@@ -651,14 +649,20 @@ const showName =!isMe && isFirstInGroup; // Hiện tên ở tin đầu cụm
       className="hidden"
       onChange={handleSendImage}
     />
-    <div className="flex-1 min-h-[36px] max-h-[120px] flex items-center bg-[#f2f2f7] dark:bg-zinc-800 rounded-[20px] px-4">
-      <input
-        ref={inputRef}
+    <div className="flex-1 min-h- max-h-[120px] flex items-end bg-[#f2f2f7] dark:bg-zinc-800 rounded- px-4 py-[6px]">
+      <textarea
+        ref={inputRef as any}
         value={text}
-        onChange={handleInputChange}
+        onChange={(e) => handleInputChange(e as any)}
         placeholder="Nhắn tin..."
-        className="flex-1 py-[8px] bg-transparent text-[15px] outline-none border-none placeholder:text-[#8e8e93]"
+        rows={1}
+        className="flex-1 bg-transparent text- resize-none outline-none border-none placeholder:text-[#8e8e93] max-h-[100px]"
         disabled={sending || uploading || recording}
+        onInput={(e) => {
+          const target = e.target as HTMLTextAreaElement;
+          target.style.height = 'auto';
+          target.style.height = target.scrollHeight + 'px';
+        }}
       />
     </div>
     {text.trim()? (
