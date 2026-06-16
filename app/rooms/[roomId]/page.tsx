@@ -928,115 +928,123 @@ const formatTimeDivider = (timestamp: any) => {
                 onClick={() => deleteMessage(msg.id)}
                 className="flex items-center gap-2.5 px-4 py-2.5 active:bg-red-50 dark:active:bg-red-950/30 text-red-500 whitespace-nowrap"
               >
-                <FiTrash2 size={18} />
-                <span className="text- font-medium">Xoá tin nhắn</span>
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-return (
-  <div 
-    key={msg.id} 
-    id={`msg-${msg.id}`} 
-    className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''} relative`}
-    onTouchStart={() => {
-      if (!isMe) return;
-      longPressTimer.current = setTimeout(() => {
-        setDeleteMsgId(msg.id);
-        if ("vibrate" in navigator) navigator.vibrate(50);
-      }, 500);
-    }}
-    onTouchEnd={() => {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-      }
-    }}
-    onTouchMove={() => {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-      }
-    }}
-  >
-    <div className="w-8 flex-shrink-0 self-end relative">
-      {isFirstInGroup? (
-        <>
-          <img
-            src={msg.senderAvatar}
-            alt={msg.senderName}
-            className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
-            referrerPolicy="no-referrer"
-            onClick={(e) => handleAvatarClick(e, msg.id)}
-            onError={(e) => {
-              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
-            }}
-          />
-          {activePopupMsgId === msg.id && (
-            <div 
-              className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => {
-                  setActivePopupMsgId(null);
-                  router.push(`/profile/${msg.senderId}`);
-                }}
-                className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
-              >
-                <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
-                  Thông tin cá nhân
-                </span>
-              </button>
-            </div>
-          )}
-        </>
-      ) : <div className="w-8" />}
-    </div>
-
-    <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-      <div className={`px-4 py-2.5 rounded-[18px] ${
-        isMe
-? 'bg-[#0a84ff] text-white'
-        : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-      } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
-        <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
-      </div>
-      {isLastInGroup && (
-        <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
-          {formatMessageTime(msg.createdAt)}
-        </p>
-      )}
-    </div>
-
-    {/* Popup xoá */}
-    {deleteMsgId === msg.id && isMe && (
-      <>
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setDeleteMsgId(null)} 
-        />
-        <div className="absolute z-50 top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95">
-          <button
-            onClick={() => deleteMessage(msg.id)}
-            className="flex items-center gap-2.5 px-4 py-2.5 active:bg-red-50 dark:active:bg-red-950/30 text-red-500 whitespace-nowrap"
-          >
-            <FiTrash2 size={18} />
-            <span className="text-[15px] font-medium">Xoá tin nhắn</span>
-          </button>
+           <FiTrash2 size={18} />
+                    <span className="text- font-medium">Xoá bình chọn</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      </>
-    )}
-  </div>
-);
-})
+      );
+    }
+
+    // Render tin nhắn text
+    return (
+      <div key={msg.id}>
+        {showTimeDivider && (
+          <div className="flex justify-center my-3">
+            <span className="text- text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+              {formatTimeDivider(msg.createdAt)}
+            </span>
+          </div>
+        )}
+
+        <div 
+          id={`msg-${msg.id}`} 
+          className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''} ${isFirstInGroup? 'mt-2' : 'mt-0.5'}`}
+          onTouchStart={() => {
+            if (!isMe) return;
+            longPressTimer.current = setTimeout(() => {
+              setDeleteMsgId(msg.id);
+              if ("vibrate" in navigator) navigator.vibrate(50);
+            }, 500);
+          }}
+          onTouchEnd={() => {
+            if (longPressTimer.current) {
+              clearTimeout(longPressTimer.current);
+              longPressTimer.current = null;
+            }
+          }}
+          onTouchMove={() => {
+            if (longPressTimer.current) {
+              clearTimeout(longPressTimer.current);
+              longPressTimer.current = null;
+            }
+          }}
+        >
+          <div className="w-8 flex-shrink-0 self-end relative">
+            {isFirstInGroup? (
+              <>
+                <img
+                  src={msg.senderAvatar}
+                  alt={msg.senderName}
+                  className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
+                  referrerPolicy="no-referrer"
+                  onClick={(e) => handleAvatarClick(e, msg.id)}
+                  onError={(e) => {
+                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
+                  }}
+                />
+                {activePopupMsgId === msg.id && (
+                  <div 
+                    className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => {
+                        setActivePopupMsgId(null);
+                        router.push(`/profile/${msg.senderId}`);
+                      }}
+                      className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
+                    >
+                      <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                      <span className="text- font-medium text-zinc-900 dark:text-white">
+                        Thông tin cá nhân
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : <div className="w-8" />}
+          </div>
+
+          <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+            {isFirstInGroup &&!isMe && (
+              <span className="text- text-[#8e8e93] px-3 mb-0.5 font-medium">{msg.senderName}</span>
+            )}
+            
+            <div className={`px-4 py-2.5 rounded- ${
+              isMe
+              ? 'bg-[#0a84ff] text-white'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+            }`}>
+              <p className="text- leading- whitespace-pre-wrap break-words">{msg.text}</p>
+            </div>
+          </div>
+
+          {deleteMsgId === msg.id && isMe && (
+            <>
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setDeleteMsgId(null)} 
+              />
+              <div className="absolute z-50 top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95">
+                <button
+                  onClick={() => deleteMessage(msg.id)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 active:bg-red-50 dark:active:bg-red-950/30 text-red-500 whitespace-nowrap"
+                >
+                  <FiTrash2 size={18} />
+                  <span className="text- font-medium">Xoá tin nhắn</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  })
 )}
-</div>
 
 {/* Input */}
       <div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-black/5 dark:border-white/5 pb-[env(safe-area-inset-bottom)]">
