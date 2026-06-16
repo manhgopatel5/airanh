@@ -680,8 +680,8 @@ return (
       className="fixed inset-0 bg-black/50 z-40"
       onClick={() => setShowEditModal(false)}
     />
-    <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 rounded-2xl p-5 z-50 max-w-md mx-auto">
-      <h2 className="text-lg font-[600] mb-4">Chỉnh sửa nhóm</h2>
+    <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-32px)] max-w-md bg-white dark:bg-zinc-900 rounded-2xl p-5 z-50">
+      <h2 className="text-lg font-[600] mb-4 text-center">Chỉnh sửa nhóm</h2>
 
       <div className="flex flex-col items-center gap-4 mb-4">
         <button
@@ -713,7 +713,7 @@ return (
         onChange={(e) => setEditName(e.target.value)}
         placeholder="Tên nhóm"
         maxLength={50}
-        className="w-full px-4 py-2.5 bg-[#f2f7] dark:bg-zinc-800 rounded-xl outline-none border-0 focus:ring-2 focus:ring-[#0a84ff] mb-4"
+        className="w-full px-4 py-2.5 bg-[#f2f2f7] dark:bg-zinc-800 rounded-xl outline-none border-0 focus:ring-2 focus:ring-[#0a84ff] mb-4 text-base"
       />
 
       <div className="flex gap-2">
