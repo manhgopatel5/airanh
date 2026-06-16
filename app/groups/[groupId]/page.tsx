@@ -584,6 +584,7 @@ return (
         const nextMsg = messages[idx + 1];
         const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
         const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
+const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
         const showAvatar = isLastInGroup;
         const showName = isFirstInGroup &&!isMe;
         const showTimeDivider = shouldShowTimeDivider(msg, prevMsg);
@@ -632,11 +633,25 @@ return (
                 )}
 
                 <div
-                  className={`relative px-3.5 py-2.5 ${
-                    isMe
-                     ? 'bg-[#0a84ff] text-white rounded-[18px] rounded-br-[4px]'
-                      : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white rounded-[18px] rounded-bl-[4px]'
-                  } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
+ className={`relative px-3.5 py-2.5 ${
+  isMe
+  ? 'bg-[#0a84ff] text-white'
+    : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white'
+} ${
+  isSingle 
+    ? 'rounded-[18px]' 
+    : isMe
+      ? isFirstInGroup
+        ? 'rounded-[18px] rounded-br-[4px]'
+        : isLastInGroup
+          ? 'rounded-[18px] rounded-tr-[4px]'
+          : 'rounded-[18px] rounded-tr-[4px] rounded-br-[4px]'
+      : isFirstInGroup
+        ? 'rounded-[18px] rounded-bl-[4px]'
+        : isLastInGroup
+          ? 'rounded-[18px] rounded-tl-[4px]'
+          : 'rounded-[18px] rounded-tl-[4px] rounded-bl-[4px]'
+} ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
                   onPointerDown={() => isMe && handleLongPressStart(msg.id)}
                   onPointerUp={handleLongPressEnd}
                   onPointerLeave={handleLongPressEnd}
