@@ -1,8 +1,7 @@
 // lib/score.ts
-import { updateDoc, doc, increment, getDoc } from "firebase/firestore";
-import { getFirebaseDB } from "./firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
-const db = getFirebaseDB();
+const functions = getFunctions();
 
 export const HuhaScore = {
   EVENT_JOIN: 20,
@@ -14,22 +13,16 @@ export const HuhaScore = {
   CANCEL_LATE: -20,
   SPAM: -15,
   REPORTED: -10,
+} as const;
+
+const addHuhaScoreFn = httpsCallable(functions, 'addHuhaScore');
+
+export const addScore = async (action: keyof typeof HuhaScore) => {
+  try {
+    await addHuhaScoreFn({ action });
+  } catch (err) {
+    console.error("addScore failed:", err);
+  }
 };
 
-export const addScore = async (uid: string, action: keyof typeof HuhaScore) => {
-  const userRef = doc(db, "users", uid);
-  const userSnap = await getDoc(userRef);
-
-  if (!userSnap.exists()) return;
-
-  const currentScore = userSnap.data().huhaScore || 0;
-  const newScore = currentScore + HuhaScore[action];
-
-  await updateDoc(userRef, {
-    huhaScore: increment(HuhaScore[action]),
-    level: Math.floor(newScore / 100) + 1, // Auto tính level
-  });
-};
-
-// Gọi khi user làm gì đó:
-// await addScore(user.uid, 'EVENT_JOIN');
+// Gọi: await addScore('EVENT_JOIN');
