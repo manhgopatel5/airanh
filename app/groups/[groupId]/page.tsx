@@ -432,13 +432,7 @@ const handleEditAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     }
   };
 
-  const formatTime = (timestamp: any) => {
-    if (!timestamp?.toDate) return "";
-    const date = timestamp.toDate();
-    if (isToday(date)) return format(date, "HH:mm");
-    if (isYesterday(date)) return "Hôm qua " + format(date, "HH:mm");
-    return format(date, "dd/MM HH:mm", { locale: vi });
-  };
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
@@ -743,7 +737,7 @@ return (
       onChange={(e) => handleInputChange(e)}
       placeholder="Nhắn tin..."
       rows={1}
-      className="flex-1 bg-transparent text- resize-none outline-none border-0 ring-0 focus:ring-0 focus:outline-none placeholder:text-[#8e8e93] max-h-[100px] py-[6px] px-1"
+      className="flex-1 bg-transparent text-sm resize-none outline-none border-0 ring-0 focus:ring-0 focus:outline-none placeholder:text-[#8e8e93] max-h-[100px] py-[6px] px-1"
       disabled={sending || uploading || recording}
       onInput={(e) => {
         const target = e.target as HTMLTextAreaElement;
