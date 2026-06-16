@@ -543,7 +543,7 @@ const shouldShowTimeDivider = (msg: Message, prevMsg: Message | undefined) => {
   const prev = prevMsg.createdAt.toDate();
   const curr = msg.createdAt.toDate();
   const diff = curr.getTime() - prev.getTime();
-  return diff > 5 * 60 * 1000; // Cách 5 phút thì hiện time
+  return diff > 10 * 60 * 1000; // Đổi từ 5 → 10 phút
 };
 
 const formatTimeDivider = (timestamp: any) => {
@@ -728,9 +728,7 @@ const formatTimeDivider = (timestamp: any) => {
                 )}
 
                 {/* Poll bo tròn full giống Messenger */}
-                <div className={`px-4 py-3 bg-zinc-100 dark:bg-zinc-800 w-full rounded-[18px] ${
-                  isLastInGroup? (isMe? 'rounded-br-[4px]' : 'rounded-bl-[4px]') : ''
-                }`}>
+              <div className={`px-4 py-3 bg-zinc-100 dark:bg-zinc-800 w-full rounded-[18px]`}>
                   <div className="flex items-start justify-between mb-3">
                     <p className="text-[15px] font-semibold flex-1">📊 {msg.pollData.question}</p>
                     {isCreator &&!isClosed && (
@@ -908,13 +906,11 @@ const formatTimeDivider = (timestamp: any) => {
               )}
 
               {/* Bubble bo tròn full giống Messenger */}
-              <div className={`px-4 py-2.5 ${
-                isMe
-               ? 'bg-[#0a84ff] text-white'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-              } rounded-[18px] ${
-                isLastInGroup? (isMe? 'rounded-br-[4px]' : 'rounded-bl-[4px]') : ''
-              }`}>
+<div className={`px-4 py-2.5 ${
+  isMe
+  ? 'bg-[#0a84ff] text-white'
+    : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+} rounded-[18px]`}>
                 <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
               </div>
               {/* Đã xoá time ở đây - Messenger không hiện time dưới mỗi tin */}
