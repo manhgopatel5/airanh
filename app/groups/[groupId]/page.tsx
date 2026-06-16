@@ -408,7 +408,7 @@ export default function GroupChatPage() {
 return (
   <div className="fixed inset-0 flex flex-col bg-white dark:bg-black overflow-hidden">
 {/* Header - fixed top */}
-<div className="flex-shrink-0 flex flex-col border-b border-black/10 dark:border-white/10 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl z-30">
+<div className="flex-shrink-0 flex flex-col border-b border-black/10 dark:border-white/10 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl z-30 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => router.back()} className="w-8 h-8 flex items-center justify-center -ml-2 active:opacity-60">
             <FiChevronLeft size={24} className="text-[#0a84ff]" strokeWidth={2.5} />
@@ -538,16 +538,16 @@ return (
                       </div>
                     )}
 
-                    <div
-                      className={`relative px-3.5 py-2.5 ${
-                        isMe
-                       ? 'bg-[#0a84ff] text-white rounded- rounded-br-[4px]'
-                          : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white rounded- rounded-bl-[4px]'
-                      } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
-                      onPointerDown={() => isMe && handleLongPressStart(msg.id)}
-                      onPointerUp={handleLongPressEnd}
-                      onPointerLeave={handleLongPressEnd}
-                    >
+                  <div
+  className={`relative px-3.5 py-2.5 ${
+    isMe
+   ? 'bg-[#0a84ff] text-white rounded-[18px] rounded-br-[4px]'
+      : 'bg-[#e9e9eb] dark:bg-zinc-800 text-black dark:text-white rounded-[18px] rounded-bl-[4px]'
+  } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
+  onPointerDown={() => isMe && handleLongPressStart(msg.id)}
+  onPointerUp={handleLongPressEnd}
+  onPointerLeave={handleLongPressEnd}
+>
                       {msg.audioUrl? (
                         <audio controls src={msg.audioUrl} className="max-w-[240px]" />
                       ) : msg.imageUrl? (
@@ -638,7 +638,7 @@ return (
     </div>
   )}
 
-  <div className="flex items-end gap-1.5 bg-[#f2f2f7] dark:bg-zinc-800 rounded- px-2 py-1.5">
+<div className="flex items-end gap-1.5 bg-white dark:bg-zinc-900 border border-[#0a84ff] rounded-full px-3 py-1.5">
     <button
       type="button"
       onClick={() => fileInputRef.current?.click()}
