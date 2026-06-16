@@ -645,7 +645,7 @@ const formatTimeDivider = (timestamp: any) => {
       const prevMsg = messages[idx - 1];
       const nextMsg = messages[idx + 1];
       const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
-      const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
+
       const showTimeDivider = shouldShowTimeDivider(msg, prevMsg);
 
       // Render Poll
