@@ -415,3 +415,4 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
         </div>
       </div>
     </div>
+}
