@@ -2369,7 +2369,7 @@ return (
   loading={gpsLoading}
   mode="task" 
 />
-{showLeaderboard && <LeaderboardModal onClose={() => setShowLeaderboard(false)} currentUserId={user?.uid} />}
+{showLeaderboard && user?.uid && <LeaderboardModal onClose={() => setShowLeaderboard(false)} currentUserId={user.uid} />}
     </>
   );
 }
