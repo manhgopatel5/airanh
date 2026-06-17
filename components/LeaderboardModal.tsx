@@ -182,6 +182,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                 <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center border-2 border-white dark:border-zinc-900">
                   <span className="text-xs font-black text-white">{userData?.level}</span>
                 </div>
+  <div>
               <div>
                 <h2 className="text-lg font-bold flex items-center gap-1.5">
                   {userData?.name}
