@@ -414,4 +414,39 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                     <img
                       src={u.avatar || "/default-avatar.png"}
                       alt=""
-                      className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-
+                      className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-700"
+/>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate flex items-center gap-1">
+                            {u.name} {isMe && <span className="text-xs text-amber-500">(Bạn)</span>}
+                          </p>
+                          <p className="text-xs text-zinc-500">
+                            Lv.{u.level} • {u.huhaScore} điểm
+                          </p>
+                        </div>
+                        {u.vip?.tier === "elite" && <Crown className="text-amber-500" size={18} />}
+                        {u.vip?.tier === "pro" && <span className="text-lg">💎</span>}
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-zinc-400">
+                            Top {idx + 1}: <span className="font-normal">...</span>
+                          </p>
+                          <p className="text-xs text-zinc-400">
+                            Lv.? •? điểm
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
