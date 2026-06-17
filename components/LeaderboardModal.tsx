@@ -32,6 +32,10 @@ type UserProgress = {
   skills?: string[];
   portfolio?: any[];
   location?: string;
+  profileCompletion: number;
+  trustScore: number;
+  joinedDays: number;
+  friendCount: number;
 };
 
 type TopUser = {
@@ -44,26 +48,26 @@ type TopUser = {
 };
 
 const ALL_ACHIEVEMENTS = [
-  { id: 1, icon: <Users className="w-5 h-5" />, label: "Bạn bè khắp nơi", desc: "Kết nối 10+ người bạn", unlocked: (u: any) => u.friendsCount >= 10, condition: "Có ≥ 10 bạn bè", color: "from-pink-400 to-rose-400", category: "profile" },
-  { id: 2, icon: <Sparkles className="w-5 h-5" />, label: "Tân binh", desc: "Thành viên lâu năm", unlocked: (u: any) => u.joinedDays <= 30, condition: "Tham gia < 30 ngày", color: "from-emerald-400 to-teal-400", category: "profile" },
-  { id: 3, icon: <Star className="w-5 h-5" />, label: "5 sao lấp lánh", desc: "Được crush cho 5 sao", unlocked: (u: any) => u.rating >= 5.0 && u.reviews >= 1, condition: "Rating = 5.0", color: "from-yellow-400 to-amber-400", category: "profile" },
-  { id: 4, icon: <Shield className="w-5 h-5" />, label: "Chính chủ 100%", desc: "Xác minh CCCD xong", unlocked: (u: any) => u.isVerifiedId, condition: "Xác minh CCCD", color: "from-blue-400 to-sky-400", category: "profile" },
-  { id: 5, icon: <Briefcase className="w-5 h-5" />, label: "Thợ cày", desc: "Cày 50 job như trâu", unlocked: (u: any) => u.completed >= 50, condition: "Hoàn thành ≥ 50 job", color: "from-indigo-400 to-blue-400", category: "profile" },
-  { id: 6, icon: <Flame className="w-5 h-5" />, label: "Streak 30 ngày", desc: "Online không nghỉ ngày nào", unlocked: (u: any) => u.joinedDays >= 30, condition: "Tham gia ≥ 30 ngày", color: "from-orange-400 to-red-400", category: "profile" },
-  { id: 7, icon: <FiAward className="w-5 h-5" />, label: "Profile xịn sò", desc: "Điền đủ 100% thông tin", unlocked: (u: any) => u.profileCompletion >= 100, condition: "Hồ sơ = 100%", color: "from-green-400 to-emerald-400", category: "profile" },
-  { id: 8, icon: <Mail className="w-5 h-5" />, label: "Email real", desc: "Xác thực email rồi", unlocked: (u: any) => u.emailVerified, condition: "Xác minh email", color: "from-sky-400 to-blue-400", category: "profile" },
-  { id: 9, icon: <Camera className="w-5 h-5" />, label: "Nhiếp ảnh gia", desc: "Đăng 5+ ảnh portfolio", unlocked: (u: any) => (u.portfolio?.length || 0) >= 5, condition: "Portfolio ≥ 5 mục", color: "from-teal-400 to-cyan-400", category: "profile" },
-  { id: 10, icon: <Crown className="w-5 h-5" />, label: "Đại gia", desc: "Cày 100 job không biết mệt", unlocked: (u: any) => u.completed >= 100, condition: "Hoàn thành ≥ 100 job", color: "from-yellow-500 to-amber-500", category: "profile" },
-  { id: 11, icon: <Clock className="w-5 h-5" />, label: "Lão làng", desc: "Tham gia 365 ngày", unlocked: (u: any) => u.joinedDays >= 365, condition: "Tham gia ≥ 1 năm", color: "from-lime-400 to-green-400", category: "profile" },
+  { id: 1, icon: <Users className="w-5 h-5" />, label: "Bạn bè khắp nơi", desc: "Kết nối 10+ người bạn", unlocked: (u: UserProgress) => u.friendCount >= 10, condition: "Có ≥ 10 bạn bè", color: "from-pink-400 to-rose-400", category: "profile" },
+  { id: 2, icon: <Sparkles className="w-5 h-5" />, label: "Tân binh", desc: "Thành viên lâu năm", unlocked: (u: UserProgress) => u.joinedDays <= 30, condition: "Tham gia < 30 ngày", color: "from-emerald-400 to-teal-400", category: "profile" },
+  { id: 3, icon: <Star className="w-5 h-5" />, label: "5 sao lấp lánh", desc: "Được crush cho 5 sao", unlocked: (u: UserProgress) => (u.stats?.rating || 0) >= 5.0 && (u.stats?.totalReviews || 0) >= 1, condition: "Rating = 5.0", color: "from-yellow-400 to-amber-400", category: "profile" },
+  { id: 4, icon: <Shield className="w-5 h-5" />, label: "Chính chủ 100%", desc: "Xác minh CCCD xong", unlocked: (u: UserProgress) =>!!u.isVerifiedId, condition: "Xác minh CCCD", color: "from-blue-400 to-sky-400", category: "profile" },
+  { id: 5, icon: <Briefcase className="w-5 h-5" />, label: "Thợ cày", desc: "Cày 50 job như trâu", unlocked: (u: UserProgress) => (u.stats?.completed || 0) >= 50, condition: "Hoàn thành ≥ 50 job", color: "from-indigo-400 to-blue-400", category: "profile" },
+  { id: 6, icon: <Flame className="w-5 h-5" />, label: "Streak 30 ngày", desc: "Online không nghỉ ngày nào", unlocked: (u: UserProgress) => u.joinedDays >= 30, condition: "Tham gia ≥ 30 ngày", color: "from-orange-400 to-red-400", category: "profile" },
+  { id: 7, icon: <FiAward className="w-5 h-5" />, label: "Profile xịn sò", desc: "Điền đủ 100% thông tin", unlocked: (u: UserProgress) => u.profileCompletion >= 100, condition: "Hồ sơ = 100%", color: "from-green-400 to-emerald-400", category: "profile" },
+  { id: 8, icon: <Mail className="w-5 h-5" />, label: "Email real", desc: "Xác thực email rồi", unlocked: (u: UserProgress) =>!!u.emailVerified, condition: "Xác minh email", color: "from-sky-400 to-blue-400", category: "profile" },
+  { id: 9, icon: <Camera className="w-5 h-5" />, label: "Nhiếp ảnh gia", desc: "Đăng 5+ ảnh portfolio", unlocked: (u: UserProgress) => (u.portfolio?.length || 0) >= 5, condition: "Portfolio ≥ 5 mục", color: "from-teal-400 to-cyan-400", category: "profile" },
+  { id: 10, icon: <Crown className="w-5 h-5" />, label: "Đại gia", desc: "Cày 100 job không biết mệt", unlocked: (u: UserProgress) => (u.stats?.completed || 0) >= 100, condition: "Hoàn thành ≥ 100 job", color: "from-yellow-500 to-amber-500", category: "profile" },
+  { id: 11, icon: <Clock className="w-5 h-5" />, label: "Lão làng", desc: "Tham gia 365 ngày", unlocked: (u: UserProgress) => u.joinedDays >= 365, condition: "Tham gia ≥ 1 năm", color: "from-lime-400 to-green-400", category: "profile" },
   { id: 12, icon: <Globe className="w-5 h-5" />, label: "Quốc tế hóa", desc: "Đi chơi với bạn nước ngoài", unlocked: () => false, condition: "Có task với user nước ngoài", color: "from-indigo-400 to-purple-400", category: "profile" },
-  { id: 13, icon: <Gem className="w-5 h-5" />, label: "Kim cương", desc: "Đạt level 50", unlocked: (u: any) => u.level >= 50, condition: "Đạt Lv.50", color: "from-cyan-400 to-blue-500", category: "profile" },
-  { id: 14, icon: <ShieldCheck className="w-5 h-5" />, label: "Uy tín 100%", desc: "Tin được như vàng 9999", unlocked: (u: any) => u.trustScore >= 100, condition: "Độ uy tín = 100%", color: "from-blue-500 to-indigo-500", category: "profile" },
-  { id: 15, icon: <Crown className="w-5 h-5" />, label: "Top 1%", desc: "Lọt top 1% người dùng", unlocked: (u: any) => u.trustScore >= 95, condition: "Độ uy tín ≥ 95%", color: "from-amber-400 to-yellow-500", category: "profile" },
-  { id: 16, icon: <Heart className="w-5 h-5" />, label: "Bạn thân 50 người", desc: "Mở rộng vòng kết nối", unlocked: (u: any) => u.friendsCount >= 50, condition: "Có ≥ 50 bạn bè", color: "from-rose-400 to-pink-500", category: "profile" },
-  { id: 17, icon: <TrendingUp className="w-5 h-5" />, label: "Level 25+", desc: "Chăm cày lên level", unlocked: (u: any) => u.level >= 25, condition: "Đạt Lv.25", color: "from-purple-400 to-violet-400", category: "profile" },
-  { id: 18, icon: <ThumbsUp className="w-5 h-5" />, label: "Được yêu thích", desc: "50+ đánh giá tích cực", unlocked: (u: any) => u.reviews >= 50, condition: "Reviews ≥ 50", color: "from-rose-400 to-pink-400", category: "profile" },
-  { id: 19, icon: <BookOpen className="w-5 h-5" />, label: "Skill master", desc: "Thêm 10+ kỹ năng", unlocked: (u: any) => (u.skills?.length || 0) >= 10, condition: "Skills ≥ 10", color: "from-slate-400 to-gray-400", category: "profile" },
-  { id: 20, icon: <MapPin className="w-5 h-5" />, label: "Dân chơi Sài Gòn", desc: "Check-in Ho Chi Minh City", unlocked: (u: any) => u.location?.includes("Hồ Chí Minh"), condition: "Location ở Sài gòn", color: "from-emerald-400 to-green-500", category: "profile" },
+  { id: 13, icon: <Gem className="w-5 h-5" />, label: "Kim cương", desc: "Đạt level 50", unlocked: (u: UserProgress) => u.level >= 50, condition: "Đạt Lv.50", color: "from-cyan-400 to-blue-500", category: "profile" },
+  { id: 14, icon: <ShieldCheck className="w-5 h-5" />, label: "Uy tín 100%", desc: "Tin được như vàng 9999", unlocked: (u: UserProgress) => u.trustScore >= 100, condition: "Độ uy tín = 100%", color: "from-blue-500 to-indigo-500", category: "profile" },
+  { id: 15, icon: <Crown className="w-5 h-5" />, label: "Top 1%", desc: "Lọt top 1% người dùng", unlocked: (u: UserProgress) => u.trustScore >= 95, condition: "Độ uy tín ≥ 95%", color: "from-amber-400 to-yellow-500", category: "profile" },
+  { id: 16, icon: <Heart className="w-5 h-5" />, label: "Bạn thân 50 người", desc: "Mở rộng vòng kết nối", unlocked: (u: UserProgress) => u.friendCount >= 50, condition: "Có ≥ 50 bạn bè", color: "from-rose-400 to-pink-500", category: "profile" },
+  { id: 17, icon: <TrendingUp className="w-5 h-5" />, label: "Level 25+", desc: "Chăm cày lên level", unlocked: (u: UserProgress) => u.level >= 25, condition: "Đạt Lv.25", color: "from-purple-400 to-violet-400", category: "profile" },
+  { id: 18, icon: <ThumbsUp className="w-5 h-5" />, label: "Được yêu thích", desc: "50+ đánh giá tích cực", unlocked: (u: UserProgress) => (u.stats?.totalReviews || 0) >= 50, condition: "Reviews ≥ 50", color: "from-rose-400 to-pink-400", category: "profile" },
+  { id: 19, icon: <BookOpen className="w-5 h-5" />, label: "Skill master", desc: "Thêm 10+ kỹ năng", unlocked: (u: UserProgress) => (u.skills?.length || 0) >= 10, condition: "Skills ≥ 10", color: "from-slate-400 to-gray-400", category: "profile" },
+  { id: 20, icon: <MapPin className="w-5 h-5" />, label: "Dân chơi Sài Gòn", desc: "Check-in Ho Chi Minh City", unlocked: (u: UserProgress) => u.location?.includes("Hồ Chí Minh") || false, condition: "Location ở Sài gòn", color: "from-emerald-400 to-green-500", category: "profile" },
   { id: 21, icon: <Coffee className="w-5 h-5" />, label: "Trùm cafe", desc: "Tạo 5 kèo đi cafe", unlocked: () => false, condition: "Tạo 5 task cafe", color: "from-amber-600 to-yellow-600", category: "task" },
   { id: 22, icon: <Heart className="w-5 h-5" />, label: "Ông mai bà mối", desc: "Tạo 10 kèo hẹn hò", unlocked: () => false, condition: "Tạo 10 task hẹn hò", color: "from-rose-400 to-pink-500", category: "task" },
   { id: 23, icon: <Music className="w-5 h-5" />, label: "Party king", desc: "Tổ chức 3 buổi nhậu", unlocked: () => false, condition: "Tạo 3 task nhậu/party", color: "from-purple-400 to-fuchsia-400", category: "task" },
@@ -92,7 +96,6 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [userData, setUserData] = useState<UserProgress | null>(null);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
 
-
   useEffect(() => {
     if (!currentUserId) return;
     const unsub = onSnapshot(doc(db, "users", currentUserId), async (snap) => {
@@ -103,11 +106,10 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
         const joinedDays = d.createdAt?.seconds? Math.floor((Date.now() - d.createdAt.seconds * 1000) / 86400000) : 999;
 
         const friendsSnap = await getDocs(collection(db, "users", currentUserId, "friends"));
+        const friendCount = friendsSnap.size;
 
-
-        const profileCompletion = Math.round(([
-          d.avatar, d.bio, d.skills?.length, d.portfolio?.length, d.location, d.title, d.emailVerified, d.isVerifiedId,
-        ].filter(Boolean).length / 8) * 100);
+        const profileFields = [d.avatar, d.bio, d.skills?.length, d.portfolio?.length, d.location, d.title, d.emailVerified, d.isVerifiedId];
+        const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
 
         const trustScore = Math.min(100, Math.floor((d.stats?.rating || 0) * 15 + (d.stats?.completed || 0) * 1.2 + (d.stats?.totalReviews || 0)));
 
@@ -126,7 +128,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
             completed: d.stats?.completed || 0,
             rating: d.stats?.rating || 0,
             totalReviews: d.stats?.totalReviews || 0,
-            friendsMade: friendsSnap.size,
+            friendsMade: friendCount,
             eventsJoined: d.stats?.eventsJoined || 0,
             checkins: d.stats?.checkins || 0,
             groupsManaged: d.stats?.groupsManaged || 0,
@@ -138,6 +140,10 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
           skills: d.skills || [],
           portfolio: d.portfolio || [],
           location: d.location || "",
+          profileCompletion,
+          trustScore,
+          joinedDays,
+          friendCount,
         });
       }
     });
@@ -176,14 +182,13 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                 <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center border-2 border-white dark:border-zinc-900">
                   <span className="text-xs font-black text-white">{userData?.level}</span>
                 </div>
-              </div>
               <div>
                 <h2 className="text-lg font-bold flex items-center gap-1.5">
                   {userData?.name}
                   {userData?.vip?.tier === 'elite' && <Crown className="text-amber-500" size={16} />}
                   {userData?.vip?.tier === 'pro' && <span className="text-sm">💎</span>}
                 </h2>
-                <p className="text-xs text-zinc-500">Hạng #{userData?.rank || '?'} • {userData?.huhaScore} điểm</p>
+                <p className="text-xs text-zinc-500">Hạng #{userData?.rank || '?'} • {userData?.huhaScore} điểm • {userData?.friendCount} bạn</p>
               </div>
             </div>
             <button onClick={onClose} className="w-8 h-8 -mr-1 flex items-center justify-center text-zinc-400">
@@ -251,29 +256,36 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                   ))}
                 </div>
               </div>
+
+              {/* Stats Grid */}
+              {userData && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-3 border border-black/5 dark:border-white/5">
+                    <p className="text-xs text-zinc-500">Bạn bè</p>
+                    <p className="text-lg font-bold text-pink-500">{userData.friendCount}</p>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-3 border border-black/5 dark:border-white/5">
+                    <p className="text-xs text-zinc-500">Uy tín</p>
+                    <p className="text-lg font-bold text-blue-500">{userData.trustScore}/100</p>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-3 border border-black/5 dark:border-white/5">
+                    <p className="text-xs text-zinc-500">Hoàn thành</p>
+                    <p className="text-lg font-bold text-green-500">{userData.stats?.completed || 0}</p>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-3 border border-black/5 dark:border-white/5">
+                    <p className="text-xs text-zinc-500">Hồ sơ</p>
+                    <p className="text-lg font-bold text-amber-500">{userData.profileCompletion}%</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {tab === "badges" && (
             <div className="grid grid-cols-3 gap-3">
               {ALL_ACHIEVEMENTS.map((item) => {
-                const u = userData;
-                if (!u) return null;
-                const unlocked = item.unlocked({
-                  friendsCount: u.stats?.friendsMade || 0,
-                  joinedDays: u.createdAt?.seconds? Math.floor((Date.now() - u.createdAt.seconds * 1000) / 86400000) : 999,
-                  rating: u.stats?.rating || 0,
-                  reviews: u.stats?.totalReviews || 0,
-                  isVerifiedId: u.isVerifiedId || false,
-                  completed: u.stats?.completed || 0,
-                  profileCompletion: Math.round((Object.values(u).filter(Boolean).length / 8) * 100),
-                  emailVerified: u.emailVerified || false,
-                  portfolio: u.portfolio || [],
-                  level: u.level,
-                  trustScore: Math.min(100, Math.floor((u.stats?.rating || 0) * 15 + (u.stats?.completed || 0) * 1.2)),
-                  skills: u.skills || [],
-                  location: u.location || "",
-                });
+                if (!userData) return null;
+                const unlocked = item.unlocked(userData);
                 return (
                   <div key={item.id} className={`p-3 rounded-2xl border text-center ${unlocked? "bg-gradient-to-br from-amber-400/20 to-orange-500/20 border-amber-500/30" : "bg-zinc-100 dark:bg-zinc-800/50 border-black/5 dark:border-white/5 opacity-50"}`}>
                     <div className={`text-3xl mb-1 ${unlocked? "" : "grayscale"}`}>{item.icon}</div>
