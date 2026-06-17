@@ -13,43 +13,12 @@ import {
 } from "firebase/firestore";
 
 
-import Crown from "lucide-react/dist/esm/icons/crown";
-import Flame from "lucide-react/dist/esm/icons/flame";
-import Trophy from "lucide-react/dist/esm/icons/trophy";
-import Sparkles from "lucide-react/dist/esm/icons/sparkles";
-import Shield from "lucide-react/dist/esm/icons/shield";
-import Gem from "lucide-react/dist/esm/icons/gem";
-import Coffee from "lucide-react/dist/esm/icons/coffee";
-import Heart from "lucide-react/dist/esm/icons/heart";
-import Music from "lucide-react/dist/esm/icons/music";
-import Sun from "lucide-react/dist/esm/icons/sun";
-import Gamepad2 from "lucide-react/dist/esm/icons/gamepad-2";
-import Utensils from "lucide-react/dist/esm/icons/utensils";
-import Dumbbell from "lucide-react/dist/esm/icons/dumbbell";
-import Film from "lucide-react/dist/esm/icons/film";
-import Plane from "lucide-react/dist/esm/icons/plane";
-import Moon from "lucide-react/dist/esm/icons/moon";
-import Gift from "lucide-react/dist/esm/icons/gift";
-import Calendar from "lucide-react/dist/esm/icons/calendar";
-import ShoppingBag from "lucide-react/dist/esm/icons/shopping-bag";
-import Mic from "lucide-react/dist/esm/icons/mic";
-import Bike from "lucide-react/dist/esm/icons/bike";
-import Palette from "lucide-react/dist/esm/icons/palette";
-import Beer from "lucide-react/dist/esm/icons/beer";
-import Map from "lucide-react/dist/esm/icons/map";
-import PartyPopper from "lucide-react/dist/esm/icons/party-popper";
-import Briefcase from "lucide-react/dist/esm/icons/briefcase";
-import Camera from "lucide-react/dist/esm/icons/camera";
-import Globe from "lucide-react/dist/esm/icons/globe";
-import Clock from "lucide-react/dist/esm/icons/clock";
-import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
-import ThumbsUp from "lucide-react/dist/esm/icons/thumbs-up";
-import BookOpen from "lucide-react/dist/esm/icons/book-open";
-import ShieldCheck from "lucide-react/dist/esm/icons/shield-check";
-import MapPin from "lucide-react/dist/esm/icons/map-pin";
-import Users from "lucide-react/dist/esm/icons/users";
-import Mail from "lucide-react/dist/esm/icons/mail";
-import Star from "lucide-react/dist/esm/icons/star";
+import {
+  Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun,
+  Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag,
+  Mic, Bike, Palette, Beer, Map, PartyPopper, Briefcase, Camera, Globe, Clock,
+  TrendingUp, ThumbsUp, BookOpen, ShieldCheck, MapPin, Users, Mail, Star
+} from "lucide-react";
 
 const IconMap = {
   Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun,
