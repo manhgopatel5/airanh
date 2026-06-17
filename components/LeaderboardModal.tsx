@@ -1,10 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { FiX, FiAward, FiTrendingUp } from "react-icons/fi";
-import { Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun, Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag, Mic, Bike, Palette, Beer, Map, PartyPopper, Briefcase, Camera, Globe, Clock, TrendingUp, ThumbsUp, BookOpen, ShieldCheck, MapPin } from "lucide-react";
+import { Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun, Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag, Mic, Bike, Palette, Beer, Map, PartyPopper, Briefcase, Camera, Globe, Clock, TrendingUp, ThumbsUp, BookOpen, ShieldCheck, MapPin, Users, Mail, Star } from "lucide-react";
 import { getFirebaseDB } from "@/lib/firebase";
 import { doc, onSnapshot, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
-
 
 type UserProgress = {
   uid: string;
@@ -51,7 +50,7 @@ const ALL_ACHIEVEMENTS = [
   { id: 4, icon: <Shield className="w-5 h-5" />, label: "Chính chủ 100%", desc: "Xác minh CCCD xong", unlocked: (u: any) => u.isVerifiedId, condition: "Xác minh CCCD", color: "from-blue-400 to-sky-400", category: "profile" },
   { id: 5, icon: <Briefcase className="w-5 h-5" />, label: "Thợ cày", desc: "Cày 50 job như trâu", unlocked: (u: any) => u.completed >= 50, condition: "Hoàn thành ≥ 50 job", color: "from-indigo-400 to-blue-400", category: "profile" },
   { id: 6, icon: <Flame className="w-5 h-5" />, label: "Streak 30 ngày", desc: "Online không nghỉ ngày nào", unlocked: (u: any) => u.joinedDays >= 30, condition: "Tham gia ≥ 30 ngày", color: "from-orange-400 to-red-400", category: "profile" },
-  { id: 7, icon: <Award className="w-5 h-5" />, label: "Profile xịn sò", desc: "Điền đủ 100% thông tin", unlocked: (u: any) => u.profileCompletion >= 100, condition: "Hồ sơ = 100%", color: "from-green-400 to-emerald-400", category: "profile" },
+  { id: 7, icon: <FiAward className="w-5 h-5" />, label: "Profile xịn sò", desc: "Điền đủ 100% thông tin", unlocked: (u: any) => u.profileCompletion >= 100, condition: "Hồ sơ = 100%", color: "from-green-400 to-emerald-400", category: "profile" },
   { id: 8, icon: <Mail className="w-5 h-5" />, label: "Email real", desc: "Xác thực email rồi", unlocked: (u: any) => u.emailVerified, condition: "Xác minh email", color: "from-sky-400 to-blue-400", category: "profile" },
   { id: 9, icon: <Camera className="w-5 h-5" />, label: "Nhiếp ảnh gia", desc: "Đăng 5+ ảnh portfolio", unlocked: (u: any) => (u.portfolio?.length || 0) >= 5, condition: "Portfolio ≥ 5 mục", color: "from-teal-400 to-cyan-400", category: "profile" },
   { id: 10, icon: <Crown className="w-5 h-5" />, label: "Đại gia", desc: "Cày 100 job không biết mệt", unlocked: (u: any) => u.completed >= 100, condition: "Hoàn thành ≥ 100 job", color: "from-yellow-500 to-amber-500", category: "profile" },
@@ -87,7 +86,7 @@ const ALL_ACHIEVEMENTS = [
   { id: 40, icon: <PartyPopper className="w-5 h-5" />, label: "Vua task", desc: "Tạo 100 task đi chơi", unlocked: () => false, condition: "Tạo 100 task", color: "from-yellow-400 via-orange-400 to-red-400", category: "task" },
 ];
 
-export default function LeaderboardModal({ onClose, currentUserId }: { onClose: () => void; currentUserId?: string }) {
+export default function LeaderboardModal({ onClose, currentUserId }: { onClose: () => void; currentUserId?: string | undefined }) {
   const db = getFirebaseDB();
   const [tab, setTab] = useState<"overview" | "badges" | "rank">("overview");
   const [userData, setUserData] = useState<UserProgress | null>(null);
@@ -173,7 +172,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="relative">
-<img src={userData?.avatar} alt="" className="w-14 h-14 rounded-2xl object-cover ring-4 ring-amber-400/30" />
+                <img src={userData?.avatar} alt="" className="w-14 h-14 rounded-2xl object-cover ring-4 ring-amber-400/30" />
                 <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center border-2 border-white dark:border-zinc-900">
                   <span className="text-xs font-black text-white">{userData?.level}</span>
                 </div>
@@ -243,7 +242,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                   {topUsers.map((u, idx) => (
                     <div key={u.uid} className={`flex items-center gap-3 p-2.5 rounded-xl ${idx === 0? "bg-gradient-to-r from-amber-400/20 to-orange-500/20 border border-amber-500/30" : "bg-zinc-50 dark:bg-zinc-800/50"}`}>
                       <span className="text-2xl">{u.badge}</span>
-<img src={u.avatar} alt="" className="w-10 h-10 rounded-full" />
+                      <img src={u.avatar} alt="" className="w-10 h-10 rounded-full" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold truncate">{u.name}</p>
                         <p className="text-xs text-zinc-500">Lv.{u.level} • {u.score} điểm</p>
