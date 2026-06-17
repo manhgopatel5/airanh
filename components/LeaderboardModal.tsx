@@ -224,7 +224,6 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
       <div className="relative w-full sm:max-w-2xl bg-white dark:bg-zinc-900 sm:rounded-3xl shadow-xl h-[100dvh] sm:max-h-[90vh] flex flex-col animate-in slide-in-from-bottom sm:zoom-in duration-300 pt-safe">
         <div className="w-9 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full mx-auto mt-2.5 sm:hidden" />
 
-        {/* Header Level */}
         <div className="px-5 pt-4 pb-1">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
@@ -268,7 +267,6 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
           )}
         </div>
 
-        {/* Tabs */}
         <div className="px-4 pb-0">
           <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700">
             {[
@@ -284,7 +282,6 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
           </div>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)]">
           {tab === "overview" && (
             <div className="pt-3 space-y-3">
@@ -358,9 +355,9 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                     key={idx}
                     className={`flex items-center gap-3 p-3 rounded-xl border ${
                       isMe
-                       ? "bg-white dark:bg-zinc-900 border-amber-500 ring-2 ring-amber-500"
+                      ? "bg-white dark:bg-zinc-900 border-amber-500 ring-2 ring-amber-500"
                         : hasUser
-                       ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                      ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
                         : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 opacity-40"
                     }`}
                   >
@@ -400,19 +397,4 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-zinc-400">
                             Top {idx + 1}: <span className="font-normal">...</span>
-                          </p>
-                          <p className="text-xs text-zinc-400">
-                            Lv.? •? điểm
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-}
+                          </
