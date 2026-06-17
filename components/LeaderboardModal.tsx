@@ -217,61 +217,61 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)]">
-          {tab === "badges" && (
-            <div className="grid grid-cols-3 gap-3 pt-3">
-              {ALL_ACHIEVEMENTS.map((item) => {
-                if (!userData) return null;
-                const unlocked = item.unlocked(userData);
-                return (
-                  <div key={item.id} className={`p-3 rounded-2xl border text-center ${unlocked? "bg-gradient-to-br from-amber-400/20 to-orange-500/20 border-amber-500/30" : "bg-zinc-100 dark:bg-zinc-800/50 border-black/5 dark:border-white/5 opacity-50"}`}>
-                    <div className={`text-3xl mb-1 ${unlocked? "" : "grayscale"}`}>{item.icon}</div>
-                    <p className="text-xs font-bold">{item.label}</p>
-                    <p className="text-zinc-500 mt-0.5 line-clamp-2">{item.desc}</p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+   {/* Content */}
+<div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)]">
+  {tab === "badges" && (
+    <div className="grid grid-cols-3 gap-3 pt-3">
+      {ALL_ACHIEVEMENTS.map((item) => {
+        if (!userData) return null;
+        const unlocked = item.unlocked(userData);
+        return (
+          <div key={item.id} className={`p-3 rounded-2xl border text-center ${unlocked? "bg-gradient-to-br from-amber-400/20 to-orange-500/20 border-amber-500/30" : "bg-zinc-100 dark:bg-zinc-800/50 border-black/5 dark:border-white/5 opacity-50"}`}>
+            <div className={`text-3xl mb-1 ${unlocked? "" : "grayscale"}`}>{item.icon}</div>
+            <p className="text-xs font-bold">{item.label}</p>
+            <p className="text-zinc-500 mt-0.5 line-clamp-2">{item.desc}</p>
+          </div>
+        );
+      })}
+    </div>
+  )}
 
-          {tab === "rank" && (
-            <div className="pt-3">
-              <div className="flex gap-2 mb-3">
-                <button onClick={() => setRankTab("score")} className={`flex-1 h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 ${rankTab === "score"? "bg-amber-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"}`}>
-                  <Trophy size={14} /> Điểm
-                </button>
-                <button onClick={() => setRankTab("achievement")} className={`flex-1 h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 ${rankTab === "achievement"? "bg-amber-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"}`}>
-                  <Medal size={14} /> Thành tựu
-                </button>
-              </div>
+  {tab === "rank" && (
+    <div>
+      <div className="flex gap-2 pt-3 mb-3">
+        <button onClick={() => setRankTab("score")} className={`flex-1 h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 ${rankTab === "score"? "bg-amber-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"}`}>
+          <Trophy size={14} /> Điểm
+        </button>
+        <button onClick={() => setRankTab("achievement")} className={`flex-1 h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 ${rankTab === "achievement"? "bg-amber-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"}`}>
+          <Medal size={14} /> Thành tựu
+        </button>
+      </div>
 
-              <div className="space-y-2">
-                {(rankTab === "score"? rankUsers : achievementRankUsers).map((u, idx) => {
-                  const isMe = u.uid === currentUserId;
-                  return (
-                    <div key={u.uid} className={`flex items-center gap-3 p-3 rounded-xl border ${isMe? "bg-gradient-to-r from-amber-400/20 to-orange-500/20 border-amber-500/30 ring-2 ring-amber-400/50" : "bg-white dark:bg-zinc-800/50 border-black/5 dark:border-white/5"}`}>
-                      <div className="w-8 text-center">
-                        {idx === 0? <span className="text-2xl">👑</span> : idx === 1? <span className="text-2xl">🥈</span> : idx === 2? <span className="text-2xl">🥉</span> : <span className="text-sm font-bold text-zinc-400">#{idx + 1}</span>}
-                      </div>
-                      <img src={u.avatar || "/default-avatar.png"} alt="" className="w-10 h-10 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate flex items-center gap-1">
-                          {u.name} {isMe && <span className="text-xs text-amber-500">(Bạn)</span>}
-                        </p>
-                        <p className="text-xs text-zinc-500">
-                          {rankTab === "score"? `Lv.${u.level} • ${u.huhaScore} điểm` : `${u.achievementCount} huy hiệu`}
-                        </p>
-                      </div>
-                      {u.vip?.tier === "elite" && <Crown className="text-amber-500" size={18} />}
-                      {u.vip?.tier === "pro" && <span className="text-lg">💎</span>}
-                    </div>
-                  );
-                })}
+      <div className="space-y-2">
+        {(rankTab === "score"? rankUsers : achievementRankUsers).map((u, idx) => {
+          const isMe = u.uid === currentUserId;
+          return (
+            <div key={u.uid} className={`flex items-center gap-3 p-3 rounded-xl border ${isMe? "bg-gradient-to-r from-amber-400/20 to-orange-500/20 border-amber-500/30 ring-2 ring-amber-400/50" : "bg-white dark:bg-zinc-800/50 border-black/5 dark:border-white/5"}`}>
+              <div className="w-8 text-center">
+                {idx === 0? <span className="text-2xl">👑</span> : idx === 1? <span className="text-2xl">🥈</span> : idx === 2? <span className="text-2xl">🥉</span> : <span className="text-sm font-bold text-zinc-400">#{idx + 1}</span>}
               </div>
+              <img src={u.avatar || "/default-avatar.png"} alt="" className="w-10 h-10 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate flex items-center gap-1">
+                  {u.name} {isMe && <span className="text-xs text-amber-500">(Bạn)</span>}
+                </p>
+                <p className="text-xs text-zinc-500">
+                  {rankTab === "score"? `Lv.${u.level} • ${u.huhaScore} điểm` : `${u.achievementCount} huy hiệu`}
+                </p>
+              </div>
+              {u.vip?.tier === "elite" && <Crown className="text-amber-500" size={18} />}
+              {u.vip?.tier === "pro" && <span className="text-lg">💎</span>}
             </div>
-          )}
-        </div>
+          );
+        })}
+      </div>
+    </div>
+  )}
+</div>
       </div>
     </div>
   );
