@@ -284,49 +284,155 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
 
 
         <div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)]">
-          {tab === "overview" && (
-            <div className="pt-3 space-y-3">
-              <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
-                <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-                  <Trophy className="text-amber-500" size={18} />
-                  Top Vinh Danh Tuần Này
-                </h3>
-                <div className="space-y-2">
-{topUsers.map((u) => (
-                    <div key={u.uid} className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700">
-                      <span className="text-2xl">{u.badge}</span>
-                      <img src={u.avatar} alt="" className="w-10 h-10 rounded-full border border-zinc-200 dark:border-zinc-700" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">{u.name}</p>
-                        <p className="text-xs text-zinc-500">Lv.{u.level} • {u.score} điểm</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+         {tab === "overview" && (
+  <div className="pt-3 space-y-3">
+    {/* EXP Card nâng cấp */}
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+            <Sparkles className="text-amber-500" size={20} />
+          </div>
+          <div>
+            <p className="text-xs text-zinc-500">Cấp độ hiện tại</p>
+            <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Level {userData?.level}</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-zinc-500">EXP</p>
+          <p className="text-sm font-bold text-amber-600 dark:text-amber-400">{userData?.exp}/100</p>
+        </div>
+      </div>
+      
+      <div className="relative h-3 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
+        <div 
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-700 ease-out"
+          style={{ width: `${expPercent}%` }}
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 mix-blend-difference">
+            {expPercent.toFixed(0)}%
+          </span>
+        </div>
+      </div>
+      <p className="text-xs text-zinc-500 mt-2">
+        Còn {100 - (userData?.exp || 0)} EXP để lên Level {(userData?.level || 0) + 1}
+      </p>
+    </div>
 
-              {userData && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
-                    <p className="text-xs text-zinc-500">Bạn bè</p>
-                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{userData.friendCount}</p>
+    {/* Top Vinh Danh - luôn 3 slot */}
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
+      <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+        <Trophy className="text-amber-500" size={18} />
+        Top Vinh Danh Tuần Này
+      </h3>
+      <div className="space-y-2">
+        {Array.from({ length: 3 }, (_, idx) => {
+          const u = topUsers[idx];
+          const badge = idx === 0? "👑" : idx === 1? "🥈" : "🥉";
+          return (
+            <div 
+              key={idx} 
+              className={`flex items-center gap-3 p-2.5 rounded-xl border ${
+                u 
+               ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700" 
+                : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 opacity-40"
+              }`}
+            >
+              <span className="text-2xl">{badge}</span>
+              {u? (
+                <>
+                  <img src={u.avatar} alt="" className="w-10 h-10 rounded-full border border-zinc-200 dark:border-zinc-700 object-cover" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{u.name}</p>
+                    <p className="text-xs text-zinc-500">Lv.{u.level} • {u.score} điểm</p>
                   </div>
-                  <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
-                    <p className="text-xs text-zinc-500">Uy tín</p>
-                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{userData.trustScore}/100</p>
+                  {idx === 0 && <Crown className="text-amber-500" size={18} />}
+                </>
+              ) : (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-zinc-400">Top {idx + 1}:...</p>
+                    <p className="text-xs text-zinc-400">Lv.? •? điểm</p>
                   </div>
-                  <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
-                    <p className="text-xs text-zinc-500">Hoàn thành</p>
-                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{userData.stats?.completed || 0}</p>
-                  </div>
-                  <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
-                    <p className="text-xs text-zinc-500">Hồ sơ</p>
-                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{userData.profileCompletion}%</p>
-                  </div>
-                </div>
+                </>
               )}
             </div>
-          )}
+          );
+        })}
+      </div>
+    </div>
+
+    {/* Stats Grid - 6 ô */}
+    {userData && (
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
+          <div className="flex items-center gap-2 mb-1">
+            <Users className="text-pink-500" size={16} />
+            <p className="text-xs text-zinc-500">Bạn bè</p>
+          </div>
+          <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{userData.friendCount}</p>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
+          <div className="flex items-center gap-2 mb-1">
+            <ShieldCheck className="text-blue-500" size={16} />
+            <p className="text-xs text-zinc-500">Uy tín</p>
+          </div>
+          <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{userData.trustScore}/100</p>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
+          <div className="flex items-center gap-2 mb-1">
+            <Briefcase className="text-green-500" size={16} />
+            <p className="text-xs text-zinc-500">Hoàn thành</p>
+          </div>
+          <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{userData.stats?.completed || 0}</p>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
+          <div className="flex items-center gap-2 mb-1">
+            <Star className="text-amber-500" size={16} />
+            <p className="text-xs text-zinc-500">Đánh giá</p>
+          </div>
+          <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+            {userData.stats?.rating?.toFixed(1) || "0.0"} <span className="text-xs text-zinc-500">({userData.stats?.totalReviews || 0})</span>
+          </p>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
+          <div className="flex items-center gap-2 mb-1">
+            <Calendar className="text-purple-500" size={16} />
+            <p className="text-xs text-zinc-500">Sự kiện</p>
+          </div>
+          <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{userData.stats?.eventsJoined || 0}</p>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="text-orange-500" size={16} />
+            <p className="text-xs text-zinc-500">Tham gia</p>
+          </div>
+          <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{userData.joinedDays} <span className="text-xs text-zinc-500">ngày</span></p>
+        </div>
+      </div>
+    )}
+
+    {/* Huy hiệu gần nhất */}
+    {userData && (
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
+        <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+          <FiAward className="text-amber-500" size={18} />
+          Huy hiệu mới mở khóa
+        </h3>
+        <div className="grid grid-cols-3 gap-2">
+          {ALL_ACHIEVEMENTS.filter(a => a.unlocked(userData)).slice(0, 3).map(item => (
+            <div key={item.id} className="p-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-center">
+              <div className="text-2xl mb-1">{item.icon}</div>
+              <p className="text-[10px] font-bold line-clamp-1">{item.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
           {tab === "badges" && (
             <div className="grid grid-cols-3 gap-3 pt-3">
