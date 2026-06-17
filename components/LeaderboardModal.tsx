@@ -1,10 +1,66 @@
 "use client";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, memo, useCallback } from "react";
 import { FiX, FiTrendingUp, FiAward } from "react-icons/fi";
-import { Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun, Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag, Mic, Bike, Palette, Beer, Map, PartyPopper, Briefcase, Camera, Globe, Clock, TrendingUp, ThumbsUp, BookOpen, ShieldCheck, MapPin, Users, Mail, Star } from "lucide-react";
 import { getFirebaseDB } from "@/lib/firebase";
-import { doc, onSnapshot, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import {
+  doc,
+  onSnapshot,
+  collection,
+  query,
+  orderBy,
+  limit,
+  Timestamp,
+} from "firebase/firestore";
 
+// 1. ICON: Import từng file để tree-shake, không bundle 900 icon
+import Crown from "lucide-react/dist/esm/icons/crown";
+import Flame from "lucide-react/dist/esm/icons/flame";
+import Trophy from "lucide-react/dist/esm/icons/trophy";
+import Sparkles from "lucide-react/dist/esm/icons/sparkles";
+import Shield from "lucide-react/dist/esm/icons/shield";
+import Gem from "lucide-react/dist/esm/icons/gem";
+import Coffee from "lucide-react/dist/esm/icons/coffee";
+import Heart from "lucide-react/dist/esm/icons/heart";
+import Music from "lucide-react/dist/esm/icons/music";
+import Sun from "lucide-react/dist/esm/icons/sun";
+import Gamepad2 from "lucide-react/dist/esm/icons/gamepad-2";
+import Utensils from "lucide-react/dist/esm/icons/utensils";
+import Dumbbell from "lucide-react/dist/esm/icons/dumbbell";
+import Film from "lucide-react/dist/esm/icons/film";
+import Plane from "lucide-react/dist/esm/icons/plane";
+import Moon from "lucide-react/dist/esm/icons/moon";
+import Gift from "lucide-react/dist/esm/icons/gift";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import ShoppingBag from "lucide-react/dist/esm/icons/shopping-bag";
+import Mic from "lucide-react/dist/esm/icons/mic";
+import Bike from "lucide-react/dist/esm/icons/bike";
+import Palette from "lucide-react/dist/esm/icons/palette";
+import Beer from "lucide-react/dist/esm/icons/beer";
+import Map from "lucide-react/dist/esm/icons/map";
+import PartyPopper from "lucide-react/dist/esm/icons/party-popper";
+import Briefcase from "lucide-react/dist/esm/icons/briefcase";
+import Camera from "lucide-react/dist/esm/icons/camera";
+import Globe from "lucide-react/dist/esm/icons/globe";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
+import ThumbsUp from "lucide-react/dist/esm/icons/thumbs-up";
+import BookOpen from "lucide-react/dist/esm/icons/book-open";
+import ShieldCheck from "lucide-react/dist/esm/icons/shield-check";
+import MapPin from "lucide-react/dist/esm/icons/map-pin";
+import Users from "lucide-react/dist/esm/icons/users";
+import Mail from "lucide-react/dist/esm/icons/mail";
+import Star from "lucide-react/dist/esm/icons/star";
+
+const IconMap = {
+  Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun,
+  Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag,
+  Mic, Bike, Palette, Beer, Map, PartyPopper, Briefcase, Camera, Globe, Clock,
+  TrendingUp, ThumbsUp, BookOpen, ShieldCheck, MapPin, Users, Mail, Star
+} as const;
+
+type IconName = keyof typeof IconMap;
+
+// 2. TYPES
 type UserProgress = {
   uid: string;
   name: string;
@@ -26,7 +82,7 @@ type UserProgress = {
     groupsManaged: number;
     eventsHosted: number;
   };
-  createdAt?: any;
+  createdAt?: Timestamp;
   emailVerified?: boolean;
   isVerifiedId?: boolean;
   skills?: string[];
@@ -35,7 +91,7 @@ type UserProgress = {
   profileCompletion: number;
   trustScore: number;
   joinedDays: number;
-  friendCount: number;
+  friendCount: number; // Giờ lấy trực tiếp từ user doc, không query subcollection
 };
 
 type TopUser = {
@@ -47,162 +103,322 @@ type TopUser = {
   badge: string;
 };
 
-const ALL_ACHIEVEMENTS = [
-  { id: 1, icon: <Users className="w-5 h-5" />, label: "Bạn bè khắp nơi", desc: "Kết nối 10+ người bạn", unlocked: (u: UserProgress) => u.friendCount >= 10, condition: "Có ≥ 10 bạn bè", color: "from-pink-400 to-rose-400", category: "profile" },
-  { id: 2, icon: <Sparkles className="w-5 h-5" />, label: "Tân binh", desc: "Thành viên lâu năm", unlocked: (u: UserProgress) => u.joinedDays <= 30, condition: "Tham gia < 30 ngày", color: "from-emerald-400 to-teal-400", category: "profile" },
-  { id: 3, icon: <Star className="w-5 h-5" />, label: "5 sao lấp lánh", desc: "Được crush cho 5 sao", unlocked: (u: UserProgress) => (u.stats?.rating || 0) >= 5.0 && (u.stats?.totalReviews || 0) >= 1, condition: "Rating = 5.0", color: "from-yellow-400 to-amber-400", category: "profile" },
-  { id: 4, icon: <Shield className="w-5 h-5" />, label: "Chính chủ 100%", desc: "Xác minh CCCD xong", unlocked: (u: UserProgress) =>!!u.isVerifiedId, condition: "Xác minh CCCD", color: "from-blue-400 to-sky-400", category: "profile" },
-  { id: 5, icon: <Briefcase className="w-5 h-5" />, label: "Thợ cày", desc: "Cày 50 job như trâu", unlocked: (u: UserProgress) => (u.stats?.completed || 0) >= 50, condition: "Hoàn thành ≥ 50 job", color: "from-indigo-400 to-blue-400", category: "profile" },
-  { id: 6, icon: <Flame className="w-5 h-5" />, label: "Streak 30 ngày", desc: "Online không nghỉ ngày nào", unlocked: (u: UserProgress) => u.joinedDays >= 30, condition: "Tham gia ≥ 30 ngày", color: "from-orange-400 to-red-400", category: "profile" },
-  { id: 7, icon: <FiAward className="w-5 h-5" />, label: "Profile xịn sò", desc: "Điền đủ 100% thông tin", unlocked: (u: UserProgress) => u.profileCompletion >= 100, condition: "Hồ sơ = 100%", color: "from-green-400 to-emerald-400", category: "profile" },
-  { id: 8, icon: <Mail className="w-5 h-5" />, label: "Email real", desc: "Xác thực email rồi", unlocked: (u: UserProgress) =>!!u.emailVerified, condition: "Xác minh email", color: "from-sky-400 to-blue-400", category: "profile" },
-  { id: 9, icon: <Camera className="w-5 h-5" />, label: "Nhiếp ảnh gia", desc: "Đăng 5+ ảnh portfolio", unlocked: (u: UserProgress) => (u.portfolio?.length || 0) >= 5, condition: "Portfolio ≥ 5 mục", color: "from-teal-400 to-cyan-400", category: "profile" },
-  { id: 10, icon: <Crown className="w-5 h-5" />, label: "Đại gia", desc: "Cày 100 job không biết mệt", unlocked: (u: UserProgress) => (u.stats?.completed || 0) >= 100, condition: "Hoàn thành ≥ 100 job", color: "from-yellow-500 to-amber-500", category: "profile" },
-  { id: 11, icon: <Clock className="w-5 h-5" />, label: "Lão làng", desc: "Tham gia 365 ngày", unlocked: (u: UserProgress) => u.joinedDays >= 365, condition: "Tham gia ≥ 1 năm", color: "from-lime-400 to-green-400", category: "profile" },
-  { id: 12, icon: <Globe className="w-5 h-5" />, label: "Quốc tế hóa", desc: "Đi chơi với bạn nước ngoài", unlocked: () => false, condition: "Có task với user nước ngoài", color: "from-indigo-400 to-purple-400", category: "profile" },
-  { id: 13, icon: <Gem className="w-5 h-5" />, label: "Kim cương", desc: "Đạt level 50", unlocked: (u: UserProgress) => u.level >= 50, condition: "Đạt Lv.50", color: "from-cyan-400 to-blue-500", category: "profile" },
-  { id: 14, icon: <ShieldCheck className="w-5 h-5" />, label: "Uy tín 100%", desc: "Tin được như vàng 9999", unlocked: (u: UserProgress) => u.trustScore >= 100, condition: "Độ uy tín = 100%", color: "from-blue-500 to-indigo-500", category: "profile" },
-  { id: 15, icon: <Crown className="w-5 h-5" />, label: "Top 1%", desc: "Lọt top 1% người dùng", unlocked: (u: UserProgress) => u.trustScore >= 95, condition: "Độ uy tín ≥ 95%", color: "from-amber-400 to-yellow-500", category: "profile" },
-  { id: 16, icon: <Heart className="w-5 h-5" />, label: "Bạn thân 50 người", desc: "Mở rộng vòng kết nối", unlocked: (u: UserProgress) => u.friendCount >= 50, condition: "Có ≥ 50 bạn bè", color: "from-rose-400 to-pink-500", category: "profile" },
-  { id: 17, icon: <TrendingUp className="w-5 h-5" />, label: "Level 25+", desc: "Chăm cày lên level", unlocked: (u: UserProgress) => u.level >= 25, condition: "Đạt Lv.25", color: "from-purple-400 to-violet-400", category: "profile" },
-  { id: 18, icon: <ThumbsUp className="w-5 h-5" />, label: "Được yêu thích", desc: "50+ đánh giá tích cực", unlocked: (u: UserProgress) => (u.stats?.totalReviews || 0) >= 50, condition: "Reviews ≥ 50", color: "from-rose-400 to-pink-400", category: "profile" },
-  { id: 19, icon: <BookOpen className="w-5 h-5" />, label: "Skill master", desc: "Thêm 10+ kỹ năng", unlocked: (u: UserProgress) => (u.skills?.length || 0) >= 10, condition: "Skills ≥ 10", color: "from-slate-400 to-gray-400", category: "profile" },
-  { id: 20, icon: <MapPin className="w-5 h-5" />, label: "Dân chơi Sài Gòn", desc: "Check-in Ho Chi Minh City", unlocked: (u: UserProgress) => u.location?.includes("Hồ Chí Minh") || false, condition: "Location ở Sài gòn", color: "from-emerald-400 to-green-500", category: "profile" },
-  { id: 21, icon: <Coffee className="w-5 h-5" />, label: "Trùm cafe", desc: "Tạo 5 kèo đi cafe", unlocked: () => false, condition: "Tạo 5 task cafe", color: "from-amber-600 to-yellow-600", category: "task" },
-  { id: 22, icon: <Heart className="w-5 h-5" />, label: "Ông mai bà mối", desc: "Tạo 10 kèo hẹn hò", unlocked: () => false, condition: "Tạo 10 task hẹn hò", color: "from-rose-400 to-pink-500", category: "task" },
-  { id: 23, icon: <Music className="w-5 h-5" />, label: "Party king", desc: "Tổ chức 3 buổi nhậu", unlocked: () => false, condition: "Tạo 3 task nhậu/party", color: "from-purple-400 to-fuchsia-400", category: "task" },
-  { id: 24, icon: <Sun className="w-5 h-5" />, label: "Dậy sớm", desc: "Tạo task buổi sáng 10 lần", unlocked: () => false, condition: "Tạo 10 task buổi sáng", color: "from-yellow-400 to-orange-400", category: "task" },
-  { id: 25, icon: <Gamepad2 className="w-5 h-5" />, label: "Game thủ", desc: "Tạo 5 kèo chơi game", unlocked: () => false, condition: "Tạo 5 task game", color: "from-violet-400 to-purple-400", category: "task" },
-  { id: 26, icon: <Utensils className="w-5 h-5" />, label: "Food reviewer", desc: "Tạo 10 kèo đi ăn", unlocked: () => false, condition: "Tạo 10 task ăn uống", color: "from-orange-400 to-red-400", category: "task" },
-  { id: 27, icon: <Dumbbell className="w-5 h-5" />, label: "Gymer", desc: "Rủ 5 người đi tập gym", unlocked: () => false, condition: "Tạo 5 task gym", color: "from-red-400 to-rose-400", category: "task" },
-  { id: 28, icon: <Film className="w-5 h-5" />, label: "Mọt phim", desc: "Tạo 5 kèo xem phim", unlocked: () => false, condition: "Tạo 5 task xem phim", color: "from-slate-400 to-zinc-400", category: "task" },
-  { id: 29, icon: <Plane className="w-5 h-5" />, label: "Phượt thủ", desc: "Tổ chức 3 chuyến đi chơi xa", unlocked: () => false, condition: "Tạo 3 task du lịch", color: "from-sky-400 to-blue-500", category: "task" },
-  { id: 30, icon: <Moon className="w-5 h-5" />, label: "Cú đêm", desc: "Tạo 10 task buổi tối", unlocked: () => false, condition: "Tạo 10 task tối", color: "from-indigo-500 to-purple-600", category: "task" },
-  { id: 31, icon: <Gift className="w-5 h-5" />, label: "Người hào phóng", desc: "Tạo 5 task miễn phí", unlocked: () => false, condition: "Tạo 5 task free", color: "from-pink-400 to-rose-400", category: "task" },
-  { id: 32, icon: <Users className="w-5 h-5" />, label: "Nhóm trưởng", desc: "Tạo task cho 10+ người", unlocked: () => false, condition: "Task có 10+ người join", color: "from-cyan-400 to-blue-400", category: "task" },
-  { id: 33, icon: <Calendar className="w-5 h-5" />, label: "Siêu bận rộn", desc: "Có task 7 ngày liên tiếp", unlocked: () => false, condition: "Tạo task 7 ngày liên tục", color: "from-teal-400 to-green-400", category: "task" },
-  { id: 34, icon: <ShoppingBag className="w-5 h-5" />, label: "Thánh shopping", desc: "Rủ 5 người đi mua sắm", unlocked: () => false, condition: "Tạo 5 task shopping", color: "from-fuchsia-400 to-pink-400", category: "task" },
-  { id: 35, icon: <Mic className="w-5 h-5" />, label: "Ca sĩ phòng trà", desc: "Tổ chức 3 buổi karaoke", unlocked: () => false, condition: "Tạo 3 task karaoke", color: "from-purple-500 to-pink-500", category: "task" },
-  { id: 36, icon: <Bike className="w-5 h-5" />, label: "Vận động viên", desc: "Rủ 5 người đi đạp xe/chạy bộ", unlocked: () => false, condition: "Tạo 5 task thể thao", color: "from-green-500 to-emerald-500", category: "task" },
-  { id: 37, icon: <Palette className="w-5 h-5" />, label: "Nghệ sĩ", desc: "Tổ chức workshop vẽ/nhạc", unlocked: () => false, condition: "Tạo 3 task workshop", color: "from-rose-400 to-orange-400", category: "task" },
-  { id: 38, icon: <Beer className="w-5 h-5" />, label: "Bợm nhậu", desc: "Tạo 10 kèo nhậu", unlocked: () => false, condition: "Tạo 10 task nhậu", color: "from-amber-500 to-yellow-600", category: "task" },
-  { id: 39, icon: <Map className="w-5 h-5" />, label: "Hướng dẫn viên", desc: "Dẫn 20 người đi chơi", unlocked: () => false, condition: "20+ người join task", color: "from-blue-400 to-cyan-400", category: "task" },
-  { id: 40, icon: <PartyPopper className="w-5 h-5" />, label: "Vua task", desc: "Tạo 100 task đi chơi", unlocked: () => false, condition: "Tạo 100 task", color: "from-yellow-400 via-orange-400 to-red-400", category: "task" },
+type Achievement = {
+  id: number;
+  iconName: IconName;
+  label: string;
+  desc: string;
+  unlocked: (u: UserProgress) => boolean;
+  condition: string;
+  category: "profile" | "task";
+};
+
+// 3. DATA: Không lưu JSX, chỉ lưu tên icon
+const ALL_ACHIEVEMENTS: Achievement[] = [
+  { id: 1, iconName: 'Users', label: "Bạn bè khắp nơi", desc: "Kết nối 10+ người bạn", unlocked: (u) => u.friendCount >= 10, condition: "Có ≥ 10 bạn bè", category: "profile" },
+  { id: 2, iconName: 'Sparkles', label: "Tân binh", desc: "Thành viên lâu năm", unlocked: (u) => u.joinedDays <= 30, condition: "Tham gia < 30 ngày", category: "profile" },
+  { id: 3, iconName: 'Star', label: "5 sao lấp lánh", desc: "Được crush cho 5 sao", unlocked: (u) => (u.stats?.rating || 0) >= 5.0 && (u.stats?.totalReviews || 0) >= 1, condition: "Rating = 5.0", category: "profile" },
+  { id: 4, iconName: 'Shield', label: "Chính chủ 100%", desc: "Xác minh CCCD xong", unlocked: (u) =>!!u.isVerifiedId, condition: "Xác minh CCCD", category: "profile" },
+  { id: 5, iconName: 'Briefcase', label: "Thợ cày", desc: "Cày 50 job như trâu", unlocked: (u) => (u.stats?.completed || 0) >= 50, condition: "Hoàn thành ≥ 50 job", category: "profile" },
+  { id: 6, iconName: 'Flame', label: "Streak 30 ngày", desc: "Online không nghỉ ngày nào", unlocked: (u) => u.joinedDays >= 30, condition: "Tham gia ≥ 30 ngày", category: "profile" },
+  { id: 7, iconName: 'ShieldCheck', label: "Profile xịn sò", desc: "Điền đủ 100% thông tin", unlocked: (u) => u.profileCompletion >= 100, condition: "Hồ sơ = 100%", category: "profile" },
+  { id: 8, iconName: 'Mail', label: "Email real", desc: "Xác thực email rồi", unlocked: (u) =>!!u.emailVerified, condition: "Xác minh email", category: "profile" },
+  { id: 9, iconName: 'Camera', label: "Nhiếp ảnh gia", desc: "Đăng 5+ ảnh portfolio", unlocked: (u) => (u.portfolio?.length || 0) >= 5, condition: "Portfolio ≥ 5 mục", category: "profile" },
+  { id: 10, iconName: 'Crown', label: "Đại gia", desc: "Cày 100 job không biết mệt", unlocked: (u) => (u.stats?.completed || 0) >= 100, condition: "Hoàn thành ≥ 100 job", category: "profile" },
+  { id: 11, iconName: 'Clock', label: "Lão làng", desc: "Tham gia 365 ngày", unlocked: (u) => u.joinedDays >= 365, condition: "Tham gia ≥ 1 năm", category: "profile" },
+  { id: 12, iconName: 'Globe', label: "Quốc tế hóa", desc: "Đi chơi với bạn nước ngoài", unlocked: () => false, condition: "Có task với user nước ngoài", category: "profile" },
+  { id: 13, iconName: 'Gem', label: "Kim cương", desc: "Đạt level 50", unlocked: (u) => u.level >= 50, condition: "Đạt Lv.50", category: "profile" },
+  { id: 14, iconName: 'ShieldCheck', label: "Uy tín 100%", desc: "Tin được như vàng 9999", unlocked: (u) => u.trustScore >= 100, condition: "Độ uy tín = 100%", category: "profile" },
+  { id: 15, iconName: 'Crown', label: "Top 1%", desc: "Lọt top 1% người dùng", unlocked: (u) => u.trustScore >= 95, condition: "Độ uy tín ≥ 95%", category: "profile" },
+  { id: 16, iconName: 'Heart', label: "Bạn thân 50 người", desc: "Mở rộng vòng kết nối", unlocked: (u) => u.friendCount >= 50, condition: "Có ≥ 50 bạn bè", category: "profile" },
+  { id: 17, iconName: 'TrendingUp', label: "Level 25+", desc: "Chăm cày lên level", unlocked: (u) => u.level >= 25, condition: "Đạt Lv.25", category: "profile" },
+  { id: 18, iconName: 'ThumbsUp', label: "Được yêu thích", desc: "50+ đánh giá tích cực", unlocked: (u) => (u.stats?.totalReviews || 0) >= 50, condition: "Reviews ≥ 50", category: "profile" },
+  { id: 19, iconName: 'BookOpen', label: "Skill master", desc: "Thêm 10+ kỹ năng", unlocked: (u) => (u.skills?.length || 0) >= 10, condition: "Skills ≥ 10", category: "profile" },
+  { id: 20, iconName: 'MapPin', label: "Dân chơi Sài Gòn", desc: "Check-in Ho Chi Minh City", unlocked: (u) => u.location?.includes("Hồ Chí Minh") || false, condition: "Location ở Sài gòn", category: "profile" },
+  // Task achievements giữ nguyên logic false
+  { id: 21, iconName: 'Coffee', label: "Trùm cafe", desc: "Tạo 5 kèo đi cafe", unlocked: () => false, condition: "Tạo 5 task cafe", category: "task" },
+  { id: 22, iconName: 'Heart', label: "Ông mai bà mối", desc: "Tạo 10 kèo hẹn hò", unlocked: () => false, condition: "Tạo 10 task hẹn hò", category: "task" },
+  { id: 23, iconName: 'Music', label: "Party king", desc: "Tổ chức 3 buổi nhậu", unlocked: () => false, condition: "Tạo 3 task nhậu/party", category: "task" },
+  { id: 24, iconName: 'Sun', label: "Dậy sớm", desc: "Tạo task buổi sáng 10 lần", unlocked: () => false, condition: "Tạo 10 task buổi sáng", category: "task" },
+  { id: 25, iconName: 'Gamepad2', label: "Game thủ", desc: "Tạo 5 kèo chơi game", unlocked: () => false, condition: "Tạo 5 task game", category: "task" },
+  { id: 26, iconName: 'Utensils', label: "Food reviewer", desc: "Tạo 10 kèo đi ăn", unlocked: () => false, condition: "Tạo 10 task ăn uống", category: "task" },
+  { id: 27, iconName: 'Dumbbell', label: "Gymer", desc: "Rủ 5 người đi tập gym", unlocked: () => false, condition: "Tạo 5 task gym", category: "task" },
+  { id: 28, iconName: 'Film', label: "Mọt phim", desc: "Tạo 5 kèo xem phim", unlocked: () => false, condition: "Tạo 5 task xem phim", category: "task" },
+  { id: 29, iconName: 'Plane', label: "Phượt thủ", desc: "Tổ chức 3 chuyến đi chơi xa", unlocked: () => false, condition: "Tạo 3 task du lịch", category: "task" },
+  { id: 30, iconName: 'Moon', label: "Cú đêm", desc: "Tạo 10 task buổi tối", unlocked: () => false, condition: "Tạo 10 task tối", category: "task" },
+  { id: 31, iconName: 'Gift', label: "Người hào phóng", desc: "Tạo 5 task miễn phí", unlocked: () => false, condition: "Tạo 5 task free", category: "task" },
+  { id: 32, iconName: 'Users', label: "Nhóm trưởng", desc: "Tạo task cho 10+ người", unlocked: () => false, condition: "Task có 10+ người join", category: "task" },
+  { id: 33, iconName: 'Calendar', label: "Siêu bận rộn", desc: "Có task 7 ngày liên tiếp", unlocked: () => false, condition: "Tạo task 7 ngày liên tục", category: "task" },
+  { id: 34, iconName: 'ShoppingBag', label: "Thánh shopping", desc: "Rủ 5 người đi mua sắm", unlocked: () => false, condition: "Tạo 5 task shopping", category: "task" },
+  { id: 35, iconName: 'Mic', label: "Ca sĩ phòng trà", desc: "Tổ chức 3 buổi karaoke", unlocked: () => false, condition: "Tạo 3 task karaoke", category: "task" },
+  { id: 36, iconName: 'Bike', label: "Vận động viên", desc: "Rủ 5 người đi đạp xe/chạy bộ", unlocked: () => false, condition: "Tạo 5 task thể thao", category: "task" },
+  { id: 37, iconName: 'Palette', label: "Nghệ sĩ", desc: "Tổ chức workshop vẽ/nhạc", unlocked: () => false, condition: "Tạo 3 task workshop", category: "task" },
+  { id: 38, iconName: 'Beer', label: "Bợm nhậu", desc: "Tạo 10 kèo nhậu", unlocked: () => false, condition: "Tạo 10 task nhậu", category: "task" },
+  { id: 39, iconName: 'Map', label: "Hướng dẫn viên", desc: "Dẫn 20 người đi chơi", unlocked: () => false, condition: "20+ người join task", category: "task" },
+  { id: 40, iconName: 'PartyPopper', label: "Vua task", desc: "Tạo 100 task đi chơi", unlocked: () => false, condition: "Tạo 100 task", category: "task" },
 ];
 
-export default function LeaderboardModal({ onClose, currentUserId }: { onClose: () => void; currentUserId?: string | undefined }) {
+// 4. UTILS
+const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
+  const level = Math.floor((d.huhaScore || 0) / 100) + 1;
+  const exp = (d.huhaScore || 0) % 100;
+  const joinedDays = d.createdAt?.seconds? Math.floor((Date.now() - d.createdAt.seconds * 1000) / 86400000) : 999;
+  const profileFields = [d.avatar, d.bio, d.skills?.length, d.portfolio?.length, d.location, d.title, d.emailVerified, d.isVerifiedId];
+  const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
+  const trustScore = Math.min(100, Math.floor((d.stats?.rating || 0) * 15 + (d.stats?.completed || 0) * 1.2 + (d.stats?.totalReviews || 0)));
+
+  return {
+    uid,
+    name: d.name || "Ẩn danh",
+    avatar: d.avatar || "",
+    level,
+    exp,
+    huhaScore: d.huhaScore || 0,
+    streakDays: d.stats?.streakDays || 0,
+    badges: d.badges || [],
+    rank: rank?? d.rank?? 0,
+    vip: d.vip || { tier: 'free' },
+    stats: {
+      completed: d.stats?.completed || 0,
+      rating: d.stats?.rating || 0,
+      totalReviews: d.stats?.totalReviews || 0,
+      friendsMade: d.friendCount || 0, // đọc từ field, không query
+      eventsJoined: d.stats?.eventsJoined || 0,
+      checkins: d.stats?.checkins || 0,
+      groupsManaged: d.stats?.groupsManaged || 0,
+      eventsHosted: d.stats?.eventsHosted || 0,
+    },
+    createdAt: d.createdAt,
+    emailVerified: d.emailVerified || false,
+    isVerifiedId: d.isVerifiedId || false,
+    skills: d.skills || [],
+    portfolio: d.portfolio || [],
+    location: d.location || "",
+    profileCompletion,
+    trustScore,
+    joinedDays,
+    friendCount: d.friendCount || 0,
+  };
+};
+
+// 5. TÁCH COMPONENT + MEMO
+const OverviewTab = memo(({ userData, topUsers }: { userData: UserProgress | null; topUsers: TopUser[] }) => {
+  const expPercent = useMemo(() => userData? (userData.exp / 100) * 100 : 0, [userData?.exp]);
+
+  const unlockedRecent = useMemo(() => {
+    if (!userData) return [];
+    return ALL_ACHIEVEMENTS.filter(a => a.unlocked(userData)).slice(0, 3);
+  }, [userData?.level, userData?.friendCount, userData?.trustScore, userData?.joinedDays, userData?.profileCompletion]);
+
+  if (!userData) return null;
+
+  return (
+    <div className="pt-3 space-y-3">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <Sparkles className="text-amber-500" size={20} />
+            </div>
+            <div>
+              <p className="text-xs text-zinc-500">Cấp độ hiện tại</p>
+              <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Level {userData.level}</p>
+            </div>
+          <div className="text-right">
+            <p className="text-xs text-zinc-500">EXP</p>
+            <p className="text-sm font-bold text-amber-600 dark:text-amber-400">{userData.exp}/100</p>
+          </div>
+        </div>
+        <div className="relative h-3 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
+          <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-700 ease-out" style={{ width: `${expPercent}%` }} />
+        </div>
+        <p className="text-xs text-zinc-500 mt-2">Còn {100 - userData.exp} EXP để lên Level {userData.level + 1}</p>
+      </div>
+
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
+        <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+          <Trophy className="text-amber-500" size={18} />
+          Top Vinh Danh Tuần Này
+        </h3>
+        <div className="space-y-2">
+          {Array.from({ length: 3 }, (_, idx) => {
+            const u = topUsers[idx];
+            const badge = idx === 0? "👑" : idx === 1? "🥈" : "🥉";
+            return (
+              <div key={idx} className={`flex items-center gap-3 p-2.5 rounded-xl border ${u? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700" : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 opacity-40"}`}>
+                <span className="text-2xl">{badge}</span>
+                {u? (
+                  <>
+                    <img src={u.avatar} alt="" className="w-10 h-10 rounded-full border border-zinc-200 dark:border-zinc-700 object-cover" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{u.name}</p>
+                      <p className="text-xs text-zinc-500">Lv.{u.level} • {u.score} điểm</p>
+                    </div>
+                    {idx === 0 && <Crown className="text-amber-500" size={18} />}
+                  </>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-zinc-400">Top {idx + 1}:...</p>
+                      <p className="text-xs text-zinc-400">Lv.? •? điểm</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {[
+          { icon: Users, label: "Bạn bè", value: userData.friendCount, color: "text-pink-500" },
+          { icon: ShieldCheck, label: "Uy tín", value: `${userData.trustScore}/100`, color: "text-blue-500" },
+          { icon: Briefcase, label: "Hoàn thành", value: userData.stats?.completed || 0, color: "text-green-500" },
+          { icon: Star, label: "Đánh giá", value: `${userData.stats?.rating?.toFixed(1) || "0.0"}`, suffix: `(${userData.stats?.totalReviews || 0})`, color: "text-amber-500" },
+          { icon: Calendar, label: "Sự kiện", value: userData.stats?.eventsJoined || 0, color: "text-purple-500" },
+          { icon: Clock, label: "Tham gia", value: userData.joinedDays, suffix: "ngày", color: "text-orange-500" },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
+            <div className="flex items-center gap-2 mb-1">
+              <stat.icon className={stat.color} size={16} />
+              <p className="text-xs text-zinc-500">{stat.label}</p>
+            </div>
+            <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+              {stat.value} {stat.suffix && <span className="text-xs text-zinc-500">{stat.suffix}</span>}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {unlockedRecent.length > 0 && (
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
+          <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+            <FiAward className="text-amber-500" size={18} />
+            Huy hiệu mới mở khóa
+          </h3>
+          <div className="grid grid-cols-3 gap-2">
+            {unlockedRecent.map(item => {
+              const Icon = IconMap[item.iconName];
+              return (
+                <div key={item.id} className="p-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-center">
+                  <Icon className="w-6 h-6 mx-auto mb-1" />
+                  <p className="text-[10px] font-bold line-clamp-1">{item.label}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+const BadgesTab = memo(({ userData }: { userData: UserProgress | null }) => {
+  const unlockedIds = useMemo(() => {
+    if (!userData) return new Set<number>();
+    return new Set(ALL_ACHIEVEMENTS.filter(a => a.unlocked(userData)).map(a => a.id));
+  }, [userData?.level, userData?.friendCount, userData?.trustScore, userData?.joinedDays, userData?.profileCompletion, userData?.emailVerified, userData?.isVerifiedId, userData?.stats?.rating, userData?.stats?.completed]);
+
+  return (
+    <div className="grid grid-cols-3 gap-3 pt-3">
+      {ALL_ACHIEVEMENTS.map((item) => {
+        const unlocked = unlockedIds.has(item.id);
+        const Icon = IconMap[item.iconName];
+        return (
+          <div key={item.id} className="p-3 rounded-2xl border text-center bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+            <div className={`mb-1 flex justify-center ${unlocked? "" : "grayscale opacity-40"}`}>
+              <Icon className="w-8 h-8" />
+            </div>
+            <p className="text-xs font-bold">{item.label}</p>
+            <p className="text-zinc-500 mt-0.5 line-clamp-2 text-[10px]">{item.desc}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+
+const RankTab = memo(({ rankUsers, currentUserId }: { rankUsers: UserProgress[]; currentUserId?: string }) => {
+  return (
+    <div className="pt-3 space-y-2">
+      {Array.from({ length: 20 }, (_, idx) => {
+        const u = rankUsers[idx];
+        const isMe = u?.uid === currentUserId;
+        const hasUser =!!u;
+
+        return (
+          <div key={idx} className={`flex items-center gap-3 p-3 rounded-xl border ${isMe? "bg-white dark:bg-zinc-900 border-amber-500 ring-2 ring-amber-500" : hasUser? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700" : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 opacity-40"}`}>
+            <div className="w-8 text-center">
+              {idx === 0? <span className="text-2xl">👑</span> : idx === 1? <span className="text-2xl">🥈</span> : idx === 2? <span className="text-2xl">🥉</span> : <span className="text-sm font-bold text-zinc-400">#{idx + 1}</span>}
+            </div>
+            {hasUser? (
+              <>
+                <img src={u.avatar || "/default-avatar.png"} alt="" className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-700" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate flex items-center gap-1">
+                    {u.name} {isMe && <span className="text-xs text-amber-500">(Bạn)</span>}
+                  </p>
+                  <p className="text-xs text-zinc-500">Lv.{u.level} • {u.huhaScore} điểm</p>
+                </div>
+                {u.vip?.tier === "elite" && <Crown className="text-amber-500" size={18} />}
+                {u.vip?.tier === "pro" && <span className="text-lg">💎</span>}
+              </>
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-zinc-400">Top {idx + 1}: <span className="font-normal">...</span></p>
+                  <p className="text-xs text-zinc-400">Lv.? •? điểm</p>
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+
+// 6. MAIN COMPONENT
+export default function LeaderboardModal({ onClose, currentUserId }: { onClose: () => void; currentUserId?: string }) {
   const db = getFirebaseDB();
   const [tab, setTab] = useState<"overview" | "badges" | "rank">("overview");
   const [userData, setUserData] = useState<UserProgress | null>(null);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
   const [rankUsers, setRankUsers] = useState<UserProgress[]>([]);
 
-  // Tối ưu: Chỉ load 20 user, không getDocs trong loop
+  // Chỉ subscribe rank khi tab rank mở
   useEffect(() => {
+    if (tab!== "rank") return;
     const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), limit(20));
     const unsub = onSnapshot(q, (snap) => {
-      const users = snap.docs.map((d, idx) => {
-        const data = d.data();
-        const level = Math.floor((data.huhaScore || 0) / 100) + 1;
-        const joinedDays = data.createdAt?.seconds? Math.floor((Date.now() - data.createdAt.seconds * 1000) / 86400000) : 999;
-        const profileFields = [data.avatar, data.bio, data.skills?.length, data.portfolio?.length, data.location, data.title, data.emailVerified, data.isVerifiedId];
-        const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
-        const trustScore = Math.min(100, Math.floor((data.stats?.rating || 0) * 15 + (data.stats?.completed || 0) * 1.2 + (data.stats?.totalReviews || 0)));
-
-        return {
-          uid: d.id,
-          name: data.name || "Ẩn danh",
-          avatar: data.avatar || "",
-          level,
-          exp: (data.huhaScore || 0) % 100,
-          huhaScore: data.huhaScore || 0,
-          streakDays: data.stats?.streakDays || 0,
-          badges: data.badges || [],
-          rank: idx + 1,
-          vip: data.vip || { tier: 'free' },
-          stats: {
-            completed: data.stats?.completed || 0,
-            rating: data.stats?.rating || 0,
-            totalReviews: data.stats?.totalReviews || 0,
-            friendsMade: data.friendCount || 0,
-            eventsJoined: data.stats?.eventsJoined || 0,
-            checkins: data.stats?.checkins || 0,
-            groupsManaged: data.stats?.groupsManaged || 0,
-            eventsHosted: data.stats?.eventsHosted || 0,
-          },
-          createdAt: data.createdAt,
-          emailVerified: data.emailVerified || false,
-          isVerifiedId: data.isVerifiedId || false,
-          skills: data.skills || [],
-          portfolio: data.portfolio || [],
-          location: data.location || "",
-          profileCompletion,
-          trustScore,
-          joinedDays,
-          friendCount: data.friendCount || 0,
-        } as UserProgress;
-      });
+      const users = snap.docs.map((d, idx) => calcUserData(d.data(), d.id, idx + 1));
       setRankUsers(users);
     });
     return () => unsub();
-  }, [db]);
+  }, [db, tab]);
 
+  // Current user data
   useEffect(() => {
     if (!currentUserId) return;
     const unsub = onSnapshot(doc(db, "users", currentUserId), (snap) => {
       if (snap.exists()) {
-        const d = snap.data();
-        const level = Math.floor((d.huhaScore || 0) / 100) + 1;
-        const exp = (d.huhaScore || 0) % 100;
-        const joinedDays = d.createdAt?.seconds? Math.floor((Date.now() - d.createdAt.seconds * 1000) / 86400000) : 999;
-        const profileFields = [d.avatar, d.bio, d.skills?.length, d.portfolio?.length, d.location, d.title, d.emailVerified, d.isVerifiedId];
-        const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
-        const trustScore = Math.min(100, Math.floor((d.stats?.rating || 0) * 15 + (d.stats?.completed || 0) * 1.2 + (d.stats?.totalReviews || 0)));
-
-        setUserData({
-          uid: snap.id,
-          name: d.name || "Bạn",
-          avatar: d.avatar || "",
-          level,
-          exp,
-          huhaScore: d.huhaScore || 0,
-          streakDays: d.stats?.streakDays || 0,
-          badges: d.badges || [],
-          rank: d.rank || 0,
-          vip: d.vip || { tier: 'free' },
-          stats: {
-            completed: d.stats?.completed || 0,
-            rating: d.stats?.rating || 0,
-            totalReviews: d.stats?.totalReviews || 0,
-            friendsMade: d.friendCount || 0,
-            eventsJoined: d.stats?.eventsJoined || 0,
-            checkins: d.stats?.checkins || 0,
-            groupsManaged: d.stats?.groupsManaged || 0,
-            eventsHosted: d.stats?.eventsHosted || 0,
-          },
-          createdAt: d.createdAt,
-          emailVerified: d.emailVerified || false,
-          isVerifiedId: d.isVerifiedId || false,
-          skills: d.skills || [],
-          portfolio: d.portfolio || [],
-          location: d.location || "",
-          profileCompletion,
-          trustScore,
-          joinedDays,
-          friendCount: d.friendCount || 0,
-        });
+        setUserData(calcUserData(snap.data(), snap.id));
       }
     });
     return () => unsub();
   }, [currentUserId, db]);
 
+  // Top 3 users
   useEffect(() => {
     const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), limit(3));
     const unsub = onSnapshot(q, (snap) => {
       setTopUsers(snap.docs.map((d, idx) => ({
         uid: d.id,
-        name: d.data().name || "Ẩn danh",
-        avatar: d.data().avatar || "",
+        name: d.data().name,
+        avatar: d.data().avatar,
         score: d.data().huhaScore || 0,
         level: Math.floor((d.data().huhaScore || 0) / 100) + 1,
         badge: idx === 0? "👑" : idx === 1? "🥈" : "🥉"
@@ -211,240 +427,84 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
     return () => unsub();
   }, [db]);
 
-  const expPercent = useMemo(() => userData? (userData.exp / 100) * 100 : 0, [userData]);
+  const expPercent = useMemo(() => userData? (userData.exp / 100) * 100 : 0, [userData?.exp]);
 
-  const TabContent = useMemo(() => {
-    if (tab === "overview") {
-      return (
-        <div className="pt-3 space-y-3">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <Sparkles className="text-amber-500" size={20} />
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500">Cấp độ hiện tại</p>
-                  <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Level {userData?.level}</p>
+  const handleClose = useCallback(() => onClose(), [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl" onClick={handleClose} />
+      <div className="relative w-full sm:max-w-2xl bg-white dark:bg-zinc-900 sm:rounded-3xl shadow-xl h-[100dvh] sm:max-h-[90vh] flex flex-col animate-in slide-in-from-bottom sm:zoom-in duration-300 pt-safe">
+        <div className="w-9 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full mx-auto mt-2.5 sm:hidden" />
+
+        <div className="px-5 pt-4 pb-1">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <img src={userData?.avatar || "/default-avatar.png"} alt="" className="w-14 h-14 rounded-2xl object-cover border border-zinc-200 dark:border-zinc-700" />
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center border-2 border-white dark:border-zinc-900">
+                  <span className="text-xs font-black text-white">{userData?.level || 1}</span>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-zinc-500">EXP</p>
-                <p className="text-sm font-bold text-amber-600 dark:text-amber-400">{userData?.exp}/100</p>
+              <div>
+                <h2 className="text-lg font-bold flex items-center gap-1.5">
+                  {userData?.name || "Bạn"}
+                  {userData?.vip?.tier === 'elite' && <Crown className="text-amber-500" size={16} />}
+                  {userData?.vip?.tier === 'pro' && <span className="text-sm">💎</span>}
+                </h2>
+                <p className="text-xs text-zinc-500">Hạng #{userData?.rank || '?'} • {userData?.huhaScore || 0} điểm • {userData?.friendCount || 0} bạn</p>
               </div>
             </div>
-            
-            <div className="relative h-3 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
-              <div 
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-700 ease-out"
-                style={{ width: `${expPercent}%` }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
-                  {expPercent.toFixed(0)}%
-                </span>
-              </div>
-            </div>
-            <p className="text-xs text-zinc-500 mt-2">
-              Còn {100 - (userData?.exp || 0)} EXP để lên Level {(userData?.level || 0) + 1}
-            </p>
+            <button onClick={handleClose} className="w-8 h-8 -mr-1 flex items-center justify-center text-zinc-400">
+              <FiX size={22} />
+            </button>
           </div>
 
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
-            <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-              <Trophy className="text-amber-500" size={18} />
-              Top Vinh Danh Tuần Này
-            </h3>
-            <div className="space-y-2">
-              {Array.from({ length: 3 }, (_, idx) => {
-                const u = topUsers[idx];
-                const badge = idx === 0? "👑" : idx === 1? "🥈" : "🥉";
-                return (
-                  <div 
-                    key={idx} 
-                    className={`flex items-center gap-3 p-2.5 rounded-xl border ${
-                      u 
-                    ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700" 
-                      : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 opacity-40"
-                    }`}
-                  >
-                    <span className="text-2xl">{badge}</span>
-                    {u? (
-                      <>
-                        <img src={u.avatar} alt="" className="w-10 h-10 rounded-full border border-zinc-200 dark:border-zinc-700 object-cover" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold truncate">{u.name}</p>
-                          <p className="text-xs text-zinc-500">Lv.{u.level} • {u.score} điểm</p>
-                        </div>
-                        {idx === 0 && <Crown className="text-amber-500" size={18} />}
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-zinc-400">Top {idx + 1}:...</p>
-                          <p className="text-xs text-zinc-400">Lv.? •? điểm</p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-amber-600 dark:text-amber-400">Level {userData?.level || 1}</span>
+              <span className="text-zinc-500">{userData?.exp || 0}/100 EXP</span>
+            </div>
+            <div className="h-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
+              <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${expPercent}%` }} />
             </div>
           </div>
 
-          {userData && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
-                <div className="flex items-center gap-2 mb-1">
-                  <Users className="text-pink-500" size={16} />
-                  <p className="text-xs text-zinc-500">Bạn bè</p>
-                </div>
-                <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{userData.friendCount}</p>
-              </div>
-              <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
-                <div className="flex items-center gap-2 mb-1">
-                  <ShieldCheck className="text-blue-500" size={16} />
-                  <p className="text-xs text-zinc-500">Uy tín</p>
-                </div>
-                <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{userData.trustScore}/100</p>
-              </div>
-              <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
-                <div className="flex items-center gap-2 mb-1">
-                  <Briefcase className="text-green-500" size={16} />
-                  <p className="text-xs text-zinc-500">Hoàn thành</p>
-                </div>
-                <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{userData.stats?.completed || 0}</p>
-              </div>
-              <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
-                <div className="flex items-center gap-2 mb-1">
-                  <Star className="text-amber-500" size={16} />
-                  <p className="text-xs text-zinc-500">Đánh giá</p>
-                </div>
-                <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-                  {userData.stats?.rating?.toFixed(1) || "0.0"} <span className="text-xs text-zinc-500">({userData.stats?.totalReviews || 0})</span>
-                </p>
-              </div>
-              <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
-                <div className="flex items-center gap-2 mb-1">
-                  <Calendar className="text-purple-500" size={16} />
-                  <p className="text-xs text-zinc-500">Sự kiện</p>
-                </div>
-                <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{userData.stats?.eventsJoined || 0}</p>
-              </div>
-              <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
-                <div className="flex items-center gap-2 mb-1">
-                  <Clock className="text-orange-500" size={16} />
-                  <p className="text-xs text-zinc-500">Tham gia</p>
-                </div>
-                <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{userData.joinedDays} <span className="text-xs text-zinc-500">ngày</span></p>
-              </div>
+          {userData && userData.streakDays > 0 && (
+            <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700">
+              <Flame className="text-orange-500" size={18} />
+              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{userData.streakDays} ngày streak • x2 EXP</span>
             </div>
           )}
+        </div>
 
-          {userData && (
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
-              <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-                <FiAward className="text-amber-500" size={18} />
-                Huy hiệu mới mở khóa
-              </h3>
-              <div className="grid grid-cols-3 gap-2">
-                {ALL_ACHIEVEMENTS.filter(a => a.unlocked(userData)).slice(0, 3).map(item => (
-                  <div key={item.id} className="p-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-center">
-                    <div className="text-2xl mb-1">{item.icon}</div>
-                    <p className="text-[10px] font-bold line-clamp-1">{item.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-    if (tab === "badges") {
-      return (
-        <div className="grid grid-cols-3 gap-3 pt-3">
-          {ALL_ACHIEVEMENTS.map((item) => {
-            if (!userData) return null;
-            const unlocked = item.unlocked(userData);
-            return (
-              <div key={item.id} className="p-3 rounded-2xl border text-center bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
-                <div className={`text-3xl mb-1 ${unlocked? "" : "grayscale opacity-40"}`}>{item.icon}</div>
-                <p className="text-xs font-bold">{item.label}</p>
-                <p className="text-zinc-500 mt-0.5 line-clamp-2">{item.desc}</p>
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-    if (tab === "rank") {
-      return (
-        <div className="pt-3 space-y-2">
-          {Array.from({ length: 20 }, (_, idx) => {
-            const u = rankUsers[idx];
-            const isMe = u?.uid === currentUserId;
-            const hasUser =!!u;
-            
-            return (
-              <div
-                key={idx}
-                className={`flex items-center gap-3 p-3 rounded-xl border ${
-                  isMe
-                 ? "bg-white dark:bg-zinc-900 border-amber-500 ring-2 ring-amber-500"
-                    : hasUser
-                 ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
-                    : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 opacity-40"
+        <div className="px-4 pb-0">
+          <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700">
+            {[
+              { id: "overview", label: "Tổng quan", icon: FiTrendingUp },
+              { id: "badges", label: "Huy hiệu", icon: FiAward },
+              { id: "rank", label: "Xếp hạng", icon: Trophy },
+            ].map(t => (
+              <button 
+                key={t.id} 
+                onClick={() => setTab(t.id as any)} 
+                className={`h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 border ${
+                  tab === t.id 
+                    ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-amber-600 dark:text-amber-400" 
+                    : "border-transparent text-zinc-500"
                 }`}
               >
-                <div className="w-8 text-center">
-                  {idx === 0? (
-                    <span className="text-2xl">👑</span>
-                  ) : idx === 1? (
-                    <span className="text-2xl">🥈</span>
-                  ) : idx === 2? (
-                    <span className="text-2xl">🥉</span>
-                  ) : (
-                    <span className="text-sm font-bold text-zinc-400">#{idx + 1}</span>
-                  )}
-                </div>
-                
-                {hasUser? (
-                  <>
-                    <img
-                      src={u.avatar || "/default-avatar.png"}
-                      alt=""
-                      className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-700"
-/>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold truncate flex items-center gap-1">
-                            {u.name} {isMe && <span className="text-xs text-amber-500">(Bạn)</span>}
-                          </p>
-                          <p className="text-xs text-zinc-500">
-                            Lv.{u.level} • {u.huhaScore} điểm
-                          </p>
-                        </div>
-                        {u.vip?.tier === "elite" && <Crown className="text-amber-500" size={18} />}
-                        {u.vip?.tier === "pro" && <span className="text-lg">💎</span>}
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-zinc-400">
-                            Top {idx + 1}: <span className="font-normal">...</span>
-                          </p>
-                          <p className="text-xs text-zinc-400">
-                            Lv.? •? điểm
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                <t.icon size={14} />
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)]">
+          {tab === "overview" && <OverviewTab userData={userData} topUsers={topUsers} />}
+          {tab === "badges" && <BadgesTab userData={userData} />}
+          {tab === "rank" && <RankTab rankUsers={rankUsers} currentUserId={currentUserId} />}
         </div>
       </div>
     </div>
