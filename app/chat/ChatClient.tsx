@@ -57,7 +57,7 @@ import {
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ScanLine, Crown, FiAward, Vote } from "lucide-react";
+import { ScanLine, Crown, Vote } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
