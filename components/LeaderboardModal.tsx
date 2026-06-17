@@ -305,7 +305,7 @@ const BadgesTab = memo(({ userData }: { userData: UserProgress | null }) => {
   );
 });
 
-const RankTab = memo(({ rankUsers, currentUserId }: { rankUsers: UserProgress[]; currentUserId?: string }) => {
+const RankTab = memo(({ rankUsers, currentUserId }: { rankUsers: UserProgress[]; currentUserId?: string | undefined }) => {
   return (
     <div className="pt-3 space-y-2">
       {Array.from({ length: 20 }, (_, idx) => {
