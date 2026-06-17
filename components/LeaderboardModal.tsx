@@ -312,7 +312,7 @@ useEffect(() => {
 {/* Content */}
 <div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)]">
   {tab === "overview" && (
-    <div className="pt-3">
+    <div className="pt-3 space-y-3">
       <div className="bg-white dark:bg-zinc-800/50 rounded-2xl p-4 border border-black/5 dark:border-white/5">
         <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
           <Trophy className="text-amber-500" size={18} />
@@ -334,7 +334,7 @@ useEffect(() => {
 
       {/* Stats Grid */}
       {userData && (
-        <div className="grid grid-cols-2 gap-2 mt-3">
+        <div className="grid grid-cols-2 gap-2">
           <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-3 border border-black/5 dark:border-white/5">
             <p className="text-xs text-zinc-500">Bạn bè</p>
             <p className="text-lg font-bold text-pink-500">{userData.friendCount}</p>
@@ -438,8 +438,7 @@ useEffect(() => {
       })}
     </div>
   )}
-
-        </div>
+</div>
       </div>
     </div>
   );
