@@ -182,7 +182,6 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
             </button>
           </div>
 
-          {/* EXP Bar */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-amber-600 dark:text-amber-400">Level {userData?.level}</span>
@@ -229,7 +228,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                   <div key={item.id} className={`p-3 rounded-2xl border text-center ${unlocked? "bg-gradient-to-br from-amber-400/20 to-orange-500/20 border-amber-500/30" : "bg-zinc-100 dark:bg-zinc-800/50 border-black/5 dark:border-white/5 opacity-50"}`}>
                     <div className={`text-3xl mb-1 ${unlocked? "" : "grayscale"}`}>{item.icon}</div>
                     <p className="text-xs font-bold">{item.label}</p>
-                    <p className="text- text-zinc-500 mt-0.5 line-clamp-2">{item.desc}</p>
+                    <p className="text-zinc-500 mt-0.5 line-clamp-2">{item.desc}</p>
                   </div>
                 );
               })}
@@ -237,8 +236,8 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
           )}
 
           {tab === "rank" && (
-            <>
-              <div className="flex gap-2 pt-3 mb-3">
+            <div className="pt-3">
+              <div className="flex gap-2 mb-3">
                 <button onClick={() => setRankTab("score")} className={`flex-1 h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 ${rankTab === "score"? "bg-amber-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"}`}>
                   <Trophy size={14} /> Điểm
                 </button>
@@ -270,7 +269,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                   );
                 })}
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
