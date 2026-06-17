@@ -96,7 +96,80 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [tab, setTab] = useState<"overview" | "badges" | "rank">("overview");
   const [userData, setUserData] = useState<UserProgress | null>(null);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
+const [rankUsers, setRankUsers] = useState<UserProgress[]>([]);
 
+useEffect(() => {
+  // Load top 50 BXH
+  const q = query(
+    collection(db, "users"), 
+    orderBy("huhaScore", "desc"), 
+    limit(50)
+  );
+  const unsub = onSnapshot(q, async (snap) => {
+    const users = await Promise.all(
+      snap.docs.map(async (d, idx) => {
+        const data = d.data();
+        const level = Math.floor((data.huhaScore || 0) / 100) + 1;
+        
+        // Lấy friendCount cho mỗi user trong BXH
+        const friendsSnap = await getDocs(collection(db, "users", d.id, "friends"));
+        const friendCount = friendsSnap.size;
+        
+        const joinedDays = data.createdAt?.seconds 
+         ? Math.floor((Date.now() - data.createdAt.seconds * 1000) / 86400000) 
+          : 999;
+        
+        const profileFields = [
+          data.avatar, data.bio, data.skills?.length, data.portfolio?.length, 
+          data.location, data.title, data.emailVerified, data.isVerifiedId
+        ];
+        const profileCompletion = Math.round(
+          (profileFields.filter(Boolean).length / profileFields.length) * 100
+        );
+        
+        const trustScore = Math.min(
+          100, 
+          Math.floor((data.stats?.rating || 0) * 15 + (data.stats?.completed || 0) * 1.2 + (data.stats?.totalReviews || 0))
+        );
+
+        return {
+          uid: d.id,
+          name: data.name || "Ẩn danh",
+          avatar: data.avatar || "",
+          level,
+          exp: (data.huhaScore || 0) % 100,
+          huhaScore: data.huhaScore || 0,
+          streakDays: data.stats?.streakDays || 0,
+          badges: data.badges || [],
+          rank: idx + 1,
+          vip: data.vip || { tier: 'free' },
+          stats: {
+            completed: data.stats?.completed || 0,
+            rating: data.stats?.rating || 0,
+            totalReviews: data.stats?.totalReviews || 0,
+            friendsMade: friendCount,
+            eventsJoined: data.stats?.eventsJoined || 0,
+            checkins: data.stats?.checkins || 0,
+            groupsManaged: data.stats?.groupsManaged || 0,
+            eventsHosted: data.stats?.eventsHosted || 0,
+          },
+          createdAt: data.createdAt,
+          emailVerified: data.emailVerified || false,
+          isVerifiedId: data.isVerifiedId || false,
+          skills: data.skills || [],
+          portfolio: data.portfolio || [],
+          location: data.location || "",
+          profileCompletion,
+          trustScore,
+          joinedDays,
+          friendCount,
+        } as UserProgress;
+      })
+    );
+    setRankUsers(users);
+  });
+  return () => unsub();
+}, [db]);
   useEffect(() => {
     if (!currentUserId) return;
     const unsub = onSnapshot(doc(db, "users", currentUserId), async (snap) => {
@@ -299,11 +372,50 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
             </div>
           )}
 
-          {tab === "rank" && (
-            <div className="text-center py-8 text-zinc-500 text-sm">
-              Xem đầy đủ BXH ở app chính
-            </div>
-          )}
+       {tab === "rank" && (
+  <div className="space-y-2">
+    {rankUsers.map((u, idx) => {
+      const isMe = u.uid === currentUserId;
+      return (
+        <div
+          key={u.uid}
+          className={`flex items-center gap-3 p-3 rounded-xl border ${
+            isMe
+             ? "bg-gradient-to-r from-amber-400/20 to-orange-500/20 border-amber-500/30 ring-2 ring-amber-400/50"
+              : "bg-white dark:bg-zinc-800/50 border-black/5 dark:border-white/5"
+          }`}
+        >
+          <div className="w-8 text-center">
+            {idx === 0? (
+              <span className="text-2xl">👑</span>
+            ) : idx === 1? (
+              <span className="text-2xl">🥈</span>
+            ) : idx === 2? (
+              <span className="text-2xl">🥉</span>
+            ) : (
+              <span className="text-sm font-bold text-zinc-400">#{idx + 1}</span>
+            )}
+          </div>
+          <img
+            src={u.avatar || "/default-avatar.png"}
+            alt=""
+            className="w-10 h-10 rounded-full object-cover"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate flex items-center gap-1">
+              {u.name} {isMe && <span className="text-xs text-amber-500">(Bạn)</span>}
+            </p>
+            <p className="text-xs text-zinc-500">
+              Lv.{u.level} • {u.huhaScore} điểm
+            </p>
+          </div>
+          {u.vip?.tier === "elite" && <Crown className="text-amber-500" size={18} />}
+          {u.vip?.tier === "pro" && <span className="text-lg">💎</span>}
+        </div>
+      );
+    })}
+  </div>
+)}
         </div>
       </div>
     </div>
