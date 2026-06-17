@@ -4,7 +4,7 @@ import { FiX, FiAward, FiTrendingUp } from "react-icons/fi";
 import { Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun, Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag, Mic, Bike, Palette, Beer, Map, PartyPopper, Briefcase, Camera, Globe, Clock, TrendingUp, ThumbsUp, BookOpen, ShieldCheck, MapPin } from "lucide-react";
 import { getFirebaseDB } from "@/lib/firebase";
 import { doc, onSnapshot, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
-import { useAuth } from "@/lib/AuthContext";
+
 
 type UserProgress = {
   uid: string;
