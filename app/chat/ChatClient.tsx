@@ -46,7 +46,7 @@ import {
   FiMic,
   FiUpload,
   FiHome,
-  
+  FiAward,
   FiMapPin,
   FiLoader,
   FiZap,
