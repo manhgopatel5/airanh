@@ -312,7 +312,7 @@ useEffect(() => {
   {/* Content */}
 <div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)] pt-0">
   {tab === "overview" && (
- <div className="space-y-3 pt-3">
+ <div className="pt-3">
       <div className="bg-white dark:bg-zinc-800/50 rounded-2xl p-4 border border-black/5 dark:border-white/5">
         <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
           <Trophy className="text-amber-500" size={18} />
