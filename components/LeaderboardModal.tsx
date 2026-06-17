@@ -12,7 +12,6 @@ import {
   Timestamp,
 } from "firebase/firestore";
 
-// 1. ICON: Import từng file để tree-shake, không bundle 900 icon
 import Crown from "lucide-react/dist/esm/icons/crown";
 import Flame from "lucide-react/dist/esm/icons/flame";
 import Trophy from "lucide-react/dist/esm/icons/trophy";
@@ -60,7 +59,6 @@ const IconMap = {
 
 type IconName = keyof typeof IconMap;
 
-// 2. TYPES
 type UserProgress = {
   uid: string;
   name: string;
@@ -91,7 +89,7 @@ type UserProgress = {
   profileCompletion: number;
   trustScore: number;
   joinedDays: number;
-  friendCount: number; // Giờ lấy trực tiếp từ user doc, không query subcollection
+  friendCount: number;
 };
 
 type TopUser = {
@@ -113,7 +111,6 @@ type Achievement = {
   category: "profile" | "task";
 };
 
-// 3. DATA: Không lưu JSX, chỉ lưu tên icon
 const ALL_ACHIEVEMENTS: Achievement[] = [
   { id: 1, iconName: 'Users', label: "Bạn bè khắp nơi", desc: "Kết nối 10+ người bạn", unlocked: (u) => u.friendCount >= 10, condition: "Có ≥ 10 bạn bè", category: "profile" },
   { id: 2, iconName: 'Sparkles', label: "Tân binh", desc: "Thành viên lâu năm", unlocked: (u) => u.joinedDays <= 30, condition: "Tham gia < 30 ngày", category: "profile" },
@@ -135,7 +132,6 @@ const ALL_ACHIEVEMENTS: Achievement[] = [
   { id: 18, iconName: 'ThumbsUp', label: "Được yêu thích", desc: "50+ đánh giá tích cực", unlocked: (u) => (u.stats?.totalReviews || 0) >= 50, condition: "Reviews ≥ 50", category: "profile" },
   { id: 19, iconName: 'BookOpen', label: "Skill master", desc: "Thêm 10+ kỹ năng", unlocked: (u) => (u.skills?.length || 0) >= 10, condition: "Skills ≥ 10", category: "profile" },
   { id: 20, iconName: 'MapPin', label: "Dân chơi Sài Gòn", desc: "Check-in Ho Chi Minh City", unlocked: (u) => u.location?.includes("Hồ Chí Minh") || false, condition: "Location ở Sài gòn", category: "profile" },
-  // Task achievements giữ nguyên logic false
   { id: 21, iconName: 'Coffee', label: "Trùm cafe", desc: "Tạo 5 kèo đi cafe", unlocked: () => false, condition: "Tạo 5 task cafe", category: "task" },
   { id: 22, iconName: 'Heart', label: "Ông mai bà mối", desc: "Tạo 10 kèo hẹn hò", unlocked: () => false, condition: "Tạo 10 task hẹn hò", category: "task" },
   { id: 23, iconName: 'Music', label: "Party king", desc: "Tổ chức 3 buổi nhậu", unlocked: () => false, condition: "Tạo 3 task nhậu/party", category: "task" },
@@ -158,7 +154,6 @@ const ALL_ACHIEVEMENTS: Achievement[] = [
   { id: 40, iconName: 'PartyPopper', label: "Vua task", desc: "Tạo 100 task đi chơi", unlocked: () => false, condition: "Tạo 100 task", category: "task" },
 ];
 
-// 4. UTILS
 const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
   const level = Math.floor((d.huhaScore || 0) / 100) + 1;
   const exp = (d.huhaScore || 0) % 100;
@@ -182,7 +177,7 @@ const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
       completed: d.stats?.completed || 0,
       rating: d.stats?.rating || 0,
       totalReviews: d.stats?.totalReviews || 0,
-      friendsMade: d.friendCount || 0, // đọc từ field, không query
+      friendsMade: d.friendCount || 0,
       eventsJoined: d.stats?.eventsJoined || 0,
       checkins: d.stats?.checkins || 0,
       groupsManaged: d.stats?.groupsManaged || 0,
@@ -201,14 +196,13 @@ const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
   };
 };
 
-// 5. TÁCH COMPONENT + MEMO
 const OverviewTab = memo(({ userData, topUsers }: { userData: UserProgress | null; topUsers: TopUser[] }) => {
   const expPercent = useMemo(() => userData? (userData.exp / 100) * 100 : 0, [userData?.exp]);
 
   const unlockedRecent = useMemo(() => {
     if (!userData) return [];
     return ALL_ACHIEVEMENTS.filter(a => a.unlocked(userData)).slice(0, 3);
-  }, [userData?.level, userData?.friendCount, userData?.trustScore, userData?.joinedDays, userData?.profileCompletion]);
+  }, [userData?.level, userData?.friendCount, userData?.trustScore, userData?.joinedDays, userData?.profileCompletion, userData?.emailVerified, userData?.isVerifiedId, userData?.stats?.rating, userData?.stats?.completed, userData?.stats?.totalReviews]);
 
   if (!userData) return null;
 
@@ -224,6 +218,7 @@ const OverviewTab = memo(({ userData, topUsers }: { userData: UserProgress | nul
               <p className="text-xs text-zinc-500">Cấp độ hiện tại</p>
               <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Level {userData.level}</p>
             </div>
+          </div>
           <div className="text-right">
             <p className="text-xs text-zinc-500">EXP</p>
             <p className="text-sm font-bold text-amber-600 dark:text-amber-400">{userData.exp}/100</p>
@@ -319,7 +314,7 @@ const BadgesTab = memo(({ userData }: { userData: UserProgress | null }) => {
   const unlockedIds = useMemo(() => {
     if (!userData) return new Set<number>();
     return new Set(ALL_ACHIEVEMENTS.filter(a => a.unlocked(userData)).map(a => a.id));
-  }, [userData?.level, userData?.friendCount, userData?.trustScore, userData?.joinedDays, userData?.profileCompletion, userData?.emailVerified, userData?.isVerifiedId, userData?.stats?.rating, userData?.stats?.completed]);
+  }, [userData?.level, userData?.friendCount, userData?.trustScore, userData?.joinedDays, userData?.profileCompletion, userData?.emailVerified, userData?.isVerifiedId, userData?.stats?.rating, userData?.stats?.completed, userData?.stats?.totalReviews, userData?.skills?.length, userData?.portfolio?.length, userData?.location]);
 
   return (
     <div className="grid grid-cols-3 gap-3 pt-3">
@@ -381,7 +376,6 @@ const RankTab = memo(({ rankUsers, currentUserId }: { rankUsers: UserProgress[];
   );
 });
 
-// 6. MAIN COMPONENT
 export default function LeaderboardModal({ onClose, currentUserId }: { onClose: () => void; currentUserId?: string }) {
   const db = getFirebaseDB();
   const [tab, setTab] = useState<"overview" | "badges" | "rank">("overview");
@@ -389,7 +383,6 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
   const [rankUsers, setRankUsers] = useState<UserProgress[]>([]);
 
-  // Chỉ subscribe rank khi tab rank mở
   useEffect(() => {
     if (tab!== "rank") return;
     const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), limit(20));
@@ -400,7 +393,6 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
     return () => unsub();
   }, [db, tab]);
 
-  // Current user data
   useEffect(() => {
     if (!currentUserId) return;
     const unsub = onSnapshot(doc(db, "users", currentUserId), (snap) => {
@@ -411,7 +403,6 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
     return () => unsub();
   }, [currentUserId, db]);
 
-  // Top 3 users
   useEffect(() => {
     const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), limit(3));
     const unsub = onSnapshot(q, (snap) => {
