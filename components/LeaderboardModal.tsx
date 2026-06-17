@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { FiX, FiAward, FiTrendingUp, FiStar, FiUsers, FiCheck, FiLock } from "react-icons/fi";
+import { FiX, FiAward, FiTrendingUp, FiUsers, FiCheck, FiLock } from "react-icons/fi";
 import { Crown, Medal, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun, Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag, Mic, Bike, Palette, Beer, Map, PartyPopper, Briefcase, Camera, Globe, Clock, TrendingUp, ThumbsUp, BookOpen, Phone, ShieldCheck, MapPin } from "lucide-react";
 import { getFirebaseDB } from "@/lib/firebase";
 import { doc, onSnapshot, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
