@@ -248,7 +248,7 @@ useEffect(() => {
         <div className="w-9 h-1 bg-black/15 dark:bg-white/15 rounded-full mx-auto mt-2.5 sm:hidden" />
 
         {/* Header Level */}
-        <div className="px-5 pt-4 pb-3">
+<div className="px-5 pt-4 pb-1">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -294,7 +294,7 @@ useEffect(() => {
         </div>
 
         {/* Tabs */}
-        <div className="px-4 pb-3">
+<div className="px-4 pb-2">
           <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
             {[
               { id: "overview", label: "Tổng quan", icon: FiTrendingUp },
@@ -310,7 +310,7 @@ useEffect(() => {
         </div>
 
   {/* Content */}
-<div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)]">
+<div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)] pt-0">
   {tab === "overview" && (
     <div className="space-y-3 pt-0">
       <div className="bg-white dark:bg-zinc-800/50 rounded-2xl p-4 border border-black/5 dark:border-white/5">
