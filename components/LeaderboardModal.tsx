@@ -291,7 +291,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                   Top Vinh Danh Tuần Này
                 </h3>
                 <div className="space-y-2">
-                  {topUsers.map((u, idx) => (
+{topUsers.map((u) => (
                     <div key={u.uid} className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700">
                       <span className="text-2xl">{u.badge}</span>
                       <img src={u.avatar} alt="" className="w-10 h-10 rounded-full border border-zinc-200 dark:border-zinc-700" />
