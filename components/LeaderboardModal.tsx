@@ -282,6 +282,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
           </div>
         </div>
 
+
         <div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)]">
           {tab === "overview" && (
             <div className="pt-3 space-y-3">
