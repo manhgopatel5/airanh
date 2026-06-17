@@ -173,7 +173,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <img src={userData?.avatar} className="w-14 h-14 rounded-2xl object-cover ring-4 ring-amber-400/30" />
+<img src={userData?.avatar} alt="" className="w-14 h-14 rounded-2xl object-cover ring-4 ring-amber-400/30" />
                 <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center border-2 border-white dark:border-zinc-900">
                   <span className="text-xs font-black text-white">{userData?.level}</span>
                 </div>
@@ -243,7 +243,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                   {topUsers.map((u, idx) => (
                     <div key={u.uid} className={`flex items-center gap-3 p-2.5 rounded-xl ${idx === 0? "bg-gradient-to-r from-amber-400/20 to-orange-500/20 border border-amber-500/30" : "bg-zinc-50 dark:bg-zinc-800/50"}`}>
                       <span className="text-2xl">{u.badge}</span>
-                      <img src={u.avatar} className="w-10 h-10 rounded-full" />
+<img src={u.avatar} alt="" className="w-10 h-10 rounded-full" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold truncate">{u.name}</p>
                         <p className="text-xs text-zinc-500">Lv.{u.level} • {u.score} điểm</p>
