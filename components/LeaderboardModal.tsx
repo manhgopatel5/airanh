@@ -170,7 +170,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl" onClick={onClose} />
-      <div className="relative w-full sm:max-w-2xl bg-gradient-to-b from-amber-50 via-white to-orange-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-black rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+      <div className="relative w-full sm:max-w-2xl bg-gradient-to-b from-amber-50 via-white to-orange-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-black rounded-t-3xl sm:rounded-3xl shadow-2xl max-h- flex flex-col animate-in slide-in-from-bottom duration-300">
         <div className="w-9 h-1 bg-black/15 dark:bg-white/15 rounded-full mx-auto mt-2.5 sm:hidden" />
 
         {/* Header Level */}
@@ -290,7 +290,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                   <div key={item.id} className={`p-3 rounded-2xl border text-center ${unlocked? "bg-gradient-to-br from-amber-400/20 to-orange-500/20 border-amber-500/30" : "bg-zinc-100 dark:bg-zinc-800/50 border-black/5 dark:border-white/5 opacity-50"}`}>
                     <div className={`text-3xl mb-1 ${unlocked? "" : "grayscale"}`}>{item.icon}</div>
                     <p className="text-xs font-bold">{item.label}</p>
-                    <p className="text-[10px] text-zinc-500 mt-0.5 line-clamp-2">{item.desc}</p>
+                    <p className="text- text-zinc-500 mt-0.5 line-clamp-2">{item.desc}</p>
                   </div>
                 );
               })}
