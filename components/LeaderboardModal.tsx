@@ -388,7 +388,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
     return () => unsub();
   }, [db]);
 
-  const expPercent = useMemo(() => userData? (userData.exp / 100) * 100 : 0, [userData?.exp]);
+
 
   const handleClose = useCallback(() => onClose(), [onClose]);
 
