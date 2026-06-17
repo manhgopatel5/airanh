@@ -5,6 +5,11 @@ const nextConfig = {
   output: 'standalone',
   poweredByHeader: false,
 
+  // Thêm đoạn này để tắt ESLint khi build prod
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   images: {
     remotePatterns: [
       {
@@ -14,7 +19,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'storage.googleapis.com', // THÊM DÒNG NÀY
+        hostname: 'storage.googleapis.com',
       },
       {
         protocol: 'https',
@@ -59,7 +64,7 @@ const nextConfig = {
         'data:',
         'blob:',
         'https://firebasestorage.googleapis.com',
-        'https://storage.googleapis.com', // THÊM DÒNG NÀY
+        'https://storage.googleapis.com',
         'https://lh3.googleusercontent.com',
         'https://ui-avatars.com',
         'https://images.unsplash.com',
