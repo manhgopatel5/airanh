@@ -91,7 +91,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [tab, setTab] = useState<"overview" | "badges" | "rank">("overview");
   const [userData, setUserData] = useState<UserProgress | null>(null);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
-  const [friendCount, setFriendCount] = useState(0);
+
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -103,7 +103,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
         const joinedDays = d.createdAt?.seconds? Math.floor((Date.now() - d.createdAt.seconds * 1000) / 86400000) : 999;
 
         const friendsSnap = await getDocs(collection(db, "users", currentUserId, "friends"));
-        setFriendCount(friendsSnap.size);
+
 
         const profileCompletion = Math.round(([
           d.avatar, d.bio, d.skills?.length, d.portfolio?.length, d.location, d.title, d.emailVerified, d.isVerifiedId,
