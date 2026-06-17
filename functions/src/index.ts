@@ -600,7 +600,76 @@ export const onHuhaScoreUpdate = onDocumentUpdated(
     console.log(`Updated ranks for ${usersSnap.size} users`);
   }
 );
+// 14. TỰ ĐỘNG CẬP NHẬT friendCount khi add friend
+export const onFriendAdded = onDocumentCreated(
+  {
+    document: "users/{userId}/friends/{friendId}",
+    region: "asia-southeast1",
+  },
+  async (event) => {
+    const userId = event.params.userId;
+    const friendData = event.data?.data();
+    
+    // Chỉ đếm khi status = "active", bỏ qua "removed"
+    if (friendData?.status !== "active") return;
+    
+    await db.doc(`users/${userId}`).update({
+      friendCount: FieldValue.increment(1)
+    });
+    console.log(`+1 friend for ${userId}`);
+  }
+);
 
+// 15. TỰ ĐỘNG GIẢM friendCount khi xóa/unfriend
+export const onFriendRemoved = onDocumentDeleted(
+  {
+    document: "users/{userId}/friends/{friendId}",
+    region: "asia-southeast1",
+  },
+  async (event) => {
+    const userId = event.params.userId;
+    const friendData = event.data?.data();
+    
+    // Chỉ giảm nếu trước đó là "active"
+    if (friendData?.status === "active") {
+      await db.doc(`users/${userId}`).update({
+        friendCount: FieldValue.increment(-1)
+      });
+      console.log(`-1 friend for ${userId}`);
+    }
+  }
+);
+
+// 16. Xử lý khi unfriend đổi status = "removed" thay vì xóa doc
+export const onFriendStatusChanged = onDocumentUpdated(
+  {
+    document: "users/{userId}/friends/{friendId}",
+    region: "asia-southeast1",
+  },
+  async (event) => {
+    const userId = event.params.userId;
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    
+    if (!before || !after) return;
+    
+    // active -> removed: giảm 1
+    if (before.status === "active" && after.status === "removed") {
+      await db.doc(`users/${userId}`).update({
+        friendCount: FieldValue.increment(-1)
+      });
+      console.log(`-1 friend for ${userId} via status change`);
+    }
+    
+    // removed -> active: tăng 1, phòng case kết bạn lại
+    if (before.status === "removed" && after.status === "active") {
+      await db.doc(`users/${userId}`).update({
+        friendCount: FieldValue.increment(1)
+      });
+      console.log(`+1 friend for ${userId} via re-add`);
+    }
+  }
+);
 // 13. Function cộng điểm HuhaScore - gọi từ client
 export const addHuhaScore = onCall(
   { region: "asia-southeast1" },
