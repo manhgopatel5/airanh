@@ -169,10 +169,7 @@ const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
 const OverviewTab = memo(({ userData, topUsers }: { userData: UserProgress | null; topUsers: TopUser[] }) => {
   const expPercent = useMemo(() => userData? (userData.exp / 100) * 100 : 0, [userData?.exp]);
 
-  const unlockedRecent = useMemo(() => {
-    if (!userData) return [];
-    return ALL_ACHIEVEMENTS.filter(a => a.unlocked(userData)).slice(0, 3);
-  }, [userData?.level, userData?.friendCount, userData?.trustScore, userData?.joinedDays, userData?.profileCompletion, userData?.emailVerified, userData?.isVerifiedId, userData?.stats?.rating, userData?.stats?.completed, userData?.stats?.totalReviews]);
+ 
 
   if (!userData) return null;
 
@@ -257,25 +254,7 @@ const OverviewTab = memo(({ userData, topUsers }: { userData: UserProgress | nul
         ))}
       </div>
 
-      {unlockedRecent.length > 0 && (
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
-          <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-            <FiAward className="text-amber-500" size={18} />
-            Huy hiệu mới mở khóa
-          </h3>
-          <div className="grid grid-cols-3 gap-2">
-            {unlockedRecent.map(item => {
-              const Icon = IconMap[item.iconName];
-              return (
-                <div key={item.id} className="p-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-center">
-                  <Icon className="w-6 h-6 mx-auto mb-1" />
-                  <p className="text-[10px] font-bold line-clamp-1">{item.label}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+    
     </div>
   );
 });
