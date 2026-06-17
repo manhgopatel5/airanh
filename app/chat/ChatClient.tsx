@@ -1442,7 +1442,7 @@ return (
           { label: "Bình chọn", icon: Vote, color: "bg-gradient-to-br from-indigo-500 to-purple-500", onClick: () => setShowPoll(true) },
           { label: "VIP", icon: Crown, color: "bg-gradient-to-br from-amber-400 to-orange-500", onClick: () => setShowVip(true) },
           { label: "Người lạ", icon: FiZap, color: "bg-gradient-to-br from-pink-500 to-rose-500", onClick: () => setShowStranger(true) },
-+ { label: "Thành Tích", icon: FiAward, color: "bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500", onClick: () => setShowLeaderboard(true) },
+{ label: "Thành Tích", icon: FiAward, color: "bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500", onClick: () => setShowLeaderboard(true) },
         ].map((item) => (
           <button
             key={item.label}
