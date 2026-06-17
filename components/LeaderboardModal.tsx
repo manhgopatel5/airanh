@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { FiX, FiAward, FiTrendingUp } from "react-icons/fi";
+import { FiX, FiAward } from "react-icons/fi";
 import { Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun, Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag, Mic, Bike, Palette, Beer, Map, PartyPopper, Briefcase, Camera, Globe, Clock, TrendingUp, ThumbsUp, BookOpen, ShieldCheck, MapPin, Users, Mail, Star } from "lucide-react";
 import { getFirebaseDB } from "@/lib/firebase";
 import { doc, onSnapshot, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
@@ -32,7 +32,6 @@ type UserProgress = {
   skills?: string[];
   portfolio?: any[];
   location?: string;
-  // Thêm 4 field tính toán để check thành tựu
   profileCompletion: number;
   trustScore: number;
   joinedDays: number;
@@ -96,80 +95,61 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [tab, setTab] = useState<"overview" | "badges" | "rank">("overview");
   const [userData, setUserData] = useState<UserProgress | null>(null);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
-const [rankUsers, setRankUsers] = useState<UserProgress[]>([]);
+  const [rankUsers, setRankUsers] = useState<UserProgress[]>([]);
 
-useEffect(() => {
-  // Load top 50 BXH
-  const q = query(
-    collection(db, "users"), 
-    orderBy("huhaScore", "desc"), 
-    limit(50)
-  );
-  const unsub = onSnapshot(q, async (snap) => {
-    const users = await Promise.all(
-      snap.docs.map(async (d, idx) => {
-        const data = d.data();
-        const level = Math.floor((data.huhaScore || 0) / 100) + 1;
-        
-        // Lấy friendCount cho mỗi user trong BXH
-        const friendsSnap = await getDocs(collection(db, "users", d.id, "friends"));
-        const friendCount = friendsSnap.size;
-        
-        const joinedDays = data.createdAt?.seconds 
-         ? Math.floor((Date.now() - data.createdAt.seconds * 1000) / 86400000) 
-          : 999;
-        
-        const profileFields = [
-          data.avatar, data.bio, data.skills?.length, data.portfolio?.length, 
-          data.location, data.title, data.emailVerified, data.isVerifiedId
-        ];
-        const profileCompletion = Math.round(
-          (profileFields.filter(Boolean).length / profileFields.length) * 100
-        );
-        
-        const trustScore = Math.min(
-          100, 
-          Math.floor((data.stats?.rating || 0) * 15 + (data.stats?.completed || 0) * 1.2 + (data.stats?.totalReviews || 0))
-        );
+  useEffect(() => {
+    const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), limit(50));
+    const unsub = onSnapshot(q, async (snap) => {
+      const users = await Promise.all(
+        snap.docs.map(async (d, idx) => {
+          const data = d.data();
+          const level = Math.floor((data.huhaScore || 0) / 100) + 1;
+          const friendsSnap = await getDocs(collection(db, "users", d.id, "friends"));
+          const friendCount = friendsSnap.size;
+          const joinedDays = data.createdAt?.seconds? Math.floor((Date.now() - data.createdAt.seconds * 1000) / 86400000) : 999;
+          const profileFields = [data.avatar, data.bio, data.skills?.length, data.portfolio?.length, data.location, data.title, data.emailVerified, data.isVerifiedId];
+          const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
+          const trustScore = Math.min(100, Math.floor((data.stats?.rating || 0) * 15 + (data.stats?.completed || 0) * 1.2 + (data.stats?.totalReviews || 0)));
 
-        return {
-          uid: d.id,
-          name: data.name || "Ẩn danh",
-          avatar: data.avatar || "",
-          level,
-          exp: (data.huhaScore || 0) % 100,
-          huhaScore: data.huhaScore || 0,
-          streakDays: data.stats?.streakDays || 0,
-          badges: data.badges || [],
-          rank: idx + 1,
-          vip: data.vip || { tier: 'free' },
-          stats: {
-            completed: data.stats?.completed || 0,
-            rating: data.stats?.rating || 0,
-            totalReviews: data.stats?.totalReviews || 0,
-            friendsMade: friendCount,
-            eventsJoined: data.stats?.eventsJoined || 0,
-            checkins: data.stats?.checkins || 0,
-            groupsManaged: data.stats?.groupsManaged || 0,
-            eventsHosted: data.stats?.eventsHosted || 0,
-          },
-          createdAt: data.createdAt,
-          emailVerified: data.emailVerified || false,
-          isVerifiedId: data.isVerifiedId || false,
-          skills: data.skills || [],
-          portfolio: data.portfolio || [],
-          location: data.location || "",
-          profileCompletion,
-          trustScore,
-          joinedDays,
-          friendCount,
-        } as UserProgress;
-      })
-    );
-    setRankUsers(users);
-  });
-  return () => unsub();
-}, [db]);
+          return {
+            uid: d.id,
+            name: data.name || "Ẩn danh",
+            avatar: data.avatar || "",
+            level,
+            exp: (data.huhaScore || 0) % 100,
+            huhaScore: data.huhaScore || 0,
+            streakDays: data.stats?.streakDays || 0,
+            badges: data.badges || [],
+            rank: idx + 1,
+            vip: data.vip || { tier: 'free' },
+            stats: {
+              completed: data.stats?.completed || 0,
+              rating: data.stats?.rating || 0,
+              totalReviews: data.stats?.totalReviews || 0,
+              friendsMade: friendCount,
+              eventsJoined: data.stats?.eventsJoined || 0,
+              checkins: data.stats?.checkins || 0,
+              groupsManaged: data.stats?.groupsManaged || 0,
+              eventsHosted: data.stats?.eventsHosted || 0,
+            },
+            createdAt: data.createdAt,
+            emailVerified: data.emailVerified || false,
+            isVerifiedId: data.isVerifiedId || false,
+            skills: data.skills || [],
+            portfolio: data.portfolio || [],
+            location: data.location || "",
+            profileCompletion,
+            trustScore,
+            joinedDays,
+            friendCount,
+          } as UserProgress;
+        })
+      );
+      setRankUsers(users);
+    });
+    return () => unsub();
+  }, [db]);
+
   useEffect(() => {
     if (!currentUserId) return;
     const unsub = onSnapshot(doc(db, "users", currentUserId), async (snap) => {
@@ -178,13 +158,10 @@ useEffect(() => {
         const level = Math.floor((d.huhaScore || 0) / 100) + 1;
         const exp = (d.huhaScore || 0) % 100;
         const joinedDays = d.createdAt?.seconds? Math.floor((Date.now() - d.createdAt.seconds * 1000) / 86400000) : 999;
-
         const friendsSnap = await getDocs(collection(db, "users", currentUserId, "friends"));
         const friendCount = friendsSnap.size;
-
         const profileFields = [d.avatar, d.bio, d.skills?.length, d.portfolio?.length, d.location, d.title, d.emailVerified, d.isVerifiedId];
         const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
-
         const trustScore = Math.min(100, Math.floor((d.stats?.rating || 0) * 15 + (d.stats?.completed || 0) * 1.2 + (d.stats?.totalReviews || 0)));
 
         setUserData({
@@ -242,18 +219,18 @@ useEffect(() => {
   const expPercent = userData? (userData.exp / 100) * 100 : 0;
 
   return (
-<div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
- <div className="absolute inset-0 bg-gradient-to-b from-amber-50 via-white to-orange-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-black sm:bg-black/60 sm:backdrop-blur-2xl" onClick={onClose} />
-<div className="relative w-full sm:max-w-2xl bg-gradient-to-b from-amber-50 via-white to-orange-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-black sm:rounded-3xl shadow-2xl h-[100dvh] sm:max-h-[90vh] flex flex-col animate-in slide-in-from-bottom sm:zoom-in duration-300 pt-safe">
-        <div className="w-9 h-1 bg-black/15 dark:bg-white/15 rounded-full mx-auto mt-2.5 sm:hidden" />
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl" onClick={onClose} />
+      <div className="relative w-full sm:max-w-2xl bg-white dark:bg-zinc-900 sm:rounded-3xl shadow-xl h-[100dvh] sm:max-h-[90vh] flex flex-col animate-in slide-in-from-bottom sm:zoom-in duration-300 pt-safe">
+        <div className="w-9 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full mx-auto mt-2.5 sm:hidden" />
 
         {/* Header Level */}
-<div className="px-5 pt-4 pb-1">
+        <div className="px-5 pt-4 pb-1">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <img src={userData?.avatar} alt="" className="w-14 h-14 rounded-2xl object-cover ring-4 ring-amber-400/30" />
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center border-2 border-white dark:border-zinc-900">
+                <img src={userData?.avatar} alt="" className="w-14 h-14 rounded-2xl object-cover border border-zinc-200 dark:border-zinc-700" />
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center border-2 border-white dark:border-zinc-900">
                   <span className="text-xs font-black text-white">{userData?.level}</span>
                 </div>
               </div>
@@ -271,22 +248,20 @@ useEffect(() => {
             </button>
           </div>
 
-          {/* EXP Bar */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-amber-600 dark:text-amber-400">Level {userData?.level}</span>
               <span className="text-zinc-500">{userData?.exp}/100 EXP</span>
             </div>
-            <div className="h-2.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 rounded-full transition-all duration-500 shadow-lg shadow-orange-500/50" style={{ width: `${expPercent}%` }} />
+            <div className="h-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
+              <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${expPercent}%` }} />
             </div>
           </div>
 
-          {/* Streak */}
           {userData && userData.streakDays > 0 && (
-            <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-500/10 to-pink-500/10 border-orange-500/20 rounded-xl">
+            <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700">
               <Flame className="text-orange-500" size={18} />
-              <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
                 {userData.streakDays} ngày streak • x2 EXP
               </span>
             </div>
@@ -294,14 +269,14 @@ useEffect(() => {
         </div>
 
         {/* Tabs */}
-<div className="px-4 pb-0">
-          <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+        <div className="px-4 pb-0">
+          <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700">
             {[
               { id: "overview", label: "Tổng quan", icon: FiTrendingUp },
               { id: "badges", label: "Huy hiệu", icon: FiAward },
               { id: "rank", label: "Xếp hạng", icon: Trophy },
             ].map(t => (
-              <button key={t.id} onClick={() => setTab(t.id as any)} className={`h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 ${tab === t.id? "bg-white dark:bg-zinc-900 shadow-sm text-amber-600 dark:text-amber-400" : "text-zinc-500"}`}>
+              <button key={t.id} onClick={() => setTab(t.id as any)} className={`h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 border ${tab === t.id? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-amber-600 dark:text-amber-400" : "border-transparent text-zinc-500"}`}>
                 <t.icon size={14} />
                 {t.label}
               </button>
@@ -309,137 +284,134 @@ useEffect(() => {
           </div>
         </div>
 
-{/* Content */}
-<div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)]">
-  {tab === "overview" && (
-    <div className="pt-3 space-y-3">
-      <div className="bg-white dark:bg-zinc-800/50 rounded-2xl p-4 border border-black/5 dark:border-white/5">
-        <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-          <Trophy className="text-amber-500" size={18} />
-          Top Vinh Danh Tuần Này
-        </h3>
-        <div className="space-y-2">
-          {topUsers.map((u, idx) => (
-            <div key={u.uid} className={`flex items-center gap-3 p-2.5 rounded-xl ${idx === 0? "bg-gradient-to-r from-amber-400/20 to-orange-500/20 border border-amber-500/30" : "bg-zinc-50 dark:bg-zinc-800/50"}`}>
-              <span className="text-2xl">{u.badge}</span>
-              <img src={u.avatar} alt="" className="w-10 h-10 rounded-full" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{u.name}</p>
-                <p className="text-xs text-zinc-500">Lv.{u.level} • {u.score} điểm</p>
+        {/* Content */}
+        <div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)]">
+          {tab === "overview" && (
+            <div className="pt-3 space-y-3">
+              <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
+                <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+                  <Trophy className="text-amber-500" size={18} />
+                  Top Vinh Danh Tuần Này
+                </h3>
+                <div className="space-y-2">
+                  {topUsers.map((u, idx) => (
+                    <div key={u.uid} className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700">
+                      <span className="text-2xl">{u.badge}</span>
+                      <img src={u.avatar} alt="" className="w-10 h-10 rounded-full border border-zinc-200 dark:border-zinc-700" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">{u.name}</p>
+                        <p className="text-xs text-zinc-500">Lv.{u.level} • {u.score} điểm</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Stats Grid */}
-      {userData && (
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-3 border border-black/5 dark:border-white/5">
-            <p className="text-xs text-zinc-500">Bạn bè</p>
-            <p className="text-lg font-bold text-pink-500">{userData.friendCount}</p>
-          </div>
-          <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-3 border border-black/5 dark:border-white/5">
-            <p className="text-xs text-zinc-500">Uy tín</p>
-            <p className="text-lg font-bold text-blue-500">{userData.trustScore}/100</p>
-          </div>
-          <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-3 border border-black/5 dark:border-white/5">
-            <p className="text-xs text-zinc-500">Hoàn thành</p>
-            <p className="text-lg font-bold text-green-500">{userData.stats?.completed || 0}</p>
-          </div>
-          <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-3 border border-black/5 dark:border-white/5">
-            <p className="text-xs text-zinc-500">Hồ sơ</p>
-            <p className="text-lg font-bold text-amber-500">{userData.profileCompletion}%</p>
-          </div>
-        </div>
-      )}
-    </div>
-  )}
-
-  {tab === "badges" && (
-    <div className="grid grid-cols-3 gap-3 pt-3">
-      {ALL_ACHIEVEMENTS.map((item) => {
-        if (!userData) return null;
-        const unlocked = item.unlocked(userData);
-        return (
-          <div key={item.id} className={`p-3 rounded-2xl border text-center ${unlocked? "bg-gradient-to-br from-amber-400/20 to-orange-500/20 border-amber-500/30" : "bg-zinc-100 dark:bg-zinc-800/50 border-black/5 dark:border-white/5 opacity-50"}`}>
-            <div className={`text-3xl mb-1 ${unlocked? "" : "grayscale"}`}>{item.icon}</div>
-            <p className="text-xs font-bold">{item.label}</p>
-            <p className="text- text-zinc-500 mt-0.5 line-clamp-2">{item.desc}</p>
-          </div>
-        );
-      })}
-    </div>
-  )}
-
-  {tab === "rank" && (
-    <div className="space-y-2 pt-3">
-      {Array.from({ length: 50 }, (_, idx) => {
-        const u = rankUsers[idx];
-        const isMe = u?.uid === currentUserId;
-        const hasUser = !!u;
-        
-        return (
-          <div
-            key={idx}
-            className={`flex items-center gap-3 p-3 rounded-xl border ${
-              isMe
-               ? "bg-gradient-to-r from-amber-400/20 to-orange-500/20 border-amber-500/30 ring-2 ring-amber-400/50"
-                : hasUser
-               ? "bg-white dark:bg-zinc-800/50 border-black/5 dark:border-white/5"
-                : "bg-zinc-50 dark:bg-zinc-800/30 border-black/5 dark:border-white/5 opacity-50"
-            }`}
-          >
-            <div className="w-8 text-center">
-              {idx === 0? (
-                <span className="text-2xl">👑</span>
-              ) : idx === 1? (
-                <span className="text-2xl">🥈</span>
-              ) : idx === 2? (
-                <span className="text-2xl">🥉</span>
-              ) : (
-                <span className="text-sm font-bold text-zinc-400">#{idx + 1}</span>
+              {userData && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
+                    <p className="text-xs text-zinc-500">Bạn bè</p>
+                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{userData.friendCount}</p>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
+                    <p className="text-xs text-zinc-500">Uy tín</p>
+                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{userData.trustScore}/100</p>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
+                    <p className="text-xs text-zinc-500">Hoàn thành</p>
+                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{userData.stats?.completed || 0}</p>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl p-3 border border-zinc-200 dark:border-zinc-700">
+                    <p className="text-xs text-zinc-500">Hồ sơ</p>
+                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{userData.profileCompletion}%</p>
+                  </div>
+                </div>
               )}
             </div>
-            
-            {hasUser? (
-              <>
-                <img
-                  src={u.avatar || "/default-avatar.png"}
-                  alt=""
-                  className="w-10 h-10 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate flex items-center gap-1">
-                    {u.name} {isMe && <span className="text-xs text-amber-500">(Bạn)</span>}
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    Lv.{u.level} • {u.huhaScore} điểm
-                  </p>
-                </div>
-                {u.vip?.tier === "elite" && <Crown className="text-amber-500" size={18} />}
-                {u.vip?.tier === "pro" && <span className="text-lg">💎</span>}
-              </>
-            ) : (
-              <>
-                <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-zinc-400">
-                    Top {idx + 1}: <span className="font-normal">...</span>
-                  </p>
-                  <p className="text-xs text-zinc-400">
-                    Lv.? • ? điểm
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  )}
-</div>
+          )}
+
+          {tab === "badges" && (
+            <div className="grid grid-cols-3 gap-3 pt-3">
+              {ALL_ACHIEVEMENTS.map((item) => {
+                if (!userData) return null;
+                const unlocked = item.unlocked(userData);
+                return (
+                  <div key={item.id} className="p-3 rounded-2xl border text-center bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                    <div className={`text-3xl mb-1 ${unlocked? "" : "grayscale opacity-40"}`}>{item.icon}</div>
+                    <p className="text-xs font-bold">{item.label}</p>
+                    <p className="text-zinc-500 mt-0.5 line-clamp-2">{item.desc}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {tab === "rank" && (
+            <div className="pt-3 space-y-2">
+              {Array.from({ length: 50 }, (_, idx) => {
+                const u = rankUsers[idx];
+                const isMe = u?.uid === currentUserId;
+                const hasUser =!!u;
+                
+                return (
+                  <div
+                    key={idx}
+                    className={`flex items-center gap-3 p-3 rounded-xl border ${
+                      isMe
+                       ? "bg-white dark:bg-zinc-900 border-amber-500 ring-2 ring-amber-500"
+                        : hasUser
+                       ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                        : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 opacity-40"
+                    }`}
+                  >
+                    <div className="w-8 text-center">
+                      {idx === 0? (
+                        <span className="text-2xl">👑</span>
+                      ) : idx === 1? (
+                        <span className="text-2xl">🥈</span>
+                      ) : idx === 2? (
+                        <span className="text-2xl">🥉</span>
+                      ) : (
+                        <span className="text-sm font-bold text-zinc-400">#{idx + 1}</span>
+                      )}
+                    </div>
+                    
+                    {hasUser? (
+                      <>
+                        <img
+                          src={u.avatar || "/default-avatar.png"}
+                          alt=""
+                          className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-700"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate flex items-center gap-1">
+                            {u.name} {isMe && <span className="text-xs text-amber-500">(Bạn)</span>}
+                          </p>
+                          <p className="text-xs text-zinc-500">
+                            Lv.{u.level} • {u.huhaScore} điểm
+                          </p>
+                        </div>
+                        {u.vip?.tier === "elite" && <Crown className="text-amber-500" size={18} />}
+                        {u.vip?.tier === "pro" && <span className="text-lg">💎</span>}
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-zinc-400">
+                            Top {idx + 1}: <span className="font-normal">...</span>
+                          </p>
+                          <p className="text-xs text-zinc-400">
+                            Lv.? •? điểm
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
-  );
-} 
