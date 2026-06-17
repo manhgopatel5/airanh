@@ -372,17 +372,22 @@ useEffect(() => {
             </div>
           )}
 
-       {tab === "rank" && (
+    {tab === "rank" && (
   <div className="space-y-2">
-    {rankUsers.map((u, idx) => {
-      const isMe = u.uid === currentUserId;
+    {Array.from({ length: 50 }, (_, idx) => {
+      const u = rankUsers[idx];
+      const isMe = u?.uid === currentUserId;
+      const hasUser =!!u;
+      
       return (
         <div
-          key={u.uid}
+          key={idx}
           className={`flex items-center gap-3 p-3 rounded-xl border ${
             isMe
              ? "bg-gradient-to-r from-amber-400/20 to-orange-500/20 border-amber-500/30 ring-2 ring-amber-400/50"
-              : "bg-white dark:bg-zinc-800/50 border-black/5 dark:border-white/5"
+              : hasUser
+             ? "bg-white dark:bg-zinc-800/50 border-black/5 dark:border-white/5"
+              : "bg-zinc-50 dark:bg-zinc-800/30 border-black/5 dark:border-white/5 opacity-50"
           }`}
         >
           <div className="w-8 text-center">
@@ -396,21 +401,38 @@ useEffect(() => {
               <span className="text-sm font-bold text-zinc-400">#{idx + 1}</span>
             )}
           </div>
-          <img
-            src={u.avatar || "/default-avatar.png"}
-            alt=""
-            className="w-10 h-10 rounded-full object-cover"
-          />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate flex items-center gap-1">
-              {u.name} {isMe && <span className="text-xs text-amber-500">(Bạn)</span>}
-            </p>
-            <p className="text-xs text-zinc-500">
-              Lv.{u.level} • {u.huhaScore} điểm
-            </p>
-          </div>
-          {u.vip?.tier === "elite" && <Crown className="text-amber-500" size={18} />}
-          {u.vip?.tier === "pro" && <span className="text-lg">💎</span>}
+          
+          {hasUser? (
+            <>
+              <img
+                src={u.avatar || "/default-avatar.png"}
+                alt=""
+                className="w-10 h-10 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate flex items-center gap-1">
+                  {u.name} {isMe && <span className="text-xs text-amber-500">(Bạn)</span>}
+                </p>
+                <p className="text-xs text-zinc-500">
+                  Lv.{u.level} • {u.huhaScore} điểm
+                </p>
+              </div>
+              {u.vip?.tier === "elite" && <Crown className="text-amber-500" size={18} />}
+              {u.vip?.tier === "pro" && <span className="text-lg">💎</span>}
+            </>
+          ) : (
+            <>
+              <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-zinc-400">
+                  Top {idx + 1}: <span className="font-normal">...</span>
+                </p>
+                <p className="text-xs text-zinc-400">
+                  Lv.? •? điểm
+                </p>
+              </div>
+            </>
+          )}
         </div>
       );
     })}
