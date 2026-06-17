@@ -134,8 +134,8 @@ const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
 
   return {
     uid,
-    name: d.name || "Ẩn danh",
-    avatar: d.avatar || "",
+    name: d.displayName || d.name || "",
+    avatar: d.photoURL || d.avatar || "",
     level,
     exp,
     huhaScore: d.huhaScore || 0,
@@ -378,8 +378,8 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
     const unsub = onSnapshot(q, (snap) => {
       setTopUsers(snap.docs.map((d, idx) => ({
         uid: d.id,
-        name: d.data().name,
-        avatar: d.data().avatar,
+        name: d.data().displayName || d.data().name || "",
+        avatar: d.data().photoURL || d.data().avatar || "",
         score: d.data().huhaScore || 0,
         level: Math.floor((d.data().huhaScore || 0) / 100) + 1,
         badge: idx === 0? "👑" : idx === 1? "🥈" : "🥉"
@@ -388,9 +388,9 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
     return () => unsub();
   }, [db]);
 
-  const expPercent = useMemo(() => userData? (userData.exp / 100) * 100 : 0, [userData?.exp]);
-
   const handleClose = useCallback(() => onClose(), [onClose]);
+
+  if (!userData) return null; // Không render gì nếu chưa load xong user
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
@@ -402,36 +402,30 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <img src={userData?.avatar || "/default-avatar.png"} alt="" className="w-14 h-14 rounded-2xl object-cover border border-zinc-200 dark:border-zinc-700" />
+                <img
+                  src={userData.avatar || "/default-avatar.png"}
+                  alt=""
+                  className="w-14 h-14 rounded-2xl object-cover border border-zinc-200 dark:border-zinc-700"
+                  onError={(e) => e.currentTarget.src = "/default-avatar.png"}
+                />
                 <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center border-2 border-white dark:border-zinc-900">
-                  <span className="text-xs font-black text-white">{userData?.level || 1}</span>
+                  <span className="text-xs font-black text-white">{userData.level}</span>
                 </div>
               </div>
               <div>
                 <h2 className="text-lg font-bold flex items-center gap-1.5">
-                  {userData?.name || "Bạn"}
-                  {userData?.vip?.tier === 'elite' && <Crown className="text-amber-500" size={16} />}
-                  {userData?.vip?.tier === 'pro' && <span className="text-sm">💎</span>}
+                  {userData.name}
+                  {userData.vip?.tier === 'elite' && <Crown className="text-amber-500" size={16} />}
+                  {userData.vip?.tier === 'pro' && <span className="text-sm">💎</span>}
                 </h2>
-                <p className="text-xs text-zinc-500">Hạng #{userData?.rank || '?'} • {userData?.huhaScore || 0} điểm • {userData?.friendCount || 0} bạn</p>
+                <p className="text-xs text-zinc-500">Hạng #{userData.rank || '?'} • {userData.huhaScore} điểm • {userData.friendCount} bạn</p>
               </div>
-            </div>
             <button onClick={handleClose} className="w-8 h-8 -mr-1 flex items-center justify-center text-zinc-400">
               <FiX size={22} />
             </button>
           </div>
 
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-amber-600 dark:text-amber-400">Level {userData?.level || 1}</span>
-              <span className="text-zinc-500">{userData?.exp || 0}/100 EXP</span>
-            </div>
-            <div className="h-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
-              <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${expPercent}%` }} />
-            </div>
-          </div>
-
-          {userData && userData.streakDays > 0 && (
+          {userData.streakDays > 0 && (
             <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700">
               <Flame className="text-orange-500" size={18} />
               <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{userData.streakDays} ngày streak • x2 EXP</span>
@@ -446,12 +440,12 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
               { id: "badges", label: "Huy hiệu", icon: FiAward },
               { id: "rank", label: "Xếp hạng", icon: Trophy },
             ].map(t => (
-              <button 
-                key={t.id} 
-                onClick={() => setTab(t.id as any)} 
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id as any)}
                 className={`h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 border ${
-                  tab === t.id 
-                    ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-amber-600 dark:text-amber-400" 
+                  tab === t.id
+                   ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-amber-600 dark:text-amber-400"
                     : "border-transparent text-zinc-500"
                 }`}
               >
