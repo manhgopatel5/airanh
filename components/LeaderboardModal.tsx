@@ -309,15 +309,15 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto px-5 pb-5">
-          {tab === "overview" && (
-            <div className="space-y-3">
-              <div className="bg-white dark:bg-zinc-800/50 rounded-2xl p-4 border border-black/5 dark:border-white/5">
-                <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-                  <Trophy className="text-amber-500" size={18} />
-                  Top Vinh Danh Tuần Này
-                </h3>
+  {/* Content */}
+<div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)]">
+  {tab === "overview" && (
+    <div className="space-y-3 pt-0">
+      <div className="bg-white dark:bg-zinc-800/50 rounded-2xl p-4 border border-black/5 dark:border-white/5">
+        <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+          <Trophy className="text-amber-500" size={18} />
+          Top Vinh Danh Tuần Này
+        </h3>
                 <div className="space-y-2">
                   {topUsers.map((u, idx) => (
                     <div key={u.uid} className={`flex items-center gap-3 p-2.5 rounded-xl ${idx === 0? "bg-gradient-to-r from-amber-400/20 to-orange-500/20 border border-amber-500/30" : "bg-zinc-50 dark:bg-zinc-800/50"}`}>
