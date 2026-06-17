@@ -134,8 +134,8 @@ const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
 
   return {
     uid,
-    name: d.displayName || d.name || "",
-    avatar: d.photoURL || d.avatar || "",
+    name: d.name || "Ẩn danh",
+    avatar: d.avatar || "",
     level,
     exp,
     huhaScore: d.huhaScore || 0,
@@ -378,8 +378,8 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
     const unsub = onSnapshot(q, (snap) => {
       setTopUsers(snap.docs.map((d, idx) => ({
         uid: d.id,
-        name: d.data().displayName || d.data().name || "",
-        avatar: d.data().photoURL || d.data().avatar || "",
+        name: d.data().name,
+        avatar: d.data().avatar,
         score: d.data().huhaScore || 0,
         level: Math.floor((d.data().huhaScore || 0) / 100) + 1,
         badge: idx === 0? "👑" : idx === 1? "🥈" : "🥉"
@@ -388,9 +388,9 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
     return () => unsub();
   }, [db]);
 
-  const handleClose = useCallback(() => onClose(), [onClose]);
+  const expPercent = useMemo(() => userData? (userData.exp / 100) * 100 : 0, [userData?.exp]);
 
-  if (!userData) return null; // Không render gì nếu chưa load xong user
+  const handleClose = useCallback(() => onClose(), [onClose]);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
@@ -402,30 +402,28 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <img
-                  src={userData.avatar || "/default-avatar.png"}
-                  alt=""
-                  className="w-14 h-14 rounded-2xl object-cover border border-zinc-200 dark:border-zinc-700"
-                  onError={(e) => e.currentTarget.src = "/default-avatar.png"}
-                />
+                <img src={userData?.avatar || "/default-avatar.png"} alt="" className="w-14 h-14 rounded-2xl object-cover border border-zinc-200 dark:border-zinc-700" />
                 <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center border-2 border-white dark:border-zinc-900">
-                  <span className="text-xs font-black text-white">{userData.level}</span>
+                  <span className="text-xs font-black text-white">{userData?.level || 1}</span>
                 </div>
               </div>
               <div>
                 <h2 className="text-lg font-bold flex items-center gap-1.5">
-                  {userData.name}
-                  {userData.vip?.tier === 'elite' && <Crown className="text-amber-500" size={16} />}
-                  {userData.vip?.tier === 'pro' && <span className="text-sm">💎</span>}
+                  {userData?.name || "Bạn"}
+                  {userData?.vip?.tier === 'elite' && <Crown className="text-amber-500" size={16} />}
+                  {userData?.vip?.tier === 'pro' && <span className="text-sm">💎</span>}
                 </h2>
-                <p className="text-xs text-zinc-500">Hạng #{userData.rank || '?'} • {userData.huhaScore} điểm • {userData.friendCount} bạn</p>
+                <p className="text-xs text-zinc-500">Hạng #{userData?.rank || '?'} • {userData?.huhaScore || 0} điểm • {userData?.friendCount || 0} bạn</p>
               </div>
+            </div>
             <button onClick={handleClose} className="w-8 h-8 -mr-1 flex items-center justify-center text-zinc-400">
               <FiX size={22} />
             </button>
           </div>
 
-          {userData.streakDays > 0 && (
+     
+
+          {userData && userData.streakDays > 0 && (
             <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700">
               <Flame className="text-orange-500" size={18} />
               <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{userData.streakDays} ngày streak • x2 EXP</span>
@@ -440,12 +438,12 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
               { id: "badges", label: "Huy hiệu", icon: FiAward },
               { id: "rank", label: "Xếp hạng", icon: Trophy },
             ].map(t => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id as any)}
+              <button 
+                key={t.id} 
+                onClick={() => setTab(t.id as any)} 
                 className={`h-9 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 border ${
-                  tab === t.id
-                   ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-amber-600 dark:text-amber-400"
+                  tab === t.id 
+                    ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-amber-600 dark:text-amber-400" 
                     : "border-transparent text-zinc-500"
                 }`}
               >
