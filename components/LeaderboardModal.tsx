@@ -397,4 +397,20 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-zinc-400">
                             Top {idx + 1}: <span className="font-normal">...</span>
-                          </
+                          </p>
+                          <p className="text-xs text-zinc-400">
+                            Lv.? •? điểm
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
