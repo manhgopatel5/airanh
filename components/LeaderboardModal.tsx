@@ -180,7 +180,7 @@ const OverviewTab = memo(({ userData, topUsers, onShowLevelInfo }: {
 
   return (
     <div className="pt-3 space-y-3">
-  <button
+<button
   onClick={onShowLevelInfo}
   className="w-full bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700 text-left active:scale-[0.98] transition-all"
 >
@@ -193,6 +193,7 @@ const OverviewTab = memo(({ userData, topUsers, onShowLevelInfo }: {
         <p className="text-xs text-zinc-500">Cấp độ hiện tại</p>
         <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Level {userData.level}</p>
       </div>
+    </div>
     <div className="text-right">
       <p className="text-xs text-zinc-500">EXP</p>
       <p className="text-sm font-bold text-amber-600 dark:text-amber-400">{userData.exp}/100</p>
@@ -203,7 +204,6 @@ const OverviewTab = memo(({ userData, topUsers, onShowLevelInfo }: {
   </div>
   <p className="text-xs text-zinc-500 mt-2">Còn {100 - userData.exp} EXP để lên Level {userData.level + 1}</p>
 </button>
-
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
         <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
           <Trophy className="text-amber-500" size={18} />
