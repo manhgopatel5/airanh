@@ -378,11 +378,19 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
 
 
 
-  const handleClose = useCallback(() => onClose(), [onClose]);
+ const handleClose = useCallback(() => onClose(), [onClose]);
 
+if (!userData) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl" onClick={handleClose} />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-2xl">
+      <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+return (
+  <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl" onClick={handleClose} />
       <div className="relative w-full sm:max-w-2xl bg-white dark:bg-zinc-900 sm:rounded-3xl shadow-xl h-[100dvh] sm:max-h-[90vh] flex flex-col animate-in slide-in-from-bottom sm:zoom-in duration-300 pt-safe">
         <div className="w-9 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full mx-auto mt-2.5 sm:hidden" />
 
@@ -390,7 +398,11 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <img src={userData?.avatar || "/default-avatar.png"} alt="" className="w-14 h-14 rounded-2xl object-cover border border-zinc-200 dark:border-zinc-700" />
+<img
+  src={userData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData?.name || "U")}&size=200&background=F59E0B&color=fff`}
+  alt=""
+  className="w-14 h-14 rounded-2xl object-cover border border-zinc-200 dark:border-zinc-700"
+/>
            <button
   onClick={() => setShowLevelInfo(true)}
   className="absolute -bottom-1 -right-1 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center border-2 border-white dark:border-zinc-900 active:scale-90 transition-all"
@@ -399,13 +411,15 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
 </button>
               </div>
               <div>
-                <h2 className="text-lg font-bold flex items-center gap-1.5">
-                  {userData?.name || "Bạn"}
-                  {userData?.vip?.tier === 'elite' && <Crown className="text-amber-500" size={16} />}
-                  {userData?.vip?.tier === 'pro' && <span className="text-sm">💎</span>}
-                </h2>
-                <p className="text-xs text-zinc-500">Hạng #{userData?.rank || '?'} • {userData?.huhaScore || 0} điểm • {userData?.friendCount || 0} bạn</p>
-              </div>
+  <h2 className="text-lg font-bold flex items-center gap-1.5">
+    {userData?.name || "Đang tải..."}
+    {userData?.vip?.tier === 'elite' && <Crown className="text-amber-500" size={16} />}
+    {userData?.vip?.tier === 'pro' && <span className="text-sm">💎</span>}
+  </h2>
+  {userData && (
+    <p className="text-xs text-zinc-500">Hạng #{userData.rank || '—'}</p>
+  )}
+</div>
             </div>
             <button onClick={handleClose} className="w-8 h-8 -mr-1 flex items-center justify-center text-zinc-400">
               <FiX size={22} />
