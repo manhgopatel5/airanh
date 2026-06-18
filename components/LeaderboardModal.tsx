@@ -332,7 +332,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
   const [rankUsers, setRankUsers] = useState<UserProgress[]>([]);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
-const [showAchievementInfo, setShowAchievementInfo] = useState(false);
+
 const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
   useEffect(() => {
     if (tab!== "rank") return;
