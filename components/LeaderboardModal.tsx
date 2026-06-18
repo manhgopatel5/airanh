@@ -135,7 +135,7 @@ const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
 
   return {
     uid,
-    name: d.displayName || d.name || d.nameLower || d.username || "User", // ƯU TIÊN nameLower TRƯỚC username
+name: (d.displayName || d.name || d.nameLower || d.username || "User").replace(/^\w/, c => c.toUpperCase()),
     avatar: d.photoURL || d.avatar || "",
     level,
     exp,
@@ -340,15 +340,15 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [showLevelInfo, setShowLevelInfo] = useState(false);
 
 
-  useEffect(() => {
-    if (tab!== "rank") return;
-    const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), limit(20));
-    const unsub = onSnapshot(q, (snap) => {
-      const users = snap.docs.map((d, idx) => calcUserData(d.data(), d.id, idx + 1));
-      setRankUsers(users);
-    });
-    return () => unsub();
-  }, [db, tab]);
+useEffect(() => {
+  if (tab!== "rank") return;
+  const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), orderBy("nameLower", "asc"), limit(20));
+  const unsub = onSnapshot(q, (snap) => {
+    const users = snap.docs.map((d, idx) => calcUserData(d.data(), d.id, idx + 1));
+    setRankUsers(users);
+  });
+  return () => unsub();
+}, [db, tab]);
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -360,20 +360,20 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
     return () => unsub();
   }, [currentUserId, db]);
 
-  useEffect(() => {
-    const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), limit(3));
-    const unsub = onSnapshot(q, (snap) => {
-      setTopUsers(snap.docs.map((d, idx) => ({
-        uid: d.id,
-        name: d.data().name,
-        avatar: d.data().avatar,
-        score: d.data().huhaScore || 0,
-        level: Math.floor((d.data().huhaScore || 0) / 100) + 1,
-        badge: idx === 0? "👑" : idx === 1? "🥈" : "🥉"
-      })));
-    });
-    return () => unsub();
-  }, [db]);
+useEffect(() => {
+  const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), orderBy("nameLower", "asc"), limit(3));
+  const unsub = onSnapshot(q, (snap) => {
+    setTopUsers(snap.docs.map((d, idx) => ({
+      uid: d.id,
+      name: d.data().displayName || d.data().name || d.data().nameLower || d.data().username,
+      avatar: d.data().photoURL || d.data().avatar,
+      score: d.data().huhaScore || 0,
+      level: Math.floor((d.data().huhaScore || 0) / 100) + 1,
+      badge: idx === 0? "👑" : idx === 1? "🥈" : "🥉"
+    })));
+  });
+  return () => unsub();
+}, [db]);
 
 
 
