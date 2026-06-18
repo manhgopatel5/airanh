@@ -333,7 +333,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [rankUsers, setRankUsers] = useState<UserProgress[]>([]);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
 
-const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
+
   useEffect(() => {
     if (tab!== "rank") return;
     const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), limit(20));
