@@ -12,9 +12,10 @@ import {
   Timestamp,
 } from "firebase/firestore";
 
+import * as Dialog from "@radix-ui/react-dialog";
 
 import {
-  Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun,
+  Zap, Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun,
   Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag,
   Mic, Bike, Palette, Beer, Map, PartyPopper, Briefcase, Camera, Globe, Clock,
   TrendingUp, ThumbsUp, BookOpen, ShieldCheck, MapPin, Users, Mail, Star
