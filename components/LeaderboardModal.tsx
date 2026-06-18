@@ -331,7 +331,9 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [userData, setUserData] = useState<UserProgress | null>(null);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
   const [rankUsers, setRankUsers] = useState<UserProgress[]>([]);
-
+  const [showLevelInfo, setShowLevelInfo] = useState(false);
+const [showAchievementInfo, setShowAchievementInfo] = useState(false);
+const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
   useEffect(() => {
     if (tab!== "rank") return;
     const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), limit(20));
@@ -382,9 +384,12 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
             <div className="flex items-center gap-3">
               <div className="relative">
                 <img src={userData?.avatar || "/default-avatar.png"} alt="" className="w-14 h-14 rounded-2xl object-cover border border-zinc-200 dark:border-zinc-700" />
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center border-2 border-white dark:border-zinc-900">
-                  <span className="text-xs font-black text-white">{userData?.level || 1}</span>
-                </div>
+           <button
+  onClick={() => setShowLevelInfo(true)}
+  className="absolute -bottom-1 -right-1 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center border-2 border-white dark:border-zinc-900 active:scale-90 transition-all"
+>
+  <span className="text-xs font-black text-white">{userData?.level || 1}</span>
+</button>
               </div>
               <div>
                 <h2 className="text-lg font-bold flex items-center gap-1.5">
@@ -439,6 +444,89 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
           {tab === "rank" && <RankTab rankUsers={rankUsers} currentUserId={currentUserId} />}
         </div>
       </div>
+      {/* DIALOG CẤP ĐỘ */}
+      <Dialog.Root open={showLevelInfo} onOpenChange={setShowLevelInfo}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-[70] backdrop-blur-sm" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-3xl p-5 z-[70] shadow-2xl">
+            <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4">
+              Hệ thống cấp độ Huha
+            </Dialog.Title>
+
+            <div className="mb-5 p-4 rounded-2xl bg-blue-50 border border-blue-200">
+              <p className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-1.5">
+                <Zap className="w-4 h-4" />
+                Công thức tính XP
+              </p>
+              <div className="space-y-1.5 text-sm text-blue-800">
+                <div className="flex justify-between">
+                  <span>Hoàn thành 1 job</span>
+                  <span className="font-semibold">+12 XP</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Nhận 1 đánh giá</span>
+                  <span className="font-semibold">+8 XP</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Rating trung bình</span>
+                  <span className="font-semibold">+Rating × 20 XP</span>
+                </div>
+                <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-bold">
+                  <span>Tổng XP hiện tại</span>
+                  <span>{userData?.huhaScore || 0} XP</span>
+                </div>
+                <div className="text-xs text-blue-700 mt-1">
+                  Mỗi level cần 300 XP
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5">
+              Các cấp độ
+            </p>
+            <div className="space-y-2.5">
+              {[
+                { range: "1 - 7", name: "Mới tham gia", icon: <Sparkles className="w-4 h-4" />, gradient: "from-sky-400 to-blue-600", xp: "0 - 2,100" },
+                { range: "8 - 19", name: "Thành viên tích cực", icon: <Flame className="w-4 h-4" />, gradient: "from-emerald-500 to-teal-500", xp: "2,100 - 5,700" },
+                { range: "20 - 34", name: "Đối tác tin cậy", icon: <Shield className="w-4 h-4" />, gradient: "from-blue-500 to-sky-500", xp: "5,700 - 10,200" },
+                { range: "35 - 49", name: "Chuyên gia", icon: <Gem className="w-4 h-4" />, gradient: "from-violet-500 to-fuchsia-500", xp: "10,200 - 14,700" },
+                { range: "50+", name: "Huyền thoại", icon: <Crown className="w-4 h-4" />, gradient: "from-amber-400 to-orange-500", xp: "14,700+" },
+              ].map((tier, i) => {
+                const minLv = parseInt(tier.range.split(" - ")[0] || "0");
+                const isActive = (userData?.level || 1) >= minLv;
+                return (
+                  <div
+                    key={i}
+                    className={`p-3.5 rounded-2xl border ${
+                      isActive? "border-zinc-300 bg-zinc-50" : "border-zinc-200 bg-white opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-xl bg-gradient-to-r ${tier.gradient} text-white flex items-center justify-center shadow-sm`}>
+                          {tier.icon}
+                        </div>
+                        <div>
+                          <p className="font-bold text-zinc-900 text-sm">{tier.name}</p>
+                          <p className="text-xs text-zinc-500">Level {tier.range}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-semibold text-zinc-700">{tier.xp}</p>
+                        <p className="text-xs text-zinc-500">XP</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
+              Đã hiểu
+            </Dialog.Close>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }
