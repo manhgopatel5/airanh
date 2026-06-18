@@ -135,7 +135,7 @@ const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
 
   return {
     uid,
-name: (d.displayName || d.name || d.nameLower || d.username || "User").replace(/^\w/, c => c.toUpperCase()),
+name: (d.displayName || d.name || d.nameLower || d.username || "User").replace(/^\w/, (c: string) => c.toUpperCase()),
     avatar: d.photoURL || d.avatar || "",
     level,
     exp,
