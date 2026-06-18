@@ -128,15 +128,15 @@ const ALL_ACHIEVEMENTS: Achievement[] = [
 const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
   const level = Math.floor((d.huhaScore || 0) / 100) + 1;
   const exp = (d.huhaScore || 0) % 100;
-  const joinedDays = d.createdAt?.seconds? Math.floor((Date.now() - d.createdAt.seconds * 1000) / 86400000) : 999;
+  const joinedDays = d.createdAt?.seconds? Math.floor((Date.now() - d.createdAt.seconds * 1000) / 86400000) : 0;
   const profileFields = [d.avatar, d.bio, d.skills?.length, d.portfolio?.length, d.location, d.title, d.emailVerified, d.isVerifiedId];
   const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
   const trustScore = Math.min(100, Math.floor((d.stats?.rating || 0) * 15 + (d.stats?.completed || 0) * 1.2 + (d.stats?.totalReviews || 0)));
 
   return {
     uid,
-    name: d.name || "Ẩn danh",
-    avatar: d.avatar || "",
+    name: d.displayName || d.name || d.nameLower || d.username || "User", // ƯU TIÊN nameLower TRƯỚC username
+    avatar: d.photoURL || d.avatar || "",
     level,
     exp,
     huhaScore: d.huhaScore || 0,
@@ -166,7 +166,6 @@ const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
     friendCount: d.friendCount || 0,
   };
 };
-
 const OverviewTab = memo(({ userData, topUsers, onShowLevelInfo }: { 
   userData: UserProgress | null; 
   topUsers: TopUser[];
@@ -399,7 +398,7 @@ return (
             <div className="flex items-center gap-3">
               <div className="relative">
 <img
-  src={userData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData?.name || "U")}&size=200&background=F59E0B&color=fff`}
+  src={userData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData?.name || "U")}&background=F59E0B&color=fff`}
   alt=""
   className="w-14 h-14 rounded-2xl object-cover border border-zinc-200 dark:border-zinc-700"
 />
