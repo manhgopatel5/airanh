@@ -167,7 +167,11 @@ const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
   };
 };
 
-const OverviewTab = memo(({ userData, topUsers }: { userData: UserProgress | null; topUsers: TopUser[] }) => {
+const OverviewTab = memo(({ userData, topUsers, onShowLevelInfo }: { 
+  userData: UserProgress | null; 
+  topUsers: TopUser[];
+  onShowLevelInfo: () => void;
+}) => {
   const expPercent = useMemo(() => userData? (userData.exp / 100) * 100 : 0, [userData?.exp]);
 
  
@@ -176,27 +180,29 @@ const OverviewTab = memo(({ userData, topUsers }: { userData: UserProgress | nul
 
   return (
     <div className="pt-3 space-y-3">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <Sparkles className="text-amber-500" size={20} />
-            </div>
-            <div>
-              <p className="text-xs text-zinc-500">Cấp độ hiện tại</p>
-              <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Level {userData.level}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-zinc-500">EXP</p>
-            <p className="text-sm font-bold text-amber-600 dark:text-amber-400">{userData.exp}/100</p>
-          </div>
-        </div>
-        <div className="relative h-3 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
-          <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-700 ease-out" style={{ width: `${expPercent}%` }} />
-        </div>
-        <p className="text-xs text-zinc-500 mt-2">Còn {100 - userData.exp} EXP để lên Level {userData.level + 1}</p>
+  <button
+  onClick={onShowLevelInfo}
+  className="w-full bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700 text-left active:scale-[0.98] transition-all"
+>
+  <div className="flex items-center justify-between mb-3">
+    <div className="flex items-center gap-2">
+      <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+        <Sparkles className="text-amber-500" size={20} />
       </div>
+      <div>
+        <p className="text-xs text-zinc-500">Cấp độ hiện tại</p>
+        <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Level {userData.level}</p>
+      </div>
+    <div className="text-right">
+      <p className="text-xs text-zinc-500">EXP</p>
+      <p className="text-sm font-bold text-amber-600 dark:text-amber-400">{userData.exp}/100</p>
+    </div>
+  </div>
+  <div className="relative h-3 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
+    <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-700 ease-out" style={{ width: `${expPercent}%` }} />
+  </div>
+  <p className="text-xs text-zinc-500 mt-2">Còn {100 - userData.exp} EXP để lên Level {userData.level + 1}</p>
+</button>
 
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
         <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
@@ -440,7 +446,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
         </div>
 
         <div className="flex-1 overflow-auto px-5 pb-[env(safe-area-inset-bottom)]">
-          {tab === "overview" && <OverviewTab userData={userData} topUsers={topUsers} />}
+{tab === "overview" && <OverviewTab userData={userData} topUsers={topUsers} onShowLevelInfo={() => setShowLevelInfo(true)} />}
           {tab === "badges" && <BadgesTab userData={userData} />}
           {tab === "rank" && <RankTab rankUsers={rankUsers} currentUserId={currentUserId} />}
         </div>
