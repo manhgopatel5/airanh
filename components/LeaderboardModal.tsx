@@ -7,6 +7,8 @@ import {
   onSnapshot,
   collection,
   query,
+  getDocs, 
+  where,
   orderBy,
   limit,
   Timestamp,
@@ -351,17 +353,33 @@ useEffect(() => {
 }, [db, tab]);
 
   useEffect(() => {
-    if (!currentUserId) return;
-    const unsub = onSnapshot(doc(db, "users", currentUserId), (snap) => {
-      if (snap.exists()) {
-        setUserData(calcUserData(snap.data(), snap.id));
-      }
-    });
-    return () => unsub();
-  }, [currentUserId, db]);
+  if (!currentUserId) return;
+  const unsub = onSnapshot(doc(db, "users", currentUserId), async (snap) => {
+    if (snap.exists()) {
+      const data = snap.data();
+      const myScore = data.huhaScore || 0;
+
+      // Tính rank: đếm user có điểm cao hơn mình
+      const rankQuery = query(
+        collection(db, "users"),
+        where("huhaScore", ">", myScore)
+      );
+      const rankSnap = await getDocs(rankQuery);
+      const myRank = rankSnap.size + 1; // +1 vì mình đứng sau tất cả người hơn điểm
+
+      setUserData(calcUserData(data, snap.id, myRank));
+    }
+  });
+  return () => unsub();
+}, [currentUserId, db]);
 
 useEffect(() => {
-  const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), orderBy("nameLower", "asc"), limit(3));
+  const q = query(
+    collection(db, "users"),
+    orderBy("huhaScore", "desc"),
+    orderBy("nameLower", "asc"),
+    limit(3)
+  );
   const unsub = onSnapshot(q, (snap) => {
     setTopUsers(snap.docs.map((d, idx) => ({
       uid: d.id,
