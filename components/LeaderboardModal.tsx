@@ -344,7 +344,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [showLevelInfo, setShowLevelInfo] = useState(false);
 
 
-// 1. TAB XẾP HẠNG - Thêm log + bắt lỗi
+// 1. TAB XẾP HẠNG - load 20 user top
 useEffect(() => {
   if (tab!== "rank") return;
   const q = query(
@@ -354,7 +354,6 @@ useEffect(() => {
     limit(20)
   );
   const unsub = onSnapshot(q, (snap) => {
-    console.log("RANK SNAP:", snap.size, snap.empty, snap.docs.map(d => d.data().nameLower));
     const users = snap.docs.map((d, idx) => calcUserData(d.data(), d.id, idx + 1));
     setRankUsers(users);
   }, (err) => {
@@ -364,60 +363,32 @@ useEffect(() => {
   return () => unsub();
 }, [db, tab]);
 
-// 2. LOAD USER HIỆN TẠI + TÍNH HẠNG - Giữ nguyên
+// 2. LOAD USER HIỆN TẠI - không tính rank ở đây nữa
 useEffect(() => {
   if (!currentUserId) return;
-  
+
   const unsubUser = onSnapshot(doc(db, "users", currentUserId), (snap) => {
     if (snap.exists()) {
       const data = snap.data();
-      console.log("USER DATA:", data); // Thêm dòng này check field
-      setUserData(calcUserData(data, snap.id, 0));
+      setUserData(calcUserData(data, snap.id, 0)); // rank = 0 tạm
     }
   });
 
   return () => unsubUser();
 }, [currentUserId, db]);
 
-// 2b. TÍNH RANK RIÊNG - Thêm log lỗi chi tiết
+// 3. TÍNH RANK TỪ LIST RANKUSERS - đồng bộ với tab Xếp hạng
 useEffect(() => {
-  if (!userData?.uid || userData.huhaScore === undefined) return;
+  if (!userData?.uid) return;
+  if (!rankUsers.length) return;
 
-  const calcRank = async () => {
-    try {
-      const myScore = userData.huhaScore;
-      const myNameLower = (userData.name || "user").toLowerCase();
+  const myIndex = rankUsers.findIndex(u => u.uid === userData.uid);
+  const myRank = myIndex >= 0? myIndex + 1 : rankUsers.length + 1;
 
-      const higherScoreQuery = query(
-        collection(db, "users"),
-        where("huhaScore", ">", myScore)
-      );
-      
-      const sameScoreQuery = query(
-        collection(db, "users"),
-        where("huhaScore", "==", myScore),
-        where("nameLower", "<", myNameLower)
-      );
+  setUserData(prev => prev? {...prev, rank: myRank } : null);
+}, [userData?.uid, rankUsers]);
 
-      const [higherSnap, sameSnap] = await Promise.all([
-        getDocs(higherScoreQuery),
-        getDocs(sameScoreQuery)
-      ]);
-      
-      const myRank = higherSnap.size + sameSnap.size + 1;
-      console.log("CALC RANK:", { myScore, myNameLower, higher: higherSnap.size, same: sameSnap.size, myRank });
-
-      setUserData(prev => prev? {...prev, rank: myRank } : null);
-    } catch (err: any) {
-      console.error("Lỗi tính rank:", err.message); // Log chi tiết lỗi
-      setUserData(prev => prev? {...prev, rank: 1 } : null);
-    }
-  };
-
-  calcRank();
-}, [userData?.uid, userData?.huhaScore, userData?.name, db]);
-
-// 3. TOP 3 VINH DANH - Thêm log + bắt lỗi
+// 4. TOP 3 VINH DANH - dùng chung logic với rank
 useEffect(() => {
   const q = query(
     collection(db, "users"),
@@ -426,7 +397,6 @@ useEffect(() => {
     limit(3)
   );
   const unsub = onSnapshot(q, (snap) => {
-    console.log("TOP3 SNAP:", snap.size, snap.empty, snap.docs.map(d => ({ name: d.data().nameLower, score: d.data().huhaScore })));
     const users = snap.docs.map((d, idx) => {
       const u = calcUserData(d.data(), d.id, idx + 1);
       return {
@@ -440,7 +410,7 @@ useEffect(() => {
     });
     setTopUsers(users);
   }, (err) => {
-    console.error("TOP3 ERROR:", err.message); // Thêm dòng này để bắt lỗi index
+    console.error("TOP3 ERROR:", err.message);
     setTopUsers([]);
   });
   return () => unsub();
