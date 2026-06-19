@@ -17,15 +17,14 @@ match /admin_credentials/{docId} {
 }
 
 match /users/{userId} {
-  // ĐÃ SỬA: Cho phép đọc public để query BXH chạy được
-  // isSignedIn() vẫn chặn orderBy toàn collection
+  // Cho phép đọc public để query BXH chạy được
   allow read: if true;
   
-  // ĐÃ SỬA: Thêm 'nameLower' vào list cho phép update
+  // ĐÃ FIX: Thêm 'huhaScore' vào list cho phép update
   allow update: if isOwner(userId) 
     && request.resource.data.diff(resource.data).changedKeys()
       .hasOnly(['name', 'avatar', 'bio', 'birthday', 'phone', 'title', 'location', 
-               'skills', 'portfolio', 'vip', 'online', 'lastSeen', 'nameLower']);
+               'skills', 'portfolio', 'vip', 'online', 'lastSeen', 'nameLower', 'huhaScore']);
   
   allow create: if isOwner(userId);
   allow delete: if isAdmin();
