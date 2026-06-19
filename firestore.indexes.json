@@ -206,40 +206,7 @@
       ],
       "density": "SPARSE_ALL"
     },
-    {
-      "collectionGroup": "groups",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "groupCode",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "groups",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "members",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "updatedAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
+    
     {
       "collectionGroup": "messages",
       "queryScope": "COLLECTION_GROUP",
@@ -557,543 +524,528 @@
       "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "category",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
     },
     {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "category",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "hotScore",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
+      "fieldPath": "status",
+      "order": "ASCENDING"
     },
     {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "category",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "price",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
+      "fieldPath": "category",
+      "order": "ASCENDING"
     },
     {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "category",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "price",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
+      "fieldPath": "createdAt",
+      "order": "DESCENDING"
     },
     {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "category",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "viewCount",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "deadline",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "hotScore",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "price",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "price",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "price",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "viewCount",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "price",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "price",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "price",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "viewCount",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "viewCount",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "userId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-        {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "userId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "type",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "deadline",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "searchKeywords",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "hidden",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "deletedAt",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "nameLower",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "shortId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "hidden",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "deletedAt",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "huhaScore",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "nameLower",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "huhaScore",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "huhaScore",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "nameLower",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
     }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "category",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "hotScore",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "category",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "price",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "ASCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "category",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "price",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "category",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "viewCount",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "createdAt",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "deadline",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "ASCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "hotScore",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "price",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "ASCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "price",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "createdAt",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "price",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "viewCount",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "price",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "price",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "createdAt",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "price",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "viewCount",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "viewCount",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "userId",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "createdAt",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "tasks",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "userId",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "type",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "deadline",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "DESCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "users",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "searchKeywords",
+      "arrayConfig": "CONTAINS"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "hidden",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "deletedAt",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "nameLower",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "ASCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "users",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "shortId",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "status",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "hidden",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "deletedAt",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "ASCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "users",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "huhaScore",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "nameLower",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "ASCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "users",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "huhaScore",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "nameLower",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "ASCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+}
   ],
   "fieldOverrides": []
 }
