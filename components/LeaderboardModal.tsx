@@ -342,9 +342,15 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [showLevelInfo, setShowLevelInfo] = useState(false);
 
 
+// 1. TAB XẾP HẠNG - Dùng calcUserData cho nhất quán
 useEffect(() => {
   if (tab!== "rank") return;
-  const q = query(collection(db, "users"), orderBy("huhaScore", "desc"), orderBy("nameLower", "asc"), limit(20));
+  const q = query(
+    collection(db, "users"),
+    orderBy("huhaScore", "desc"),
+    orderBy("nameLower", "asc"),
+    limit(20)
+  );
   const unsub = onSnapshot(q, (snap) => {
     const users = snap.docs.map((d, idx) => calcUserData(d.data(), d.id, idx + 1));
     setRankUsers(users);
@@ -352,20 +358,34 @@ useEffect(() => {
   return () => unsub();
 }, [db, tab]);
 
-  useEffect(() => {
+// 2. LOAD USER HIỆN TẠI + TÍNH HẠNG
+// Khi nhiều người cùng 0 điểm thì rank sẽ sort theo nameLower
+useEffect(() => {
   if (!currentUserId) return;
   const unsub = onSnapshot(doc(db, "users", currentUserId), async (snap) => {
     if (snap.exists()) {
       const data = snap.data();
       const myScore = data.huhaScore || 0;
+      const myNameLower = (data.nameLower || data.username || "user").toLowerCase();
 
-      // Tính rank: đếm user có điểm cao hơn mình
-      const rankQuery = query(
+      // Đếm người có điểm cao hơn HOẶC cùng điểm nhưng tên đứng trước
+      const higherScoreQuery = query(
         collection(db, "users"),
         where("huhaScore", ">", myScore)
       );
-      const rankSnap = await getDocs(rankQuery);
-      const myRank = rankSnap.size + 1; // +1 vì mình đứng sau tất cả người hơn điểm
+      
+      const sameScoreQuery = query(
+        collection(db, "users"),
+        where("huhaScore", "==", myScore),
+        where("nameLower", "<", myNameLower)
+      );
+
+      const [higherSnap, sameSnap] = await Promise.all([
+        getDocs(higherScoreQuery),
+        getDocs(sameScoreQuery)
+      ]);
+      
+      const myRank = higherSnap.size + sameSnap.size + 1;
 
       setUserData(calcUserData(data, snap.id, myRank));
     }
@@ -373,6 +393,7 @@ useEffect(() => {
   return () => unsub();
 }, [currentUserId, db]);
 
+// 3. TOP 3 VINH DANH - Dùng calcUserData để đồng bộ tên/ảnh
 useEffect(() => {
   const q = query(
     collection(db, "users"),
@@ -381,14 +402,18 @@ useEffect(() => {
     limit(3)
   );
   const unsub = onSnapshot(q, (snap) => {
-    setTopUsers(snap.docs.map((d, idx) => ({
-      uid: d.id,
-      name: d.data().displayName || d.data().name || d.data().nameLower || d.data().username,
-      avatar: d.data().photoURL || d.data().avatar,
-      score: d.data().huhaScore || 0,
-      level: Math.floor((d.data().huhaScore || 0) / 100) + 1,
-      badge: idx === 0? "👑" : idx === 1? "🥈" : "🥉"
-    })));
+    const users = snap.docs.map((d, idx) => {
+      const u = calcUserData(d.data(), d.id, idx + 1);
+      return {
+        uid: u.uid,
+        name: u.name,
+        avatar: u.avatar,
+        score: u.huhaScore,
+        level: u.level,
+        badge: idx === 0? "👑" : idx === 1? "🥈" : "🥉"
+      };
+    });
+    setTopUsers(users);
   });
   return () => unsub();
 }, [db]);
