@@ -359,16 +359,30 @@ useEffect(() => {
 }, [db, tab]);
 
 // 2. LOAD USER HIỆN TẠI + TÍNH HẠNG
-// Khi nhiều người cùng 0 điểm thì rank sẽ sort theo nameLower
 useEffect(() => {
   if (!currentUserId) return;
-  const unsub = onSnapshot(doc(db, "users", currentUserId), async (snap) => {
+  
+  // Listener 1: Lấy data user, set ngay để hết loading
+  const unsubUser = onSnapshot(doc(db, "users", currentUserId), (snap) => {
     if (snap.exists()) {
       const data = snap.data();
-      const myScore = data.huhaScore || 0;
-      const myNameLower = (data.nameLower || data.username || "user").toLowerCase();
+      // Set data trước, rank tính sau
+      setUserData(calcUserData(data, snap.id, 0));
+    }
+  });
 
-      // Đếm người có điểm cao hơn HOẶC cùng điểm nhưng tên đứng trước
+  return () => unsubUser();
+}, [currentUserId, db]);
+
+// 2b. TÍNH RANK RIÊNG - chỉ chạy khi có userData
+useEffect(() => {
+  if (!userData?.uid || userData.huhaScore === undefined) return;
+
+  const calcRank = async () => {
+    try {
+      const myScore = userData.huhaScore;
+      const myNameLower = (userData.name || "user").toLowerCase();
+
       const higherScoreQuery = query(
         collection(db, "users"),
         where("huhaScore", ">", myScore)
@@ -387,11 +401,16 @@ useEffect(() => {
       
       const myRank = higherSnap.size + sameSnap.size + 1;
 
-      setUserData(calcUserData(data, snap.id, myRank));
+      setUserData(prev => prev ? { ...prev, rank: myRank } : null);
+    } catch (err) {
+      console.error("Lỗi tính rank:", err);
+      // Nếu lỗi index thì tạm set rank = 1
+      setUserData(prev => prev ? { ...prev, rank: 1 } : null);
     }
-  });
-  return () => unsub();
-}, [currentUserId, db]);
+  };
+
+  calcRank();
+}, [userData?.uid, userData?.huhaScore, userData?.name, db]);
 
 // 3. TOP 3 VINH DANH - Dùng calcUserData để đồng bộ tên/ảnh
 useEffect(() => {
