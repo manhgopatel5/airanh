@@ -368,7 +368,7 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [showLevelInfo, setShowLevelInfo] = useState(false);
 
 
-// 1. TAB XẾP HẠNG - Dùng calcUserData cho nhất quán
+// 1. TAB XẾP HẠNG - Thêm log + bắt lỗi
 useEffect(() => {
   if (tab!== "rank") return;
   const q = query(
@@ -378,21 +378,24 @@ useEffect(() => {
     limit(20)
   );
   const unsub = onSnapshot(q, (snap) => {
+    console.log("RANK SNAP:", snap.size, snap.empty, snap.docs.map(d => d.data().nameLower));
     const users = snap.docs.map((d, idx) => calcUserData(d.data(), d.id, idx + 1));
     setRankUsers(users);
+  }, (err) => {
+    console.error("RANK ERROR:", err.message);
+    setRankUsers([]);
   });
   return () => unsub();
 }, [db, tab]);
 
-// 2. LOAD USER HIỆN TẠI + TÍNH HẠNG
+// 2. LOAD USER HIỆN TẠI + TÍNH HẠNG - Giữ nguyên
 useEffect(() => {
   if (!currentUserId) return;
   
-  // Listener 1: Lấy data user, set ngay để hết loading
   const unsubUser = onSnapshot(doc(db, "users", currentUserId), (snap) => {
     if (snap.exists()) {
       const data = snap.data();
-      // Set data trước, rank tính sau
+      console.log("USER DATA:", data); // Thêm dòng này check field
       setUserData(calcUserData(data, snap.id, 0));
     }
   });
@@ -400,7 +403,7 @@ useEffect(() => {
   return () => unsubUser();
 }, [currentUserId, db]);
 
-// 2b. TÍNH RANK RIÊNG - chỉ chạy khi có userData
+// 2b. TÍNH RANK RIÊNG - Thêm log lỗi chi tiết
 useEffect(() => {
   if (!userData?.uid || userData.huhaScore === undefined) return;
 
@@ -426,19 +429,19 @@ useEffect(() => {
       ]);
       
       const myRank = higherSnap.size + sameSnap.size + 1;
+      console.log("CALC RANK:", { myScore, myNameLower, higher: higherSnap.size, same: sameSnap.size, myRank });
 
-      setUserData(prev => prev ? { ...prev, rank: myRank } : null);
-    } catch (err) {
-      console.error("Lỗi tính rank:", err);
-      // Nếu lỗi index thì tạm set rank = 1
-      setUserData(prev => prev ? { ...prev, rank: 1 } : null);
+      setUserData(prev => prev? {...prev, rank: myRank } : null);
+    } catch (err: any) {
+      console.error("Lỗi tính rank:", err.message); // Log chi tiết lỗi
+      setUserData(prev => prev? {...prev, rank: 1 } : null);
     }
   };
 
   calcRank();
 }, [userData?.uid, userData?.huhaScore, userData?.name, db]);
 
-// 3. TOP 3 VINH DANH - Dùng calcUserData để đồng bộ tên/ảnh
+// 3. TOP 3 VINH DANH - Thêm log + bắt lỗi
 useEffect(() => {
   const q = query(
     collection(db, "users"),
@@ -447,6 +450,7 @@ useEffect(() => {
     limit(3)
   );
   const unsub = onSnapshot(q, (snap) => {
+    console.log("TOP3 SNAP:", snap.size, snap.empty, snap.docs.map(d => ({ name: d.data().nameLower, score: d.data().huhaScore })));
     const users = snap.docs.map((d, idx) => {
       const u = calcUserData(d.data(), d.id, idx + 1);
       return {
@@ -459,6 +463,9 @@ useEffect(() => {
       };
     });
     setTopUsers(users);
+  }, (err) => {
+    console.error("TOP3 ERROR:", err.message); // Thêm dòng này để bắt lỗi index
+    setTopUsers([]);
   });
   return () => unsub();
 }, [db]);
