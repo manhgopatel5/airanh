@@ -11,7 +11,7 @@ import {
   useCallback,
 } from "react";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
-import { doc, onSnapshot, Timestamp } from "firebase/firestore";
+import { doc, onSnapshot, Timestamp, getDoc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import {
   ref,
   onValue,
@@ -41,6 +41,7 @@ export type AppUser = {
   createdAt?: Timestamp | string;
   updatedAt?: Timestamp | string;
   onboardingCompleted: boolean;
+  huhaScore?: number; // THÊM DÒNG NÀY
 };
 
 type AuthContextType = {
@@ -128,6 +129,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // HÀM MỚI: Thêm field huhaScore và nameLower nếu thiếu
+  const updateUserLogin = useCallback(async (firebaseUser: User) => {
+    if (!db) return;
+    const userRef = doc(db, "users", firebaseUser.uid);
+    const snap = await getDoc(userRef);
+    
+    if (snap.exists()) {
+      const data = snap.data();
+      const updates: any = {};
+      if (data.huhaScore === undefined) updates.huhaScore = 0;
+      if (data.nameLower === undefined) updates.nameLower = data.displayName?.toLowerCase() || "";
+      
+      if (Object.keys(updates).length > 0) {
+        await updateDoc(userRef, updates);
+      }
+    } else {
+      // Nếu chưa có doc thì tạo mới luôn
+      await setDoc(userRef, {
+        uid: firebaseUser.uid,
+        displayName: firebaseUser.displayName || "User",
+        nameLower: firebaseUser.displayName?.toLowerCase() || "",
+        photoURL: firebaseUser.photoURL || "",
+        email: firebaseUser.email,
+        huhaScore: 0,
+        createdAt: serverTimestamp()
+      });
+    }
+  }, [db]);
+
   const refreshToken = useCallback(async () => {
     if (!auth?.currentUser) return;
     const token = await auth.currentUser.getIdToken(true);
@@ -165,6 +195,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       try {
+        // GỌI HÀM UPDATE Ở ĐÂY
+        await updateUserLogin(firebaseUser);
+
         // Fix 2: Không toast gì ở đây để tránh chặn redirect
         const token = await firebaseUser.getIdToken();
         setCookie('__session', token, {
@@ -220,7 +253,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       userDataUnsub.current?.();
       presenceUnsub.current?.();
     };
-  }, [auth, db, rtdb, createUserProfile]);
+  }, [auth, db, rtdb, createUserProfile, updateUserLogin]);
 
   const logout = useCallback(async () => {
     if (!auth) return;
