@@ -336,31 +336,7 @@ const RankTab = memo(({ rankUsers, currentUserId }: { rankUsers: UserProgress[];
 
 export default function LeaderboardModal({ onClose, currentUserId }: { onClose: () => void; currentUserId?: string }) {
   const db = getFirebaseDB();
-  useEffect(() => {
-    const addMissingFields = async () => {
-      const usersRef = collection(db, "users");
-      const snap = await getDocs(usersRef);
-      
-      const batch = writeBatch(db);
-      let count = 0;
-      snap.docs.forEach(doc => {
-        const data = doc.data();
-        if (data.huhaScore === undefined) {
-          batch.update(doc.ref, { huhaScore: 0 });
-          count++;
-        }
-      });
-      
-      if (count > 0) {
-        await batch.commit();
-        console.log(`Đã update ${count} users`);
-      } else {
-        console.log("Tất cả user đã có huhaScore");
-      }
-    };
-    
-    addMissingFields();
-  }, [db]); // Chạy 1 lần lúc mount
+  
   const [tab, setTab] = useState<"overview" | "badges" | "rank">("overview");
   const [userData, setUserData] = useState<UserProgress | null>(null);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
