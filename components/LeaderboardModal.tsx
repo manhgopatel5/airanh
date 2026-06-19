@@ -8,7 +8,7 @@ import {
   collection,
   query,
   getDocs, 
-  writeBatch,
+  
   where,
   orderBy,
   limit,
