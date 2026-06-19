@@ -3,7 +3,6 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { nanoid } from 'nanoid';
 
-
 const generateSearchKeywords = (name: string, userId: string, username?: string): string[] => {
   const keywords = new Set<string>();
   const nameLower = name.toLowerCase().trim();
@@ -44,6 +43,11 @@ export async function POST(req: NextRequest) {
     const userSnap = await userRef.get();
 
     if (userSnap.exists) {
+      // FIX: Nếu user cũ chưa có huhaScore thì update thêm
+      const data = userSnap.data();
+      if (data?.huhaScore === undefined) {
+        await userRef.update({ huhaScore: 0 });
+      }
       return NextResponse.json({ success: true, existed: true });
     }
 
@@ -58,12 +62,12 @@ export async function POST(req: NextRequest) {
       // Generate username unique
       const baseName = name || email?.split('@')[0] || 'user';
       let baseUsername = baseName
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, "")
-      .replace(/[^a-z0-9]/g, "")
-      .slice(0, 20);
+     .toLowerCase()
+     .normalize("NFD")
+     .replace(/[\u0300-\u036f]/g, "")
+     .replace(/\s+/g, "")
+     .replace(/[^a-z0-9]/g, "")
+     .slice(0, 20);
 
       let username = baseUsername || 'user';
       let counter = 1;
@@ -95,9 +99,10 @@ export async function POST(req: NextRequest) {
         searchKeywords: generateSearchKeywords(displayName, userId, username),
         hidden: false,
         deletedAt: null,
+        huhaScore: 0, // ĐÃ THÊM DÒNG NÀY
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-        onboardingCompleted: false, // QUAN TRỌNG: Mặc định false
+        onboardingCompleted: false,
       };
 
       tx.set(userRef, newUser);
