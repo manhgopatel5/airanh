@@ -10,33 +10,34 @@ service cloud.firestore {
     }
     function isPublic(chatId) { return chatId.matches('public_.*'); }
 
-    // ========== ADMIN CREDENTIALS ==========
-    match /admin_credentials/{docId} {
-      allow read: if true;
-      allow write: if false;
-    }
+   // ========== ADMIN CREDENTIALS ==========
+match /admin_credentials/{docId} {
+  allow read: if true;
+  allow write: if false;
+}
 
-    match /users/{userId} {
-      // Ai đăng nhập cũng xem được để làm BXH
-      allow read: if isSignedIn();
-      
-      // Chủ acc chỉ được update field của mình, không tự set huhaScore/level/rank
-      allow update: if isOwner(userId) 
-        && request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly(['name', 'avatar', 'bio', 'birthday', 'phone', 'title', 'location', 
-                   'skills', 'portfolio', 'vip', 'online', 'lastSeen']);
-      
-      allow create: if isOwner(userId);
-      allow delete: if isAdmin();
+match /users/{userId} {
+  // ĐÃ SỬA: Cho phép đọc public để query BXH chạy được
+  // isSignedIn() vẫn chặn orderBy toàn collection
+  allow read: if true;
+  
+  // ĐÃ SỬA: Thêm 'nameLower' vào list cho phép update
+  allow update: if isOwner(userId) 
+    && request.resource.data.diff(resource.data).changedKeys()
+      .hasOnly(['name', 'avatar', 'bio', 'birthday', 'phone', 'title', 'location', 
+               'skills', 'portfolio', 'vip', 'online', 'lastSeen', 'nameLower']);
+  
+  allow create: if isOwner(userId);
+  allow delete: if isAdmin();
 
-      match /friends/{friendId} {
-        allow read: if isOwner(userId);
-        allow create: if false;
-        allow update: if isSignedIn()
-          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'removedAt', 'updatedAt']);
-        allow delete: if isOwner(userId);
-      }
-    }
+  match /friends/{friendId} {
+    allow read: if isOwner(userId);
+    allow create: if false;
+    allow update: if isSignedIn()
+      && request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'removedAt', 'updatedAt']);
+    allow delete: if isOwner(userId);
+  }
+}
 
     // ========== EVENTS - CHỈ ADMIN MỚI SỬA ĐƯỢC ==========
     match /events/{eventId} {
