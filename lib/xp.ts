@@ -1,4 +1,4 @@
-import { doc, updateDoc, increment, getDoc, runTransaction } from "firebase/firestore";
+import { doc, updateDoc, increment, getDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "./firebase";
 
 export const XP_REWARDS = {
@@ -62,20 +62,29 @@ export const checkDailyLoginXP = async (uid: string) => {
 
     await updateDoc(userRef, {
       huhaScore: increment(XP_REWARDS.DAILY_LOGIN),
-      lastLoginAt: new Date(),
+      lastLoginAt: serverTimestamp(),
       "stats.streakDays": newStreak,
     });
   }
 };
 
 // 2. Hoàn thành job - gọi khi job status = completed
-export const onJobCompleted = async (uid: string, rating: number) => {
+export const onJobCompleted = async (uid: string, rating: number, taskId: string) => {
+  const taskRef = doc(db, "tasks", taskId);
+  const taskSnap = await getDoc(taskRef);
+  if (!taskSnap.exists()) return;
+
+  const data = taskSnap.data();
+  if (data.xpClaimed) return; // Đã cộng rồi thì thôi
+
   await addXP(uid, "COMPLETE_JOB");
   if (rating >= 4) {
     await addXP(uid, "REVIEW_4_5_STAR");
   } else {
     await addXP(uid, "REVIEW_1_3_STAR");
   }
+
+  await updateDoc(taskRef, { xpClaimed: true });
 };
 
 // 3. Có bạn mới - gọi khi accept friend request
