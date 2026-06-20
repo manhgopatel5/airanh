@@ -58,10 +58,16 @@ export default function TaskDetailPage() {
 
   // Cộng XP khi job hoàn thành - chỉ chạy 1 lần khi status đổi sang completed
   useEffect(() => {
-  if (task?.status === "completed" && task?.userId &&!task?.xpClaimed) {
+  if (!task || task.xpClaimed) return;
+  
+  if (task.type === "task" && task.status === "completed") {
     onJobCompleted(task.userId, task.rating || 5, task.id).catch(console.error);
   }
-}, [task?.status, task?.userId, task?.rating, task?.xpClaimed, task?.id]);
+  
+  if (task.type === "plan" && task.status === "completed") {
+    onPlanCompleted(task.userId, task.rating || 5, task.id).catch(console.error);
+  }
+}, [task?.status, task?.userId, task?.rating, task?.xpClaimed, task?.id, task?.type]);
   if (loading) {
     return (
       <div className="min-h-dvh bg-white px-4 py-5 dark:bg-zinc-950">
