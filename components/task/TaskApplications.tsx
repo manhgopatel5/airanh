@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiCheck, FiX, FiStar } from "react-icons/fi";
+import { FiCheck, FiX, FiStar, FiUsers } from "react-icons/fi";
 import { doc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
@@ -57,13 +57,29 @@ export default function TaskApplications({ applications, task, currentUserId, on
     return `${Math.floor(seconds / 86400)} ngày trước`;
   };
 
+  const acceptedApps = applications.filter(a => a.status === 'accepted');
+  const pendingApps = applications.filter(a => a.status === 'pending');
+  const isFull = task.totalSlots > 0 && acceptedApps.length >= task.totalSlots;
+  const canAcceptMore =!isFull && task.status === 'open';
+
   const handleAcceptApp = async (appId: string, applicantId: string) => {
+    if (!canAcceptMore) {
+      toast.error("Task đã đủ người");
+      return;
+    }
+
     const db = getFirebaseDB();
     try {
       await updateDoc(doc(db, 'applications', appId), {
         status: 'accepted',
         updatedAt: serverTimestamp()
       });
+
+      await updateDoc(doc(db, 'tasks', task.id), {
+        joined: acceptedApps.length + 1,
+        status: acceptedApps.length + 1 >= task.totalSlots? 'full' : 'open'
+      });
+
       const chatId = [currentUserId, applicantId].sort().join("_");
       await setDoc(doc(db, "chats", chatId), {
         members: [currentUserId, applicantId],
@@ -71,6 +87,7 @@ export default function TaskApplications({ applications, task, currentUserId, on
         lastMessageAt: serverTimestamp(),
         createdAt: serverTimestamp(),
       }, { merge: true });
+
       toast.success("Đã duyệt ứng viên");
       navigator.vibrate?.(10);
       onUpdate();
@@ -100,16 +117,14 @@ export default function TaskApplications({ applications, task, currentUserId, on
     const db = getFirebaseDB();
 
     try {
-      // 1. Update task thành completed + rating
       await updateDoc(doc(db, "tasks", task.id), {
         status: "completed",
         rating: rating,
       });
 
-      // 2. Cộng XP cho applicant được hoàn thành
       await onJobCompleted(completingApp.userId, rating, task.id);
 
-      toast.success(`Đã hoàn thành + đánh giá ${rating} sao`);
+      toast.success(`Đã hoàn thành + ${rating} sao + XP`);
       navigator.vibrate?.(15);
       setCompletingApp(null);
       onUpdate();
@@ -121,15 +136,20 @@ export default function TaskApplications({ applications, task, currentUserId, on
     }
   };
 
-  const acceptedApps = applications.filter(a => a.status === 'accepted');
-
   return (
     <>
       <div ref={appsRef} className="bg-white dark:bg-zinc-950">
         <div className="py-4 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800">
-          <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
-            Ứng viên ({applications.length})
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
+              Ứng viên ({applications.length})
+            </h3>
+            {acceptedApps.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-xs font-semibold text-green-600 dark:text-green-400">
+                {acceptedApps.length}/{task.totalSlots} đã duyệt
+              </span>
+            )}
+          </div>
           {applications.length > 1 && (
             <motion.button
               whileTap={{ scale: 0.95 }}
@@ -143,6 +163,13 @@ export default function TaskApplications({ applications, task, currentUserId, on
             </motion.button>
           )}
         </div>
+
+        {isFull && (
+          <div className="py-2 px-3 bg-amber-50 dark:bg-amber-900/20 flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
+            <FiUsers size={14} />
+            <span>Task đã đủ {task.totalSlots} người</span>
+          </div>
+        )}
 
         {applications.length === 0? (
           <div className="py-12 text-center">
@@ -187,7 +214,8 @@ export default function TaskApplications({ applications, task, currentUserId, on
                             navigator.vibrate?.(8);
                             handleAcceptApp(app.id, app.userId);
                           }}
-                          className="h-8 px-3 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center gap-1.5 active:bg-green-200 dark:active:bg-green-900/50 transition-all"
+                          disabled={!canAcceptMore}
+                          className="h-8 px-3 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center gap-1.5 active:bg-green-200 dark:active:bg-green-900/50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           <div className="w-4 h-4 rounded-full bg-[#34C759] flex items-center justify-center">
                             <FiCheck size={10} strokeWidth={3} className="text-white" />
@@ -212,15 +240,22 @@ export default function TaskApplications({ applications, task, currentUserId, on
                       </>
                     )}
 
-                    {app.status === 'accepted' && task.status!== 'completed' && (
-                      <motion.button
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setCompletingApp(app)}
-                        className="h-8 px-3 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center gap-1.5 active:bg-blue-200 dark:active:bg-blue-900/50 transition-all"
-                      >
-                        <FiStar size={14} className="text-blue-500" />
-                        <span className="text-sm font-semibold text-blue-500">Hoàn thành</span>
-                      </motion.button>
+                    {app.status === 'accepted' && (
+                      <>
+                        <span className="px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-xs font-semibold text-green-600 dark:text-green-400">
+                          Đã duyệt
+                        </span>
+                        {task.status!== 'completed' && (
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setCompletingApp(app)}
+                            className="h-8 px-3 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center gap-1.5 active:bg-blue-200 dark:active:bg-blue-900/50 transition-all"
+                          >
+                            <FiStar size={14} className="text-blue-500" />
+                            <span className="text-sm font-semibold text-blue-500">Hoàn thành</span>
+                          </motion.button>
+                        )}
+                      </>
                     )}
 
                     {app.status === 'rejected' && (
@@ -234,19 +269,18 @@ export default function TaskApplications({ applications, task, currentUserId, on
         )}
       </div>
 
-      {/* Dialog chọn sao khi hoàn thành */}
       <Dialog.Root open={!!completingApp} onOpenChange={(open) =>!open && setCompletingApp(null)}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40 z-[70] backdrop-blur-sm" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white rounded-3xl p-5 z-[70]">
-            <Dialog.Title className="text-lg font-bold mb-2">Hoàn thành job</Dialog.Title>
-            <p className="text-sm text-zinc-500 mb-4">Đánh giá {completingApp?.userName}</p>
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white dark:bg-zinc-900 rounded-3xl p-5 z-[70]">
+            <Dialog.Title className="text-lg font-bold mb-2 text-zinc-900 dark:text-zinc-100">Hoàn thành job</Dialog.Title>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">Đánh giá {completingApp?.userName}</p>
 
             <div className="flex justify-center gap-2 mb-5">
               {[1,2,3,4,5].map(star => (
                 <button key={star} onClick={() => setRating(star)}>
                   <FiStar
-                    className={`w-10 h-10 ${rating >= star? "fill-amber-400 text-amber-400" : "text-zinc-300"}`}
+                    className={`w-10 h-10 transition-colors ${rating >= star? "fill-amber-400 text-amber-400" : "text-zinc-300 dark:text-zinc-700"}`}
                   />
                 </button>
               ))}
@@ -255,14 +289,14 @@ export default function TaskApplications({ applications, task, currentUserId, on
             <div className="flex gap-2">
               <button
                 onClick={() => setCompletingApp(null)}
-                className="flex-1 h-11 rounded-2xl border border-zinc-200 font-semibold"
+                className="flex-1 h-11 rounded-2xl border border-zinc-200 dark:border-zinc-800 font-semibold text-zinc-900 dark:text-zinc-100"
               >
                 Hủy
               </button>
               <button
                 onClick={handleCompleteJob}
                 disabled={loading}
-                className="flex-1 h-11 rounded-2xl bg-zinc-900 text-white font-bold disabled:opacity-50"
+                className="flex-1 h-11 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold disabled:opacity-50"
               >
                 {loading? "Đang lưu..." : "Xác nhận"}
               </button>
