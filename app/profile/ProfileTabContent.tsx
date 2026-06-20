@@ -1,5 +1,5 @@
 "use client";
-
+import { onProfileUpdate } from "@/lib/xp"; // thêm dòng này
 import { useRouter } from "next/navigation";
 import { Database } from "lucide-react"; // thêm icon
 import { signOut, updateProfile } from "firebase/auth";
@@ -268,74 +268,76 @@ const ADMIN_EMAILS = ["justastormyday@gmail.com", "hongann2210@gmail.com"];
     setShowNameModal(true);
   };
 
-  const handleUpdateName = async () => {
-    if (!user) return;
 
-    const error = validateRealName(displayName);
 
-    if (error) {
-      toast.error(error);
-      return;
-    }
+const handleUpdateName = async () => {
+  if (!user) return;
 
-    const newName = displayName.trim();
+  const error = validateRealName(displayName);
+  if (error) {
+    toast.error(error);
+    return;
+  }
 
-    if (newName === userData?.displayName) {
-      setShowNameModal(false);
-      return;
-    }
-
-    const oldName = userData?.displayName;
-
+  const newName = displayName.trim();
+  if (newName === userData?.displayName) {
     setShowNameModal(false);
+    return;
+  }
+
+  const oldName = userData?.displayName;
+  setShowNameModal(false);
+
+  setUserData((prev) =>
+    prev
+     ? {
+         ...prev,
+          displayName: newName,
+        }
+      : null
+  );
+
+  try {
+    await Promise.all([
+      updateProfile(user, {
+        displayName: newName,
+      }),
+
+      updateDoc(doc(db, "users", user.uid), {
+        displayName: newName,
+        nameLower: newName.toLowerCase(),
+        lastNameChangeAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }),
+    ]);
+
+    // CỘNG XP KHI SAVE PROFILE THÀNH CÔNG
+    await onProfileUpdate(user.uid); // +100 XP
+
+    await user.reload();
+
+    toast.success(
+      "Cập nhật tên thành công. +100 XP. Bạn có thể đổi lại sau 3 tháng"
+    );
+
+    if ("vibrate" in navigator) {
+      navigator.vibrate(8);
+    }
+  } catch {
+    toast.error("Cập nhật thất bại");
 
     setUserData((prev) =>
       prev
        ? {
            ...prev,
-            displayName: newName,
+            displayName: oldName || "",
           }
         : null
     );
 
-    try {
-      await Promise.all([
-        updateProfile(user, {
-          displayName: newName,
-        }),
-
-        updateDoc(doc(db, "users", user.uid), {
-          displayName: newName,
-          nameLower: newName.toLowerCase(),
-          lastNameChangeAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        }),
-      ]);
-
-      await user.reload();
-
-      toast.success(
-        "Cập nhật tên thành công. Bạn có thể đổi lại sau 3 tháng"
-      );
-
-      if ("vibrate" in navigator) {
-        navigator.vibrate(8);
-      }
-    } catch {
-      toast.error("Cập nhật thất bại");
-
-      setUserData((prev) =>
-        prev
-         ? {
-             ...prev,
-              displayName: oldName || "",
-            }
-          : null
-      );
-
-      setDisplayName(oldName || "");
-    }
-  };
+    setDisplayName(oldName || "");
+  }
+};
 
   const handleAvatarClick = (
     e: React.MouseEvent
