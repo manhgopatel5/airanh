@@ -9,7 +9,7 @@ import { FiArrowLeft, FiInbox } from "react-icons/fi";
 
 import { useTask } from "@/hooks/useTask";
 import { useComments } from "@/hooks/useComments";
-import { onJobCompleted } from "@/lib/xp";
+import { onJobCompleted, onPlanCompleted } from "@/lib/xp";
 
 import TaskDetailHeader from "@/components/task/TaskDetailHeader";
 import TaskInfoGrid from "@/components/task/TaskInfoGrid";
