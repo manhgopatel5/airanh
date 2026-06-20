@@ -6,7 +6,7 @@ import { CATEGORY_INFO, EventItem } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
 import { FiArrowLeft, FiUsers, FiMapPin, FiStar, FiFilter, FiX } from "react-icons/fi";
 import { RiEqualizerLine } from "react-icons/ri";
-// XÓA: import { useCheckinCount } from "@/hooks/useCheckinCount";
+import { onEventCheckin } from "@/lib/xp"; // THÊM DÒNG NÀY
 
 const PROVINCES = [
   "Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ",
@@ -49,8 +49,6 @@ type FilterState = {
   province: string | null;
 };
 
-// XÓA ExploreCard component
-
 export default function ExplorePage() {
   const router = useRouter();
   const [eventsData, setEventsData] = useState<EventItem[]>([]);
@@ -82,7 +80,7 @@ export default function ExplorePage() {
       try {
         const res = await fetch('/api/admin/events', { cache: 'no-store' });
         const data = await res.json();
-        setEventsData(data.events || []); // joined đã đúng sẵn
+        setEventsData(data.events || []);
       } catch (err) {
         console.error('Fetch events error:', err);
         setEventsData([]);
@@ -187,8 +185,8 @@ export default function ExplorePage() {
           <button
             onClick={() => setFilters(prev => ({...prev, category: null}))}
             className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
-        !filters.category
-          ? 'bg-[#0a84ff] text-white'
+       !filters.category
+         ? 'bg-[#0a84ff] text-white'
                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
             }`}
           >
@@ -200,7 +198,7 @@ export default function ExplorePage() {
               onClick={() => setFilters(prev => ({...prev, category: key}))}
               className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap flex items-center gap-1 ${
                 filters.category === key
-          ? 'bg-[#0a84ff] text-white'
+         ? 'bg-[#0a84ff] text-white'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
             >
@@ -222,7 +220,7 @@ export default function ExplorePage() {
               onClick={() => setFilters(prev => ({...prev, sortBy: sort.value as SortOption}))}
               className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
                 filters.sortBy === sort.value
-          ? 'bg-[#0a84ff] text-white'
+         ? 'bg-[#0a84ff] text-white'
                   : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
             >
@@ -281,7 +279,7 @@ export default function ExplorePage() {
                     <span className="flex items-center gap-1">
                       <FiMapPin size={12} />
                       {item.province} • {userLat && userLng && item.lat && item.lng
-                   ? formatDistance(getEventDistance(item))
+                  ? formatDistance(getEventDistance(item))
                         : '?km'}
                     </span>
                   </div>
@@ -329,7 +327,7 @@ export default function ExplorePage() {
                       onClick={() => setFilters(prev => ({...prev, minRating: rating}))}
                       className={`flex-1 h-11 rounded-xl text-sm font-[600] ${
                         filters.minRating === rating
-                  ? 'bg-[#0a84ff] text-white'
+                 ? 'bg-[#0a84ff] text-white'
                           : 'bg-zinc-100 dark:bg-zinc-800'
                       }`}
                     >
@@ -348,7 +346,7 @@ export default function ExplorePage() {
                       onClick={() => setFilters(prev => ({...prev, maxDistance: km}))}
                       className={`w-full h-11 rounded-xl text-sm font-[600] text-left px-4 ${
                         filters.maxDistance === km
-                  ? 'bg-[#0a84ff] text-white'
+                 ? 'bg-[#0a84ff] text-white'
                           : 'bg-zinc-100 dark:bg-zinc-800'
                       }`}
                     >
@@ -380,7 +378,12 @@ export default function ExplorePage() {
       <EventDetailModal
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
-        onCheckinSuccess={() => router.refresh()}
+        onCheckinSuccess={async () => {
+          if (selectedEvent?.id) {
+            await onEventCheckin(userLat? 'user-id' : '', selectedEvent.id); // THÊM DÒNG NÀY
+          }
+          router.refresh();
+        }}
       />
 
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}`}</style>
