@@ -9,6 +9,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
 import { getApp } from "firebase/app";
+import AddFriendModal from "@/components/AddFriendModal";
 import LeaderboardModal from "@/components/LeaderboardModal";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
@@ -57,8 +58,8 @@ import {
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ScanLine, Crown, Vote } from "lucide-react";
-import { Html5Qrcode } from "html5-qrcode";
+import { Crown, Vote } from "lucide-react";
+
 import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -157,6 +158,7 @@ const [showLeaderboard, setShowLeaderboard] = useState(false);
       setUserLng(Number(lng));
     }
   }, []);
+const [showAdd, setShowAdd] = useState(false);
 const requestGPS = useCallback(async () => {
   if (!navigator.geolocation) {
     toast.error("Trình duyệt không hỗ trợ GPS");
@@ -222,16 +224,16 @@ useEffect(() => {
   const [items, setItems] = useState<ChatItem[]>([]);
   const [friends, setFriends] = useState<FriendItem[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [search, setSearch] = useState<string>("");
+
   const [debounced, setDebounced] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [friendsLoading, setFriendsLoading] = useState<boolean>(false);
   const [notifLoading, setNotifLoading] = useState<boolean>(false);
-  const [adding, setAdding] = useState<boolean>(false);
+
 const [activeTab, setActiveTab] = useState<"all" | "unread" | "group" | "friends" | "notifications">("all");
   const [pinned, setPinned] = useState<string[]>([]);
-  const [showAdd, setShowAdd] = useState<boolean>(false);
-  const [addMode, setAddMode] = useState<"friend" | "group">("friend");
+
+
   const [groupName, setGroupName] = useState<string>("");
   const [selected, setSelected] = useState<string[]>([]);
 // State
@@ -518,14 +520,10 @@ const VIP_TIERS: VipTier[] = [
 const [pollQuestion, setPollQuestion] = useState<string>("");
 const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
 const [creatingPoll, setCreatingPoll] = useState<boolean>(false);
-  const [scanMode, setScanMode] = useState<"camera" | "upload">("camera");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(search), DEBOUNCE_DELAY);
-    return () => clearTimeout(timer);
-  }, [search]);
+
+
+
 
 
 
@@ -789,196 +787,11 @@ useEffect(() => {
     }
   }, [db]);
 
-  const stopScan = async (closeModal = true) => {
-    try {
-      if (scannerRef.current) {
-        if (scannerRef.current.isScanning) {
-          await scannerRef.current.stop();
-        }
-        await scannerRef.current.clear();
-        scannerRef.current = null;
-      }
-    } catch {}
-    if (closeModal) {
-      setShowScanQR(false);
-    }
-  };
-const handleScanFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+  
 
-  let qrReader = document.getElementById("qr-reader-file");
-  if (!qrReader) {
-    qrReader = document.createElement("div");
-    qrReader.id = "qr-reader-file";
-    qrReader.style.display = "none";
-    document.body.appendChild(qrReader);
-  }
 
-  const html5QrCode = new Html5Qrcode("qr-reader-file");
-  try {
-    const result = await html5QrCode.scanFile(file, false);
-    let userId = "";
 
-    if (result.includes("/u/")) {
-      userId = result.split("/u/")[1] || "";
-    } else if (result.startsWith("@")) {
-      userId = result.slice(1);
-    } else {
-      userId = result.trim();
-    }
 
-    if (userId) {
-      setSearch(userId);
-      setAddMode("friend");
-      setShowAdd(true);
-      toast.success("Đã quét QR thành công");
-    } else {
-      toast.error("Mã QR không hợp lệ");
-    }
-  } catch {
-    toast.error("Không đọc được QR từ ảnh");
-  } finally {
-    await html5QrCode.clear();
-    e.target.value = "";
-  }
-};
-
-useEffect(() => {
-  if (!showScanQR || scanMode!== "camera") return;
-
-  const startScan = async () => {
-    const html5QrCode = new Html5Qrcode("qr-reader");
-    scannerRef.current = html5QrCode;
-
-    try {
-      await html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          if ("vibrate" in navigator) navigator.vibrate(10);
-          let userId = "";
-
-          if (decodedText.includes("/u/")) {
-            userId = decodedText.split("/u/")[1] || "";
-          } else if (decodedText.startsWith("@")) {
-            userId = decodedText.slice(1);
-          } else {
-            userId = decodedText.trim();
-          }
-
-          if (userId) {
-            setSearch(userId);
-            setAddMode("friend");
-            setShowAdd(true);
-            stopScan();
-            toast.success("Đã quét QR");
-          } else {
-            toast.error("Mã QR không hợp lệ");
-          }
-        },
-        () => {}
-      );
-    } catch {
-      toast.error("Không mở được camera");
-      setShowScanQR(false);
-    }
-  };
-
-  startScan();
-  return () => {
-    stopScan(false);
-  };
-}, [showScanQR, scanMode]);
-
-const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<void> => {
-  event?.preventDefault();
-  setAdding(true);
-
-  try {
-    const auth = getAuth();
-    await auth.authStateReady();
-    const currentUser = auth.currentUser;
-    if (!currentUser?.uid) {
-      toast.error("Chưa đăng nhập. F5 lại trang.");
-      return;
-    }
-
-    const keyword = search.trim().replace("@", "");
-    if (!keyword) {
-      toast.error("Vui lòng nhập username");
-      return;
-    }
-
-    let targetUserId: string | null = null;
-    const lowerKeyword = keyword.toLowerCase();
-
-    const usernameDoc = await getDoc(doc(db, "usernames", lowerKeyword));
-    if (usernameDoc.exists()) targetUserId = usernameDoc.data().uid;
-
-    if (!targetUserId) {
-      toast.error(`Không tìm thấy @${keyword}`);
-      return;
-    }
-
-    if (targetUserId === currentUser.uid) {
-      toast.error("Không thể thêm chính mình");
-      return;
-    }
-
-    const requestId = `${currentUser.uid}_${targetUserId}`;
-    await setDoc(doc(db, "friendRequests", requestId), {
-      from: currentUser.uid,
-      to: targetUserId,
-      status: "pending",
-      createdAt: serverTimestamp()
-    });
-
-    toast.success("Đã gửi lời mời kết bạn");
-    setShowAdd(false);
-    setSearch("");
-  } catch (error: any) {
-    console.error("Add friend error:", error.code, error.message);
-    if (error.code === 'permission-denied') {
-      toast.error("Đã gửi lời mời hoặc các bạn đã là bạn bè");
-    } else {
-      toast.error(`Lỗi: ${error.message || "Không thể gửi lời mời"}`);
-    }
-  } finally {
-    setAdding(false);
-  }
-}, [search, db]);
-
-const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) => {
-  if (!user?.uid) return;
-  setAdding(true);
-
-  try {
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const acceptFn = httpsCallable(functions, 'acceptFriendRequest');
-
-    const result = await acceptFn({
-      fromUid: notif.fromUid,
-      notifId: notif.id
-    });
-
-    const data = result.data as { chatId: string };
-    toast.success(`Đã kết bạn với ${notif.fromName}`);
-    router.push(`/chat/${data.chatId}`);
-
-  } catch (error: any) {
-    console.error(error);
-    if (error.code === 'functions/not-found') {
-      toast.error("Lời mời đã hết hạn");
-    } else if (error.code === 'functions/already-exists') {
-      toast.error("Các bạn đã là bạn bè");
-    } else {
-      toast.error("Lỗi: " + error.message);
-    }
-  } finally {
-    setAdding(false);
-  }
-}, [user?.uid, router]);
 
 const handleDeclineFriendRequest = useCallback(async (notif: NotificationItem) => {
   const auth = getAuth();
@@ -1409,7 +1222,7 @@ return (
   <div className="grid grid-cols-5 gap-2">
     {[
       { label: "Trang chủ", icon: FiHome, color: "bg-gradient-to-br from-[#0a84ff] to-purple-500", onClick: () => setActiveTab("all") },
-      { label: "Mời bạn", icon: FiUserPlus, color: "bg-blue-500", onClick: () => setShowAdd(true) },
+{ label: "Mời bạn", icon: FiUserPlus, color: "bg-blue-500", onClick: () => setShowAdd(true) },
       { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => setActiveTab("friends") },
       { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => setActiveTab("group") },
       { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => setActiveTab("notifications") },
@@ -1974,102 +1787,9 @@ return (
   }}
 />
 
-        {showAdd && (
-          <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-2xl" onClick={() => setShowAdd(false)} />
-            <div className="relative w-full sm:max-w-[380px] bg-[#f5f5f7] dark:bg-zinc-900 sm:rounded-[20px] rounded-[20px] shadow-2xl max-h-[85vh] flex flex-col animate-in fade-in zoom-in duration-200">
-              <div className="w-[36px] h-[5px] bg-black/15 dark:bg-white/15 rounded-full mx-auto mt-2.5 sm:hidden flex-shrink-0" />
-              <div className="flex items-center justify-between px-5 pt-4 pb-3 flex-shrink-0">
-                <h2 className="text-[20px] font-semibold tracking-tight">Tin nhắn mới</h2>
-                <button onClick={() => setShowAdd(false)} className="w-7 h-7 -mr-1 flex items-center justify-center text-[#8e8e93] active:opacity-60 transition-opacity" aria-label="Đóng"><FiX size={22} /></button>
-              </div>
-              <div className="px-4 pb-3 flex-shrink-0">
-                <div className="grid grid-cols-2 gap-1 p-1 bg-black/[0.04] dark:bg-white/[0.06] rounded-[10px]">
-                  {[{ id: "friend", label: "Thêm bạn", icon: FiUserPlus }, { id: "group", label: "Tạo nhóm", icon: FiUsers }].map((tab) => (
-                    <button key={tab.id} onClick={() => setAddMode(tab.id as any)} className={`h-[30px] rounded-[7px] text-[14px] font-[550] flex items-center justify-center gap-1.5 transition-all duration-200 ${addMode === tab.id? "bg-white dark:bg-zinc-800 shadow-sm text-black dark:text-white" : "text-[#8e8e93] dark:text-zinc-500"}`}>
-                      <tab.icon size={15} />{tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex-1 overflow-hidden flex flex-col min-h-0 px-5 pb-5">
-                {addMode === "friend"? (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-3 gap-2">
-                      <button type="button" onClick={() => { setShowScanQR(true); setScanMode("camera"); }} className="h-[44px] bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[14px] font-[550] flex items-center justify-center gap-1.5 active:scale-95 transition">
-                        <ScanLine size={18} /> Quét
-                      </button>
-                      <button type="button" onClick={() => fileInputRef.current?.click()} className="h-[44px] bg-white dark:bg-zinc-800 border-black/10 dark:border-white/10 rounded-[12px] text-[14px] font-[550] flex items-center justify-center gap-1.5 active:scale-95 transition">
-                        <FiUpload size={18} /> Ảnh QR
-                      </button>
-                      <button type="button" onClick={() => setAddMode("friend")} className="h-[44px] bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[14px] font-[550] flex items-center justify-center gap-1.5 active:scale-95 transition">
-                        <FiUserPlus size={18} /> Thủ công
-                      </button>
-                    </div>
-                    <form onSubmit={handleAddFriend} className="space-y-3">
-                      <div className="relative">
-                        <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8e93] pointer-events-none" size={18} />
-                        <input type="search" inputMode="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ID hoặc @username" className={`w-full h-[44px] pl-10 pr-3.5 bg-white dark:bg-zinc-800 border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none ${primaryBorder} focus:ring-4 ${primaryRing} transition-all`} autoFocus autoComplete="off" autoCorrect="off" spellCheck={false} name="search-user-not-login" />
-                      </div>
-                      <button type="submit" disabled={adding ||!search.trim()} className={`w-full h-[44px] ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded-[12px] text-[16px] font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2`}>
-                        {adding && <FiLoader className="animate-spin" size={18} />}{adding? "Đang tìm" : "Tiếp tục"}
-                      </button>
-                    </form>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleScanFromFile} />
-                  </div>
-                ) : (
-                  <div className="flex-1 flex flex-col min-h-0 space-y-3">
-                    <input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Tên nhóm" className={`w-full h-[44px] px-3.5 bg-white dark:bg-zinc-800 border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none ${primaryBorder} focus:ring-4 ${primaryRing} transition-all`} maxLength={30} />
-                    <div className="flex-1 bg-white dark:bg-zinc-800 rounded-[12px] border border-black/10 dark:border-white/10 overflow-hidden flex flex-col min-h-0">
-                      <div className="px-3 py-2.5 bg-white/80 dark:bg-zinc-800/80 backdrop-blur border-b border-black/5 dark:border-white/5 flex-shrink-0">
-    <p className="text-[13px] font-medium text-[#8e8e93] dark:text-zinc-500">Đã chọn {selected.length} người</p>
-                      </div>
-                      <div className="flex-1 overflow-auto">
-                        {friendsForGroup.length === 0? (
-                          <div className="p-8 text-center"><p className="text-[14px] text-[#8e8e93] dark:text-zinc-500">Chưa có bạn bè</p></div>
-                        ) : (
-                          <div className="divide-y divide-black/5 dark:divide-white/5">
-                            {friendsForGroup.map((person) => (
-                              <label key={person.uid} className="flex items-center gap-3 px-3 py-2.5 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] cursor-pointer active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors">
-                                <input type="checkbox" checked={selected.includes(person.uid)} onChange={(e) => setSelected((current) => e.target.checked? [...current, person.uid] : current.filter((id) => id!== person.uid))} className={`w-[20px] h-[20px] rounded-[6px] border-2 border-[#c7c7cc] dark:border-zinc-600 ${primaryText} focus:ring-0 focus:ring-offset-0 checked:${primaryBgSolid} checked:border-transparent transition-colors`} />
-                                <img src={person.avatar} alt={person.name} className="w-9 h-9 rounded-full object-cover bg-gray-100 dark:bg-zinc-800 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[15px] leading-5 font-normal truncate">{person.name}</p>
-                                  <p className="text-[13px] leading-4 text-[#8e8e93] dark:text-zinc-500">@{person.username || person.userId}</p>
-                                </div>
-                                {selected.includes(person.uid) && <div className={`w-5 h-5 ${primaryBgSolid} rounded-full flex items-center justify-center flex-shrink-0`}><FiCheck className="text-white" size={12} strokeWidth={3} /></div>}
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <button onClick={handleCreateGroup} disabled={adding ||!groupName.trim() || selected.length < 1} className={`w-full h-[44px] ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded-[12px] text-[16px] font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2 flex-shrink-0`}>
-                      {adding && <FiLoader className="animate-spin" size={18} />}Tạo nhóm ({selected.length + 1})
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+    
 
-        {showScanQR && (
-          <div className="fixed inset-0 bg-black z-[60]">
-            <div id="qr-reader" className={scanMode === "camera"? "w-full h-full" : "hidden"} />
-            <div id="qr-reader-file" className="hidden" />
-            <button
-              onClick={() => stopScan()}
-              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center"
-            >
-              <FiX className="w-5 h-5 text-white" />
-            </button>
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
-              <p className="font-bold">Đưa mã QR vào khung</p>
-              <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
-            </div>
-          </div>
-        )}
+
 {showPoll && (
   <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/40 backdrop-blur-2xl" onClick={() => setShowPoll(false)} />
@@ -2362,6 +2082,7 @@ return (
   </div>
 )}
 <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+<AddFriendModal open={showAdd} onClose={() => setShowAdd(false)} />
 <GpsRequiredModal 
   open={showGpsModal} 
   onClose={() => setShowGpsModal(false)} 
