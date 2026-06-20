@@ -654,10 +654,10 @@ return (
       <span>Streak hàng ngày</span>
       <span className="font-semibold">+5 XP/ngày</span>
     </div>
-    <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-bold">
-      <span>Tổng XP hiện tại</span>
-      <span>{userData?.huhaScore || 0} XP</span>
-    </div>
+ <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-bold">
+  <span>Tổng XP hiện tại</span>
+  <span>{userData?.huhaScore?.toLocaleString() || 0} XP</span>
+</div>
     <div className="text-xs text-blue-700 mt-1">
       Level tăng theo công thức: 100 × Level^1.5 XP
     </div>
