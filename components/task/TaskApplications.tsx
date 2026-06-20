@@ -9,7 +9,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import type { FeedTask } from "@/types/task";
-import type { FeedPlan } from "@/types/plan";
+
 import { onJobCompleted, onHotTaskCreated } from "@/lib/xp";
 import * as Dialog from "@radix-ui/react-dialog";
 
@@ -29,10 +29,10 @@ type Application = {
 
 type Props = {
   applications: Application[];
-  item: FeedTask | FeedPlan; // DÙNG CHUNG
+  item: FeedTask; // Dùng FeedTask cho cả task + plan
   currentUserId: string;
   onUpdate: () => void;
-  type: 'task' | 'plan'; // THÊM PROP ĐỂ BIẾT TYPE
+  type: 'task' | 'plan';
 };
 
 export default function TaskApplications({ applications, item, currentUserId, onUpdate, type }: Props) {
