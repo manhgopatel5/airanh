@@ -58,9 +58,11 @@ export default function TaskApplications({ applications, task, currentUserId, on
   };
 
   const acceptedApps = applications.filter(a => a.status === 'accepted');
-  const pendingApps = applications.filter(a => a.status === 'pending');
-  const isFull = task.totalSlots > 0 && acceptedApps.length >= task.totalSlots;
-  const canAcceptMore =!isFull && task.status === 'open';
+const pendingApps = applications.filter(a => a.status === 'pending');
+const rejectedApps = applications.filter(a => a.status === 'rejected');
+
+const isFull = task.totalSlots > 0 && acceptedApps.length >= task.totalSlots;
+const canAcceptMore =!isFull && task.status === 'open' && pendingApps.length > 0;
 
   const handleAcceptApp = async (appId: string, applicantId: string) => {
     if (!canAcceptMore) {
@@ -139,30 +141,40 @@ export default function TaskApplications({ applications, task, currentUserId, on
   return (
     <>
       <div ref={appsRef} className="bg-white dark:bg-zinc-950">
-        <div className="py-4 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
-              Ứng viên ({applications.length})
-            </h3>
-            {acceptedApps.length > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-xs font-semibold text-green-600 dark:text-green-400">
-                {acceptedApps.length}/{task.totalSlots} đã duyệt
-              </span>
-            )}
-          </div>
-          {applications.length > 1 && (
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                setShowAllApps(!showAllApps);
-                navigator.vibrate?.(5);
-              }}
-              className="text-sm font-semibold text-[#0A84FF] active:opacity-60 transition-opacity"
-            >
-              {showAllApps? 'Thu gọn' : 'Xem tất cả'} ›
-            </motion.button>
-          )}
-        </div>
+     <div className="py-4 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800">
+  <div className="flex items-center gap-2 flex-wrap">
+    <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
+      Ứng viên ({applications.length})
+    </h3>
+    {acceptedApps.length > 0 && (
+      <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-xs font-semibold text-green-600 dark:text-green-400">
+        {acceptedApps.length} duyệt
+      </span>
+    )}
+    {pendingApps.length > 0 && (
+      <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-xs font-semibold text-amber-600 dark:text-amber-400">
+        {pendingApps.length} chờ
+      </span>
+    )}
+    {rejectedApps.length > 0 && (
+      <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+        {rejectedApps.length} từ chối
+      </span>
+    )}
+  </div>
+  {applications.length > 1 && (
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      onClick={() => {
+        setShowAllApps(!showAllApps);
+        navigator.vibrate?.(5);
+      }}
+      className="text-sm font-semibold text-[#0A84FF] active:opacity-60 transition-opacity"
+    >
+      {showAllApps? 'Thu gọn' : 'Xem tất cả'} ›
+    </motion.button>
+  )}
+</div>
 
         {isFull && (
           <div className="py-2 px-3 bg-amber-50 dark:bg-amber-900/20 flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
