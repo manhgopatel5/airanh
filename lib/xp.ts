@@ -125,9 +125,19 @@ export const onHotTaskCreated = async (hostUid: string, taskId: string) => {
 };
 
 // 5. Check-in sự kiện
-export const onEventCheckin = async (uid: string) => {
-  await addXP(uid, "CHECKIN_EVENT");
-};
+export const onEventCheckin = async (eventId: string) => {
+  const auth = getFirebaseAuth();
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const db = getFirebaseDB();
+  const userRef = doc(db, "users", user.uid);
+  
+  await updateDoc(userRef, {
+    huhaScore: increment(15),
+    lastEventCheckinAt: serverTimestamp()
+  });
+}
 
 // 6. Hoàn thành profile 100% - gọi khi update profile
 export const onProfileUpdate = async (uid: string) => {
