@@ -39,6 +39,7 @@ type UserProgress = {
   avatar: string;
   level: number;
   exp: number;
+  nextLevelExp: number;
   huhaScore: number;
   streakDays: number;
   badges: string[];
@@ -128,9 +129,27 @@ const ALL_ACHIEVEMENTS: Achievement[] = [
   { id: 40, iconName: 'PartyPopper', label: "Vua task", desc: "Tạo 100 task đi chơi", unlocked: () => false, condition: "Tạo 100 task", category: "task" },
 ];
 
+const getLevelFromXP = (xp: number): { level: number; currentExp: number; nextLevelExp: number } => {
+  let level = 1;
+  let totalXP = 0;
+  
+  while (true) {
+    const nextLevelExp = Math.floor(100 * Math.pow(level, 1.5));
+    if (xp < totalXP + nextLevelExp) break;
+    totalXP += nextLevelExp;
+    level++;
+  }
+  
+  const currentExp = xp - totalXP;
+  const nextLevelExp = Math.floor(100 * Math.pow(level, 1.5));
+  
+  return { level, currentExp, nextLevelExp };
+};
+
 const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
-  const level = Math.floor((d.huhaScore || 0) / 100) + 1;
-  const exp = (d.huhaScore || 0) % 100;
+  const huhaScore = d.huhaScore || 0;
+  const { level, currentExp, nextLevelExp } = getLevelFromXP(huhaScore);
+  
   const joinedDays = d.createdAt?.seconds? Math.floor((Date.now() - d.createdAt.seconds * 1000) / 86400000) : 0;
   const profileFields = [d.avatar, d.bio, d.skills?.length, d.portfolio?.length, d.location, d.title, d.emailVerified, d.isVerifiedId];
   const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
@@ -138,11 +157,11 @@ const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
 
   return {
     uid,
-name: (d.displayName || d.name || d.nameLower || d.username || "User").replace(/^\w/, (c: string) => c.toUpperCase()),
+    name: (d.displayName || d.name || d.nameLower || d.username || "User").replace(/^\w/, (c: string) => c.toUpperCase()),
     avatar: d.photoURL || d.avatar || "",
     level,
-    exp,
-    huhaScore: d.huhaScore || 0,
+    exp: currentExp, // XP hiện tại của level này
+    huhaScore, // Tổng XP
     streakDays: d.stats?.streakDays || 0,
     badges: d.badges || [],
     rank: rank?? d.rank?? 0,
@@ -167,6 +186,7 @@ name: (d.displayName || d.name || d.nameLower || d.username || "User").replace(/
     trustScore,
     joinedDays,
     friendCount: d.friendCount || 0,
+    nextLevelExp, // Thêm field này
   };
 };
 const OverviewTab = memo(({ userData, topUsers, onShowLevelInfo }: { 
@@ -174,38 +194,40 @@ const OverviewTab = memo(({ userData, topUsers, onShowLevelInfo }: {
   topUsers: TopUser[];
   onShowLevelInfo: () => void;
 }) => {
-  const expPercent = useMemo(() => userData? (userData.exp / 100) * 100 : 0, [userData?.exp]);
-
- 
+  const expPercent = useMemo(() => 
+    userData? (userData.exp / userData.nextLevelExp) * 100 : 0, 
+    [userData?.exp, userData?.nextLevelExp]
+  );
 
   if (!userData) return null;
 
   return (
     <div className="pt-3 space-y-3">
-<button
-  onClick={onShowLevelInfo}
-  className="w-full bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700 text-left active:scale-[0.98] transition-all"
->
-  <div className="flex items-center justify-between mb-3">
-    <div className="flex items-center gap-2">
-      <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-        <Sparkles className="text-amber-500" size={20} />
-      </div>
-      <div>
-        <p className="text-xs text-zinc-500">Cấp độ hiện tại</p>
-        <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Level {userData.level}</p>
-      </div>
-    </div>
-    <div className="text-right">
-      <p className="text-xs text-zinc-500">EXP</p>
-      <p className="text-sm font-bold text-amber-600 dark:text-amber-400">{userData.exp}/100</p>
-    </div>
-  </div>
-  <div className="relative h-3 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
-    <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-700 ease-out" style={{ width: `${expPercent}%` }} />
-  </div>
-  <p className="text-xs text-zinc-500 mt-2">Còn {100 - userData.exp} EXP để lên Level {userData.level + 1}</p>
-</button>
+      <button
+        onClick={onShowLevelInfo}
+        className="w-full bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700 text-left active:scale-[0.98] transition-all"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <Sparkles className="text-amber-500" size={20} />
+            </div>
+            <div>
+              <p className="text-xs text-zinc-500">Cấp độ hiện tại</p>
+              <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Level {userData.level}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-zinc-500">EXP</p>
+            <p className="text-sm font-bold text-amber-600 dark:text-amber-400">{userData.exp}/{userData.nextLevelExp}</p>
+          </div>
+        </div>
+        <div className="relative h-3 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
+          <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-700 ease-out" style={{ width: `${expPercent}%` }} />
+        </div>
+        <p className="text-xs text-zinc-500 mt-2">Còn {userData.nextLevelExp - userData.exp} EXP để lên Level {userData.level + 1}</p>
+      </button>
+
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
         <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
           <Trophy className="text-amber-500" size={18} />
@@ -262,8 +284,6 @@ const OverviewTab = memo(({ userData, topUsers, onShowLevelInfo }: {
           </div>
         ))}
       </div>
-
-    
     </div>
   );
 });
@@ -571,73 +591,84 @@ return (
               Hệ thống cấp độ Huha
             </Dialog.Title>
 
-            <div className="mb-5 p-4 rounded-2xl bg-blue-50 border border-blue-200">
-              <p className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-1.5">
-                <Zap className="w-4 h-4" />
-                Công thức tính XP
-              </p>
-              <div className="space-y-1.5 text-sm text-blue-800">
-                <div className="flex justify-between">
-                  <span>Hoàn thành 1 job</span>
-                  <span className="font-semibold">+12 XP</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Nhận 1 đánh giá</span>
-                  <span className="font-semibold">+8 XP</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Rating trung bình</span>
-                  <span className="font-semibold">+Rating × 20 XP</span>
-                </div>
-                <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-bold">
-                  <span>Tổng XP hiện tại</span>
-                  <span>{userData?.huhaScore || 0} XP</span>
-                </div>
-                <div className="text-xs text-blue-700 mt-1">
-                  Mỗi level cần 300 XP
-                </div>
-              </div>
-            </div>
+       <div className="mb-5 p-4 rounded-2xl bg-blue-50 border-blue-200">
+  <p className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-1.5">
+    <Zap className="w-4 h-4" />
+    Công thức tính XP
+  </p>
+  <div className="space-y-1.5 text-sm text-blue-800">
+    <div className="flex justify-between">
+      <span>Hoàn thành 1 job</span>
+      <span className="font-semibold">+50 XP</span>
+    </div>
+    <div className="flex justify-between">
+      <span>Nhận đánh giá 4-5★</span>
+      <span className="font-semibold">+20 XP</span>
+    </div>
+    <div className="flex justify-between">
+      <span>Nhận đánh giá 1-3★</span>
+      <span className="font-semibold">+5 XP</span>
+    </div>
+    <div className="flex justify-between">
+      <span>Có bạn bè mới</span>
+      <span className="font-semibold">+10 XP</span>
+    </div>
+    <div className="flex justify-between">
+      <span>Tạo task hot 5+ người</span>
+      <span className="font-semibold">+30 XP</span>
+    </div>
+    <div className="flex justify-between">
+      <span>Check-in sự kiện</span>
+      <span className="font-semibold">+15 XP</span>
+    </div>
+    <div className="flex justify-between">
+      <span>Streak hàng ngày</span>
+      <span className="font-semibold">+5 XP/ngày</span>
+    </div>
+    <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-bold">
+      <span>Tổng XP hiện tại</span>
+      <span>{userData?.huhaScore || 0} XP</span>
+    </div>
+    <div className="text-xs text-blue-700 mt-1">
+      Level tăng theo công thức: 100 × Level^1.5 XP
+    </div>
+  </div>
+</div>
 
-            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5">
-              Các cấp độ
-            </p>
-            <div className="space-y-2.5">
-              {[
-                { range: "1 - 7", name: "Mới tham gia", icon: <Sparkles className="w-4 h-4" />, gradient: "from-sky-400 to-blue-600", xp: "0 - 2,100" },
-                { range: "8 - 19", name: "Thành viên tích cực", icon: <Flame className="w-4 h-4" />, gradient: "from-emerald-500 to-teal-500", xp: "2,100 - 5,700" },
-                { range: "20 - 34", name: "Đối tác tin cậy", icon: <Shield className="w-4 h-4" />, gradient: "from-blue-500 to-sky-500", xp: "5,700 - 10,200" },
-                { range: "35 - 49", name: "Chuyên gia", icon: <Gem className="w-4 h-4" />, gradient: "from-violet-500 to-fuchsia-500", xp: "10,200 - 14,700" },
-                { range: "50+", name: "Huyền thoại", icon: <Crown className="w-4 h-4" />, gradient: "from-amber-400 to-orange-500", xp: "14,700+" },
-              ].map((tier, i) => {
-                const minLv = parseInt(tier.range.split(" - ")[0] || "0");
-                const isActive = (userData?.level || 1) >= minLv;
-                return (
-                  <div
-                    key={i}
-                    className={`p-3.5 rounded-2xl border ${
-                      isActive? "border-zinc-300 bg-zinc-50" : "border-zinc-200 bg-white opacity-60"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-xl bg-gradient-to-r ${tier.gradient} text-white flex items-center justify-center shadow-sm`}>
-                          {tier.icon}
-                        </div>
-                        <div>
-                          <p className="font-bold text-zinc-900 text-sm">{tier.name}</p>
-                          <p className="text-xs text-zinc-500">Level {tier.range}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-semibold text-zinc-700">{tier.xp}</p>
-                        <p className="text-xs text-zinc-500">XP</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+<p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5">
+  CÁC CẤP ĐỘ
+</p>
+<div className="space-y-2.5">
+  {[
+    { range: "1 - 7", name: "Mới tham gia", icon: <Sparkles className="w-4 h-4" />, gradient: "from-sky-400 to-blue-600", xp: "0 - 2,000" },
+    { range: "8 - 19", name: "Thành viên tích cực", icon: <Flame className="w-4 h-4" />, gradient: "from-emerald-500 to-teal-500", xp: "2,000 - 10,000" },
+    { range: "20 - 34", name: "Đối tác tin cậy", icon: <Shield className="w-4 h-4" />, gradient: "from-blue-500 to-sky-500", xp: "10,000 - 22,000" },
+    { range: "35 - 49", name: "Chuyên gia", icon: <Gem className="w-4 h-4" />, gradient: "from-violet-500 to-fuchsia-500", xp: "22,000 - 35,000" },
+    { range: "50+", name: "Huyền thoại", icon: <Crown className="w-4 h-4" />, gradient: "from-amber-400 to-orange-500", xp: "35,000+" },
+  ].map((tier, i) => {
+    const minLv = parseInt(tier.range.split(" - ")[0] || "0");
+    const isActive = (userData?.level || 1) >= minLv;
+    return (
+      <div key={i} className={`p-3.5 rounded-2xl border ${isActive? "border-zinc-300 bg-zinc-50" : "border-zinc-200 bg-white opacity-60"}`}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-xl bg-gradient-to-r ${tier.gradient} text-white flex items-center justify-center shadow-sm`}>
+              {tier.icon}
             </div>
+            <div>
+              <p className="font-bold text-zinc-900 text-sm">{tier.name}</p>
+              <p className="text-xs text-zinc-500">Level {tier.range}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-semibold text-zinc-700">{tier.xp}</p>
+            <p className="text-xs text-zinc-500">XP</p>
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
 
             <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
               Đã hiểu
