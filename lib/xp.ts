@@ -7,7 +7,7 @@ export const XP_REWARDS = {
   REVIEW_4_5_STAR: 20,
   REVIEW_1_3_STAR: 5,
   NEW_FRIEND: 10,
-  HOT_TASK: 30, // Task có 5+ người join
+  HOT_TASK: 30, // Task/Plan có 5+ người join
   CHECKIN_EVENT: 15,
   PROFILE_COMPLETE: 100, // One-time
   VERIFY_ID: 200, // One-time
@@ -111,33 +111,30 @@ export const onNewFriend = async (uid: string) => {
   await addXP(uid, "NEW_FRIEND");
 };
 
-// 4. Tạo task hot - gọi khi task có đủ 5 người join
-export const onHotTaskCreated = async (hostUid: string, taskId: string) => {
-  const taskRef = doc(db, "tasks", taskId);
-  const taskSnap = await getDoc(taskRef);
-  if (!taskSnap.exists()) return;
+// 4. Tạo task/plan hot - gọi khi có đủ 5 người join - DÙNG CHUNG CHO CẢ 2
+export const onHotTaskCreated = async (
+  hostUid: string,
+  itemId: string,
+  type: 'task' | 'plan' = 'task'
+) => {
+  const collectionName = type === 'plan'? 'plans' : 'tasks';
+  const itemRef = doc(db, collectionName, itemId);
+  const itemSnap = await getDoc(itemRef);
+  if (!itemSnap.exists()) return;
 
-  const data = taskSnap.data();
-  if (data.participants?.length >= 5 &&!data.hotTaskXPClaimed) {
+  const data = itemSnap.data();
+  const joinedCount = data.joined || data.participants?.length || 0;
+
+  if (joinedCount >= 5 &&!data.hotTaskXPClaimed) {
     await addXP(hostUid, "HOT_TASK");
-    await updateDoc(taskRef, { hotTaskXPClaimed: true });
+    await updateDoc(itemRef, { hotTaskXPClaimed: true });
   }
 };
 
 // 5. Check-in sự kiện
-export const onEventCheckin = async (eventId: string) => {
-  const auth = getFirebaseAuth();
-  const user = auth.currentUser;
-  if (!user) return;
-
-  const db = getFirebaseDB();
-  const userRef = doc(db, "users", user.uid);
-  
-  await updateDoc(userRef, {
-    huhaScore: increment(15),
-    lastEventCheckinAt: serverTimestamp()
-  });
-}
+export const onEventCheckin = async (uid: string) => {
+  await addXP(uid, "CHECKIN_EVENT");
+};
 
 // 6. Hoàn thành profile 100% - gọi khi update profile
 export const onProfileUpdate = async (uid: string) => {
