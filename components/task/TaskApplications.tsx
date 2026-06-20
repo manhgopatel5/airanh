@@ -9,13 +9,16 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import type { FeedTask } from "@/types/task";
-import { onJobCompleted } from "@/lib/xp";
+import type { FeedPlan } from "@/types/plan";
+import { onJobCompleted, onHotTaskCreated } from "@/lib/xp";
 import * as Dialog from "@radix-ui/react-dialog";
 
 type Application = {
   id: string;
-  taskId: string;
-  taskOwnerId: string;
+  taskId?: string;
+  planId?: string;
+  taskOwnerId?: string;
+  planOwnerId?: string;
   userId: string;
   userName: string;
   userAvatar: string;
@@ -26,17 +29,24 @@ type Application = {
 
 type Props = {
   applications: Application[];
-  task: FeedTask;
+  item: FeedTask | FeedPlan; // DÙNG CHUNG
   currentUserId: string;
   onUpdate: () => void;
+  type: 'task' | 'plan'; // THÊM PROP ĐỂ BIẾT TYPE
 };
 
-export default function TaskApplications({ applications, task, currentUserId, onUpdate }: Props) {
+export default function TaskApplications({ applications, item, currentUserId, onUpdate, type }: Props) {
   const [showAllApps, setShowAllApps] = useState(false);
   const [completingApp, setCompletingApp] = useState<Application | null>(null);
   const [rating, setRating] = useState(5);
   const [loading, setLoading] = useState(false);
   const appsRef = useRef<HTMLDivElement>(null);
+
+  const isPlan = type === 'plan';
+  const itemId = item.id;
+  const itemOwnerId = item.userId;
+  const itemTitle = item.title;
+  const itemSlots = item.totalSlots;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -58,15 +68,15 @@ export default function TaskApplications({ applications, task, currentUserId, on
   };
 
   const acceptedApps = applications.filter(a => a.status === 'accepted');
-const pendingApps = applications.filter(a => a.status === 'pending');
-const rejectedApps = applications.filter(a => a.status === 'rejected');
+  const pendingApps = applications.filter(a => a.status === 'pending');
+  const rejectedApps = applications.filter(a => a.status === 'rejected');
 
-const isFull = task.totalSlots > 0 && acceptedApps.length >= task.totalSlots;
-const canAcceptMore =!isFull && task.status === 'open' && pendingApps.length > 0;
+  const isFull = itemSlots > 0 && acceptedApps.length >= itemSlots;
+  const canAcceptMore =!isFull && item.status === 'open' && pendingApps.length > 0;
 
   const handleAcceptApp = async (appId: string, applicantId: string) => {
     if (!canAcceptMore) {
-      toast.error("Task đã đủ người");
+      toast.error(`${isPlan? 'Plan' : 'Task'} đã đủ người`);
       return;
     }
 
@@ -77,15 +87,23 @@ const canAcceptMore =!isFull && task.status === 'open' && pendingApps.length > 0
         updatedAt: serverTimestamp()
       });
 
-      await updateDoc(doc(db, 'tasks', task.id), {
-        joined: acceptedApps.length + 1,
-        status: acceptedApps.length + 1 >= task.totalSlots? 'full' : 'open'
+      const newJoined = acceptedApps.length + 1;
+      const collectionName = isPlan? 'plans' : 'tasks';
+
+      await updateDoc(doc(db, collectionName, itemId), {
+        joined: newJoined,
+        status: newJoined >= itemSlots? 'full' : 'open'
       });
+
+      // CHECK HOT 5+ NGƯỜI - CỘNG XP
+      if (newJoined >= 5 && itemSlots >= 5) {
+        await onHotTaskCreated(itemOwnerId, itemId); // +30 XP cho chủ
+      }
 
       const chatId = [currentUserId, applicantId].sort().join("_");
       await setDoc(doc(db, "chats", chatId), {
         members: [currentUserId, applicantId],
-        lastMessage: `Bạn đã được duyệt cho task "${task.title}"`,
+        lastMessage: `Bạn đã được duyệt cho ${isPlan? 'plan' : 'task'} "${itemTitle}"`,
         lastMessageAt: serverTimestamp(),
         createdAt: serverTimestamp(),
       }, { merge: true });
@@ -117,14 +135,15 @@ const canAcceptMore =!isFull && task.status === 'open' && pendingApps.length > 0
     if (!completingApp) return;
     setLoading(true);
     const db = getFirebaseDB();
+    const collectionName = isPlan? 'plans' : 'tasks';
 
     try {
-      await updateDoc(doc(db, "tasks", task.id), {
+      await updateDoc(doc(db, collectionName, itemId), {
         status: "completed",
         rating: rating,
       });
 
-      await onJobCompleted(completingApp.userId, rating, task.id);
+      await onJobCompleted(completingApp.userId, rating, itemId);
 
       toast.success(`Đã hoàn thành + ${rating} sao + XP`);
       navigator.vibrate?.(15);
@@ -141,45 +160,45 @@ const canAcceptMore =!isFull && task.status === 'open' && pendingApps.length > 0
   return (
     <>
       <div ref={appsRef} className="bg-white dark:bg-zinc-950">
-     <div className="py-4 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800">
-  <div className="flex items-center gap-2 flex-wrap">
-    <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
-      Ứng viên ({applications.length})
-    </h3>
-    {acceptedApps.length > 0 && (
-      <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-xs font-semibold text-green-600 dark:text-green-400">
-        {acceptedApps.length} duyệt
-      </span>
-    )}
-    {pendingApps.length > 0 && (
-      <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-xs font-semibold text-amber-600 dark:text-amber-400">
-        {pendingApps.length} chờ
-      </span>
-    )}
-    {rejectedApps.length > 0 && (
-      <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-        {rejectedApps.length} từ chối
-      </span>
-    )}
-  </div>
-  {applications.length > 1 && (
-    <motion.button
-      whileTap={{ scale: 0.95 }}
-      onClick={() => {
-        setShowAllApps(!showAllApps);
-        navigator.vibrate?.(5);
-      }}
-      className="text-sm font-semibold text-[#0A84FF] active:opacity-60 transition-opacity"
-    >
-      {showAllApps? 'Thu gọn' : 'Xem tất cả'} ›
-    </motion.button>
-  )}
-</div>
+        <div className="py-4 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
+              Ứng viên ({applications.length})
+            </h3>
+            {acceptedApps.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-xs font-semibold text-green-600 dark:text-green-400">
+                {acceptedApps.length} duyệt
+              </span>
+            )}
+            {pendingApps.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                {pendingApps.length} chờ
+              </span>
+            )}
+            {rejectedApps.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                {rejectedApps.length} từ chối
+              </span>
+            )}
+          </div>
+          {applications.length > 1 && (
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                setShowAllApps(!showAllApps);
+                navigator.vibrate?.(5);
+              }}
+              className="text-sm font-semibold text-[#0A84FF] active:opacity-60 transition-opacity"
+            >
+              {showAllApps? 'Thu gọn' : 'Xem tất cả'} ›
+            </motion.button>
+          )}
+        </div>
 
         {isFull && (
           <div className="py-2 px-3 bg-amber-50 dark:bg-amber-900/20 flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
             <FiUsers size={14} />
-            <span>Task đã đủ {task.totalSlots} người</span>
+            <span>{isPlan? 'Plan' : 'Task'} đã đủ {itemSlots} người</span>
           </div>
         )}
 
@@ -257,7 +276,7 @@ const canAcceptMore =!isFull && task.status === 'open' && pendingApps.length > 0
                         <span className="px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-xs font-semibold text-green-600 dark:text-green-400">
                           Đã duyệt
                         </span>
-                        {task.status!== 'completed' && (
+                        {item.status!== 'completed' && (
                           <motion.button
                             whileTap={{ scale: 0.95 }}
                             onClick={() => setCompletingApp(app)}
@@ -285,7 +304,7 @@ const canAcceptMore =!isFull && task.status === 'open' && pendingApps.length > 0
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/40 z-[70] backdrop-blur-sm" />
           <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white dark:bg-zinc-900 rounded-3xl p-5 z-[70]">
-            <Dialog.Title className="text-lg font-bold mb-2 text-zinc-900 dark:text-zinc-100">Hoàn thành job</Dialog.Title>
+            <Dialog.Title className="text-lg font-bold mb-2 text-zinc-900 dark:text-zinc-100">Hoàn thành {isPlan? 'plan' : 'job'}</Dialog.Title>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">Đánh giá {completingApp?.userName}</p>
 
             <div className="flex justify-center gap-2 mb-5">
