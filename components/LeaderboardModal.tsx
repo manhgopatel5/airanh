@@ -9,7 +9,7 @@ import {
   query,
   getDoc,
   updateDoc,
-  
+  increment,
   orderBy,
   limit,
   Timestamp,
