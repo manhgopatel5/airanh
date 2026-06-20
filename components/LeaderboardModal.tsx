@@ -322,7 +322,7 @@ const BadgesTab = memo(({ userData }: { userData: UserProgress | null }) => {
       {ALL_ACHIEVEMENTS.map((item) => {
         const unlocked = unlockedIds.has(item.id);
         const Icon = IconMap[item.iconName];
-        const style = BADGE_STYLES[item.id]?? BADGE_STYLES[1]; // Dòng fix đây
+const style = BADGE_STYLES[item.id]?? BADGE_STYLES[1]!;
 
         return (
           <div
