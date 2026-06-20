@@ -621,7 +621,7 @@ return (
       <span className="font-semibold">+10 XP</span>
     </div>
     <div className="flex justify-between">
-      <span>Tạo task hot 5+ người tham gia</span>
+      <span>Tạo sự kiện/ công việc hot 5+ người tham gia</span>
       <span className="font-semibold">+30 XP</span>
     </div>
     <div className="flex justify-between">
