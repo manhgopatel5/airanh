@@ -67,7 +67,6 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
         return;
       }
 
-      // FIX: Convert sang FeedTask chuẩn - tất cả optional đều check undefined
       const taskData: FeedTask = {
         id: snap.id,
         slug: d.slug || "",
@@ -76,15 +75,17 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
         description: d.description || "",
         type: d.type || "task",
         status: d.status || "open",
+        rating: d.rating, // Thêm dòng này
+        xpClaimed: d.xpClaimed || false, // Thêm dòng này
         userId: d.userId || "",
         userName: d.userName || "",
         userAvatar: d.userAvatar || "",
-       ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
-       ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
+      ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
+      ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
         price: d.price?? 0,
         currency: d.currency || "VND",
         budgetType: d.budgetType || "fixed",
-       ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
+      ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
         totalSlots: d.totalSlots?? 0,
         joined: d.joined?? 0,
         maxParticipants: d.maxParticipants?? d.totalSlots?? 0,
@@ -93,7 +94,7 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
         savedBy: Array.isArray(d.savedBy)? d.savedBy : [],
         assignees: Array.isArray(d.assignees)? d.assignees : [],
         likes: Array.isArray(d.likes)? d.likes : [],
-       ...(d.location!== undefined && { location: d.location }),
+      ...(d.location!== undefined && { location: d.location }),
         tags: Array.isArray(d.tags)? d.tags : [],
         category: d.category || "",
         images: Array.isArray(d.images)? d.images : [],
@@ -103,23 +104,21 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
         commentCount: d.commentCount?? 0,
         shareCount: d.shareCount?? 0,
         bookmarkCount: d.bookmarkCount?? 0,
-       ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
-       ...(d.banned!== undefined && { banned: d.banned }),
-       ...(d.hidden!== undefined && { hidden: d.hidden }),
-       ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
-        // Timestamp -> string
+      ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
+      ...(d.banned!== undefined && { banned: d.banned }),
+      ...(d.hidden!== undefined && { hidden: d.hidden }),
+      ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
         createdAt: d.createdAt?.toDate?.()?.toISOString() || null,
-       ...(d.updatedAt?.toDate && { updatedAt: d.updatedAt.toDate().toISOString() }),
-       ...(d.deadline?.toDate && { deadline: d.deadline.toDate().toISOString() }),
-       ...(d.eventDate?.toDate && { eventDate: d.eventDate.toDate().toISOString() }),
-       ...(d.endDate?.toDate && { endDate: d.endDate.toDate().toISOString() }),
-       ...(d.startDate?.toDate && { startDate: d.startDate.toDate().toISOString() }),
-       ...(d.applicationDeadline?.toDate && { applicationDeadline: d.applicationDeadline.toDate().toISOString() }),
-        // Plan fields
-       ...(d.type === "plan" && {
+      ...(d.updatedAt?.toDate && { updatedAt: d.updatedAt.toDate().toISOString() }),
+      ...(d.deadline?.toDate && { deadline: d.deadline.toDate().toISOString() }),
+      ...(d.eventDate?.toDate && { eventDate: d.eventDate.toDate().toISOString() }),
+      ...(d.endDate?.toDate && { endDate: d.endDate.toDate().toISOString() }),
+      ...(d.startDate?.toDate && { startDate: d.startDate.toDate().toISOString() }),
+      ...(d.applicationDeadline?.toDate && { applicationDeadline: d.applicationDeadline.toDate().toISOString() }),
+      ...(d.type === "plan" && {
           milestones: Array.isArray(d.milestones)? d.milestones : [],
           costType: d.costType || "free",
-         ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
+        ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
         }),
       };
 
@@ -220,10 +219,9 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
   const isApplied = applications.some(
     app => app.userId === currentUserId && ['pending', 'accepted'].includes(app.status)
   );
-  // FIX: Dùng joined cho task, currentParticipants cho plan
   const isFull = task?
     (task.type === "task"
-     ? (task.joined?? 0) >= task.totalSlots
+    ? (task.joined?? 0) >= task.totalSlots
       : (task.currentParticipants?? 0) >= (task.maxParticipants?? task.totalSlots)
     ) : false;
 
