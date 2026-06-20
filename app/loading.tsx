@@ -60,7 +60,22 @@ const JobCardSkeleton = () => (
   </div>
 );
 
-
+const TabSkeleton = () => (
+  <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-t border-zinc-100 dark:border-zinc-800">
+    <div className="max-w-2xl mx-auto h-16 px-2 flex items-center justify-around">
+      <div className="flex flex-col items-center gap-1.5">
+        <HomeIcon />
+        <div className="h-1 w-4 rounded-full bg-blue-600" />
+      </div>
+      <MessageIcon />
+      <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center -mt-6 shadow-lg shadow-blue-500/30">
+        <PlusIcon />
+      </div>
+      <GridIcon />
+      <UserIcon />
+    </div>
+  </div>
+);
 
 export default function Loading() {
   return (
@@ -91,16 +106,14 @@ export default function Loading() {
         ))}
       </div>
 
- 
+      <TabSkeleton />
 
       {/* Dùng keyframes Tailwind thay vì <style> để tránh CLS */}
-<style>{`
-  @keyframes shimmer {
-    100% {
-      transform: translateX(100%);
-    }
-  }
-`}</style>
+      <style jsx>{`
+        @keyframes shimmer {
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
     </div>
   );
 }
