@@ -8,7 +8,7 @@ import {
   collection,
   query,
   getDoc,
-  
+  updateDoc,
   
   orderBy,
   limit,
