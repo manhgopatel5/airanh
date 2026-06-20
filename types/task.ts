@@ -109,6 +109,9 @@ export type TaskItem = BaseItem & {
   joined: number;
   appliedCount?: number;  
   requirements?: string;
+
+  rating?: number;
+  xpClaimed?: boolean;
   isRemote: boolean;
   applicationDeadline?: Timestamp | null;
   deadline?: Timestamp | null;
