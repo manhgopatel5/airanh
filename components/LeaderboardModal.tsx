@@ -1,4 +1,5 @@
 "use client";
+import { checkDailyLoginXP } from "@/lib/xp";
 import { useEffect, useState, useMemo, memo, useCallback } from "react";
 import { FiX, FiTrendingUp, FiAward } from "react-icons/fi";
 import { getFirebaseDB } from "@/lib/firebase";
@@ -476,35 +477,11 @@ useEffect(() => {
   setUserData(prev => prev? {...prev, rank: myRank } : null);
 }, [userData?.uid, rankUsers]);
 // Tự cộng 5 XP/ngày khi mở modal
+
 useEffect(() => {
-  if (!currentUserId ||!db) return;
-  
-  const checkAndAddDailyXP = async () => {
-    const userRef = doc(db, "users", currentUserId);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) return;
-    
-    const data = userSnap.data();
-    const lastLogin = data.lastLoginAt?.toDate();
-    const now = new Date();
-    
-    // Nếu chưa login hôm nay
-    if (!lastLogin || lastLogin.toDateString() !== now.toDateString()) {
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const isConsecutive = lastLogin?.toDateString() === yesterday.toDateString();
-      const newStreak = isConsecutive ? (data.stats?.streakDays || 0) + 1 : 1;
-      
-      await updateDoc(userRef, {
-        huhaScore: increment(5),
-        lastLoginAt: serverTimestamp(),
-        "stats.streakDays": newStreak,
-      });
-    }
-  };
-  
-  checkAndAddDailyXP();
-}, [currentUserId, db]);
+    if (!currentUserId) return;
+    checkDailyLoginXP(currentUserId);
+  }, [currentUserId]);
 // 4. TOP 3 VINH DANH - lấy từ rankUsers cho đồng bộ
 useEffect(() => {
   if (!rankUsers.length) {
