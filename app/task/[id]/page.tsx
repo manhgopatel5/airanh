@@ -4,11 +4,12 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import type { FeedTask } from "@/types/task"; // FIX: Import FeedTask
+import type { FeedTask } from "@/types/task";
 import { FiArrowLeft, FiInbox } from "react-icons/fi";
 
 import { useTask } from "@/hooks/useTask";
 import { useComments } from "@/hooks/useComments";
+import { onJobCompleted } from "@/lib/xp";
 
 import TaskDetailHeader from "@/components/task/TaskDetailHeader";
 import TaskInfoGrid from "@/components/task/TaskInfoGrid";
@@ -25,7 +26,7 @@ export default function TaskDetailPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const {
-    task, // Giờ là FeedTask | null
+    task,
     owner,
     applications,
     loading,
@@ -47,13 +48,20 @@ export default function TaskDetailPage() {
   } = useComments(task?.id);
 
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
-  const [shareTask, setShareTask] = useState<FeedTask | null>(null); // FIX: FeedTask
+  const [shareTask, setShareTask] = useState<FeedTask | null>(null);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
     if (!auth) return;
     return onAuthStateChanged(auth, setCurrentUser);
   }, []);
+
+  // Cộng XP khi job hoàn thành - chỉ chạy 1 lần khi status đổi sang completed
+  useEffect(() => {
+    if (task?.status === "completed" && task?.userId &&!task?.xpClaimed) {
+      onJobCompleted(task.userId, task.rating || 5).catch(console.error);
+    }
+  }, [task?.status, task?.userId, task?.rating, task?.xpClaimed]);
 
   if (loading) {
     return (
@@ -140,7 +148,7 @@ export default function TaskDetailPage() {
                 isFull={isFull}
                 isOwner={isOwner}
                 onApplied={reloadTask}
-                onShare={() => setShareTask(task)} // task giờ là FeedTask
+                onShare={() => setShareTask(task)}
               />
             )}
           </div>
@@ -168,7 +176,7 @@ export default function TaskDetailPage() {
 
       {shareTask && (
         <ShareTaskModal
-          task={shareTask} // FeedTask
+          task={shareTask}
           onClose={() => setShareTask(null)}
         />
       )}
