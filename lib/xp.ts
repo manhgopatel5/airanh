@@ -69,22 +69,23 @@ export const checkDailyLoginXP = async (uid: string) => {
 };
 
 // 2. Hoàn thành job - gọi khi job status = completed
-export const onJobCompleted = async (uid: string, rating: number, taskId: string) => {
-  const taskRef = doc(db, "tasks", taskId);
-  const taskSnap = await getDoc(taskRef);
-  if (!taskSnap.exists()) return;
+// 8. Hoàn thành Plan/Event - gọi khi event kết thúc
+export const onPlanCompleted = async (hostUid: string, rating: number, planId: string) => {
+  const planRef = doc(db, "tasks", planId);
+  const planSnap = await getDoc(planRef);
+  if (!planSnap.exists()) return;
 
-  const data = taskSnap.data();
+  const data = planSnap.data();
   if (data.xpClaimed) return; // Đã cộng rồi thì thôi
 
-  await addXP(uid, "COMPLETE_JOB");
+  await addXP(hostUid, "COMPLETE_JOB"); // Dùng chung 50 XP
   if (rating >= 4) {
-    await addXP(uid, "REVIEW_4_5_STAR");
+    await addXP(hostUid, "REVIEW_4_5_STAR");
   } else {
-    await addXP(uid, "REVIEW_1_3_STAR");
+    await addXP(hostUid, "REVIEW_1_3_STAR");
   }
 
-  await updateDoc(taskRef, { xpClaimed: true });
+  await updateDoc(planRef, { xpClaimed: true });
 };
 
 // 3. Có bạn mới - gọi khi accept friend request
