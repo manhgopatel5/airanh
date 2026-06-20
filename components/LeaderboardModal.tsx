@@ -274,7 +274,6 @@ const BadgesTab = memo(({ userData }: { userData: UserProgress | null }) => {
     return new Set(ALL_ACHIEVEMENTS.filter(a => a.unlocked(userData)).map(a => a.id));
   }, [userData?.level, userData?.friendCount, userData?.trustScore, userData?.joinedDays, userData?.profileCompletion, userData?.emailVerified, userData?.isVerifiedId, userData?.stats?.rating, userData?.stats?.completed, userData?.stats?.totalReviews, userData?.skills?.length, userData?.portfolio?.length, userData?.location]);
 
-  // Map màu cho từng achievement
   const BADGE_STYLES: Record<number, { from: string; to: string; border: string; icon: string; text: string }> = {
     1: { from: "from-pink-50", to: "to-rose-50", border: "border-pink-300 dark:border-pink-700", icon: "text-pink-600 dark:text-pink-400", text: "text-pink-900 dark:text-pink-100" },
     2: { from: "from-sky-50", to: "to-blue-50", border: "border-sky-300 dark:border-sky-700", icon: "text-sky-600 dark:text-sky-400", text: "text-sky-900 dark:text-sky-100" },
@@ -323,14 +322,14 @@ const BadgesTab = memo(({ userData }: { userData: UserProgress | null }) => {
       {ALL_ACHIEVEMENTS.map((item) => {
         const unlocked = unlockedIds.has(item.id);
         const Icon = IconMap[item.iconName];
-const style = BADGE_STYLES[item.id] || BADGE_STYLES[1]; // Fallback về màu hồng
+        const style = BADGE_STYLES[item.id]?? BADGE_STYLES[1]; // Dòng fix đây
 
         return (
           <div
             key={item.id}
             className={`p-3 rounded-2xl border text-center transition-all duration-300 ${
               unlocked
-                ? `bg-gradient-to-br ${style.from} ${style.to} dark:from-zinc-900/80 dark:to-zinc-800/80 ${style.border} shadow-lg shadow-black/5 scale-100`
+              ? `bg-gradient-to-br ${style.from} ${style.to} dark:from-zinc-900/80 dark:to-zinc-800/80 ${style.border} shadow-lg shadow-black/5 scale-100`
                 : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 scale-95"
             }`}
           >
