@@ -12,6 +12,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, documentId } from "firebase/firestore";
 import { FiUserPlus, FiCheck, FiX, FiClock } from "react-icons/fi";
 import { HiSparkles } from "react-icons/hi";
+import { onNewFriend } from "@/lib/xp"; // thêm dòng này
 
 type UserData = {
   uid: string;
@@ -65,7 +66,7 @@ export default function FriendRequests() {
           snap.forEach((doc) => {
             newUsers[doc.id] = {
               uid: doc.id,
-             ...(doc.data() as any),
+            ...(doc.data() as any),
             };
           });
         })
@@ -88,6 +89,13 @@ export default function FriendRequests() {
 
       try {
         await acceptRequest(req);
+
+        // Cộng +10 XP cho cả 2 người
+        await Promise.all([
+          onNewFriend(user!.uid), // Mình được +10 XP
+          onNewFriend(req.fromUserId) // Người kia được +10 XP
+        ]);
+
       } catch (err) {
         console.error("❌ lỗi accept:", err);
         setList((prev) => [...prev, req]);
@@ -95,7 +103,7 @@ export default function FriendRequests() {
         setProcessing(null);
       }
     },
-    [processing]
+    [processing, user?.uid]
   );
 
   /* ================= REJECT ================= */
