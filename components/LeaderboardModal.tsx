@@ -413,9 +413,8 @@ export default function LeaderboardModal({ onClose, currentUserId }: { onClose: 
   const [showLevelInfo, setShowLevelInfo] = useState(false);
 
 
-// 1. TAB XẾP HẠNG - load 20 user top
+// 1. LOAD RANKUSERS LUÔN - để Tổng quan + Top 3 có data ngay
 useEffect(() => {
-  if (tab!== "rank") return;
   const q = query(
     collection(db, "users"),
     orderBy("huhaScore", "desc"),
@@ -430,9 +429,9 @@ useEffect(() => {
     setRankUsers([]);
   });
   return () => unsub();
-}, [db, tab]);
+}, [db]);
 
-// 2. LOAD USER HIỆN TẠI - không tính rank ở đây nữa
+// 2. LOAD USER HIỆN TẠI - không tính rank ở đây
 useEffect(() => {
   if (!currentUserId) return;
 
@@ -446,10 +445,9 @@ useEffect(() => {
   return () => unsubUser();
 }, [currentUserId, db]);
 
-// 3. TÍNH RANK TỪ LIST RANKUSERS - đồng bộ với tab Xếp hạng
+// 3. TÍNH RANK TỪ LIST RANKUSERS - chạy ngay khi có data
 useEffect(() => {
-  if (!userData?.uid) return;
-  if (!rankUsers.length) return;
+  if (!userData?.uid ||!rankUsers.length) return;
 
   const myIndex = rankUsers.findIndex(u => u.uid === userData.uid);
   const myRank = myIndex >= 0? myIndex + 1 : rankUsers.length + 1;
@@ -457,33 +455,23 @@ useEffect(() => {
   setUserData(prev => prev? {...prev, rank: myRank } : null);
 }, [userData?.uid, rankUsers]);
 
-// 4. TOP 3 VINH DANH - dùng chung logic với rank
+// 4. TOP 3 VINH DANH - lấy từ rankUsers cho đồng bộ
 useEffect(() => {
-  const q = query(
-    collection(db, "users"),
-    orderBy("huhaScore", "desc"),
-    orderBy("nameLower", "asc"),
-    limit(3)
-  );
-  const unsub = onSnapshot(q, (snap) => {
-    const users = snap.docs.map((d, idx) => {
-      const u = calcUserData(d.data(), d.id, idx + 1);
-      return {
-        uid: u.uid,
-        name: u.name,
-        avatar: u.avatar,
-        score: u.huhaScore,
-        level: u.level,
-        badge: idx === 0? "👑" : idx === 1? "🥈" : "🥉"
-      };
-    });
-    setTopUsers(users);
-  }, (err) => {
-    console.error("TOP3 ERROR:", err.message);
+  if (!rankUsers.length) {
     setTopUsers([]);
-  });
-  return () => unsub();
-}, [db]);
+    return;
+  }
+
+  const users = rankUsers.slice(0, 3).map((u, idx) => ({
+    uid: u.uid,
+    name: u.name,
+    avatar: u.avatar,
+    score: u.huhaScore,
+    level: u.level,
+    badge: idx === 0? "👑" : idx === 1? "🥈" : "🥉"
+  }));
+  setTopUsers(users);
+}, [rankUsers]);
 
 
 
