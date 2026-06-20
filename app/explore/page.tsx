@@ -375,16 +375,16 @@ export default function ExplorePage() {
         </div>
             )}
 
-      <EventDetailModal
-        event={selectedEvent}
-        onClose={() => setSelectedEvent(null)}
-        onCheckinSuccess={async () => {
-          if (selectedEvent?.id) {
-            await onEventCheckin(userLat? 'user-id' : '', selectedEvent.id); // THÊM DÒNG NÀY
-          }
-          router.refresh();
-        }}
-      />
+<EventDetailModal
+  event={selectedEvent}
+  onClose={() => setSelectedEvent(null)}
+  onCheckinSuccess={async () => {
+    if (selectedEvent?.id) {
+      await onEventCheckin(selectedEvent.id); // BỎ 'user-id', CHỈ TRUYỀN eventId
+    }
+    router.refresh();
+  }}
+/>
 
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}`}</style>
     </div>
