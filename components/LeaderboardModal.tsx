@@ -274,18 +274,88 @@ const BadgesTab = memo(({ userData }: { userData: UserProgress | null }) => {
     return new Set(ALL_ACHIEVEMENTS.filter(a => a.unlocked(userData)).map(a => a.id));
   }, [userData?.level, userData?.friendCount, userData?.trustScore, userData?.joinedDays, userData?.profileCompletion, userData?.emailVerified, userData?.isVerifiedId, userData?.stats?.rating, userData?.stats?.completed, userData?.stats?.totalReviews, userData?.skills?.length, userData?.portfolio?.length, userData?.location]);
 
+  // Map màu cho từng achievement
+  const BADGE_STYLES: Record<number, { from: string; to: string; border: string; icon: string; text: string }> = {
+    1: { from: "from-pink-50", to: "to-rose-50", border: "border-pink-300 dark:border-pink-700", icon: "text-pink-600 dark:text-pink-400", text: "text-pink-900 dark:text-pink-100" },
+    2: { from: "from-sky-50", to: "to-blue-50", border: "border-sky-300 dark:border-sky-700", icon: "text-sky-600 dark:text-sky-400", text: "text-sky-900 dark:text-sky-100" },
+    3: { from: "from-amber-50", to: "to-yellow-50", border: "border-amber-300 dark:border-amber-700", icon: "text-amber-600 dark:text-amber-400", text: "text-amber-900 dark:text-amber-100" },
+    4: { from: "from-blue-50", to: "to-indigo-50", border: "border-blue-300 dark:border-blue-700", icon: "text-blue-600 dark:text-blue-400", text: "text-blue-900 dark:text-blue-100" },
+    5: { from: "from-green-50", to: "to-emerald-50", border: "border-green-300 dark:border-green-700", icon: "text-green-600 dark:text-green-400", text: "text-green-900 dark:text-green-100" },
+    6: { from: "from-orange-50", to: "to-red-50", border: "border-orange-300 dark:border-orange-700", icon: "text-orange-600 dark:text-orange-400", text: "text-orange-900 dark:text-orange-100" },
+    7: { from: "from-teal-50", to: "to-cyan-50", border: "border-teal-300 dark:border-teal-700", icon: "text-teal-600 dark:text-teal-400", text: "text-teal-900 dark:text-teal-100" },
+    8: { from: "from-violet-50", to: "to-purple-50", border: "border-violet-300 dark:border-violet-700", icon: "text-violet-600 dark:text-violet-400", text: "text-violet-900 dark:text-violet-100" },
+    9: { from: "from-zinc-50", to: "to-slate-50", border: "border-zinc-300 dark:border-zinc-700", icon: "text-zinc-600 dark:text-zinc-400", text: "text-zinc-900 dark:text-zinc-100" },
+    10: { from: "from-yellow-50", to: "to-amber-50", border: "border-yellow-300 dark:border-yellow-700", icon: "text-yellow-600 dark:text-yellow-400", text: "text-yellow-900 dark:text-yellow-100" },
+    11: { from: "from-stone-50", to: "to-neutral-50", border: "border-stone-300 dark:border-stone-700", icon: "text-stone-600 dark:text-stone-400", text: "text-stone-900 dark:text-stone-100" },
+    12: { from: "from-lime-50", to: "to-green-50", border: "border-lime-300 dark:border-lime-700", icon: "text-lime-600 dark:text-lime-400", text: "text-lime-900 dark:text-lime-100" },
+    13: { from: "from-cyan-50", to: "to-sky-50", border: "border-cyan-300 dark:border-cyan-700", icon: "text-cyan-600 dark:text-cyan-400", text: "text-cyan-900 dark:text-cyan-100" },
+    14: { from: "from-emerald-50", to: "to-teal-50", border: "border-emerald-300 dark:border-emerald-700", icon: "text-emerald-600 dark:text-emerald-400", text: "text-emerald-900 dark:text-emerald-100" },
+    15: { from: "from-fuchsia-50", to: "to-pink-50", border: "border-fuchsia-300 dark:border-fuchsia-700", icon: "text-fuchsia-600 dark:text-fuchsia-400", text: "text-fuchsia-900 dark:text-fuchsia-100" },
+    16: { from: "from-rose-50", to: "to-pink-50", border: "border-rose-300 dark:border-rose-700", icon: "text-rose-600 dark:text-rose-400", text: "text-rose-900 dark:text-rose-100" },
+    17: { from: "from-indigo-50", to: "to-violet-50", border: "border-indigo-300 dark:border-indigo-700", icon: "text-indigo-600 dark:text-indigo-400", text: "text-indigo-900 dark:text-indigo-100" },
+    18: { from: "from-red-50", to: "to-orange-50", border: "border-red-300 dark:border-red-700", icon: "text-red-600 dark:text-red-400", text: "text-red-900 dark:text-red-100" },
+    19: { from: "from-blue-50", to: "to-sky-50", border: "border-blue-300 dark:border-blue-700", icon: "text-blue-600 dark:text-blue-400", text: "text-blue-900 dark:text-blue-100" },
+    20: { from: "from-green-50", to: "to-lime-50", border: "border-green-300 dark:border-green-700", icon: "text-green-600 dark:text-green-400", text: "text-green-900 dark:text-green-100" },
+    21: { from: "from-amber-50", to: "to-orange-50", border: "border-amber-300 dark:border-amber-700", icon: "text-amber-600 dark:text-amber-400", text: "text-amber-900 dark:text-amber-100" },
+    22: { from: "from-pink-50", to: "to-rose-50", border: "border-pink-300 dark:border-pink-700", icon: "text-pink-600 dark:text-pink-400", text: "text-pink-900 dark:text-pink-100" },
+    23: { from: "from-purple-50", to: "to-fuchsia-50", border: "border-purple-300 dark:border-purple-700", icon: "text-purple-600 dark:text-purple-400", text: "text-purple-900 dark:text-purple-100" },
+    24: { from: "from-yellow-50", to: "to-amber-50", border: "border-yellow-300 dark:border-yellow-700", icon: "text-yellow-600 dark:text-yellow-400", text: "text-yellow-900 dark:text-yellow-100" },
+    25: { from: "from-indigo-50", to: "to-blue-50", border: "border-indigo-300 dark:border-indigo-700", icon: "text-indigo-600 dark:text-indigo-400", text: "text-indigo-900 dark:text-indigo-100" },
+    26: { from: "from-red-50", to: "to-rose-50", border: "border-red-300 dark:border-red-700", icon: "text-red-600 dark:text-red-400", text: "text-red-900 dark:text-red-100" },
+    27: { from: "from-emerald-50", to: "to-green-50", border: "border-emerald-300 dark:border-emerald-700", icon: "text-emerald-600 dark:text-emerald-400", text: "text-emerald-900 dark:text-emerald-100" },
+    28: { from: "from-violet-50", to: "to-purple-50", border: "border-violet-300 dark:border-violet-700", icon: "text-violet-600 dark:text-violet-400", text: "text-violet-900 dark:text-violet-100" },
+    29: { from: "from-cyan-50", to: "to-teal-50", border: "border-cyan-300 dark:border-cyan-700", icon: "text-cyan-600 dark:text-cyan-400", text: "text-cyan-900 dark:text-cyan-100" },
+    30: { from: "from-slate-50", to: "to-zinc-50", border: "border-slate-300 dark:border-slate-700", icon: "text-slate-600 dark:text-slate-400", text: "text-slate-900 dark:text-slate-100" },
+    31: { from: "from-green-50", to: "to-emerald-50", border: "border-green-300 dark:border-green-700", icon: "text-green-600 dark:text-green-400", text: "text-green-900 dark:text-green-100" },
+    32: { from: "from-blue-50", to: "to-indigo-50", border: "border-blue-300 dark:border-blue-700", icon: "text-blue-600 dark:text-blue-400", text: "text-blue-900 dark:text-blue-100" },
+    33: { from: "from-orange-50", to: "to-amber-50", border: "border-orange-300 dark:border-orange-700", icon: "text-orange-600 dark:text-orange-400", text: "text-orange-900 dark:text-orange-100" },
+    34: { from: "from-pink-50", to: "to-fuchsia-50", border: "border-pink-300 dark:border-pink-700", icon: "text-pink-600 dark:text-pink-400", text: "text-pink-900 dark:text-pink-100" },
+    35: { from: "from-purple-50", to: "to-violet-50", border: "border-purple-300 dark:border-purple-700", icon: "text-purple-600 dark:text-purple-400", text: "text-purple-900 dark:text-purple-100" },
+    36: { from: "from-teal-50", to: "to-cyan-50", border: "border-teal-300 dark:border-teal-700", icon: "text-teal-600 dark:text-teal-400", text: "text-teal-900 dark:text-teal-100" },
+    37: { from: "from-rose-50", to: "to-red-50", border: "border-rose-300 dark:border-rose-700", icon: "text-rose-600 dark:text-rose-400", text: "text-rose-900 dark:text-rose-100" },
+    38: { from: "from-amber-50", to: "to-yellow-50", border: "border-amber-300 dark:border-amber-700", icon: "text-amber-600 dark:text-amber-400", text: "text-amber-900 dark:text-amber-100" },
+    39: { from: "from-sky-50", to: "to-cyan-50", border: "border-sky-300 dark:border-sky-700", icon: "text-sky-600 dark:text-sky-400", text: "text-sky-900 dark:text-sky-100" },
+    40: { from: "from-red-50", to: "to-pink-50", border: "border-red-300 dark:border-red-700", icon: "text-red-600 dark:text-red-400", text: "text-red-900 dark:text-red-100" },
+  };
+
   return (
     <div className="grid grid-cols-3 gap-3 pt-3">
       {ALL_ACHIEVEMENTS.map((item) => {
         const unlocked = unlockedIds.has(item.id);
         const Icon = IconMap[item.iconName];
+        const style = BADGE_STYLES[item.id];
+
         return (
-          <div key={item.id} className="p-3 rounded-2xl border text-center bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
-            <div className={`mb-1 flex justify-center ${unlocked? "" : "grayscale opacity-40"}`}>
-              <Icon className="w-8 h-8" />
+          <div
+            key={item.id}
+            className={`p-3 rounded-2xl border text-center transition-all duration-300 ${
+              unlocked
+                ? `bg-gradient-to-br ${style.from} ${style.to} dark:from-zinc-900/80 dark:to-zinc-800/80 ${style.border} shadow-lg shadow-black/5 scale-100`
+                : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 scale-95"
+            }`}
+          >
+            <div className={`mb-1.5 flex justify-center transition-all ${
+              unlocked? style.icon : "text-zinc-400 grayscale opacity-40"
+            }`}>
+              <Icon className="w-8 h-8" strokeWidth={unlocked? 2.5 : 2} />
             </div>
-            <p className="text-xs font-bold">{item.label}</p>
-            <p className="text-zinc-500 mt-0.5 line-clamp-2 text-[10px]">{item.desc}</p>
+            <p className={`text-xs font-bold transition-colors ${
+              unlocked? style.text : "text-zinc-700 dark:text-zinc-300"
+            }`}>
+              {item.label}
+            </p>
+            <p className={`mt-0.5 line-clamp-2 text-[10px] transition-colors ${
+              unlocked? `${style.icon} opacity-80` : "text-zinc-500"
+            }`}>
+              {item.desc}
+            </p>
+            {unlocked && (
+              <div className="mt-1.5 flex justify-center">
+                <div className={`px-2 py-0.5 rounded-full ${style.from} ${style.border} border`}>
+                  <span className={`text-[9px] font-black ${style.icon}`}>✦ ĐÃ MỞ</span>
+                </div>
+              </div>
+            )}
           </div>
         );
       })}
