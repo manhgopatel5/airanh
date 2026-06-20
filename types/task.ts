@@ -167,7 +167,8 @@ export type PlanItem = BaseItem & {
   appliedCount?: number;
   inviteCode?: string; 
   allowInvite: boolean;
-
+  rating?: number; // Thêm dòng này - đánh giá 1-5 sao
+  xpClaimed?: boolean;
   // Cost
   costType: CostType;
   costAmount?: number; 
@@ -260,6 +261,8 @@ export type TaskListItem = Pick<
   | "status"
   | "userName"
   | "userVerified" 
+  | "rating" 
+  | "xpClaimed" 
   | "userAvatar"
   | "userShortId"
   | "userUsername"
@@ -306,6 +309,8 @@ export type PlanListItem = Pick<
   | "userVerified" 
   | "tags"
   | "images"
+  | "rating" 
+  | "xpClaimed" 
   | "viewCount"
   | "likeCount"
   | "commentCount"
@@ -346,6 +351,8 @@ export type FeedTask = (TaskListItem | PlanListItem) & {
   shortId?: string;
   hotScore?: number; // THÊM DÒNG NÀY
   priceRange?: string; // THÊM DÒNG NÀY
+  rating?: number; // Thêm dòng này
+  xpClaimed?: boolean; //
 };
 
 /* ================= PARTICIPANT ================= */
