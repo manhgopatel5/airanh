@@ -194,14 +194,14 @@ export default function AddFriendModal({ open, onClose }: Props) {
             className="fixed inset-0 bg-black/40 backdrop-blur-2xl z-[60]"
             onClick={onClose}
           />
-          <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-[61] bg-white dark:bg-zinc-900 rounded-t-[28px] shadow-2xl max-h-[85vh] flex flex-col sm:max-w-[440px] sm:mx-auto sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:rounded-[28px]"
-          >
-            <div className="w-[36px] h-[5px] bg-black/15 dark:bg-white/15 rounded-full mx-auto mt-2.5 sm:hidden flex-shrink-0" />
+   <motion.div
+  initial={{ y: -100, opacity: 0 }}
+  animate={{ y: 0, opacity: 1 }}
+  exit={{ y: -100, opacity: 0 }}
+  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+  className="fixed top-4 inset-x-4 z-[61] bg-white dark:bg-zinc-900 rounded- shadow-2xl max-h-[85vh] flex flex-col sm:max-w-[440px] sm:mx-auto sm:left-1/2 sm:-translate-x-1/2"
+>
+
 
             <div className="flex items-center justify-between px-5 pt-4 pb-3 flex-shrink-0">
               <div className="flex items-center gap-3">
