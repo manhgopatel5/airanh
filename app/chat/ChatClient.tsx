@@ -807,8 +807,7 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
   }
 }, [user?.uid, router]);
 
-const handleDeclineFriendRequest = useCallback(async (notif: NotificationItem) => {
-  // hàm này ông có rồi
+
 
 const handleDeclineFriendRequest = useCallback(async (notif: NotificationItem) => {
   const auth = getAuth();
