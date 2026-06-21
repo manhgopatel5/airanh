@@ -132,7 +132,7 @@ const formatDistance = (km: number): string => {
   return km < 1? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
 };
 const PINNED_KEY = "pinned_chats";
-const DEBOUNCE_DELAY = 200;
+
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1500;
 const BATCH_SIZE = 10;
