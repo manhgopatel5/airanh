@@ -906,7 +906,7 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
     console.error("Remove friend error:", error);
     toast.error(`Lỗi: ${error.message || "Không thể xóa"}`);
   } finally {
-    setAdding(false);
+    
   }
 }, [user?.uid]);
 
@@ -947,7 +947,7 @@ updatedAt: serverTimestamp(), lastMessage: `${user.displayName || "Bạn"} đã 
     console.error("Create group error:", error);
     toast.error(`Lỗi tạo nhóm: ${error.message || "Vui lòng thử lại"}`);
   } finally {
-    setAdding(false);
+    
   }
 }, [user, groupName, selected, db, router, createNotification]);
 
