@@ -1074,7 +1074,7 @@ const { pinnedChats, normalChats } = useMemo(() => {
   return { pinnedChats: pinnedList, normalChats: normalList };
 }, [filteredChats, pinned]);
 
-const friendsForGroup = useMemo(() => friends, [friends]);
+
 
 const unreadNotifications = useMemo(() => notifications.filter(n =>!n.read).length, [notifications]);
 
