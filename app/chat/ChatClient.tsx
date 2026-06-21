@@ -779,33 +779,7 @@ useEffect(() => {
 
 
 
-const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) => {
-  if (!user?.uid) return;
 
-  try {
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const acceptFn = httpsCallable(functions, 'acceptFriendRequest');
-
-    const result = await acceptFn({
-      fromUid: notif.fromUid,
-      notifId: notif.id
-    });
-
-    const data = result.data as { chatId: string };
-    toast.success(`Đã kết bạn với ${notif.fromName}`);
-    router.push(`/chat/${data.chatId}`);
-
-  } catch (error: any) {
-    console.error(error);
-    if (error.code === 'functions/not-found') {
-      toast.error("Lời mời đã hết hạn");
-    } else if (error.code === 'functions/already-exists') {
-      toast.error("Các bạn đã là bạn bè");
-    } else {
-      toast.error("Lỗi: " + error.message);
-    }
-  }
-}, [user?.uid, router]);
 
 const handleDeclineFriendRequest = useCallback(async (notif: NotificationItem) => {
   const auth = getAuth();
@@ -1617,18 +1591,11 @@ return (
 <p className="text-[15px] leading-5 text-[#8e8e93] dark:text-zinc-500 max-w-[280px]">
   Mời kết bạn để bắt đầu trò chuyện cùng nhau
 </p>
-{!search && (
-  <button onClick={() => setShowAdd(true)} className={`mt-6 px-6 h-11 ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-[550] shadow-sm active:scale-95 transition-all flex items-center gap-2`}>
-    <FiUserPlus size={18} />
-    Kết bạn ngay
-  </button>
-)}
-        {!search && (
-          <button onClick={() => setShowAdd(true)} className={`mt-6 px-6 h-11 ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-[550] shadow-sm active:scale-95 transition-all flex items-center gap-2`}>
-            <FiUserPlus size={18} />
-            Kết bạn ngay
-          </button>
-        )}
+<button onClick={() => setShowAdd(true)} className={`mt-6 px-6 h-11 ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-[550] shadow-sm active:scale-95 transition-all flex items-center gap-2`}>
+  <FiUserPlus size={18} />
+  Kết bạn ngay
+</button>
+      
       </div>
     ) : (
       <div className="divide-y divide-gray-100 dark:divide-zinc-900">
