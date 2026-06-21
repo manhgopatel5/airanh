@@ -779,7 +779,33 @@ useEffect(() => {
 
 
 
+const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) => {
+  if (!user?.uid) return;
 
+  try {
+    const functions = getFunctions(getApp(), "asia-southeast1");
+    const acceptFn = httpsCallable(functions, 'acceptFriendRequest');
+
+    const result = await acceptFn({
+      fromUid: notif.fromUid,
+      notifId: notif.id
+    });
+
+    const data = result.data as { chatId: string };
+    toast.success(`Đã kết bạn với ${notif.fromName}`);
+    router.push(`/chat/${data.chatId}`);
+
+  } catch (error: any) {
+    console.error(error);
+    if (error.code === 'functions/not-found') {
+      toast.error("Lời mời đã hết hạn");
+    } else if (error.code === 'functions/already-exists') {
+      toast.error("Các bạn đã là bạn bè");
+    } else {
+      toast.error("Lỗi: " + error.message);
+    }
+  }
+}, [user?.uid, router]);
 
 const handleDeclineFriendRequest = useCallback(async (notif: NotificationItem) => {
   const auth = getAuth();
