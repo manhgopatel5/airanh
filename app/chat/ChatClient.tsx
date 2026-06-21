@@ -894,7 +894,7 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
   if (!user?.uid) return;
   if (!window.confirm(`Xóa ${friendName} khỏi danh sách bạn bè?`)) return;
 
-  setAdding(true);
+  
   try {
     const functions = getFunctions(getApp(), "asia-southeast1");
     const unfriend = httpsCallable(functions, 'unfriend');
@@ -916,7 +916,7 @@ const handleCreateGroup = useCallback(async (): Promise<void> => {
   if (!trimmedName) { toast.error("Vui lòng nhập tên nhóm"); return; }
   if (selected.length < 1) { toast.error("Vui lòng chọn ít nhất 1 thành viên"); return; }
   if (trimmedName.length > 50) { toast.error("Tên nhóm tối đa 50 ký tự"); return; }
-  setAdding(true);
+  
   try {
     const groupRef = doc(collection(db, "chats"));
     const groupData = { members: [user.uid,...selected], isGroup: true, groupName: trimmedName, admins: [user.uid], createdAt: serverTimestamp(),
