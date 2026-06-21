@@ -225,7 +225,7 @@ useEffect(() => {
   const [friends, setFriends] = useState<FriendItem[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
-  const [debounced, setDebounced] = useState<string>("");
+  const [debounced ] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [friendsLoading, setFriendsLoading] = useState<boolean>(false);
   const [notifLoading, setNotifLoading] = useState<boolean>(false);
