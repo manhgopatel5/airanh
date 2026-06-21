@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiSearch, FiUserPlus, FiLoader, FiUpload, FiCheck, FiClock, FiShare2, FiLink } from "react-icons/fi";
 import { ScanLine } from "lucide-react";
@@ -123,48 +123,50 @@ export default function AddFriendModal({ open, onClose }: Props) {
   };
 
   useEffect(() => {
-    if (!showScanQR || scanMode!== "camera") return;
+  if (!showScanQR || scanMode!== "camera") return;
 
-    const startScan = async () => {
-      const html5QrCode = new Html5Qrcode("qr-reader-add");
-      scannerRef.current = html5QrCode;
+  const startScan = async () => {
+    const html5QrCode = new Html5Qrcode("qr-reader-add");
+    scannerRef.current = html5QrCode;
 
-      try {
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          (decodedText) => {
-            if ("vibrate" in navigator) navigator.vibrate([10, 30, 10]);
-            let userId = "";
+    try {
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          if ("vibrate" in navigator) navigator.vibrate([10, 30, 10]);
+          let userId = "";
 
-            if (decodedText.includes("/u/")) {
-              userId = decodedText.split("/u/")[1] || "";
-            } else if (decodedText.startsWith("@")) {
-              userId = decodedText.slice(1);
-            } else {
-              userId = decodedText.trim();
-            }
+          if (decodedText.includes("/u/")) {
+            userId = decodedText.split("/u/")[1] || "";
+          } else if (decodedText.startsWith("@")) {
+            userId = decodedText.slice(1);
+          } else {
+            userId = decodedText.trim();
+          }
 
-            if (userId) {
-              setSearch(userId);
-              setActiveTab("manual");
-              stopScan();
-              toast.success("Đã quét QR");
-            } else {
-              toast.error("Mã QR không hợp lệ");
-            }
-          },
-          () => {}
-        );
-      } catch {
-        toast.error("Không mở được camera");
-        setShowScanQR(false);
-      }
-    };
+          if (userId) {
+            setSearch(userId);
+            setActiveTab("manual");
+            stopScan();
+            toast.success("Đã quét QR");
+          } else {
+            toast.error("Mã QR không hợp lệ");
+          }
+        },
+        () => {}
+      );
+    } catch {
+      toast.error("Không mở được camera");
+      setShowScanQR(false);
+    }
+  };
 
-    startScan();
-    return () => stopScan(false);
-  }, [showScanQR, scanMode]);
+  startScan();
+  return () => {
+    void stopScan(false); // Thêm void ở đây
+  };
+}, [showScanQR, scanMode]);
 
   // Autocomplete + check friend status
   useEffect(() => {
