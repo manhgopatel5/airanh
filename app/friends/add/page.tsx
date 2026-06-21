@@ -600,27 +600,28 @@ export default function AddFriendPage() {
                       {user.name[0]?.toUpperCase()}
                     </div>
                   )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-[600] text- truncate">{user.name}</p>
-                    <div className="flex items-center gap-2 text- text-[#8e8e93] dark:text-zinc-500">
-                      <span>@{user.username}</span>
-                      {user.distance!== undefined && (
-                        <>
-                          <span>•</span>
-                          <span className="flex items-center gap-0.5">
-                            <FiMapPin size={12} />
-                            {user.distance}km
-                          </span>
-                        </>
-                      )}
-                      {user.age && (
-                        <>
-                          <span>•</span>
-                          <span>{user.age}t</span>
-                        </>
-                      )}
-                    </div>
-                  {user.status === "friend" && (
+            <div className="flex-1 min-w-0">
+  <p className="font-[600] text- truncate">{user.name}</p>
+  <div className="flex items-center gap-2 text-sm text-[#8e8e93] dark:text-zinc-500">
+    <span>@{user.username}</span>
+    {user.distance!== undefined && (
+      <>
+        <span>•</span>
+        <span className="flex items-center gap-0.5">
+          <FiMapPin size={12} />
+          {user.distance}km
+        </span>
+      </>
+    )}
+    {user.age && (
+      <>
+        <span>•</span>
+        <span>{user.age}t</span>
+      </>
+    )}
+  </div>
+</div> {/* Thêm dòng này */}
+{user.status === "friend" && (
                     <div className="px-3 py-1.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-lg text- font-[600] flex items-center gap-1">
                       <FiCheck size={14} /> Bạn bè
                     </div>
