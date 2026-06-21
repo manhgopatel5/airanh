@@ -9,7 +9,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
 import { getApp } from "firebase/app";
-import AddFriendModal from "@/components/AddFriendModal";
+
 import LeaderboardModal from "@/components/LeaderboardModal";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
@@ -158,7 +158,7 @@ const [showLeaderboard, setShowLeaderboard] = useState(false);
       setUserLng(Number(lng));
     }
   }, []);
-const [showAdd, setShowAdd] = useState(false);
+
 const requestGPS = useCallback(async () => {
   if (!navigator.geolocation) {
     toast.error("Trình duyệt không hỗ trợ GPS");
@@ -1619,7 +1619,10 @@ return (
 <p className="text-[15px] leading-5 text-[#8e8e93] dark:text-zinc-500 max-w-[280px]">
   Mời kết bạn để bắt đầu trò chuyện cùng nhau
 </p>
-<button onClick={() => setShowAdd(true)} className={`mt-6 px-6 h-11 ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-[550] shadow-sm active:scale-95 transition-all flex items-center gap-2`}>
+<button
+  onClick={() => router.push('/friends/add')}
+  className={`mt-6 px-6 h-11 ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-[550] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2`}
+>
   <FiUserPlus size={18} />
   Kết bạn ngay
 </button>
@@ -2057,7 +2060,7 @@ return (
   </div>
 )}
 <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
-<AddFriendModal open={showAdd} onClose={() => setShowAdd(false)} />
+
 <GpsRequiredModal 
   open={showGpsModal} 
   onClose={() => setShowGpsModal(false)} 
