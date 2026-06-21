@@ -774,19 +774,7 @@ useEffect(() => {
     };
   }, [user?.uid, authLoading, db, mode]); // đổi isPlan -> mode
 
-  const createNotification = useCallback(async (targetUid: string, notif: Omit<NotificationItem, "id" | "createdAt" | "read">) => {
-    try {
-      const notifRef = doc(collection(db, "notifications", targetUid, "items"));
-      await setDoc(notifRef, {
-       ...notif,
-        read: false,
-        createdAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error("Create notification error:", error);
-    }
-  }, [db]);
-
+  
   
 
 
