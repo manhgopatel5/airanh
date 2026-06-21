@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { FiSearch, FiUserPlus, FiLoader, FiUpload, FiCheck, FiClock, FiShare2, FiLink, FiArrowLeft } from "react-icons/fi";
+import { FiSearch, FiUserPlus, FiX, FiLoader, FiUpload, FiCheck, FiClock, FiShare2, FiLink, FiArrowLeft } from "react-icons/fi";
 import { ScanLine } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
