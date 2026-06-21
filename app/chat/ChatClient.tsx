@@ -321,7 +321,7 @@ const handleFindStranger = async () => {
     setFindingStranger(false);
   }
 };
-  const [showScanQR, setShowScanQR] = useState<boolean>(false);
+
   const [showPoll, setShowPoll] = useState<boolean>(false);
   const [showVip, setShowVip] = useState<boolean>(false);
 const [userVip, setUserVip] = useState<{tier: 'free' | 'pro' | 'elite', expiresAt?: Timestamp} | null>(null);
