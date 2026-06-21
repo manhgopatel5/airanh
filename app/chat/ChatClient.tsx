@@ -45,7 +45,7 @@ import {
   FiCheck,
   FiX,
   FiMic,
-  FiUpload,
+  
   FiHome,
   FiAward,
   FiMapPin,
