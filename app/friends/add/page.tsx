@@ -9,7 +9,7 @@ import { getAuth } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, getDocs, limit } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import Image from "next/image";
-import { useDebounce } from "@/hooks/useDebounce";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 
@@ -56,7 +56,7 @@ export default function AddFriendPage() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const db = getFirebaseDB();
   const router = useRouter();
-  const debouncedSearch = useDebounce(search, 300);
+
 
   // Chặn scroll bounce
   useEffect(() => {
