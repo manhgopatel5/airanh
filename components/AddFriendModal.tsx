@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiSearch, FiUserPlus, FiLoader, FiUpload } from "react-icons/fi";
+import { FiX, FiSearch, FiUserPlus, FiLoader, FiUpload, FiCheck, FiClock, FiShare2, FiLink } from "react-icons/fi";
 import { ScanLine } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
@@ -22,7 +22,10 @@ type UserSuggestion = {
   username: string;
   name: string;
   avatarUrl?: string;
+  status?: "none" | "friend" | "sent" | "received";
 };
+
+const RECENT_SEARCH_KEY = "friend_search_recent";
 
 export default function AddFriendModal({ open, onClose }: Props) {
   const [search, setSearch] = useState("");
@@ -33,11 +36,29 @@ export default function AddFriendModal({ open, onClose }: Props) {
   const [loadingSuggest, setLoadingSuggest] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeTab, setActiveTab] = useState<"manual" | "qr">("manual");
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [myUsername, setMyUsername] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const db = getFirebaseDB();
   const debouncedSearch = useDebounce(search, 300);
+
+  // Load recent searches + my username
+  useEffect(() => {
+    if (!open) return;
+
+    const recent = localStorage.getItem(RECENT_SEARCH_KEY);
+    if (recent) setRecentSearches(JSON.parse(recent).slice(0, 5));
+
+    const auth = getAuth();
+    const uid = auth.currentUser?.uid;
+    if (uid) {
+      getDoc(doc(db, "users", uid)).then((snap) => {
+        if (snap.exists()) setMyUsername(snap.data().username || "");
+      });
+    }
+  }, [open, db]);
 
   const stopScan = async (closeModal = true) => {
     try {
@@ -49,9 +70,7 @@ export default function AddFriendModal({ open, onClose }: Props) {
         scannerRef.current = null;
       }
     } catch {}
-    if (closeModal) {
-      setShowScanQR(false);
-    }
+    if (closeModal) setShowScanQR(false);
   };
 
   useEffect(() => {
@@ -90,6 +109,7 @@ export default function AddFriendModal({ open, onClose }: Props) {
       if (userId) {
         setSearch(userId);
         setActiveTab("manual");
+        if ("vibrate" in navigator) navigator.vibrate([10, 30, 10]);
         toast.success("Đã quét QR thành công");
       } else {
         toast.error("Mã QR không hợp lệ");
@@ -114,7 +134,7 @@ export default function AddFriendModal({ open, onClose }: Props) {
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
-            if ("vibrate" in navigator) navigator.vibrate(10);
+            if ("vibrate" in navigator) navigator.vibrate([10, 30, 10]);
             let userId = "";
 
             if (decodedText.includes("/u/")) {
@@ -143,12 +163,10 @@ export default function AddFriendModal({ open, onClose }: Props) {
     };
 
     startScan();
-    return () => {
-      stopScan(false);
-    };
+    return () => stopScan(false);
   }, [showScanQR, scanMode]);
 
-  // Autocomplete username
+  // Autocomplete + check friend status
   useEffect(() => {
     const fetchSuggestions = async () => {
       const keyword = debouncedSearch.trim().replace("@", "").toLowerCase();
@@ -161,6 +179,7 @@ export default function AddFriendModal({ open, onClose }: Props) {
       try {
         const auth = getAuth();
         const currentUid = auth.currentUser?.uid;
+        if (!currentUid) return;
 
         const usernamesRef = collection(db, "usernames");
         const q = query(
@@ -178,15 +197,34 @@ export default function AddFriendModal({ open, onClose }: Props) {
           if (data.uid === currentUid) continue;
 
           const userDoc = await getDoc(doc(db, "users", data.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            results.push({
-              uid: data.uid,
-              username: docSnap.id,
-              name: userData.name || docSnap.id,
-              avatarUrl: userData.avatarUrl
-            });
+          if (!userDoc.exists()) continue;
+
+          const userData = userDoc.data();
+
+          // Check status
+          let status: UserSuggestion["status"] = "none";
+          const friendDoc = await getDoc(doc(db, "users", currentUid, "friends", data.uid));
+          if (friendDoc.exists()) {
+            status = "friend";
+          } else {
+            const sentReq = await getDoc(doc(db, "friendRequests", `${currentUid}_${data.uid}`));
+            if (sentReq.exists() && sentReq.data().status === "pending") {
+              status = "sent";
+            } else {
+              const receivedReq = await getDoc(doc(db, "friendRequests", `${data.uid}_${currentUid}`));
+              if (receivedReq.exists() && receivedReq.data().status === "pending") {
+                status = "received";
+              }
+            }
           }
+
+          results.push({
+            uid: data.uid,
+            username: docSnap.id,
+            name: userData.name || docSnap.id,
+            avatarUrl: userData.avatarUrl,
+            status
+          });
         }
         setSuggestions(results);
       } catch (e) {
@@ -199,7 +237,13 @@ export default function AddFriendModal({ open, onClose }: Props) {
     fetchSuggestions();
   }, [debouncedSearch, db]);
 
-  const handleAddFriend = async (userId?: string) => {
+  const saveRecentSearch = (username: string) => {
+    const updated = [username,...recentSearches.filter(s => s!== username)].slice(0, 5);
+    setRecentSearches(updated);
+    localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(updated));
+  };
+
+  const handleAddFriend = async (userId?: string, username?: string) => {
     setAdding(true);
 
     try {
@@ -217,13 +261,10 @@ export default function AddFriendModal({ open, onClose }: Props) {
         return;
       }
 
-      let targetUserId: string | null = null;
+      let targetUserId: string | null = userId || null;
       const lowerKeyword = keyword.toLowerCase();
 
-      // Nếu truyền userId trực tiếp từ suggestion
-      if (userId) {
-        targetUserId = userId;
-      } else {
+      if (!targetUserId) {
         const usernameDoc = await getDoc(doc(db, "usernames", lowerKeyword));
         if (usernameDoc.exists()) targetUserId = usernameDoc.data().uid;
       }
@@ -238,14 +279,12 @@ export default function AddFriendModal({ open, onClose }: Props) {
         return;
       }
 
-      // Check đã là bạn bè chưa
       const friendDoc = await getDoc(doc(db, "users", currentUser.uid, "friends", targetUserId));
       if (friendDoc.exists()) {
         toast.error("Các bạn đã là bạn bè");
         return;
       }
 
-      // Check đã gửi lời mời chưa
       const requestId = `${currentUser.uid}_${targetUserId}`;
       const requestDoc = await getDoc(doc(db, "friendRequests", requestId));
       if (requestDoc.exists() && requestDoc.data().status === "pending") {
@@ -260,20 +299,28 @@ export default function AddFriendModal({ open, onClose }: Props) {
         createdAt: serverTimestamp()
       });
 
+      if (username) saveRecentSearch(username);
       toast.success("Đã gửi lời mời kết bạn");
       setSearch("");
       setSuggestions([]);
       onClose();
     } catch (error: any) {
       console.error("Add friend error:", error.code, error.message);
-      if (error.code === 'permission-denied') {
-        toast.error("Đã gửi lời mời hoặc các bạn đã là bạn bè");
-      } else {
-        toast.error(`Lỗi: ${error.message || "Không thể gửi lời mời"}`);
-      }
+      toast.error(error.code === 'permission-denied'? "Đã gửi lời mời hoặc các bạn đã là bạn bè" : `Lỗi: ${error.message}`);
     } finally {
       setAdding(false);
     }
+  };
+
+  const copyMyLink = () => {
+    if (!myUsername) {
+      toast.error("Chưa có username");
+      return;
+    }
+    const link = `${window.location.origin}/u/${myUsername}`;
+    navigator.clipboard.writeText(link);
+    if ("vibrate" in navigator) navigator.vibrate(10);
+    toast.success("Đã copy link");
   };
 
   if (!open) return null;
@@ -294,7 +341,11 @@ export default function AddFriendModal({ open, onClose }: Props) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -100, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed top-4 inset-x-4 z-[61] bg-white dark:bg-zinc-900 rounded-[28px] shadow-2xl max-h-[85vh] flex flex-col sm:max-w-[440px] sm:mx-auto sm:left-1/2 sm:-translate-x-1/2"
+            className="fixed inset-x-4 z-[61] bg-white dark:bg-zinc-900 rounded-[28px] shadow-2xl max-h-[calc(100vh-32px)] flex flex-col sm:max-w-[440px] sm:mx-auto sm:left-1/2 sm:-translate-x-1/2"
+            style={{
+              top: "max(16px, env(safe-area-inset-top))",
+              paddingBottom: "max(16px, env(safe-area-inset-bottom))"
+            }}
           >
             <div className="flex items-center justify-between px-5 pt-4 pb-3 flex-shrink-0">
               <div className="flex items-center gap-3">
@@ -306,13 +357,24 @@ export default function AddFriendModal({ open, onClose }: Props) {
                   <p className="text-[13px] text-[#8e8e93] dark:text-zinc-500">Kết nối với bạn bè</p>
                 </div>
               </div>
-              <button
-                onClick={onClose}
-                className="w-8 h-8 -mr-1 flex items-center justify-center text-[#8e8e93] active:opacity-60 transition-opacity"
-                aria-label="Đóng"
-              >
-                <FiX size={22} />
-              </button>
+              <div className="flex items-center gap-2">
+                {myUsername && (
+                  <button
+                    onClick={copyMyLink}
+                    className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 transition-opacity"
+                    aria-label="Copy link"
+                  >
+                    <FiLink size={20} />
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="w-8 h-8 -mr-1 flex items-center justify-center text-[#8e8e93] active:opacity-60 transition-opacity"
+                  aria-label="Đóng"
+                >
+                  <FiX size={22} />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-auto px-5 pb-6 space-y-4">
@@ -322,7 +384,7 @@ export default function AddFriendModal({ open, onClose }: Props) {
                   onClick={() => { setShowScanQR(true); setScanMode("camera"); setActiveTab("qr"); }}
                   className={`h-12 rounded-2xl text-[14px] font-[600] flex items-center justify-center gap-2 active:scale-95 transition-all ${
                     activeTab === "qr"
-                     ? "bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/30"
+                    ? "bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/30"
                       : "bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10"
                   }`}
                 >
@@ -358,58 +420,111 @@ export default function AddFriendModal({ open, onClose }: Props) {
                     spellCheck={false}
                   />
 
-                  {/* Autocomplete dropdown */}
                   <AnimatePresence>
-                    {showSuggestions && (search.length >= 2) && (
+                    {(showSuggestions && search.length >= 2) || (search.length === 0 && recentSearches.length > 0)? (
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-zinc-800 rounded-2xl shadow-xl border border-black/10 dark:border-white/10 overflow-hidden z-20"
+                        className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-zinc-800 rounded-2xl shadow-xl border border-black/10 dark:border-white/10 overflow-hidden z-20 max-h-[280px] overflow-y-auto"
                       >
-                        {loadingSuggest && (
-                          <div className="px-4 py-3 text-center text-[#8e8e93]">
-                            <FiLoader className="animate-spin inline mr-2" size={16} />
-                            Đang tìm...
-                          </div>
+                        {search.length === 0 && recentSearches.length > 0 && (
+                          <>
+                            <div className="px-4 py-2 text-[12px] font-[600] text-[#8e8e93] dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-900/50">
+                              Tìm kiếm gần đây
+                            </div>
+                            {recentSearches.map((uname) => (
+                              <button
+                                key={uname}
+                                type="button"
+                                onClick={() => {
+                                  setSearch(uname);
+                                  setShowSuggestions(false);
+                                }}
+                                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors text-left"
+                              >
+                                <FiClock className="text-[#8e8e93]" size={18} />
+                                <span className="text-[15px]">@{uname}</span>
+                              </button>
+                            ))}
+                          </>
                         )}
-                        {!loadingSuggest && suggestions.length === 0 && (
-                          <div className="px-4 py-3 text-center text-[#8e8e93] text-sm">
-                            Không tìm thấy @{search.replace("@", "")}
-                          </div>
-                        )}
-                        {!loadingSuggest && suggestions.map((user) => (
-                          <button
-                            key={user.uid}
-                            type="button"
-                            onClick={() => {
-                              handleAddFriend(user.uid);
-                              setShowSuggestions(false);
-                            }}
-                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors text-left"
-                          >
-                            {user.avatarUrl? (
-                              <Image
-                                src={user.avatarUrl}
-                                alt={user.name}
-                                width={40}
-                                height={40}
-                                className="rounded-full"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                                {user.name[0]?.toUpperCase()}
+
+                        {search.length >= 2 && (
+                          <>
+                            {loadingSuggest && (
+                              <div className="px-4 py-3 text-center text-[#8e8e93]">
+                                <FiLoader className="animate-spin inline mr-2" size={16} />
+                                Đang tìm...
                               </div>
                             )}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-[600] text-[15px] truncate">{user.name}</p>
-                              <p className="text-[13px] text-[#8e8e93] dark:text-zinc-500">@{user.username}</p>
-                            </div>
-                            <FiUserPlus className="text-[#0a84ff] flex-shrink-0" size={18} />
-                          </button>
-                        ))}
+                            {!loadingSuggest && suggestions.length === 0 && (
+                              <div className="px-4 py-3 text-center text-[#8e8e93] text-sm">
+                                Không tìm thấy @{search.replace("@", "")}
+                              </div>
+                            )}
+                            {!loadingSuggest && suggestions.map((user) => (
+                              <button
+                                key={user.uid}
+                                type="button"
+                                onClick={() => {
+                                  if (user.status === "friend") {
+                                    toast.error("Các bạn đã là bạn bè");
+                                    return;
+                                  }
+                                  if (user.status === "sent") {
+                                    toast.error("Đã gửi lời mời rồi");
+                                    return;
+                                  }
+                                  handleAddFriend(user.uid, user.username);
+                                  setShowSuggestions(false);
+                                }}
+                                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors text-left"
+                              >
+                                <div
+                                  className="relative"
+                                  onContextMenu={(e) => {
+                                    e.preventDefault();
+                                    navigator.clipboard.writeText(`@${user.username}`);
+                                    toast.success("Đã copy @" + user.username);
+                                  }}
+                                >
+                                  {user.avatarUrl? (
+                                    <Image src={user.avatarUrl} alt={user.name} width={40} height={40} className="rounded-full" />
+                                  ) : (
+                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                                      {user.name[0]?.toUpperCase()}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-[600] text-[15px] truncate">{user.name}</p>
+                                  <p className="text-[13px] text-[#8e8e93] dark:text-zinc-500">@{user.username}</p>
+                                </div>
+                                {user.status === "friend" && (
+                                  <div className="px-2 py-1 bg-green-500/10 text-green-600 dark:text-green-400 rounded-lg text-[12px] font-[600] flex items-center gap-1">
+                                    <FiCheck size={14} /> Bạn bè
+                                  </div>
+                                )}
+                                {user.status === "sent" && (
+                                  <div className="px-2 py-1 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text-[12px] font-[600]">
+                                    Đã gửi
+                                  </div>
+                                )}
+                                {user.status === "received" && (
+                                  <div className="px-2 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-[12px] font-[600]">
+                                    Chờ xác nhận
+                                  </div>
+                                )}
+                                {user.status === "none" && (
+                                  <FiUserPlus className="text-[#0a84ff] flex-shrink-0" size={18} />
+                                )}
+                              </button>
+                            ))}
+                          </>
+                        )}
                       </motion.div>
-                    )}
+                    ) : null}
                   </AnimatePresence>
                 </div>
 
@@ -423,6 +538,15 @@ export default function AddFriendModal({ open, onClose }: Props) {
                 </button>
               </form>
 
+              {myUsername && (
+                <button
+                  onClick={copyMyLink}
+                  className="w-full h-11 bg-zinc-100 dark:bg-zinc-800 rounded-2xl text-[15px] font-[600] flex items-center justify-center gap-2 active:scale-95 transition"
+                >
+                  <FiShare2 size={18} /> Chia sẻ link của tôi
+                </button>
+              )}
+
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleScanFromFile} />
             </div>
           </motion.div>
@@ -434,6 +558,7 @@ export default function AddFriendModal({ open, onClose }: Props) {
               <button
                 onClick={() => stopScan()}
                 className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center active:scale-90 transition"
+                style={{ top: "max(24px, env(safe-area-inset-top))" }}
               >
                 <FiX className="w-5 h-5 text-white" />
               </button>
