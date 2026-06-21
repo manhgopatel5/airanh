@@ -184,52 +184,64 @@ export default function AddFriendPage() {
   };
 
   const fetchSuggestedUsers = async () => {
-    setLoadingSuggested(true);
-    try {
-      const auth = getAuth();
-      const currentUid = auth.currentUser?.uid;
-      if (!currentUid) return;
+  setLoadingSuggested(true);
+  try {
+    const auth = getAuth();
+    const currentUid = auth.currentUser?.uid;
+    if (!currentUid) return;
 
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, limit(50));
-      const snap = await getDocs(q);
-      const results: UserSuggestion[] = [];
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, limit(50));
+    const snap = await getDocs(q);
+    const results: UserSuggestion[] = [];
+    const randomUsers: UserSuggestion[] = [];
 
-      for (const docSnap of snap.docs) {
-        if (docSnap.id === currentUid) continue;
-        const data = docSnap.data();
+    for (const docSnap of snap.docs) {
+      if (docSnap.id === currentUid) continue;
+      const data = docSnap.data();
 
-        const friendDoc = await getDoc(doc(db, "users", currentUid, "friends", docSnap.id));
-        if (friendDoc.exists()) continue;
+      const friendDoc = await getDoc(doc(db, "users", currentUid, "friends", docSnap.id));
+      if (friendDoc.exists()) continue;
 
-        // Đếm bạn chung
-        const myFriendsSnap = await getDocs(collection(db, "users", currentUid, "friends"));
-        const theirFriendsSnap = await getDocs(collection(db, "users", docSnap.id, "friends"));
-        const myFriends = new Set(myFriendsSnap.docs.map(d => d.id));
-        const mutualCount = theirFriendsSnap.docs.filter(d => myFriends.has(d.id)).length;
+      // Đếm bạn chung
+      const myFriendsSnap = await getDocs(collection(db, "users", currentUid, "friends"));
+      const theirFriendsSnap = await getDocs(collection(db, "users", docSnap.id, "friends"));
+      const myFriends = new Set(myFriendsSnap.docs.map(d => d.id));
+      const mutualCount = theirFriendsSnap.docs.filter(d => myFriends.has(d.id)).length;
 
-        if (mutualCount === 0) continue;
+      const userData: UserSuggestion = {
+        uid: docSnap.id,
+        username: data.username || "",
+        name: data.name || "",
+        avatarUrl: data.avatarUrl,
+        status: "none",
+        mutualFriends: mutualCount,
+        age: data.age,
+        gender: data.gender
+      };
 
-        results.push({
-          uid: docSnap.id,
-          username: data.username || "",
-          name: data.name || "",
-          avatarUrl: data.avatarUrl,
-          status: "none",
-          mutualFriends: mutualCount,
-          age: data.age,
-          gender: data.gender
-        });
+      if (mutualCount > 0) {
+        results.push(userData);
+      } else {
+        randomUsers.push(userData);
       }
-
-      results.sort((a, b) => (b.mutualFriends || 0) - (a.mutualFriends || 0));
-      setSuggestedUsers(results.slice(0, 10));
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingSuggested(false);
     }
-  };
+
+    results.sort((a, b) => (b.mutualFriends || 0) - (a.mutualFriends || 0));
+
+    // Nếu không có bạn chung thì lấy random 10 người
+    if (results.length === 0) {
+      const shuffled = randomUsers.sort(() => 0.5 - Math.random());
+      setSuggestedUsers(shuffled.slice(0, 10));
+    } else {
+      setSuggestedUsers(results.slice(0, 10));
+    }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    setLoadingSuggested(false);
+  }
+};
 
   const handleSearchUser = async () => {
     const keyword = search.trim().replace("@", "").toLowerCase();
@@ -565,36 +577,38 @@ export default function AddFriendPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black pb-[env(safe-area-inset-bottom)]">
-      <div className="sticky top-0 z-10 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
-        <div className="flex items-center justify-between px-4 h-14">
-          <button
-            onClick={() => router.back()}
-            className="w-8 h-8 -ml-1 flex items-center justify-center text-[#0a84ff] active:opacity-60 transition-opacity"
-          >
-            <FiArrowLeft size={22} />
-          </button>
-          <h1 className="text- font-bold">Mời bạn</h1>
-          <button
-            onClick={() => setShowFilter(!showFilter)}
-            className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 transition-opacity"
-          >
-            <SlidersHorizontal size={20} />
-          </button>
-        </div>
+  <div className="h-screen bg-white dark:bg-black flex flex-col overflow-hidden">
+    {/* Header fixed */}
+    <div className="flex-shrink-0 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5 z-50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <div className="flex items-center justify-between px-4 h-14">
+        <button
+          onClick={() => router.back()}
+          className="w-8 h-8 -ml-1 flex items-center justify-center text-[#0a84ff] active:opacity-60 transition-opacity"
+        >
+          <FiArrowLeft size={22} />
+        </button>
+        <h1 className="text- font-bold">Mời bạn</h1>
+        <button
+          onClick={() => setShowFilter(!showFilter)}
+          className="w-8 h-8 flex items-center justify-center text-[#0a84ff] active:opacity-60 transition-opacity"
+        >
+          <SlidersHorizontal size={20} />
+        </button>
       </div>
+    </div>
 
-      <div className="px-4 pt-4 pb-6 space-y-4">
-        {locationDenied && (
+    {/* Content scroll riêng */}
+    <div className="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-4" style={{ overscrollBehavior: 'contain' }}>
+      {locationDenied && (
           <div className="p-4 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900 rounded-2xl">
             <div className="flex items-start gap-3">
               <FiMapPin className="text-orange-600 dark:text-orange-400 mt-0.5" size={20} />
               <div className="flex-1">
-                <p className="text- font-[600] text-orange-900 dark:text-orange-100">Cần bật định vị</p>
-                <p className="text- text-orange-700 dark:text-orange-300 mt-1">Bật định vị để tìm bạn bè gần bạn</p>
+                <p className="text-sm font-[600] text-orange-900 dark:text-orange-100">Cần bật định vị</p>
+                <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">Bật định vị để tìm bạn bè gần bạn</p>
                 <button
                   onClick={requestLocation}
-                  className="mt-3 px-4 h-9 bg-orange-600 text-white rounded-xl text- font-[600] active:scale-95 transition"
+                  className="mt-3 px-4 h-9 bg-orange-600 text-white rounded-xl text-sm font-[600] active:scale-95 transition"
                 >
                   Bật định vị
                 </button>
@@ -613,7 +627,7 @@ export default function AddFriendPage() {
             >
               <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-2xl space-y-4">
                 <div>
-                  <p className="text- font-[600] mb-2">Giới tính</p>
+                  <p className="text-sm font-[600] mb-2">Giới tính</p>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { label: "Tất cả", value: "all" },
@@ -623,7 +637,7 @@ export default function AddFriendPage() {
                       <button
                         key={g.value}
                         onClick={() => setFilters({...filters, gender: g.value as any })}
-                        className={`h-9 rounded-xl text- font-[600] transition-all ${
+                        className={`h-9 rounded-xl text-sm font-[600] transition-all ${
                           filters.gender === g.value
                        ? "bg-[#0a84ff] text-white"
                             : "bg-white dark:bg-zinc-800"
@@ -636,7 +650,7 @@ export default function AddFriendPage() {
                 </div>
 
                 <div>
-                  <p className="text- font-[600] mb-3">Tuổi: {filters.minAge} - {filters.maxAge}</p>
+                  <p className="text-sm font-[600] mb-3">Tuổi: {filters.minAge} - {filters.maxAge}</p>
                   <DualRangeSlider
                     min={18}
                     max={70}
@@ -646,7 +660,7 @@ export default function AddFriendPage() {
                 </div>
 
                 <div>
-                  <p className="text- font-[600] mb-3">Khoảng cách: {filters.maxDistance}km</p>
+                  <p className="text-sm font-[600] mb-3">Khoảng cách: {filters.maxDistance}km</p>
                   <div className="relative h-10 flex items-center">
                     <input
                       type="range"
@@ -674,7 +688,7 @@ export default function AddFriendPage() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="h-12 bg-zinc-100 dark:bg-zinc-800 border border-black/5 dark:border-white/5 rounded-2xl text- font-[600] flex items-center justify-center gap-2 active:scale-95 transition"
+            className="h-12 bg-zinc-100 dark:bg-zinc-800 border border-black/5 dark:border-white/5 rounded-2xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition"
           >
             <FiUpload size={18} /> Ảnh QR
           </button>
@@ -874,64 +888,87 @@ export default function AddFriendPage() {
           )}
         </div>
 
-        {/* Những người bạn có thể biết */}
-        {!loadingSuggested && suggestedUsers.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <FiUsers className="text-white" size={18} />
-              </div>
-              <div>
-                <p className="text- font-[700]">Những người bạn có thể biết</p>
-                <p className="text- text-[#8e8e93] dark:text-zinc-500">Dựa trên bạn chung</p>
-              </div>
-            </div>
+       {/* Những người bạn có thể biết */}
+{!loadingSuggested && (
+  <div>
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+        <FiUsers className="text-white" size={18} />
+      </div>
+      <div>
+        <p className="text- font-[700]">
+          {suggestedUsers.some(u => u.mutualFriends && u.mutualFriends > 0)
+        ? "Những người bạn có thể biết"
+            : "Gợi ý cho bạn"}
+        </p>
+        <p className="text- text-[#8e8e93] dark:text-zinc-500">
+          {suggestedUsers.some(u => u.mutualFriends && u.mutualFriends > 0)
+        ? "Dựa trên bạn chung"
+            : "Người dùng mới"}
+        </p>
+      </div>
+    </div>
 
-            <div className="space-y-2">
-              {suggestedUsers.map((user) => (
-                <div
-                  key={user.uid}
-                  className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-900 rounded-2xl"
-                >
-                  {user.avatarUrl? (
-                    <Image src={user.avatarUrl} alt={user.name} width={48} height={48} className="rounded-full" />
-                  ) : (
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                      {user.name[0]?.toUpperCase()}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-[600] text- truncate">{user.name}</p>
-                    <div className="flex items-center gap-2 text- text-[#8e8e93] dark:text-zinc-500">
-                      <span>@{user.username}</span>
-                      {user.mutualFriends && user.mutualFriends > 0 && (
-                        <>
-                          <span>•</span>
-                          <span className="flex items-center gap-0.5 font-[600] text-purple-600 dark:text-purple-400">
-                            <FiUsers size={12} />
-                            {user.mutualFriends} bạn chung
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleAddFriend(user.uid, user.username)}
-                    disabled={adding}
-                    className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text- font-[600] active:scale-95 transition-all disabled:opacity-40"
-                  >
-                    Kết bạn
-                  </button>
-                </div>
-              ))}
+    {suggestedUsers.length === 0? (
+      <div className="py-12 text-center">
+        <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-3">
+          <FiUsers className="text-[#8e8e93]" size={28} />
+        </div>
+        <p className="text- font-[600]">Chưa có gợi ý nào</p>
+        <p className="text- text-[#8e8e93] dark:text-zinc-500 mt-1">Hãy thử lại sau</p>
+      </div>
+    ) : (
+      <div className="space-y-2">
+        {suggestedUsers.map((user) => (
+          <div
+            key={user.uid}
+            className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-900 rounded-2xl"
+          >
+            {user.avatarUrl? (
+              <Image src={user.avatarUrl} alt={user.name} width={48} height={48} className="rounded-full" />
+            ) : (
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                {user.name[0]?.toUpperCase()}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="font-[600] text- truncate">{user.name}</p>
+              <div className="flex items-center gap-2 text- text-[#8e8e93] dark:text-zinc-500">
+                <span>@{user.username}</span>
+                {user.mutualFriends && user.mutualFriends > 0? (
+                  <>
+                    <span>•</span>
+                    <span className="flex items-center gap-0.5 font-[600] text-purple-600 dark:text-purple-400">
+                      <FiUsers size={12} />
+                      {user.mutualFriends} bạn chung
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span>•</span>
+                    <span className="font-[600] text-green-600 dark:text-green-400">Mới tham gia</span>
+                  </>
+                )}
+              </div>
             </div>
+            <button
+              onClick={() => handleAddFriend(user.uid, user.username)}
+              disabled={adding}
+              className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text- font-[600] active:scale-95 transition-all disabled:opacity-40"
+            >
+              Kết bạn
+            </button>
           </div>
-        )}
+        ))}
+      </div>
+    )}
+  </div>
+)}
 
-        {myUsername && (
+{myUsername && (
           <button
             onClick={copyMyLink}
-            className="w-full h-11 bg-zinc-100 dark:bg-zinc-800 rounded-2xl text- font-[600] flex items-center justify-center gap-2 active:scale-95 transition"
+            className="w-full h-11 bg-zinc-100 dark:bg-zinc-800 rounded-2xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition"
           >
             <FiShare2 size={18} /> Chia sẻ link của tôi
           </button>
