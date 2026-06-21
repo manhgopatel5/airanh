@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiSearch, FiUserPlus, FiLoader, FiUpload, FiCheck } from "react-icons/fi";
+import { FiX, FiSearch, FiUserPlus, FiLoader, FiUpload } from "react-icons/fi";
 import { ScanLine } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
