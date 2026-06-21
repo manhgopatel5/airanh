@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiSearch, FiUserPlus, FiLoader, FiUpload, FiCheck } from "react-icons/fi";
 import { ScanLine } from "lucide-react";
