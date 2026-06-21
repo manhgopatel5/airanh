@@ -234,8 +234,8 @@ const [activeTab, setActiveTab] = useState<"all" | "unread" | "group" | "friends
   const [pinned, setPinned] = useState<string[]>([]);
 
 
-  const [groupName, setGroupName] = useState<string>("");
-  const [selected, setSelected] = useState<string[]>([]);
+
+
 // State
 const [showStranger, setShowStranger] = useState(false);
 const [strangerInterests, setStrangerInterests] = useState<string[]>([]);
@@ -910,46 +910,6 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
   }
 }, [user?.uid]);
 
-const handleCreateGroup = useCallback(async (): Promise<void> => {
-  if (!user) { toast.error("Chưa đăng nhập"); return; }
-  const trimmedName = groupName.trim();
-  if (!trimmedName) { toast.error("Vui lòng nhập tên nhóm"); return; }
-  if (selected.length < 1) { toast.error("Vui lòng chọn ít nhất 1 thành viên"); return; }
-  if (trimmedName.length > 50) { toast.error("Tên nhóm tối đa 50 ký tự"); return; }
-  
-  try {
-    const groupRef = doc(collection(db, "chats"));
-    const groupData = { members: [user.uid,...selected], isGroup: true, groupName: trimmedName, admins: [user.uid], createdAt: serverTimestamp(),
-updatedAt: serverTimestamp(), lastMessage: `${user.displayName || "Bạn"} đã tạo nhóm`, lastSenderName: "Hệ thống" };
-    await setDoc(groupRef, groupData);
-
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    const userData = userDoc.data();
-    await Promise.all(selected.map(memberId =>
-      createNotification(memberId, {
-        type: "group_invite",
-        fromUid: user.uid,
-        fromName: userData?.name || "Người dùng",
-        fromAvatar: userData?.avatar || "",
-        title: "Mời vào nhóm",
-        message: `đã thêm bạn vào nhóm "${trimmedName}"`,
-        groupId: groupRef.id,
-        chatId: groupRef.id,
-      })
-    ));
-
-    toast.success("Đã tạo nhóm thành công");
-    router.push(`/chat/${groupRef.id}`);
-    setShowAdd(false);
-    setGroupName("");
-    setSelected([]);
-  } catch (error: any) {
-    console.error("Create group error:", error);
-    toast.error(`Lỗi tạo nhóm: ${error.message || "Vui lòng thử lại"}`);
-  } finally {
-    
-  }
-}, [user, groupName, selected, db, router, createNotification]);
 
 const handleCreatePoll = useCallback(async (targetChatId?: string): Promise<void> => {
   if (!user?.uid) return;
