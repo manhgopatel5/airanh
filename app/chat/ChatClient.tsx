@@ -37,7 +37,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import {
-  FiSearch,
+  
   FiStar,
   FiUserPlus,
   FiUsers,
