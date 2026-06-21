@@ -1198,7 +1198,7 @@ return (
   <div className="grid grid-cols-5 gap-2">
     {[
       { label: "Trang chủ", icon: FiHome, color: "bg-gradient-to-br from-[#0a84ff] to-purple-500", onClick: () => setActiveTab("all") },
-{ label: "Mời bạn", icon: FiUserPlus, color: "bg-blue-500", onClick: () => setShowAdd(true) },
+{ label: "Mời bạn", icon: FiUserPlus, color: "bg-blue-500", onClick: () => router.push('/friends/add') },
       { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => setActiveTab("friends") },
       { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => setActiveTab("group") },
       { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => setActiveTab("notifications") },
