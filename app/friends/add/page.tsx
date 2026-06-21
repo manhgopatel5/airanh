@@ -6,7 +6,7 @@ import { ScanLine, SlidersHorizontal } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
 import { getAuth } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, getDocs, limit } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import Image from "next/image";
 import { useDebounce } from "@/hooks/useDebounce";
