@@ -198,33 +198,7 @@ useEffect(() => {
   const primaryBgSolid = isPlan? "bg-green-500" : "bg-[#0a84ff]";
   const [longPressChatId, setLongPressChatId] = useState<string | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) => {
-  if (!user?.uid) return;
 
-  try {
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const acceptFn = httpsCallable(functions, 'acceptFriendRequest');
-
-    const result = await acceptFn({
-      fromUid: notif.fromUid,
-      notifId: notif.id
-    });
-
-    const data = result.data as { chatId: string };
-    toast.success(`Đã kết bạn với ${notif.fromName}`);
-    router.push(`/chat/${data.chatId}`);
-
-  } catch (error: any) {
-    console.error(error);
-    if (error.code === 'functions/not-found') {
-      toast.error("Lời mời đã hết hạn");
-    } else if (error.code === 'functions/already-exists') {
-      toast.error("Các bạn đã là bạn bè");
-    } else {
-      toast.error("Lỗi: " + error.message);
-    }
-  }
-}, [user?.uid, router]);
   const handleLongPressStart = (chatId: string) => {
     longPressTimer.current = setTimeout(() => {
       setLongPressChatId(chatId);
@@ -1611,12 +1585,18 @@ return (
         <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
           <FiUsers className="text-gray-400" size={30} strokeWidth={1.5} />
         </div>
-        <h3 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white mb-1.5">
-          {search? "Không tìm thấy" : "Chưa có bạn"}
-        </h3>
-        <p className="text-[15px] leading-5 text-[#8e8e93] dark:text-zinc-500 max-w-[280px]">
-          {search? "Thử tìm với từ khóa khác" : "Mời kết bạn để bắt đầu trò chuyện cùng nhau"}
-        </p>
+     <h3 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white mb-1.5">
+  Chưa có bạn
+</h3>
+<p className="text-[15px] leading-5 text-[#8e8e93] dark:text-zinc-500 max-w-[280px]">
+  Mời kết bạn để bắt đầu trò chuyện cùng nhau
+</p>
+{!search && (
+  <button onClick={() => setShowAdd(true)} className={`mt-6 px-6 h-11 ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-[550] shadow-sm active:scale-95 transition-all flex items-center gap-2`}>
+    <FiUserPlus size={18} />
+    Kết bạn ngay
+  </button>
+)}
         {!search && (
           <button onClick={() => setShowAdd(true)} className={`mt-6 px-6 h-11 ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-[550] shadow-sm active:scale-95 transition-all flex items-center gap-2`}>
             <FiUserPlus size={18} />
