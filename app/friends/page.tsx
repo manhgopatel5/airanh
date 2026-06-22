@@ -501,294 +501,292 @@ const copyMyLink = () => {
   };
 
   return (
-  <div className="min-h-[100dvh] bg-[#F7F8FA] dark:bg-[#0A0A0B] font-serif pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-    <div className="sticky top-0 z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-black/[0.06] dark:border-white/[0.06]" style={{ top: 'env(safe-area-inset-top)' }}>
-      <div className="px-5 pt-3 pb-3">
-        <div className="relative mb-4">
-          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={20} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm bạn bè"
-            className="w-full h-11 pl-12 pr-4 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl text-base outline-none border border-black/[0.04] dark:border-white/[0.06] focus:ring-2 focus:ring-[#007AFF]/20"
-          />
-        </div>
+  <div className="min-h-[100dvh] bg-[#F7F8FA] dark:bg-[#0A0A0B] font-serif">
+    <div className="px-5 pt-4 pb-3">
+      <div className="relative mb-4">
+        <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={20} />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Tìm bạn bè"
+          className="w-full h-11 pl-12 pr-4 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl text-base outline-none border border-black/[0.04] dark:border-white/[0.06] focus:ring-2 focus:ring-[#007AFF]/20"
+        />
+      </div>
 
-        <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl p-1 flex gap-1">
-          {(['friends', 'requests', 'suggestions'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`flex-1 h-9 rounded-lg text-sm font-[600] transition-all flex items-center justify-center gap-1.5 ${
-                tab === t
-               ? 'bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm'
-                : 'text-[#8e8e93]'
-              }`}
-            >
-              {t === 'friends' && <><FiUsers size={16} /> Bạn bè</>}
-              {t === 'requests' && <><IoRibbon size={16} /> Lời mời{requests.length > 0? ` (${requests.length})` : ''}</>}
-              {t === 'suggestions' && <><IoStatsChart size={16} /> Gợi ý</>}
-            </button>
-          ))}
-        </div>
+      <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl p-1 flex gap-1">
+        {(['friends', 'requests', 'suggestions'] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 h-9 rounded-lg text-sm font-[600] transition-all flex items-center justify-center gap-1.5 ${
+              tab === t
+            ? 'bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm'
+              : 'text-[#8e8e93]'
+            }`}
+          >
+            {t === 'friends' && <><FiUsers size={16} /> Bạn bè</>}
+            {t === 'requests' && <><IoRibbon size={16} /> Lời mời{requests.length > 0? ` (${requests.length})` : ''}</>}
+            {t === 'suggestions' && <><IoStatsChart size={16} /> Gợi ý</>}
+          </button>
+        ))}
       </div>
     </div>
 
-      <div ref={scrollRef} className="overflow-auto pb-20 px-5 pt-4">
-        {tab === 'friends' && (
-          <>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
-                <div className="flex items-center gap-2 mb-1">
-                  <FiUsers className="text-[#8e8e93]" size={18} />
-                  <span className="text-sm text-[#8e8e93]">Bạn bè</span>
-                </div>
-                <p className="text-2xl font-[700] leading-8">{friends.length}</p>
+    <div ref={scrollRef} className="overflow-auto pb-20 px-5 pt-4">
+      {tab === 'friends' && (
+        <>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
+              <div className="flex items-center gap-2 mb-1">
+                <FiUsers className="text-[#8e8e93]" size={18} />
+                <span className="text-sm text-[#8e8e93]">Bạn bè</span>
               </div>
-              <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
-                <div className="flex items-center gap-2 mb-1">
-                  <FiShield className="text-[#8e8e93]" size={18} />
-                  <span className="text-sm text-[#8e8e93]">Đang hoạt động</span>
+              <p className="text-2xl font-[700] leading-8">{friends.length}</p>
+            </div>
+            <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
+              <div className="flex items-center gap-2 mb-1">
+                <FiShield className="text-[#8e8e93]" size={18} />
+                <span className="text-sm text-[#8e8e93]">Đang hoạt động</span>
+              </div>
+              <p className="text-2xl font-[700] leading-8">{onlineCount}</p>
+            </div>
+          </div>
+
+          {friendsLoading? (
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
+                  <div className="flex items-center gap-3 animate-pulse">
+                    <div className="w-14 h-14 bg-gray-200 dark:bg-zinc-800 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
+                      <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/4" />
+                    </div>
+                  </div>
                 </div>
-                <p className="text-2xl font-[700] leading-8">{onlineCount}</p>
+              ))}
+            </div>
+          ) : filteredFriends.length === 0? (
+            <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center">
+              <div className="w-16 h-16 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <FiUsers className="text-[#8e8e93]" size={32} strokeWidth={1.5} />
+              </div>
+              <h3 className="text-lg font-[700] mb-2">
+                {search? "Không tìm thấy" : "Chưa có bạn"}
+              </h3>
+              <p className="text-sm text-[#8e8e93] mb-6">
+                {search? "Thử tìm kiếm khác" : "Mời kết bạn để bắt đầu trò chuyện"}
+              </p>
+              {!search && (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setTab('suggestions')}
+                    className="h-11 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition-all"
+                  >
+                    <FiUsers size={18} /> Tìm bạn
+                  </button>
+                  <button
+                    onClick={copyMyLink}
+                    className="h-11 bg-zinc-100 dark:bg-zinc-800 border border-black/5 dark:border-white/5 rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition"
+                  >
+                    <FiShare2 size={18} /> Mời bạn
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredFriends.map((friend) => <FriendRow key={friend.uid} friend={friend} />)}
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === 'requests' && (
+        <div className="space-y-3">
+          {requests.length === 0? (
+            <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center text-[#8e8e93]">
+              Chưa có lời mời nào
+            </div>
+          ) : (
+            requests.map(req => (
+              <div key={req.uid} className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
+                <div className="flex items-center gap-3 mb-4">
+                  <img src={req.avatar} className="w-14 h-14 rounded-full" />
+                  <div className="flex-1">
+                    <p className="text-base font-[600]">{req.name}</p>
+                    <p className="text-sm text-[#8e8e93]">{req.mutualFriends} bạn chung</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleAccept(req.uid)}
+                    className="flex-1 h-11 bg-[#007AFF] text-white rounded-xl text-base font-[600] active:scale-95"
+                  >
+                    Chấp nhận
+                  </button>
+                  <button className="flex-1 h-11 bg-[#F2F2F7] dark:bg-zinc-800 text-[#8e8e93] rounded-xl text-base font-[600]">
+                    Xóa
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {tab === 'suggestions' && (
+        <div className="space-y-4">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                  <FiMapPin className="text-white" size={20} />
+                </div>
+                <div>
+                  <p className="text-base font-[700]">Tìm xung quanh</p>
+                  <p className="text-sm text-[#8e8e93]">Bạn bè gần bạn</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowScanQR(true)}
+                  className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all"
+                >
+                  <FiUsers size={18} />
+                </button>
+                <button
+                  onClick={() => setShowFilter(!showFilter)}
+                  className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all"
+                >
+                  <SlidersHorizontal size={18} />
+                </button>
               </div>
             </div>
 
-            {friendsLoading? (
-              <div className="space-y-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
-                    <div className="flex items-center gap-3 animate-pulse">
-                      <div className="w-14 h-14 bg-gray-200 dark:bg-zinc-800 rounded-full" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
-                        <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/4" />
+            <AnimatePresence>
+              {showFilter && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden mb-4"
+                >
+                  <div className="p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl space-y-4">
+                    <div>
+                      <p className="text-sm font-[600] mb-3">Giới tính</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { label: "Tất cả", value: "all" },
+                          { label: "Nam", value: "male" },
+                          { label: "Nữ", value: "female" }
+                        ].map((g) => (
+                          <button
+                            key={g.value}
+                            onClick={() => setFilters({...filters, gender: g.value as any })}
+                            className={`h-11 rounded-xl text-sm font-[600] transition-all active:scale-95 ${
+                              filters.gender === g.value
+                            ? "bg-gradient-to-br from-[#0a84ff] to-purple-500 text-white shadow-lg shadow-blue-500/30"
+                              : "bg-white dark:bg-zinc-700"
+                            }`}
+                          >
+                            {g.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-         ) : filteredFriends.length === 0? (
-  <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center">
-    <div className="w-16 h-16 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl flex items-center justify-center mx-auto mb-4">
-      <FiUsers className="text-[#8e8e93]" size={32} strokeWidth={1.5} />
-    </div>
-    <h3 className="text-lg font-[700] mb-2">
-      {search? "Không tìm thấy" : "Chưa có bạn"}
-    </h3>
-    <p className="text-sm text-[#8e8e93] mb-6">
-      {search? "Thử tìm kiếm khác" : "Mời kết bạn để bắt đầu trò chuyện"}
-    </p>
-    {!search && (
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={() => setTab('suggestions')}
-          className="h-11 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition-all"
-        >
-          <FiUsers size={18} /> Tìm bạn
-        </button>
-        <button
-          onClick={copyMyLink}
-          className="h-11 bg-zinc-100 dark:bg-zinc-800 border border-black/5 dark:border-white/5 rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition"
-        >
-          <FiShare2 size={18} /> Mời bạn
-        </button>
-      </div>
-    )}
-  </div>
-) : (
-  <div className="space-y-3">
-    {filteredFriends.map((friend) => <FriendRow key={friend.uid} friend={friend} />)}
-  </div>
-)}
-</>
-)}
 
-{tab === 'requests' && (
-          <div className="space-y-3">
-            {requests.length === 0? (
-              <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center text-[#8e8e93]">
-                Chưa có lời mời nào
-              </div>
-            ) : (
-              requests.map(req => (
-                <div key={req.uid} className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
-                  <div className="flex items-center gap-3 mb-4">
-                    <img src={req.avatar} className="w-14 h-14 rounded-full" />
-                    <div className="flex-1">
-                      <p className="text-base font-[600]">{req.name}</p>
-                      <p className="text-sm text-[#8e8e93]">{req.mutualFriends} bạn chung</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleAccept(req.uid)}
-                      className="flex-1 h-11 bg-[#007AFF] text-white rounded-xl text-base font-[600] active:scale-95"
-                    >
-                      Chấp nhận
-                    </button>
-                    <button className="flex-1 h-11 bg-[#F2F2F7] dark:bg-zinc-800 text-[#8e8e93] rounded-xl text-base font-[600]">
-                      Xóa
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-     {tab === 'suggestions' && (
-  <div className="space-y-4">
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-            <FiMapPin className="text-white" size={20} />
-          </div>
-          <div>
-            <p className="text-base font-[700]">Tìm xung quanh</p>
-            <p className="text-sm text-[#8e8e93]">Bạn bè gần bạn</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowScanQR(true)}
-            className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all"
-          >
-            <FiUsers size={18} />
-          </button>
-          <button
-            onClick={() => setShowFilter(!showFilter)}
-            className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all"
-          >
-            <SlidersHorizontal size={18} />
-          </button>
-        </div>
-      </div>
-
-              <AnimatePresence>
-                {showFilter && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden mb-4"
-                  >
-                    <div className="p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl space-y-4">
-                      <div>
-                        <p className="text-sm font-[600] mb-3">Giới tính</p>
-                        <div className="grid grid-cols-3 gap-2">
-                          {[
-                            { label: "Tất cả", value: "all" },
-                            { label: "Nam", value: "male" },
-                            { label: "Nữ", value: "female" }
-                          ].map((g) => (
-                            <button
-                              key={g.value}
-                              onClick={() => setFilters({...filters, gender: g.value as any })}
-                              className={`h-11 rounded-xl text-sm font-[600] transition-all active:scale-95 ${
-                                filters.gender === g.value
-                                ? "bg-gradient-to-br from-[#0a84ff] to-purple-500 text-white shadow-lg shadow-blue-500/30"
-                                  : "bg-white dark:bg-zinc-700"
-                              }`}
-                            >
-                              {g.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-[600] mb-3">Tuổi</p>
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1">
-                            <p className="text-xs text-[#8e8e93] dark:text-zinc-500 mb-1.5">Từ</p>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              value={filters.minAge}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/\D/g, '');
-                                setFilters({...filters, minAge: val? Number(val) : ''});
-                              }}
-                              onBlur={(e) => {
-                                let val = Number(e.target.value) || 18;
-                                if (val < 18) {
-                                  toast.error("Tuổi tối thiểu phải từ 18 trở lên");
-                                  val = 18;
-                                }
-                                if (val > 100) val = 100;
-                                setFilters({
-                                ...filters,
-                                  minAge: val,
-                                  maxAge: Math.max(val, Number(filters.maxAge) || val)
-                                });
-                              }}
-                              className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text-base font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-                              placeholder="18"
-                            />
-                          </div>
-                          <div className="w-4 h-[2px] bg-zinc-300 dark:bg-zinc-600 mt-6" />
-                          <div className="flex-1">
-                            <p className="text-xs text-[#8e8e93] dark:text-zinc-500 mb-1.5">Đến</p>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              value={filters.maxAge}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/\D/g, '');
-                                setFilters({...filters, maxAge: val? Number(val) : ''});
-                              }}
-                              onBlur={(e) => {
-                                let val = Number(e.target.value) || 25;
-                                if (val < 18) {
-                                  toast.error("Tuổi tối thiểu phải từ 18 trở lên");
-                                  val = 18;
-                                }
-                                if (val > 100) val = 100;
-                                setFilters({
-                                ...filters,
-                                  maxAge: val,
-                                  minAge: Math.min(val, Number(filters.minAge) || val)
-                                });
-                              }}
-                              className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text-base font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-                              placeholder="25"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-[600] mb-3">Khoảng cách tối đa</p>
-                        <div className="relative">
+                    <div>
+                      <p className="text-sm font-[600] mb-3">Tuổi</p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <p className="text-xs text-[#8e8e93] dark:text-zinc-500 mb-1.5">Từ</p>
                           <input
                             type="text"
                             inputMode="numeric"
                             pattern="[0-9]*"
-                            value={filters.maxDistance}
+                            value={filters.minAge}
                             onChange={(e) => {
                               const val = e.target.value.replace(/\D/g, '');
-                              setFilters({...filters, maxDistance: val? Number(val) : ''});
+                              setFilters({...filters, minAge: val? Number(val) : ''});
                             }}
                             onBlur={(e) => {
-                              let val = Number(e.target.value);
-                              if (e.target.value === '') val = 50;
-                              val = Math.max(0, Math.min(100, val));
-                              setFilters({...filters, maxDistance: val});
+                              let val = Number(e.target.value) || 18;
+                              if (val < 18) {
+                                toast.error("Tuổi tối thiểu phải từ 18 trở lên");
+                                val = 18;
+                              }
+                              if (val > 100) val = 100;
+                              setFilters({
+                             ...filters,
+                                minAge: val,
+                                maxAge: Math.max(val, Number(filters.maxAge) || val)
+                              });
                             }}
-                            className="w-full h-12 px-4 pr-12 bg-white dark:bg-zinc-700 rounded-xl text-center text-base font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-                            placeholder="50"
+                            className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text-base font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+                            placeholder="18"
                           />
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
+                        </div>
+                        <div className="w-4 h-[2px] bg-zinc-300 dark:bg-zinc-600 mt-6" />
+                        <div className="flex-1">
+                          <p className="text-xs text-[#8e8e93] dark:text-zinc-500 mb-1.5">Đến</p>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={filters.maxAge}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '');
+                              setFilters({...filters, maxAge: val? Number(val) : ''});
+                            }}
+                            onBlur={(e) => {
+                              let val = Number(e.target.value) || 25;
+                              if (val < 18) {
+                                toast.error("Tuổi tối thiểu phải từ 18 trở lên");
+                                val = 18;
+                              }
+                              if (val > 100) val = 100;
+                              setFilters({
+                             ...filters,
+                                maxAge: val,
+                                minAge: Math.min(val, Number(filters.minAge) || val)
+                              });
+                            }}
+                            className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text-base font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+                            placeholder="25"
+                          />
                         </div>
                       </div>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+
+                    <div>
+                      <p className="text-sm font-[600] mb-3">Khoảng cách tối đa</p>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={filters.maxDistance}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '');
+                            setFilters({...filters, maxDistance: val? Number(val) : ''});
+                          }}
+                          onBlur={(e) => {
+                            let val = Number(e.target.value);
+                            if (e.target.value === '') val = 50;
+                            val = Math.max(0, Math.min(100, val));
+                            setFilters({...filters, maxDistance: val});
+                          }}
+                          className="w-full h-12 px-4 pr-12 bg-white dark:bg-zinc-700 rounded-xl text-center text-base font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+                          placeholder="50"
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 {!loadingNearby && locationDenied && (
   <div className="py-8 text-center">
     <div className="w-16 h-16 bg-red-50 dark:bg-red-950/30 rounded-full flex items-center justify-center mx-auto mb-3">
