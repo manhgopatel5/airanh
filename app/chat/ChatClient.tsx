@@ -83,17 +83,7 @@ type ChatItem = {
   deletedFor?: string[];
 };
 
-type FriendItem = {
-  uid: string;
-  name: string;
-  username: string;
-  avatar: string;
-  userId: string;
-  isOnline: boolean;
-  lastSeen?: Timestamp;
-  mutualFriends?: number;
-  isDeletedByThem?: boolean;
-};
+
 
 type NotificationItem = {
   id: string;
@@ -222,15 +212,15 @@ useEffect(() => {
   }, [longPressChatId]);
 
   const [items, setItems] = useState<ChatItem[]>([]);
-  const [friends, setFriends] = useState<FriendItem[]>([]);
+
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const [debounced ] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
-  const [friendsLoading, setFriendsLoading] = useState<boolean>(false);
+
   const [notifLoading, setNotifLoading] = useState<boolean>(false);
 
-const [activeTab, setActiveTab] = useState<"all" | "unread" | "group" | "friends" | "notifications">("all");
+const [activeTab, setActiveTab] = useState<"all" | "unread" | "group" | "notifications">("all");
   const [pinned, setPinned] = useState<string[]>([]);
 
 
@@ -868,63 +858,6 @@ const handleClearAllNotifications = useCallback(async () => {
   }
 }, [user?.uid, db, notifications]);
 
-const handleStartChatWithFriend = useCallback(async (friendId: string) => {
-  const auth = getAuth();
-  await auth.authStateReady();
-  const currentUser = auth.currentUser;
-  if (!currentUser?.uid) return;
-
-  const chatId = [currentUser.uid, friendId].sort().join("_");
-
-  const [currentUserDoc, friendDoc] = await Promise.all([
-    getDoc(doc(db, "users", currentUser.uid)),
-    getDoc(doc(db, "users", friendId))
-  ]);
-
-  const currentData = currentUserDoc.data();
-  const friendData = friendDoc.data();
-
-  await setDoc(doc(db, "chats", chatId), {
-    members: [currentUser.uid, friendId],
-    isGroup: false,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    membersInfo: {
-      [currentUser.uid]: {
-        name: currentData?.name || "User",
-        avatar: currentData?.avatar || "",
-        username: currentData?.username || ""
-      },
-      [friendId]: {
-        name: friendData?.name || "User",
-        avatar: friendData?.avatar || "",
-        username: friendData?.username || ""
-      }
-    }
-  }, { merge: true });
-
-  router.push(`/chat/${chatId}`);
-}, [db, router]);
-
-const handleRemoveFriend = useCallback(async (friendId: string, friendName: string) => {
-  if (!user?.uid) return;
-  if (!window.confirm(`Xóa ${friendName} khỏi danh sách bạn bè?`)) return;
-
-  
-  try {
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const unfriend = httpsCallable(functions, 'unfriend');
-
-    await unfriend({ friendUid: friendId });
-    toast.success("Đã hủy kết bạn");
-
-  } catch (error: any) {
-    console.error("Remove friend error:", error);
-    toast.error(`Lỗi: ${error.message || "Không thể xóa"}`);
-  } finally {
-    
-  }
-}, [user?.uid]);
 
 
 const handleCreatePoll = useCallback(async (targetChatId?: string): Promise<void> => {
@@ -1043,21 +976,6 @@ const formatMessageTime = useCallback((timestamp?: Timestamp): string => {
   return format(date, "dd/MM");
 }, []);
 
-const formatLastSeen = useCallback((timestamp?: Timestamp): string => {
-  if (!timestamp?.toDate) return "Lâu rồi";
-  const date = timestamp.toDate();
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return "Vừa xong";
-  if (diffMins < 60) return `${diffMins} phút trước`;
-  if (diffHours < 24) return `${diffHours} giờ trước`;
-  if (diffDays < 7) return `${diffDays} ngày trước`;
-  return format(date, "dd/MM/yyyy");
-}, []);
 
 const formatNotifTime = useCallback((timestamp?: Timestamp): string => {
   if (!timestamp?.toDate) return "";
@@ -1086,15 +1004,6 @@ const filteredChats = useMemo(() => {
   if (activeTab === "unread") filtered = filtered.filter((item) => (item.unreadCount || 0) > 0);
   return filtered;
 }, [items, debounced, activeTab, user?.uid]);
-const filteredFriends = useMemo(() => {
-  const query = debounced.toLowerCase().trim();
-  if (!query) return friends;
-  return friends.filter(f =>
-    f.name.toLowerCase().includes(query) ||
-    f.username.toLowerCase().includes(query) ||
-    f.userId.toLowerCase().includes(query)
-  );
-}, [friends, debounced]);
 
 const { pinnedChats, normalChats } = useMemo(() => {
   const pinnedList = filteredChats.filter((chat) => pinned.includes(chat.chatId));
@@ -1199,7 +1108,7 @@ return (
     {[
       { label: "Trang chủ", icon: FiHome, color: "bg-gradient-to-br from-[#0a84ff] to-purple-500", onClick: () => setActiveTab("all") },
 { label: "Mời bạn", icon: FiUserPlus, color: "bg-blue-500", onClick: () => router.push('/friends/add') },
-      { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => setActiveTab("friends") },
+{ label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => router.push('/friends') },
       { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => setActiveTab("group") },
       { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => setActiveTab("notifications") },
     ].map((item) => (
@@ -1505,172 +1414,7 @@ return (
 )}
               </div>
             )
-      ) : activeTab === "friends"? (
-  <div>
-    {/* Danh sách chat 1-1 với bạn bè */}
-    {items.filter(chat =>!chat.isGroup &&!chat.chatId.startsWith('public_')).length > 0 && (
-      <div>
-        <div className="px-4 py-2.5 bg-gray-50/80 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-[104px] z-10">
-          <p className="text-xs text-[#8e8e93] dark:text-zinc-500 font-medium">TRÒ CHUYỆN</p>
-        </div>
-        <div className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-zinc-900">
-          {items
-         .filter(chat =>!chat.isGroup &&!chat.chatId.startsWith('public_'))
-         .map((chat) => (
-              <div key={chat.chatId} className="group relative">
-                <Link
-                  href={`/chat/${chat.chatId}`}
-                  className="flex items-center gap-3 px-4 py-2.5 active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150 select-none"
-                  onPointerDown={() => handleLongPressStart(chat.chatId)}
-                  onPointerUp={handleLongPressEnd}
-                  onPointerLeave={handleLongPressEnd}
-                  onContextMenu={(e) => e.preventDefault()}
-                >
-                  <div className="relative flex-shrink-0">
-                    <img src={chat.avatar} alt={chat.name} className="w-12 h-12 rounded-full object-cover bg-gray-100 dark:bg-zinc-800" loading="lazy" />
-                    {chat.isOnline && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#30d158] rounded-full border-2 border-white dark:border-black" />}
-                  </div>
-                  <div className="flex-1 min-w-0 py-1">
-                    <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <p className="text-base leading-5 font-[550] text-black dark:text-white truncate">{chat.name}</p>
-                        {userVip?.tier === 'pro' && <span className="text-sm">💎</span>}
-                        {userVip?.tier === 'elite' && <span className="text-sm animate-pulse">👑</span>}
-                        {pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {longPressChatId === chat.chatId? (
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleTogglePin(chat.chatId); setLongPressChatId(null); }} className="h-6 px-2.5 bg-white dark:bg-zinc-800 rounded-md text-xs font-medium text-[#0a84ff] shadow-sm ring-1 ring-black/5 dark:ring-white/10 active:scale-95 transition-all">
-                              {pinned.includes(chat.chatId)? "Bỏ ghim" : "Ghim"}
-                            </button>
-                            <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteChat(chat); setLongPressChatId(null); }} className="h-6 px-2.5 bg-white dark:bg-zinc-800 rounded-md text-xs font-medium text-[#ff3b30] shadow-sm ring-1 ring-black/5 dark:ring-white/10 active:scale-95 transition-all">
-                              Xóa
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <span className="text-sm leading-4 text-[#8e8e93] dark:text-zinc-500 tabular-nums">{formatMessageTime(chat.updatedAt)}</span>
-                            {chat.unreadCount? (
-                              <span className={`min-w-5 h-5 px-1.5 ${primaryBgSolid} rounded-full flex items-center justify-center`}>
-                                <span className="text-xs leading-none font-medium text-white">{chat.unreadCount > 99? "99+" : chat.unreadCount}</span>
-                              </span>
-                            ) : null}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {chat.isTyping? (
-                        <div className="flex items-center gap-1.5">
-                          <div className="flex gap-0.5">
-                            <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce [animation-delay:-0.3s]`} />
-                            <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce [animation-delay:-0.15s]`} />
-                            <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce`} />
-                          </div>
-                          <span className={`text-sm leading-5 ${primaryText} italic`}>đang nhập</span>
-                        </div>
-                      ) : (
-                        <p className="text-sm leading-5 text-[#8e8e93] dark:text-zinc-500 truncate">
-                          {chat.lastSenderId === user?.uid? "Bạn: " : ""}
-                          {chat.lastMessage || "Bắt đầu trò chuyện"}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            ))}
-        </div>
-      </div>
-    )}
-
-    {/* Danh sách bạn bè chưa chat */}
-    <div className="px-4 py-2.5 bg-gray-50/80 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-[104px] z-10">
-      <p className="text-xs text-[#8e8e93] dark:text-zinc-500 font-medium">
-        <span className="inline-flex items-center gap-1">
-          <span className="w-2 h-2 bg-[#30d158] rounded-full animate-pulse" />
-          {filteredFriends.filter(f => f.isOnline).length} đang hoạt động
-        </span>
-        <span className="mx-1.5">•</span>
-        {filteredFriends.length} bạn bè
-      </p>
-    </div>
-    {friendsLoading? (
-      <div className="px-4 pt-4 space-y-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 py-3 animate-pulse">
-            <div className="w-12 h-12 bg-gray-200 dark:bg-zinc-800 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
-              <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/4" />
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : filteredFriends.length === 0? (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
-        <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
-          <FiUsers className="text-gray-400" size={30} strokeWidth={1.5} />
-        </div>
-     <h3 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white mb-1.5">
-  Chưa có bạn
-</h3>
-<p className="text-[15px] leading-5 text-[#8e8e93] dark:text-zinc-500 max-w-[280px]">
-  Mời kết bạn để bắt đầu trò chuyện cùng nhau
-</p>
-<button
-  onClick={() => router.push('/friends/add')}
-  className={`mt-6 px-6 h-11 ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-[550] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2`}
->
-  <FiUserPlus size={18} />
-  Kết bạn ngay
-</button>
-      
-      </div>
-    ) : (
-      <div className="divide-y divide-gray-100 dark:divide-zinc-900">
-        {filteredFriends.map((friend) => (
-          <div key={friend.uid} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-zinc-900/50 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors">
-            <button
-              onClick={() => handleStartChatWithFriend(friend.uid)}
-              className="flex items-center gap-3 flex-1 min-w-0 active:scale-[0.98] transition-transform"
-            >
-              <div className="relative flex-shrink-0">
-                <img
-                  src={friend.avatar}
-                  alt={friend.name}
-                  className="w-12 h-12 rounded-full object-cover bg-gray-100 dark:bg-zinc-800"
-                />
-                {friend.isOnline && (
-                  <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#30d158] rounded-full border-2 border-white dark:border-black" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0 text-left">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-base leading-5 font-[550] truncate">{friend.name}</p>
-                  {friend.isDeletedByThem && (
-                    <span className="text-xs text-red-500 font-medium flex-shrink-0">Đã xóa</span>
-                  )}
-                </div>
-                <p className="text-sm leading-4 text-[#8e8e93] dark:text-zinc-500 truncate">
-                  {friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}
-                </p>
-              </div>
-            </button>
-            <button
-              onClick={() => handleRemoveFriend(friend.uid, friend.name)}
-              className="w-8 h-8 flex items-center justify-center text-[#8e8e93] hover:text-red-500 active:scale-90 transition-all"
-              title="Xóa bạn"
-            >
-              <FiX size={18} strokeWidth={2.5} />
-            </button>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-) : loading? (
+ ) : loading? (
   <div className="px-4 pt-4 space-y-0">
     {Array.from({ length: 8 }).map((_, index) => (
       <div key={index} className="flex items-center gap-3 py-3 animate-pulse">
