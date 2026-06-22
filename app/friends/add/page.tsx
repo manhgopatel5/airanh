@@ -58,16 +58,22 @@ export default function AddFriendPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const db = getFirebaseDB();
+const db = getFirebaseDB();
+
+// Thêm đoạn này
+useEffect(() => {
+  document.body.style.paddingTop = 'env(safe-area-inset-top)';
+  document.body.style.paddingBottom = 'env(safe-area-inset-bottom)';
+  document.documentElement.style.overscrollBehavior = 'none';
+  return () => {
+    document.body.style.paddingTop = '';
+    document.body.style.paddingBottom = '';
+    document.documentElement.style.overscrollBehavior = 'auto';
+  };
+}, []);
 
 
-  // Chặn scroll bounce
-  useEffect(() => {
-    document.body.style.overscrollBehavior = "none";
-    return () => {
-      document.body.style.overscrollBehavior = "auto";
-    };
-  }, []);
+
 
   // Yêu cầu định vị ngay khi vào
   useEffect(() => {
@@ -600,8 +606,8 @@ const RangeSlider = ({ min, max, value, onChange, label, unit = "" }: {
   );
 };
 return (
-  <div className="min-h-screen bg-white dark:bg-black" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-    <div className="px-4 pt-3 pb-6 space-y-4">
+  <div className="min-h-[100dvh] bg-white dark:bg-black">
+    <div className="px-4 pt-2 pb-6 space-y-4">
       {locationDenied && (
           <div className="p-4 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900 rounded-2xl">
             <div className="flex items-start gap-3">
