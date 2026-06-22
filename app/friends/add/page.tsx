@@ -24,12 +24,7 @@ type UserSuggestion = {
   mutualFriends?: number;
 };
 
-type FilterOptions = {
-  gender: "all" | "male" | "female";
-  minAge: number;
-  maxAge: number;
-  maxDistance: number;
-};
+
 
 const RECENT_SEARCH_KEY = "friend_search_recent";
 
