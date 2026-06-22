@@ -63,33 +63,33 @@ export default function FriendsPage() {
       }
 
       const userDocs = await Promise.all(activeFriendIds.map(id => getDoc(doc(db, "users", id))));
-      const friendsData: FriendItem[] = await Promise.all(
-        userDocs.map(async (userDoc) => {
-          if (!userDoc.exists()) return null;
-          const data = userDoc.data();
+      const friendsData = await Promise.all(
+  userDocs.map(async (userDoc) => {
+    if (!userDoc.exists()) return null;
+    const data = userDoc.data();
 
-          // Đếm bạn chung
-          const theirFriendsSnap = await getDoc(doc(db, "users", userDoc.id, "friends", user.uid));
-          const mutualCount = theirFriendsSnap.exists()?
-            Object.keys(data.friends || {}).filter(fid => activeFriendIds.includes(fid)).length : 0;
+    // Đếm bạn chung
+    const theirFriendsSnap = await getDoc(doc(db, "users", userDoc.id, "friends", user.uid));
+    const mutualCount = theirFriendsSnap.exists()?
+      Object.keys(data.friends || {}).filter(fid => activeFriendIds.includes(fid)).length : 0;
 
-          return {
-            uid: userDoc.id,
-            name: data.name || "User",
-            username: data.username || "",
-            avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
-            userId: data.userId || "",
-            isOnline: Boolean(data.isOnline),
-            lastSeen: data.lastSeen,
-            isDeletedByThem: Boolean(snapshot.docs.find(d => d.id === userDoc.id)?.data()?.removedBy),
-            mutualFriends: mutualCount,
-            vip: data.vip || { tier: 'free' }
-          };
-        })
-      );
+    return {
+      uid: userDoc.id,
+      name: data.name || "User",
+      username: data.username || "",
+      avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
+      userId: data.userId || "",
+      isOnline: Boolean(data.isOnline),
+      lastSeen: data.lastSeen,
+      isDeletedByThem: Boolean(snapshot.docs.find(d => d.id === userDoc.id)?.data()?.removedBy),
+      mutualFriends: mutualCount,
+      vip: data.vip || { tier: 'free' }
+    } satisfies FriendItem;
+  })
+);
 
-      setFriends(friendsData.filter(Boolean) as FriendItem[]);
-      setFriendsLoading(false);
+setFriends(friendsData.filter((f): f is FriendItem => f !== null));
+setFriendsLoading(false);
     });
 
     return () => unsub();
