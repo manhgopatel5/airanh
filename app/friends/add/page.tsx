@@ -150,6 +150,7 @@ useEffect(() => {
           data.location.lng
         );
 
+
         if (distance > filters.maxDistance) continue;
         if (filters.gender!== "all" && data.gender!== filters.gender) continue;
         if (data.age && (data.age < filters.minAge || data.age > filters.maxAge)) continue;
