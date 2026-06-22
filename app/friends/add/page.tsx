@@ -151,9 +151,13 @@ useEffect(() => {
         );
 
 
-        if (distance > filters.maxDistance) continue;
-        if (filters.gender!== "all" && data.gender!== filters.gender) continue;
-        if (data.age && (data.age < filters.minAge || data.age > filters.maxAge)) continue;
+const maxDist = Number(filters.maxDistance) || 100;
+const minAge = Number(filters.minAge) || 18;
+const maxAge = Number(filters.maxAge) || 100;
+
+if (distance > maxDist) continue;
+if (filters.gender !== "all" && data.gender !== filters.gender) continue;
+if (data.age && (data.age < minAge || data.age > maxAge)) continue;
 
         let status: UserSuggestion["status"] = "none";
         const friendDoc = await getDoc(doc(db, "users", currentUid, "friends", docSnap.id));
