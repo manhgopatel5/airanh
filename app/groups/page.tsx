@@ -1,13 +1,13 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import GroupsTab from "@/components/GroupsTab";
 import CreateGroupModal from "@/components/CreateGroupModal";
-import { FiUsers, FiSearch } from "react-icons/fi";
-import { RiAddLine } from "react-icons/ri";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { FiUsers, FiSearch, FiHash } from "react-icons/fi";
+import { RiAddLine, RiPushpinFill } from "react-icons/ri";
+import { collection, query, where, onSnapshot, getDocs, orderBy } from "firebase/firestore";
 import { toast } from "sonner";
 
 type ChatItem = {
@@ -28,6 +28,7 @@ type ChatItem = {
   members?: string[];
   hasPassword?: boolean;
   groupCode?: string;
+  createdAt?: any;
 };
 
 const PINNED_KEY = "pinned_chats";
@@ -42,6 +43,8 @@ export default function GroupsPage() {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [pinned, setPinned] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [searchCode, setSearchCode] = useState("");
+  const [finding, setFinding] = useState(false);
 
   useEffect(() => {
     try {
@@ -58,7 +61,7 @@ export default function GroupsPage() {
 
   const handleTogglePin = (chatId: string) => {
     const newPinned = pinned.includes(chatId)
-     ? pinned.filter(id => id!== chatId)
+    ? pinned.filter(id => id!== chatId)
       : [...pinned, chatId];
     savePinned(newPinned);
     toast.success(newPinned.includes(chatId)? "Đã ghim nhóm" : "Đã bỏ ghim");
@@ -69,7 +72,8 @@ export default function GroupsPage() {
 
     const q = query(
       collection(db, "groups"),
-      where("members", "array-contains", user.uid)
+      where("members", "array-contains", user.uid),
+      orderBy("updatedAt", "desc")
     );
 
     const unsub = onSnapshot(q, (snap) => {
@@ -91,49 +95,146 @@ export default function GroupsPage() {
           members: data.members || [],
           hasPassword: data.hasPassword || false,
           groupCode: data.groupCode || "",
+          createdAt: data.createdAt,
         };
       });
       setGroupItems(list);
+      setLoading(false);
+    }, (err) => {
+      console.error("Groups error:", err);
+      toast.error("Lỗi tải danh sách nhóm");
       setLoading(false);
     });
 
     return () => unsub();
   }, [user?.uid, authLoading, db]);
 
-  const filteredGroups = groupItems.filter(g =>
-    g.name.toLowerCase().includes(search.toLowerCase())
+  const filteredGroups = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return groupItems;
+    return groupItems.filter(g =>
+      g.name.toLowerCase().includes(q) ||
+      g.groupCode?.includes(q)
+    );
+  }, [groupItems, search]);
+
+  const handleFindByCode = async () => {
+    if (searchCode.length!== 6) return toast.error("Mã nhóm phải 6 số");
+
+    setFinding(true);
+    try {
+      const q = query(
+        collection(db, "groups"),
+        where("groupCode", "==", searchCode)
+      );
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        toast.error("Không tìm thấy nhóm");
+        return;
+      }
+
+      const groupId = snap.docs[0]?.id;
+      if (!groupId) {
+        toast.error("Không tìm thấy nhóm");
+        return;
+      }
+
+      const groupData = snap.docs[0]?.data();
+      if (!groupData?.members?.includes(user?.uid)) {
+        toast.error("Bạn không phải thành viên nhóm này");
+        return;
+      }
+
+      router.push(`/groups/${groupId}`);
+      setSearchCode("");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Lỗi: " + e.message);
+    } finally {
+      setFinding(false);
+    }
+  };
+
+  const totalUnread = useMemo(() =>
+    groupItems.reduce((sum, g) => sum + (g.unreadCount || 0), 0),
+    [groupItems]
   );
 
   return (
-    <div className="min-h-[100dvh] bg-[#F7F8FA] dark:bg-[#0A0B] font-serif">
-      <div className="px-5 pt-4 pb-3">
-        <div className="relative mb-4">
-          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={20} />
+    <div className="min-h-[100dvh] bg-white dark:bg-black">
+      <div className="px-4 pt-4 pb-3 space-y-3">
+        {/* Search */}
+        <div className="relative">
+          <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={18} />
           <input
+            type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm nhóm..."
-            className="w-full h-11 pl-12 pr-4 bg-[#F2F7] dark:bg-zinc-800 rounded-xl text-base outline-none border-black/[0.04] dark:border-white/[0.06] focus:ring-2 focus:ring-[#007AFF]/20"
+            placeholder="Tìm nhóm theo tên hoặc mã..."
+            className="w-full h-11 pl-10 pr-3.5 bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 rounded-xl text-sm outline-none focus:ring-4 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff]"
           />
         </div>
 
+        {/* Find by Code */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <FiHash className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={18} />
+            <input
+              type="text"
+              inputMode="numeric"
+              value={searchCode}
+              onChange={(e) => setSearchCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onKeyPress={(e) => e.key === 'Enter' && handleFindByCode()}
+              placeholder="Nhập mã 6 số"
+              className="w-full h-11 pl-10 pr-3.5 bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 rounded-xl text-sm outline-none focus:ring-4 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff]"
+              maxLength={6}
+            />
+          </div>
+          <button
+            onClick={handleFindByCode}
+            disabled={finding || searchCode.length!== 6}
+            className="h-11 px-5 bg-[#f2f2f7] dark:bg-zinc-800 hover:bg-black/5 dark:hover:bg-white/5 text-sm font-[600] rounded-xl disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
+          >
+            {finding? "..." : "Tìm"}
+          </button>
+        </div>
+
+        {/* Stats cards - giống /friends */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 rounded-2xl p-3.5">
+            <div className="flex items-center gap-2 mb-1">
+              <FiUsers className="text-[#0a84ff]" size={16} />
+              <span className="text-sm text-[#8e8e93]">Nhóm</span>
+            </div>
+            <p className="text-xl font-[700] tracking-tight">{groupItems.length}</p>
+          </div>
+          <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 rounded-2xl p-3.5">
+            <div className="flex items-center gap-2 mb-1">
+              <RiPushpinFill className="text-purple-500" size={16} />
+              <span className="text-sm text-[#8e8e93]">Chưa đọc</span>
+            </div>
+            <p className="text-xl font-[700] tracking-tight">{totalUnread}</p>
+          </div>
+        </div>
+
+        {/* Create button */}
         <button
           onClick={() => setShowCreateGroup(true)}
-          className="w-full h-12 bg-gradient-to-r from-[#0a84ff] to-purple-500 text-white rounded-xl text-base font-[600] flex items-center justify-center gap-2 active:scale-95 transition-all"
+          className="w-full h-12 bg-gradient-to-r from-[#0a84ff] to-purple-500 text-white rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-[#0a84ff]/20"
         >
-          <RiAddLine size={22} /> Tạo nhóm mới
+          <RiAddLine size={22} strokeWidth={2.5} />
+          Tạo nhóm mới
         </button>
       </div>
 
-      <div className="px-5 pt-2 pb-24">
-        <GroupsTab
-          groups={filteredGroups}
-          pinned={pinned}
-          onTogglePin={handleTogglePin}
-          onCreateGroup={() => setShowCreateGroup(true)}
-          loading={loading}
-        />
-      </div>
+      <GroupsTab
+        groups={filteredGroups}
+        pinned={pinned}
+        onTogglePin={handleTogglePin}
+        onCreateGroup={() => setShowCreateGroup(true)}
+        loading={loading}
+      />
 
       <CreateGroupModal
         open={showCreateGroup}
