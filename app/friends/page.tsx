@@ -876,7 +876,7 @@ const filteredFriends = useMemo((): (FriendItem | StrangerChatItem)[] => {
       <FiMapPin className="text-red-500" size={28} />
     </div>
     <p className="text-base font-[600]">Bạn đã từ chối quyền vị trí</p>
-    <p className="text-sm text-[#8e93] dark:text-zinc-500 mt-1">
+    <p className="text-sm text-[#8e8e93] dark:text-zinc-500 mt-1">
       Bật quyền vị trí trong cài đặt trình duyệt để tìm bạn bè gần bạn
     </p>
     <button
@@ -1076,7 +1076,7 @@ const filteredFriends = useMemo((): (FriendItem | StrangerChatItem)[] => {
                 <img src={selectedFriend.avatar} className="w-16 h-16 rounded-full" />
                 <div>
                   <p className="text-lg font-[600]">{selectedFriend.name}</p>
-                  <p className="text-sm text-[#8e93]">@{selectedFriend.username}</p>
+                  <p className="text-sm text-[#8e8e93]">@{selectedFriend.username}</p>
                 </div>
               </div>
               <div className="space-y-3">
