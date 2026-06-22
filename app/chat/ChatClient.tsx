@@ -1,6 +1,6 @@
 "use client";
 import GpsRequiredModal from "@/components/GpsRequiredModal";
-import GroupsTab from "@/components/GroupsTab";
+
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import CreateGroupModal from "@/components/CreateGroupModal";
