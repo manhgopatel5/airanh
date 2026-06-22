@@ -45,7 +45,7 @@ export default function FriendsPage() {
   const [suggestions, setSuggestions] = useState<RequestItem[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterOnline, setFilterOnline] = useState(false);
+
   const [selectedFriend, setSelectedFriend] = useState<FriendItem | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -202,18 +202,16 @@ export default function FriendsPage() {
   };
 
   const filteredFriends = useMemo(() => {
-    let result = friends;
-    if (filterOnline) result = result.filter(f => f.isOnline);
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(f => f.name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q));
-    }
-    return result.sort((a, b) => {
-      if (a.isOnline!== b.isOnline) return b.isOnline? 1 : -1;
-      return a.name.localeCompare(b.name);
-    });
-  }, [friends, search, filterOnline]);
-
+  let result = friends;
+  if (search) {
+    const q = search.toLowerCase();
+    result = result.filter(f => f.name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q));
+  }
+  return result.sort((a, b) => {
+    if (a.isOnline!== b.isOnline) return b.isOnline? 1 : -1;
+    return a.name.localeCompare(b.name);
+  });
+}, [friends, search]);
   const onlineCount = friends.filter(f => f.isOnline).length;
 
   const FriendRow = ({ friend }: { friend: FriendItem }) => {
