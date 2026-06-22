@@ -49,14 +49,12 @@ export default function AddFriendPage() {
   const [loadingSuggested, setLoadingSuggested] = useState(false);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
-type FilterOptions = {
+const [filters, setFilters] = useState<{
   gender: "all" | "male" | "female";
   minAge: number | '';
   maxAge: number | '';
   maxDistance: number | '';
-};
-
-const [filters, setFilters] = useState<FilterOptions>({
+}>({
   gender: "all",
   minAge: 18,
   maxAge: 25,
