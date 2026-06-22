@@ -277,15 +277,7 @@ export default function FriendsPage() {
       {/* Header */}
       <div className="sticky top-0 z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-black/[0.06] dark:border-white/[0.06]">
         <div className="px-5 pt-5 pb-3">
-          <div className="flex items-center justify-between mb-5">
-            <h1 className="text-[34px] font-[700] tracking-[-0.6px]">Bạn bè</h1>
-            <button
-              onClick={() => router.push('/friends/add')}
-              className="w-11 h-11 bg-[#007AFF] rounded-full flex items-center justify-center active:scale-90 transition-transform"
-            >
-              <FiUserPlus className="text-white" size={22} strokeWidth={2.5} />
-            </button>
-          </div>
+   
 
           {/* Search */}
           <div className="relative mb-4">
