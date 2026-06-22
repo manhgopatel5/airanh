@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FiSearch, FiX, FiLoader, FiUpload, FiCheck, FiClock, FiShare2, FiArrowLeft, FiMapPin, FiNavigation, FiRefreshCw, FiUsers } from "react-icons/fi";
 import { ScanLine, SlidersHorizontal } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
