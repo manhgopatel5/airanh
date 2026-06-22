@@ -10,7 +10,7 @@ import { doc, getDoc, setDoc, serverTimestamp, collection, query, getDocs, limit
 import { getFirebaseDB } from "@/lib/firebase";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+
 
 type UserSuggestion = {
   uid: string;
