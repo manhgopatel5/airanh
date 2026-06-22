@@ -302,22 +302,25 @@ useEffect(() => {
   };
 
   const fetchSuggestedUsers = async () => {
-    setLoadingSuggested(true);
-    try {
-      const auth = getAuth();
-      const currentUid = auth.currentUser?.uid;
-      if (!currentUid) return;
+  setLoadingSuggested(true);
+  try {
+    const auth = getAuth();
+    const currentUid = auth.currentUser?.uid;
+    if (!currentUid) return;
 
-      const friendIds = friends.map(f => f.uid);
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, limit(50));
-      const snap = await getDocs(q);
-      const results: UserSuggestion[] = [];
-      const randomUsers: UserSuggestion[] = [];
+    const friendIds = friends.map(f => f.uid); // giữ lại
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, limit(50));
+    const snap = await getDocs(q);
+    const results: UserSuggestion[] = [];
+    const randomUsers: UserSuggestion[] = [];
 
-      for (const docSnap of snap.docs) {
-        if (docSnap.id === currentUid) continue;
-        const data = docSnap.data();
+    for (const docSnap of snap.docs) {
+      if (docSnap.id === currentUid) continue;
+      if (friendIds.includes(docSnap.id)) continue; // dùng ở đây
+      
+      const data = docSnap.data();
+      // bỏ đoạn getDoc check friend đi vì check ở trên rồi
 
         const friendDoc = await getDoc(doc(db, "users", currentUid, "friends", docSnap.id));
         if (friendDoc.exists()) continue;
