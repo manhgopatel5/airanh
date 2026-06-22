@@ -81,6 +81,40 @@ export default function FriendsPage() {
     maxAge: 25,
     maxDistance: 50
   });
+const stopScan = async () => {
+  if (scannerRef.current) {
+    try {
+      await scannerRef.current.stop();
+      scannerRef.current.clear();
+    } catch (e) {}
+  }
+  setShowScanQR(false);
+};
+
+const startScan = async () => {
+  const scanner = new Html5Qrcode("qr-reader-add");
+  scannerRef.current = scanner;
+  try {
+    await scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      (decodedText) => {
+        toast.success(`Đã quét: ${decodedText}`);
+        stopScan();
+        router.push(`/profile/${decodedText}`);
+      },
+      () => {}
+    );
+  } catch (e) {
+    toast.error("Không mở được camera");
+    stopScan();
+  }
+};
+
+useEffect(() => {
+  if (showScanQR && scanMode === "camera") startScan();
+  return () => { stopScan(); };
+}, [showScanQR, scanMode]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1001,7 +1035,23 @@ export default function FriendsPage() {
         </div>
       )}
 
-      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={() => {}} />
+<input
+  ref={fileInputRef}
+  type="file"
+  accept="image/*"
+  className="hidden"
+  onChange={async (e) => {
+    const file = e.target.files?.[0];
+    if (!file ||!scannerRef.current) return;
+    try {
+      const result = await scannerRef.current.scanFile(file, true);
+      toast.success(`Đã quét: ${result}`);
+      stopScan();
+    } catch (e) {
+      toast.error("Không đọc được mã QR");
+    }
+  }}
+/>
 
       <style jsx global>{`
       .animate-shimmer {
