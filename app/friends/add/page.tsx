@@ -524,86 +524,65 @@ export default function AddFriendPage() {
   };
 
   // Dual Range Slider Component
-  // Thêm vào đầu file, sau type FilterOptions
-const RangeSlider = ({ min, max, value, onChange, label, unit = "" }: {
-  min: number;
-  max: number;
-  value: [number, number];
-  onChange: (val: [number, number]) => void;
-  label: string;
-  unit?: string;
-}) => {
-  const [active, setActive] = useState<'min' | 'max' | null>(null);
-  const sliderRef = useRef<HTMLDivElement>(null);
+  const DualRangeSlider = ({ min, max, value, onChange }: {
+    min: number;
+    max: number;
+    value: [number, number];
+    onChange: (val: [number, number]) => void;
+  }) => {
+    const [minVal, maxVal] = value;
+    const minValRef = useRef<HTMLInputElement>(null);
+    const maxValRef = useRef<HTMLInputElement>(null);
 
-  const getPercent = (val: number) => ((val - min) / (max - min)) * 100;
+    const getPercent = useCallback((value: number) => Math.round(((value - min) / (max - min)) * 100), [min, max]);
 
-  const handleMove = (e: TouchEvent | MouseEvent) => {
-    if (!active ||!sliderRef.current) return;
-    const rect = sliderRef.current.getBoundingClientRect();
-    const clientX = 'touches' in e? e.touches[0].clientX : e.clientX;
-    const percent = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
-    const val = Math.round(min + (percent / 100) * (max - min));
-
-    if (active === 'min') {
-      onChange([Math.min(val, value[1] - 1), value[1]]);
-    } else {
-      onChange([value[0], Math.max(val, value[0] + 1)]);
-    }
+    return (
+      <div className="relative h-10 flex items-center">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          value={minVal}
+          ref={minValRef}
+          onChange={(e) => {
+            const value = Math.min(+e.target.value, maxVal - 1);
+            onChange([value, maxVal]);
+          }}
+          className="absolute w-full h-2 bg-transparent pointer-events-none appearance-none z-10 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#0a84ff] [&::-webkit-slider-thumb]:cursor-pointer"
+        />
+        <input
+          type="range"
+          min={min}
+          max={max}
+          value={maxVal}
+          ref={maxValRef}
+          onChange={(e) => {
+            const value = Math.max(+e.target.value, minVal + 1);
+            onChange([minVal, value]);
+          }}
+          className="absolute w-full h-2 bg-transparent pointer-events-none appearance-none z-10 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#0a84ff] [&::-webkit-slider-thumb]:cursor-pointer"
+        />
+        <div className="relative w-full h-2">
+          <div className="absolute h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full w-full" />
+          <div
+            className="absolute h-2 bg-[#0a84ff] rounded-full"
+            style={{
+              left: `${getPercent(minVal)}%`,
+              width: `${getPercent(maxVal) - getPercent(minVal)}%`
+            }}
+          />
+        </div>
+      </div>
+    );
   };
 
-  useEffect(() => {
-    if (!active) return;
-    const move = (e: TouchEvent | MouseEvent) => handleMove(e);
-    const up = () => setActive(null);
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', up);
-    window.addEventListener('touchmove', move);
-    window.addEventListener('touchend', up);
-    return () => {
-      window.removeEventListener('mousemove', move);
-      window.removeEventListener('mouseup', up);
-      window.removeEventListener('touchmove', move);
-      window.removeEventListener('touchend', up);
-    };
-  }, [active, value]);
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <p className="text- font-[600]">{label}</p>
-        <p className="text- font-[700] text-[#0a84ff]">{value[0]} - {value[1]}{unit}</p>
-      </div>
-      <div ref={sliderRef} className="relative h-12 flex items-center">
-        <div className="absolute w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full" />
-        <div
-          className="absolute h-1.5 bg-gradient-to-r from-[#0a84ff] to-purple-500 rounded-full"
-          style={{
-            left: `${getPercent(value[0])}%`,
-            width: `${getPercent(value[1]) - getPercent(value[0])}%`
-          }}
-        />
-        <div
-          onMouseDown={() => setActive('min')}
-          onTouchStart={() => setActive('min')}
-          className="absolute w-7 h-7 bg-white dark:bg-zinc-800 rounded-full shadow-lg border-2 border-[#0a84ff] -ml-3.5 active:scale-110 transition-transform"
-          style={{ left: `${getPercent(value[0])}%` }}
-        />
-        <div
-          onMouseDown={() => setActive('max')}
-          onTouchStart={() => setActive('max')}
-          className="absolute w-7 h-7 bg-white dark:bg-zinc-800 rounded-full shadow-lg border-2 border-[#0a84ff] -ml-3.5 active:scale-110 transition-transform"
-          style={{ left: `${getPercent(value[1])}%` }}
-        />
-      </div>
-    </div>
-  );
-};
-
-  return (
-  <div className="h-screen bg-white dark:bg-black flex flex-col overflow-hidden">
-    {/* Header fixed */}
-    <div className="flex-shrink-0 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5 z-50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+return (
+  <div className="min-h-screen bg-white dark:bg-black">
+    {/* Header sticky chuẩn */}
+    <div 
+      className="sticky top-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-black/5 dark:border-white/5"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
       <div className="flex items-center justify-between px-4 h-14">
         <button
           onClick={() => router.back()}
@@ -621,8 +600,8 @@ const RangeSlider = ({ min, max, value, onChange, label, unit = "" }: {
       </div>
     </div>
 
-    {/* Content scroll riêng */}
-    <div className="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-4" style={{ overscrollBehavior: 'contain' }}>
+    {/* Content */}
+    <div className="px-4 pt-4 pb-6 space-y-4">
       {locationDenied && (
           <div className="p-4 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900 rounded-2xl">
             <div className="flex items-start gap-3">
@@ -641,75 +620,65 @@ const RangeSlider = ({ min, max, value, onChange, label, unit = "" }: {
           </div>
         )}
 
-<AnimatePresence>
-  {showFilter && (
-    <motion.div
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: "auto", opacity: 1 }}
-      exit={{ height: 0, opacity: 0 }}
-      className="overflow-hidden"
-    >
-      <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-2xl space-y-5">
-        <div>
-          <p className="text- font-[600] mb-3">Giới tính</p>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: "Tất cả", value: "all" },
-              { label: "Nam", value: "male" },
-              { label: "Nữ", value: "female" }
-            ].map((g) => (
-              <button
-                key={g.value}
-                onClick={() => setFilters({...filters, gender: g.value as any })}
-                className={`h-10 rounded-xl text- font-[600] transition-all active:scale-95 ${
-                  filters.gender === g.value
-               ? "bg-gradient-to-br from-[#0a84ff] to-purple-500 text-white shadow-lg shadow-blue-500/30"
-                    : "bg-white dark:bg-zinc-800"
-                }`}
-              >
-                {g.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <AnimatePresence>
+          {showFilter && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-2xl space-y-4">
+                <div>
+                  <p className="text-sm font-[600] mb-2">Giới tính</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: "Tất cả", value: "all" },
+                      { label: "Nam", value: "male" },
+                      { label: "Nữ", value: "female" }
+                    ].map((g) => (
+                      <button
+                        key={g.value}
+                        onClick={() => setFilters({...filters, gender: g.value as any })}
+                        className={`h-9 rounded-xl text-sm font-[600] transition-all ${
+                          filters.gender === g.value
+                       ? "bg-[#0a84ff] text-white"
+                            : "bg-white dark:bg-zinc-800"
+                        }`}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-        <RangeSlider
-          min={18}
-          max={70}
-          value={[filters.minAge, filters.maxAge]}
-          onChange={([min, max]) => setFilters({...filters, minAge: min, maxAge: max})}
-          label="Tuổi"
-        />
+                <div>
+                  <p className="text-sm font-[600] mb-3">Tuổi: {filters.minAge} - {filters.maxAge}</p>
+                  <DualRangeSlider
+                    min={18}
+                    max={70}
+                    value={[filters.minAge, filters.maxAge]}
+                    onChange={([min, max]) => setFilters({...filters, minAge: min, maxAge: max})}
+                  />
+                </div>
 
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text- font-[600]">Khoảng cách</p>
-            <p className="text- font-[700] text-[#0a84ff]">{filters.maxDistance}km</p>
-          </div>
-          <div className="relative h-12 flex items-center px-3.5">
-            <div className="absolute left-0 right-0 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full" />
-            <div
-              className="absolute left-0 h-1.5 bg-gradient-to-r from-[#0a84ff] to-purple-500 rounded-full"
-              style={{ width: `${(filters.maxDistance / 100) * 100}%` }}
-            />
-            <input
-              type="range"
-              min="1"
-              max="100"
-              value={filters.maxDistance}
-              onChange={(e) => setFilters({...filters, maxDistance: Number(e.target.value) })}
-              className="absolute inset-0 w-full h-12 opacity-0 cursor-pointer"
-            />
-            <div
-              className="absolute w-7 h-7 bg-white dark:bg-zinc-800 rounded-full shadow-lg border-2 border-[#0a84ff] -ml-3.5 pointer-events-none"
-              style={{ left: `${(filters.maxDistance / 100) * 100}%` }}
-            />
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
+                <div>
+                  <p className="text-sm font-[600] mb-3">Khoảng cách: {filters.maxDistance}km</p>
+                  <div className="relative h-10 flex items-center">
+                    <input
+                      type="range"
+                      min="1"
+                      max="100"
+                      value={filters.maxDistance}
+                      onChange={(e) => setFilters({...filters, maxDistance: Number(e.target.value) })}
+                      className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#0a84ff] [&::-webkit-slider-thumb]:cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="grid grid-cols-2 gap-2">
           <button
@@ -731,21 +700,25 @@ const RangeSlider = ({ min, max, value, onChange, label, unit = "" }: {
         <form onSubmit={(e) => { e.preventDefault(); handleSearchUser(); }} className="space-y-3">
           <div className="relative">
             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8e8e93] pointer-events-none z-10" size={20} />
-            <input
-              type="search"
-              inputMode="search"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setSearchResult(null);
-              }}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearchUser()}
-              placeholder="Nhập ID hoặc @username"
-              className="w-full h-12 pl-12 pr-4 bg-zinc-100 dark:bg-zinc-800 rounded-2xl text- outline-none focus:ring-4 focus:ring-[#0a84ff]/20 focus:bg-white dark:focus:bg-zinc-700 transition-all"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
+     <input
+  type="text"
+  name="username-search-field"
+  inputMode="search"
+  value={search}
+  onChange={(e) => {
+    setSearch(e.target.value);
+    setSearchResult(null);
+  }}
+  onKeyDown={(e) => e.key === 'Enter' && handleSearchUser()}
+  placeholder="Nhập ID hoặc @username"
+  className="w-full h-12 pl-12 pr-4 bg-zinc-100 dark:bg-zinc-800 rounded-2xl text- outline-none focus:ring-4 focus:ring-[#0a84ff]/20 focus:bg-white dark:focus:bg-zinc-700 transition-all"
+  autoComplete="off"
+  autoCorrect="off"
+  autoCapitalize="off"
+  spellCheck={false}
+  data-form-type="other"
+  data-lpignore="true"
+/>
           </div>
 
           <button
@@ -922,7 +895,7 @@ const RangeSlider = ({ min, max, value, onChange, label, unit = "" }: {
           )}
         </div>
 
-    {/* Gợi ý cho bạn */}
+   {/* Gợi ý cho bạn */}
 {!loadingSuggested && (
   <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-2xl">
     <div className="flex items-center gap-2 mb-4">
@@ -932,12 +905,12 @@ const RangeSlider = ({ min, max, value, onChange, label, unit = "" }: {
       <div>
         <p className="text- font-[700]">
           {suggestedUsers.some(u => u.mutualFriends && u.mutualFriends > 0)
-      ? "Những người bạn có thể biết"
+     ? "Những người bạn có thể biết"
             : "Gợi ý cho bạn"}
         </p>
         <p className="text- text-[#8e8e93] dark:text-zinc-500">
           {suggestedUsers.some(u => u.mutualFriends && u.mutualFriends > 0)
-      ? "Dựa trên bạn chung"
+     ? "Dựa trên bạn chung"
             : "Người dùng mới"}
         </p>
       </div>
@@ -984,7 +957,6 @@ const RangeSlider = ({ min, max, value, onChange, label, unit = "" }: {
                   </>
                 )}
               </div>
-            </div>
             <button
               onClick={() => handleAddFriend(user.uid, user.username)}
               disabled={adding}
