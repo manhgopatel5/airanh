@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, query, onSnapshot, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { FiUsers, FiX, FiLoader, FiUserPlus } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
