@@ -722,3 +722,262 @@ export default function FriendsPage() {
                           />
                           <span className="absolute right-4 top-1/2 -translate-y-1/2 text- font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
                         </
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {loadingNearby && (
+                    <div className="py-12 text-center text-[#8e8e93]">
+                      <FiRefreshCw className="animate-spin mx-auto mb-2" size={24} />
+                      <p className="text-">Đang tìm bạn bè gần bạn...</p>
+                    </div>
+                  )}
+
+                  {!loadingNearby && nearbyUsers.length === 0 && userLocation && (
+                    <div className="py-8 text-center">
+                      <div className="w-16 h-16 bg-white/50 dark:bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <FiMapPin className="text-[#8e8e93]" size={28} />
+                      </div>
+                      <p className="text- font-[600]">Không tìm thấy ai gần bạn</p>
+                      <p className="text- text-[#8e8e93] dark:text-zinc-500 mt-1">Thử mở rộng khoảng cách tìm kiếm</p>
+                    </div>
+                  )}
+
+                  {!loadingNearby && nearbyUsers.length > 0 && (
+                    <div className="space-y-2 mb-3">
+                      {nearbyUsers.map((user) => (
+                        <div
+                          key={user.uid}
+                          className="flex items-center gap-3 p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl"
+                        >
+                          {user.avatarUrl? (
+                            <Image src={user.avatarUrl} alt={user.name} width={48} height={48} className="rounded-full" />
+                          ) : (
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                              {user.name[0]?.toUpperCase()}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-[600] text- truncate">{user.name}</p>
+                            <div className="flex items-center gap-2 text- text-[#8e8e93] dark:text-zinc-500">
+                              <span>@{user.username}</span>
+                              {user.distance!== undefined && (
+                                <>
+                                  <span>•</span>
+                                  <span className="flex items-center gap-0.5 font-[600] text-[#0a84ff]">
+                                    <FiMapPin size={12} />
+                                    {user.distance}km
+                                  </span>
+                                </>
+                              )}
+                              {user.age && (
+                                <>
+                                  <span>•</span>
+                                  <span>{user.age}t</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {user.status === "sent" && (
+                            <div className="px-3 py-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text- font-[600]">
+                              Đã gửi
+                            </div>
+                          )}
+                          {user.status === "received" && (
+                            <div className="px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text- font-[600]">
+                              Chờ xác nhận
+                            </div>
+                          )}
+                          {user.status === "none" && (
+                            <button
+                              onClick={() => handleAddFriend(user.uid, user.username)}
+                              className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text- font-[600] active:scale-95 transition-all"
+                            >
+                              Kết bạn
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {userLocation && (
+                    <button
+                      onClick={fetchNearbyUsers}
+                      disabled={loadingNearby}
+                      className="w-full h-10 flex items-center justify-center gap-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl text-[#0a84ff] font-[600] active:scale-95 transition-all disabled:opacity-40"
+                    >
+                      <FiRefreshCw size={18} className={loadingNearby? "animate-spin" : ""} />
+                      Làm mới
+                    </button>
+                  )}
+                </div>
+
+                {/* Gợi ý cho bạn */}
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded- p-4 border border-black/[0.06] dark:border-white/[0.06]">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                      <FiUsers className="text-white" size={20} />
+                    </div>
+                    <div>
+                      <p className="text- font-[700]">
+                        {suggestions.some(u => u.mutualFriends && u.mutualFriends > 0)
+             ? "Những người bạn có thể biết"
+                          : "Gợi ý cho bạn"}
+                      </p>
+                      <p className="text- text-[#8e8e93] dark:text-zinc-500">
+                        {suggestions.some(u => u.mutualFriends && u.mutualFriends > 0)
+             ? "Dựa trên bạn chung"
+                          : "Người dùng mới"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {loadingSuggested? (
+                    <div className="py-12 text-center text-[#8e8e93]">
+                      <FiRefreshCw className="animate-spin mx-auto mb-2" size={24} />
+                      <p className="text-">Đang tải gợi ý...</p>
+                    </div>
+                  ) : suggestions.length === 0? (
+                    <div className="py-12 text-center">
+                      <div className="w-16 h-16 bg-white/50 dark:bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <FiUsers className="text-[#8e8e93]" size={28} />
+                      </div>
+                      <p className="text- font-[600]">Chưa có gợi ý nào</p>
+                      <p className="text- text-[#8e8e93] dark:text-zinc-500 mt-1">Hãy thử lại sau</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {suggestions.map((user) => (
+                        <div
+                          key={user.uid}
+                          className="flex items-center gap-3 p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl"
+                        >
+                          {user.avatarUrl? (
+                            <Image src={user.avatarUrl} alt={user.name} width={48} height={48} className="rounded-full" />
+                          ) : (
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                              {user.name[0]?.toUpperCase()}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-[600] text- truncate">{user.name}</p>
+                            <div className="flex items-center gap-2 text- text-[#8e8e93] dark:text-zinc-500">
+                              <span>@{user.username}</span>
+                              {user.mutualFriends && user.mutualFriends > 0? (
+                                <>
+                                  <span>•</span>
+                                  <span className="flex items-center gap-0.5 font-[600] text-purple-600 dark:text-purple-400">
+                                    <FiUsers size={12} />
+                                    {user.mutualFriends} bạn chung
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>•</span>
+                                  <span className="font-[600] text-green-600 dark:text-green-400">Mới tham gia</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleAddFriend(user.uid, user.username)}
+                            className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text- font-[600] active:scale-95 transition-all"
+                          >
+                            Kết bạn
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Sheet Actions */}
+      <AnimatePresence>
+        {selectedFriend && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedFriend(null)}
+              className="fixed inset-0 bg-black/40 z-40"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 rounded-t- z-50 p-5 pb-10"
+            >
+              <div className="w-12 h-1.5 bg-gray-300 dark:bg-zinc-700 rounded-full mx-auto mb-5" />
+              <div className="flex items-center gap-3 mb-6">
+                <img src={selectedFriend.avatar} className="w-16 h-16 rounded-full" />
+                <div>
+                  <p className="text- font-[600]">{selectedFriend.name}</p>
+                  <p className="text- text-[#8e8e93]">@{selectedFriend.username}</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <button
+                  onClick={() => { handleStartChat(selectedFriend.uid); setSelectedFriend(null); }}
+                  className="w-full h- flex items-center gap-3 px-5 bg-[#F2F2F7] dark:bg-zinc-800 rounded- active:scale-98"
+                >
+                  <FiMessageCircle size={22} />
+                  <span className="text- font-[500]">Nhắn tin</span>
+                </button>
+                <button
+                  onClick={() => { handleRemoveFriend(selectedFriend); }}
+                  className="w-full h- flex items-center gap-3 px-5 bg-red-50 dark:bg-red-950/30 text-red-500 rounded- active:scale-98"
+                >
+                  <FiUserX size={22} />
+                  <span className="text- font-[500]">Hủy kết bạn</span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* QR Scanner Modal */}
+      {showScanQR && (
+        <div className="fixed inset-0 bg-black z-[70]">
+          <div id="qr-reader-add" className={scanMode === "camera"? "w-full h-full" : "hidden"} />
+          <div id="qr-reader-file-add" className="hidden" />
+          <button
+            onClick={() => stopScan()}
+            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center active:scale-90 transition"
+            style={{ top: "max(24px, env(safe-area-inset-top))" }}
+          >
+            <FiX className="w-5 h-5 text-white" />
+          </button>
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
+            <p className="font-bold">Đưa mã QR vào khung</p>
+            <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
+          </div>
+        </div>
+      )}
+
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={() => {}} />
+
+      <style jsx global>{`
+       .animate-shimmer {
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
