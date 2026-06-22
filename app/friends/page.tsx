@@ -276,61 +276,59 @@ export default function FriendsPage() {
     <div className="min-h-dvh bg-[#F7F8FA] dark:bg-[#0A0A0B] font-serif">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-black/[0.06] dark:border-white/[0.06]">
-        <div className="px-5 pt-5 pb-3">
-   
+     <div className="px-5 pt-5 pb-3">
+  {/* Search */}
+  <div className="relative mb-4">
+    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={20} />
+    <input
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      placeholder="Tìm bạn bè"
+      className="w-full h-[48px] pl-12 pr-4 bg-[#F2F2F7] dark:bg-zinc-800 rounded-[14px] text-[17px] outline-none border border-black/[0.04] dark:border-white/[0.06] focus:ring-2 focus:ring-[#007AFF]/20"
+    />
+  </div>
 
-          {/* Search */}
-          <div className="relative mb-4">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={20} />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm bạn bè"
-              className="w-full h-[48px] pl-12 pr-4 bg-[#F2F2F7] dark:bg-zinc-800 rounded-[14px] text-[17px] outline-none border border-black/[0.04] dark:border-white/[0.06] focus:ring-2 focus:ring-[#007AFF]/20"
-            />
-          </div>
-
-          {/* Segmented Control */}
-          <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-[12px] p-1 flex gap-1">
-            {(['friends', 'requests', 'suggestions'] as const).map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`flex-1 h-[36px] rounded-[10px] text-[15px] font-[600] transition-all flex items-center justify-center gap-1.5 ${
-                  tab === t
-                  ? 'bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm'
-                    : 'text-[#8e8e93]'
-                }`}
-              >
-                {t === 'friends' && <><FiUsers size={16} /> Bạn bè</>}
-                {t === 'requests' && <><IoRibbon size={16} /> Lời mời{requests.length > 0? ` (${requests.length})` : ''}</>}
-                {t === 'suggestions' && <><IoStatsChart size={16} /> Gợi ý</>}
-              </button>
-            ))}
-          </div>
-        </div>
+  {/* Segmented Control */}
+  <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-[12px] p-1 flex gap-1">
+    {(['friends', 'requests', 'suggestions'] as const).map(t => (
+      <button
+        key={t}
+        onClick={() => setTab(t)}
+        className={`flex-1 h-[36px] rounded-[10px] text-[15px] font-[600] transition-all flex items-center justify-center gap-1.5 ${
+          tab === t
+        ? 'bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm'
+            : 'text-[#8e8e93]'
+        }`}
+      >
+        {t === 'friends' && <><FiUsers size={16} /> Bạn bè</>}
+        {t === 'requests' && <><IoRibbon size={16} /> Lời mời{requests.length > 0? ` (${requests.length})` : ''}</>}
+        {t === 'suggestions' && <><IoStatsChart size={16} /> Gợi ý</>}
+      </button>
+    ))}
+  </div>
+</div>
       </div>
 
       <div ref={scrollRef} className="overflow-auto pb-20 px-5 pt-4">
         {tab === 'friends' && (
           <>
-            {/* Stats Cards giống ảnh */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="bg-white dark:bg-zinc-900 rounded-[20px] p-4 border border-black/[0.06] dark:border-white/[0.06]">
-                <div className="flex items-center gap-2 mb-1">
-                  <FiUsers className="text-[#8e8e93]" size={18} />
-                  <span className="text-[14px] text-[#8e8e93]">Bạn bè</span>
-                </div>
-                <p className="text-[28px] font-[700]">{friends.length}</p>
-              </div>
-              <div className="bg-white dark:bg-zinc-900 rounded-[20px] p-4 border border-black/[0.06] dark:border-white/[0.06]">
-                <div className="flex items-center gap-2 mb-1">
-                  <FiShield className="text-[#8e8e93]" size={18} />
-                  <span className="text-[14px] text-[#8e8e93]">Đang hoạt động</span>
-                </div>
-                <p className="text-[28px] font-[700]">{onlineCount}</p>
-              </div>
-            </div>
+         {/* Stats Cards */}
+<div className="grid grid-cols-2 gap-3 mb-4">
+  <div className="bg-white dark:bg-zinc-900 rounded-[20px] p-4 border border-black/[0.06] dark:border-white/[0.06]">
+    <div className="flex items-center gap-2 mb-1">
+      <FiUsers className="text-[#8e8e93]" size={18} />
+      <span className="text-[14px] text-[#8e8e93]">Bạn bè</span>
+    </div>
+    <p className="text-[28px] font-[700] leading-8">{friends.length}</p>
+  </div>
+  <div className="bg-white dark:bg-zinc-900 rounded-[20px] p-4 border border-black/[0.06] dark:border-white/[0.06]">
+    <div className="flex items-center gap-2 mb-1">
+      <FiShield className="text-[#8e8e93]" size={18} />
+      <span className="text-[14px] text-[#8e8e93]">Đang hoạt động</span>
+    </div>
+    <p className="text-[28px] font-[700] leading-8">{onlineCount}</p>
+  </div>
+</div>
 
             {friendsLoading? (
               <div className="space-y-3">
@@ -347,26 +345,26 @@ export default function FriendsPage() {
                 ))}
               </div>
             ) : filteredFriends.length === 0? (
-              <div className="bg-white dark:bg-zinc-900 rounded-[20px] p-10 border border-black/[0.06] dark:border-white/[0.06] text-center">
-                <div className="w-[72px] h-[72px] bg-[#F2F2F7] dark:bg-zinc-800 rounded-[20px] flex items-center justify-center mx-auto mb-4">
-                  <FiUsers className="text-[#8e8e93]" size={32} strokeWidth={1.5} />
-                </div>
-                <h3 className="text-[20px] font-[700] mb-2">
-                  {search? "Không tìm thấy" : "Chưa có bạn"}
-                </h3>
-                <p className="text-[15px] text-[#8e8e93] mb-6">
-                  {search? "Thử tìm kiếm khác" : "Mời kết bạn để bắt đầu trò chuyện"}
-                </p>
-                {!search && (
-                  <button
-                    onClick={() => router.push('/friends/add')}
-                    className="px-8 h-[48px] bg-[#007AFF] text-white rounded-[14px] text-[16px] font-[600] active:scale-95 transition-all inline-flex items-center justify-center gap-2"
-                  >
-                    <FiUserPlus size={20} />
-                    Kết bạn ngay
-                  </button>
-                )}
-              </div>
+           <div className="bg-white dark:bg-zinc-900 rounded-[20px] p-10 border-black/[0.06] dark:border-white/[0.06] text-center">
+  <div className="w-[72px] h-[72px] bg-[#F2F2F7] dark:bg-zinc-800 rounded-[20px] flex items-center justify-center mx-auto mb-4">
+    <FiUsers className="text-[#8e8e93]" size={32} strokeWidth={1.5} />
+  </div>
+  <h3 className="text-[20px] font-[700] mb-2">
+    {search? "Không tìm thấy" : "Chưa có bạn"}
+  </h3>
+  <p className="text-[15px] text-[#8e8e93] mb-6 leading-[20px]">
+    {search? "Thử tìm kiếm khác" : "Mời kết bạn để bắt đầu trò chuyện"}
+  </p>
+  {!search && (
+    <button
+      onClick={() => router.push('/friends/add')}
+      className="px-8 h-[48px] bg-[#007AFF] text-white rounded-[14px] text-[16px] font-[600] active:scale-95 transition-all inline-flex items-center justify-center gap-2"
+    >
+      <FiUserPlus size={20} />
+      Kết bạn ngay
+    </button>
+  )}
+</div>
             ) : (
               <div className="space-y-3">
                 {filteredFriends.map((friend) => <FriendRow key={friend.uid} friend={friend} />)}
