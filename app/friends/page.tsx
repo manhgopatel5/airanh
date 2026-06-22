@@ -898,63 +898,63 @@ export default function FriendsPage() {
                 </div>
               )}
 
-              {!loadingNearby && nearbyUsers.length > 0 && (
-                <div className="space-y-2 mb-3">
-                  {nearbyUsers.map((user) => (
-                    <div
-                      key={user.uid}
-                      className="flex items-center gap-3 p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl shadow-sm hover:shadow-md transition-shadow"
-                    >
-                      {user.avatarUrl? (
-                        <Image src={user.avatarUrl} alt={user.name} width={48} height={48} className="rounded-full" />
-                      ) : (
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                          {user.name[0]?.toUpperCase()}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-[600] text-base truncate">{user.name}</p>
-                        <div className="flex items-center gap-2 text-sm text-[#8e8e93] dark:text-zinc-500">
-                          <span>@{user.username}</span>
-                          {user.distance!== undefined && (
-                            <>
-                              <span>•</span>
-                              <span className="flex items-center gap-0.5 font-[600] text-[#0a84ff]">
-                                <FiMapPin size={12} />
-                                {user.distance}km
-                              </span>
-                            </>
-                          )}
-                          {user.age && (
-                            <>
-                              <span>•</span>
-                              <span>{user.age}t</span>
-                            </>
-                          )}
-                        </div>
-                      {user.status === "sent" && (
-                        <div className="px-3 py-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text-sm font-[600]">
-                          Đã gửi
-                        </div>
-                      )}
-                      {user.status === "received" && (
-                        <div className="px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-[600]">
-                          Chờ xác nhận
-                        </div>
-                      )}
-                      {user.status === "none" && (
-                        <button
-                          onClick={() => handleAddFriend(user.uid, user.username)}
-                          className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] active:scale-95 transition-all shadow-md shadow-[#0a84ff]/30"
-                        >
-                          Kết bạn
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
+      {!loadingNearby && nearbyUsers.length > 0 && (
+  <div className="space-y-2 mb-3">
+    {nearbyUsers.map((user) => (
+      <div
+        key={user.uid}
+        className="flex items-center gap-3 p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl shadow-sm hover:shadow-md transition-shadow"
+      >
+        {user.avatarUrl? (
+          <Image src={user.avatarUrl} alt={user.name} width={48} height={48} className="rounded-full" />
+        ) : (
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+            {user.name[0]?.toUpperCase()}
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-[600] text-base truncate">{user.name}</p>
+          <div className="flex items-center gap-2 text-sm text-[#8e8e93] dark:text-zinc-500">
+            <span>@{user.username}</span>
+            {user.distance!== undefined && (
+              <>
+                <span>•</span>
+                <span className="flex items-center gap-0.5 font-[600] text-[#0a84ff]">
+                  <FiMapPin size={12} />
+                  {user.distance}km
+                </span>
+              </>
+            )}
+            {user.age && (
+              <>
+                <span>•</span>
+                <span>{user.age}t</span>
+              </>
+            )}
+          </div>
+        </div>
+        {user.status === "sent" && (
+          <div className="px-3 py-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text-sm font-[600]">
+            Đã gửi
+          </div>
+        )}
+        {user.status === "received" && (
+          <div className="px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-[600]">
+            Chờ xác nhận
+          </div>
+        )}
+        {user.status === "none" && (
+          <button
+            onClick={() => handleAddFriend(user.uid, user.username)}
+            className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] active:scale-95 transition-all shadow-md shadow-[#0a84ff]/30"
+          >
+            Kết bạn
+          </button>
+        )}
+      </div>
+    ))}
+  </div>
+)}
               {userLocation && (
                 <button
                   onClick={fetchNearbyUsers}
