@@ -17,7 +17,7 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAppStore } from "@/store/app";
 import {
   collection,
-  
+  query,
   where,
   onSnapshot,
   doc,
