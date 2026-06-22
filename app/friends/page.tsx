@@ -5,7 +5,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp, query, where, limit } from "firebase/firestore";
 import { FiUsers, FiUserPlus, FiSearch, FiMessageCircle, FiUserX } from "react-icons/fi";
 import { RiVipCrownLine, RiUserSearchLine } from "react-icons/ri";
-import { IoStatsChart, IoTrophy, IoRibbon } from "react-icons/io5";
+import { IoStatsChart, IoRibbon } from "react-icons/io5";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getFunctions, httpsCallable } from "firebase/functions";
