@@ -604,127 +604,128 @@ export default function FriendsPage() {
                 </button>
               </div>
 
-              <AnimatePresence>
-                {showFilter && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden mb-4"
-                  >
-                    <div className="p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl space-y-4">
-                      <div>
-                        <p className="text- font-[600] mb-3">Giới tính</p>
-                        <div className="grid grid-cols-3 gap-2">
-                          {[
-                            { label: "Tất cả", value: "all" },
-                            { label: "Nam", value: "male" },
-                            { label: "Nữ", value: "female" }
-                          ].map((g) => (
-                            <button
-                              key={g.value}
-                              onClick={() => setFilters({...filters, gender: g.value as any })}
-                              className={`h-11 rounded-xl text- font-[600] transition-all active:scale-95 ${
-                                filters.gender === g.value
-                         ? "bg-gradient-to-br from-[#0a84ff] to-purple-500 text-white shadow-lg shadow-blue-500/30"
-                                  : "bg-white dark:bg-zinc-700"
-                              }`}
-                            >
-                              {g.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+         <AnimatePresence>
+  {showFilter && (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: "auto", opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      className="overflow-hidden mb-4"
+    >
+      <div className="p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl space-y-4">
+        <div>
+          <p className="text- font-[600] mb-3">Giới tính</p>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Tất cả", value: "all" },
+              { label: "Nam", value: "male" },
+              { label: "Nữ", value: "female" }
+            ].map((g) => (
+              <button
+                key={g.value}
+                onClick={() => setFilters({...filters, gender: g.value as any })}
+                className={`h-11 rounded-xl text- font-[600] transition-all active:scale-95 ${
+                  filters.gender === g.value
+                 ? "bg-gradient-to-br from-[#0a84ff] to-purple-500 text-white shadow-lg shadow-blue-500/30"
+                    : "bg-white dark:bg-zinc-700"
+                }`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-                      <div>
-                        <p className="text- font-[600] mb-3">Tuổi</p>
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1">
-                            <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Từ</p>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              value={filters.minAge}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/\D/g, '');
-                                setFilters({...filters, minAge: val? Number(val) : ''});
-                              }}
-                              onBlur={(e) => {
-                                let val = Number(e.target.value) || 18;
-                                if (val < 18) {
-                                  toast.error("Tuổi tối thiểu phải từ 18 trở lên");
-                                  val = 18;
-                                }
-                                if (val > 100) val = 100;
-                                setFilters({
-                               ...filters,
-                                  minAge: val,
-                                  maxAge: Math.max(val, Number(filters.maxAge) || val)
-                                });
-                              }}
-                              className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-                              placeholder="18"
-                            />
-                          </div>
-                          <div className="w-4 h-[2px] bg-zinc-300 dark:bg-zinc-600 mt-6" />
-                          <div className="flex-1">
-                            <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Đến</p>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              value={filters.maxAge}
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/\D/g, '');
-                                setFilters({...filters, maxAge: val? Number(val) : ''});
-                              }}
-                              onBlur={(e) => {
-                                let val = Number(e.target.value) || 25;
-                                if (val < 18) {
-                                  toast.error("Tuổi tối thiểu phải từ 18 trở lên");
-                                  val = 18;
-                                }
-                                if (val > 100) val = 100;
-                                setFilters({
-                               ...filters,
-                                  maxAge: val,
-                                  minAge: Math.min(val, Number(filters.minAge) || val)
-                                });
-                              }}
-                              className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-                              placeholder="25"
-                            />
-                          </div>
-                        </div>
-                      </div>
+        <div>
+          <p className="text- font-[600] mb-3">Tuổi</p>
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Từ</p>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={filters.minAge}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setFilters({...filters, minAge: val? Number(val) : ''});
+                }}
+                onBlur={(e) => {
+                  let val = Number(e.target.value) || 18;
+                  if (val < 18) {
+                    toast.error("Tuổi tối thiểu phải từ 18 trở lên");
+                    val = 18;
+                  }
+                  if (val > 100) val = 100;
+                  setFilters({
+                   ...filters,
+                    minAge: val,
+                    maxAge: Math.max(val, Number(filters.maxAge) || val)
+                  });
+                }}
+                className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+                placeholder="18"
+              />
+            </div>
+            <div className="w-4 h-[2px] bg-zinc-300 dark:bg-zinc-600 mt-6" />
+            <div className="flex-1">
+              <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Đến</p>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={filters.maxAge}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setFilters({...filters, maxAge: val? Number(val) : ''});
+                }}
+                onBlur={(e) => {
+                  let val = Number(e.target.value) || 25;
+                  if (val < 18) {
+                    toast.error("Tuổi tối thiểu phải từ 18 trở lên");
+                    val = 18;
+                  }
+                  if (val > 100) val = 100;
+                  setFilters({
+                   ...filters,
+                    maxAge: val,
+                    minAge: Math.min(val, Number(filters.minAge) || val)
+                  });
+                }}
+                className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+                placeholder="25"
+              />
+            </div>
+          </div>
+        </div>
 
-                      <div>
-                        <p className="text- font-[600] mb-3">Khoảng cách tối đa</p>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            value={filters.maxDistance}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, '');
-                              setFilters({...filters, maxDistance: val? Number(val) : ''});
-                            }}
-                            onBlur={(e) => {
-                              let val = Number(e.target.value);
-                              if (e.target.value === '') val = 50;
-                              val = Math.max(0, Math.min(100, val));
-                              setFilters({...filters, maxDistance: val});
-                            }}
-                            className="w-full h-12 px-4 pr-12 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-                            placeholder="50"
-                          />
-             <span className="absolute right-4 top-1/2 -translate-y-1/2 text- font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
-</div>
-</div>
-</div>
-</motion.div>
+        <div>
+          <p className="text- font-[600] mb-3">Khoảng cách tối đa</p>
+          <div className="relative">
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={filters.maxDistance}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                setFilters({...filters, maxDistance: val? Number(val) : ''});
+              }}
+              onBlur={(e) => {
+                let val = Number(e.target.value);
+                if (e.target.value === '') val = 50;
+                val = Math.max(0, Math.min(100, val));
+                setFilters({...filters, maxDistance: val});
+              }}
+              className="w-full h-12 px-4 pr-12 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+              placeholder="50"
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text- font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )}
 </AnimatePresence>
 
                   {loadingNearby && (
