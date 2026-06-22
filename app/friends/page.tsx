@@ -718,7 +718,23 @@ export default function FriendsPage() {
                   </motion.div>
                 )}
               </AnimatePresence>
-
+{!loadingNearby && locationDenied && (
+  <div className="py-8 text-center">
+    <div className="w-16 h-16 bg-red-50 dark:bg-red-950/30 rounded-full flex items-center justify-center mx-auto mb-3">
+      <FiMapPin className="text-red-500" size={28} />
+    </div>
+    <p className="text-base font-[600]">Bạn đã từ chối quyền vị trí</p>
+    <p className="text-sm text-[#8e8e93] dark:text-zinc-500 mt-1">
+      Bật quyền vị trí trong cài đặt trình duyệt để tìm bạn bè gần bạn
+    </p>
+    <button
+      onClick={() => window.location.reload()}
+      className="mt-4 px-4 h-10 bg-[#0a84ff] text-white rounded-xl text-sm font-[600]"
+    >
+      Thử lại
+    </button>
+  </div>
+)}
               {loadingNearby && (
                 <div className="py-12 text-center text-[#8e8e93]">
                   <FiRefreshCw className="animate-spin mx-auto mb-2" size={24} />
