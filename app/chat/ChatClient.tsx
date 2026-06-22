@@ -220,7 +220,7 @@ useEffect(() => {
 
   const [notifLoading, setNotifLoading] = useState<boolean>(false);
 
-const [activeTab, setActiveTab] = useState<"all" | "unread" | "group" | "notifications">("all");
+const [activeTab, setActiveTab] = useState<"all" | "unread" | "notifications">("all");
   const [pinned, setPinned] = useState<string[]>([]);
 
 
@@ -322,45 +322,7 @@ const [eventsData, setEventsData] = useState<EventItem[]>([]);
 const [eventsLoading, setEventsLoading] = useState<boolean>(true);
 // THÊM DÒNG NÀY
 const [publicRooms, setPublicRooms] = useState<PublicRoomItem[]>([]);
-const [groupItems, setGroupItems] = useState<ChatItem[]>([]);
 
-// Query groups riêng
-useEffect(() => {
-  if (authLoading || !user?.uid) return;
-  
-  const q = query(
-    collection(db, "groups"),
-    where("members", "array-contains", user.uid)
-  );
-
-  const unsub = onSnapshot(q, (snap) => {
-    const list: ChatItem[] = snap.docs.map(d => {
-      const data = d.data();
-      return {
-        uid: d.id,
-        chatId: d.id,
-        name: data.name || "Nhóm",
-        username: "",
-        avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}&background=0a84ff&color=fff&bold=true`,
-        userId: "",
-        lastMessage: data.lastMessage || "",
-        lastSenderId: data.lastSenderId || "",
-        lastSenderName: data.lastSenderName || "",
-        updatedAt: data.updatedAt,
-        unreadCount: data.unreadCount?.[user.uid] || 0,
-        isGroup: true,
-        members: data.members || [],
-        hasPassword: data.hasPassword || false,
-        groupCode: data.groupCode || "",
-      };
-    });
-    setGroupItems(list);
-  }, (err) => {
-    console.error("Groups error:", err);
-  });
-
-  return () => unsub();
-}, [user?.uid, authLoading, db]);
 const [publicRoomsLoading, setPublicRoomsLoading] = useState(true);
 const [showPublicRooms, setShowPublicRooms] = useState(false);
 
@@ -914,13 +876,7 @@ const filteredChats = useMemo(() => {
   const query = debounced.toLowerCase().trim();
   let filtered = items;
 
-  // TÁCH CHAT 1-1 RA KHỎI TAB ALL
-  if (activeTab === "all") {
-    filtered = filtered.filter(item => item.isGroup); // Chỉ lấy group + public room
-  } else if (activeTab === "group") {
-    filtered = filtered.filter(item => item.isGroup);
-  }
-
+  // Bỏ lọc group - inbox giờ chỉ có chat 1-1 và phòng public
   if (query) {
     filtered = filtered.filter((item) => {
       const nameMatch = item.name.toLowerCase().includes(query);
@@ -931,14 +887,13 @@ const filteredChats = useMemo(() => {
   }
   if (activeTab === "unread") filtered = filtered.filter((item) => (item.unreadCount || 0) > 0);
   return filtered;
-}, [items, debounced, activeTab, user?.uid]);
+}, [items, debounced, activeTab]);
 
 const { pinnedChats, normalChats } = useMemo(() => {
   const pinnedList = filteredChats.filter((chat) => pinned.includes(chat.chatId));
-  const normalList = filteredChats.filter((chat) =>!pinned.includes(chat.chatId));
+  const normalList = filteredChats.filter((chat) => !pinned.includes(chat.chatId));
   return { pinnedChats: pinnedList, normalChats: normalList };
 }, [filteredChats, pinned]);
-
 
 
 const unreadNotifications = useMemo(() => notifications.filter(n =>!n.read).length, [notifications]);
@@ -1031,12 +986,12 @@ return (
       <div className="sticky top-0 z-40 pt-3 px-4">
         <div className="space-y-2.5">
 {/* Hàng 1: 4 nút - 1 khung riêng */}
-<div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] dark:shadow-black/20 border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3.5">
+<div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] dark:shadow-black/20 border border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3.5">
   <div className="grid grid-cols-4 gap-3">
     {[
       { label: "Trang chủ", icon: FiHome, color: "bg-gradient-to-br from-[#0a84ff] to-purple-500", onClick: () => setActiveTab("all") },
       { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => router.push('/friends') },
-      { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => setActiveTab("group") },
+      { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => router.push('/groups') },
       { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => setActiveTab("notifications") },
     ].map((item) => (
       <button
@@ -1245,17 +1200,7 @@ return (
      </div> 
 )} 
 
- {activeTab === "group" && ( 
-  <div className="pt-3">
-    <GroupsTab
-      groups={groupItems} // Dùng groupItems thay vì items.filter
-      pinned={pinned}
-      onTogglePin={handleTogglePin}
-      onCreateGroup={() => setShowCreateGroup(true)}
-      loading={loading}
-    />
-  </div>
-)}
+
   {activeTab === "notifications"? (
     notifLoading? (
       <div className="px-4 pt-4 space-y-3">
