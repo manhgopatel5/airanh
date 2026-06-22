@@ -1304,14 +1304,18 @@ return (
     <div className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-zinc-900">
       {[...pinnedChats,...normalChats].map((chat) => (
         <div key={chat.chatId} className="group relative">
-          <Link
-            href={chat.chatId.startsWith('public_') || chat.isGroup? `/rooms/${chat.chatId}` : `/chat/${chat.chatId}`}
-            className="flex items-center gap-3 px-4 py-2.5 active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150 select-none"
-            onPointerDown={() => handleLongPressStart(chat.chatId)}
-            onPointerUp={handleLongPressEnd}
-            onPointerLeave={handleLongPressEnd}
-            onContextMenu={(e) => e.preventDefault()}
-          >
+       <Link
+  href={
+    (chat as any).isStranger ? `/friends` :
+    chat.chatId.startsWith('public_') || chat.isGroup ? `/rooms/${chat.chatId}` : 
+    `/chat/${chat.chatId}`
+  }
+  className="flex items-center gap-3 px-4 py-2.5 active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150 select-none"
+  onPointerDown={() => handleLongPressStart(chat.chatId)}
+  onPointerUp={handleLongPressEnd}
+  onPointerLeave={handleLongPressEnd}
+  onContextMenu={(e) => e.preventDefault()}
+>
             <div className="relative flex-shrink-0">
               <img src={chat.avatar} alt={chat.name} className="w-12 h-12 rounded-full object-cover bg-gray-100 dark:bg-zinc-800" loading="lazy" />
               {chat.isOnline &&!chat.isGroup && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />}
