@@ -897,7 +897,7 @@ export default function FriendsPage() {
             )}
           </div>
         </div>
-      </div>
+
 
       {/* Bottom Sheet Actions */}
       <AnimatePresence>
