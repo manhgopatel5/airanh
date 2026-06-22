@@ -58,18 +58,22 @@ export default function AddFriendPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const db = getFirebaseDB();
+const db = getFirebaseDB();
 
-
- // Fix safe area + chặn scroll bounce
+// Thêm đoạn này
 useEffect(() => {
-  document.documentElement.style.paddingTop = 'env(safe-area-inset-top)';
+  document.body.style.paddingTop = 'env(safe-area-inset-top)';
+  document.body.style.paddingBottom = 'env(safe-area-inset-bottom)';
   document.documentElement.style.overscrollBehavior = 'none';
   return () => {
-    document.documentElement.style.paddingTop = '';
+    document.body.style.paddingTop = '';
+    document.body.style.paddingBottom = '';
     document.documentElement.style.overscrollBehavior = 'auto';
   };
 }, []);
+
+
+
 
   // Yêu cầu định vị ngay khi vào
   useEffect(() => {
@@ -525,140 +529,10 @@ useEffect(() => {
     }
   };
 
-  // Dual Range Slider Component
-  // Thêm vào đầu file, sau type FilterOptions
-// Thay RangeSlider cũ bằng cái này - đặt trên return
-const DualRangeSlider = ({ min, max, value, onChange, label, unit = "" }: {
-  min: number;
-  max: number;
-  value: [number, number];
-  onChange: (val: [number, number]) => void;
-  label: string;
-  unit?: string;
-}) => {
-  const trackRef = useRef<HTMLDivElement>(null);
-  
-  const getValueFromPosition = (x: number) => {
-    if (!trackRef.current) return min;
-    const rect = trackRef.current.getBoundingClientRect();
-    const percent = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
-    return Math.round(min + percent * (max - min));
-  };
 
-  const getPositionFromValue = (val: number) => {
-    return ((val - min) / (max - min)) * 100;
-  };
-
-  return (
-    <div className="py-1">
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-[15px] font-[600]">{label}</p>
-        <p className="text-[15px] font-[700] text-[#0a84ff]">{value[0]} - {value[1]}{unit}</p>
-      </div>
-      <div ref={trackRef} className="relative h-8 flex items-center touch-none">
-        {/* Track nền */}
-        <div className="absolute w-full h-[6px] bg-zinc-200 dark:bg-zinc-700 rounded-full" />
-        
-        {/* Track active */}
-        <motion.div
-          className="absolute h-[6px] bg-gradient-to-r from-[#0a84ff] to-purple-500 rounded-full"
-          style={{
-            left: `${getPositionFromValue(value[0])}%`,
-            width: `${getPositionFromValue(value[1]) - getPositionFromValue(value[0])}%`
-          }}
-          layout
-          transition={{ type: "spring", stiffness: 500, damping: 50 }}
-        />
-
-        {/* Thumb min */}
-        <motion.div
-          drag="x"
-          dragConstraints={trackRef}
-          dragElastic={0}
-          dragMomentum={false}
-          onDrag={(_, info) => {
-            const newVal = getValueFromPosition(info.point.x);
-            onChange([Math.min(newVal, value[1] - 1), value[1]]);
-          }}
-          className="absolute w-7 h-7 bg-white dark:bg-zinc-800 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.15)] border-[3px] border-[#0a84ff] -ml-3.5 cursor-grab active:cursor-grabbing active:scale-110"
-          style={{ left: `${getPositionFromValue(value[0])}%` }}
-          whileTap={{ scale: 1.15 }}
-        />
-
-        {/* Thumb max */}
-        <motion.div
-          drag="x"
-          dragConstraints={trackRef}
-          dragElastic={0}
-          dragMomentum={false}
-          onDrag={(_, info) => {
-            const newVal = getValueFromPosition(info.point.x);
-            onChange([value[0], Math.max(newVal, value[0] + 1)]);
-          }}
-          className="absolute w-7 h-7 bg-white dark:bg-zinc-800 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.15)] border-[3px] border-[#0a84ff] -ml-3.5 cursor-grab active:cursor-grabbing active:scale-110"
-          style={{ left: `${getPositionFromValue(value[1])}%` }}
-          whileTap={{ scale: 1.15 }}
-        />
-      </div>
-    </div>
-  );
-};
-
-// Single slider cho khoảng cách
-const SingleSlider = ({ min, max, value, onChange, label, unit = "" }: {
-  min: number;
-  max: number;
-  value: number;
-  onChange: (val: number) => void;
-  label: string;
-  unit?: string;
-}) => {
-  const trackRef = useRef<HTMLDivElement>(null);
-  
-  const getValueFromPosition = (x: number) => {
-    if (!trackRef.current) return min;
-    const rect = trackRef.current.getBoundingClientRect();
-    const percent = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
-    return Math.round(min + percent * (max - min));
-  };
-
-  const getPositionFromValue = (val: number) => {
-    return ((val - min) / (max - min)) * 100;
-  };
-
-  return (
-    <div className="py-1">
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-[15px] font-[600]">{label}</p>
-        <p className="text-[15px] font-[700] text-[#0a84ff]">{value}{unit}</p>
-      </div>
-      <div ref={trackRef} className="relative h-8 flex items-center touch-none">
-        <div className="absolute w-full h-[6px] bg-zinc-200 dark:bg-zinc-700 rounded-full" />
-        <motion.div
-          className="absolute h-[6px] bg-gradient-to-r from-[#0a84ff] to-purple-500 rounded-full"
-          style={{ width: `${getPositionFromValue(value)}%` }}
-          layout
-          transition={{ type: "spring", stiffness: 500, damping: 50 }}
-        />
-        <motion.div
-          drag="x"
-          dragConstraints={trackRef}
-          dragElastic={0}
-          dragMomentum={false}
-          onDrag={(_, info) => {
-            onChange(getValueFromPosition(info.point.x));
-          }}
-          className="absolute w-7 h-7 bg-white dark:bg-zinc-800 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.15)] border-[3px] border-[#0a84ff] -ml-3.5 cursor-grab active:cursor-grabbing active:scale-110"
-          style={{ left: `${getPositionFromValue(value)}%` }}
-          whileTap={{ scale: 1.15 }}
-        />
-      </div>
-    </div>
-  );
-};
 return (
   <div className="min-h-[100dvh] bg-white dark:bg-black">
-    <div className="px-4 pt-1 pb-6 space-y-4">
+    <div className="px-4 pt-2 pb-6 space-y-4">
       {locationDenied && (
           <div className="p-4 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900 rounded-2xl">
             <div className="flex items-start gap-3">
@@ -685,9 +559,10 @@ return (
       exit={{ height: 0, opacity: 0 }}
       className="overflow-hidden mb-4"
     >
-      <div className="p-4 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl space-y-6">
+      <div className="p-4 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl space-y-5">
+        {/* Giới tính */}
         <div>
-          <p className="text-[15px] font-[600] mb-3">Giới tính</p>
+          <p className="text- font-[600] mb-3">Giới tính</p>
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: "Tất cả", value: "all" },
@@ -697,7 +572,7 @@ return (
               <button
                 key={g.value}
                 onClick={() => setFilters({...filters, gender: g.value as any })}
-                className={`h-11 rounded-xl text-[15px] font-[600] transition-all active:scale-95 ${
+                className={`h-11 rounded-xl text- font-[600] transition-all active:scale-95 ${
                   filters.gender === g.value
              ? "bg-gradient-to-br from-[#0a84ff] to-purple-500 text-white shadow-lg shadow-blue-500/30"
                     : "bg-white dark:bg-zinc-700"
@@ -709,26 +584,68 @@ return (
           </div>
         </div>
 
-        <DualRangeSlider
-          min={18}
-          max={70}
-          value={[filters.minAge, filters.maxAge]}
-          onChange={([min, max]) => setFilters({...filters, minAge: min, maxAge: max})}
-          label="Tuổi"
-        />
+        {/* Tuổi - 2 ô input */}
+        <div>
+          <p className="text- font-[600] mb-3">Tuổi</p>
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Từ</p>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={18}
+                max={70}
+                value={filters.minAge}
+                onChange={(e) => {
+                  const val = Math.max(18, Math.min(70, Number(e.target.value) || 18));
+                  setFilters({...filters, minAge: val, maxAge: Math.max(val, filters.maxAge)});
+                }}
+                className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+              />
+            </div>
+            <div className="w-4 h-[2px] bg-zinc-300 dark:bg-zinc-600 mt-6" />
+            <div className="flex-1">
+              <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Đến</p>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={18}
+                max={70}
+                value={filters.maxAge}
+                onChange={(e) => {
+                  const val = Math.max(18, Math.min(70, Number(e.target.value) || 18));
+                  setFilters({...filters, maxAge: val, minAge: Math.min(val, filters.minAge)});
+                }}
+                className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+              />
+            </div>
+          </div>
+        </div>
 
-        <SingleSlider
-          min={1}
-          max={100}
-          value={filters.maxDistance}
-          onChange={(val) => setFilters({...filters, maxDistance: val})}
-          label="Khoảng cách"
-          unit="km"
-        />
+        {/* Khoảng cách - 1 ô input */}
+        <div>
+          <p className="text- font-[600] mb-3">Khoảng cách tối đa</p>
+          <div className="relative">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={100}
+              value={filters.maxDistance}
+              onChange={(e) => {
+                const val = Math.max(1, Math.min(100, Number(e.target.value) || 1));
+                setFilters({...filters, maxDistance: val});
+              }}
+              className="w-full h-12 px-4 pr-12 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text- font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
+          </div>
+        </div>
       </div>
     </motion.div>
   )}
 </AnimatePresence>
+
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
