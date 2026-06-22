@@ -535,7 +535,7 @@ useEffect(() => {
 }, [user?.uid, db]);
   
 
-  useEffect(() => {
+useEffect(() => {
   if (authLoading || !user?.uid) return;
   let retryCount = 0;
   let isMounted = true;
@@ -552,8 +552,8 @@ useEffect(() => {
         snapshot.forEach((document) => {
           const chatData = document.data();
 
-          // THÊM 3 DÒNG NÀY ĐỂ ẨN PHÒNG PUBLIC
-          if (document.id.startsWith('public_') || chatData.isPublicRoom === true) {
+          // ẨN PHÒNG PUBLIC VÀ CHAT NGƯỜI LẠ
+          if (document.id.startsWith('public_') || chatData.isPublicRoom === true || chatData.isStranger === true) {
             return; // Bỏ qua, không thêm vào list inbox
           }
 
@@ -567,92 +567,92 @@ useEffect(() => {
           }
         });
 
-          const usersMap: Record<string, any> = {};
-          if (userIdsToFetch.size > 0) {
-            const userIds = Array.from(userIdsToFetch);
-            const chunks: string[][] = [];
-            for (let i = 0; i < userIds.length; i += BATCH_SIZE) chunks.push(userIds.slice(i, i + BATCH_SIZE));
-            await Promise.all(chunks.map(async (chunk) => {
-              const userDocs = await Promise.all(chunk.map((userId) => getDoc(doc(db, "users", userId))));
-              userDocs.forEach((userDoc) => { if (userDoc.exists()) usersMap[userDoc.id] = userDoc.data(); });
-            }));
+        const usersMap: Record<string, any> = {};
+        if (userIdsToFetch.size > 0) {
+          const userIds = Array.from(userIdsToFetch);
+          const chunks: string[][] = [];
+          for (let i = 0; i < userIds.length; i += BATCH_SIZE) chunks.push(userIds.slice(i, i + BATCH_SIZE));
+          await Promise.all(chunks.map(async (chunk) => {
+            const userDocs = await Promise.all(chunk.map((userId) => getDoc(doc(db, "users", userId))));
+            userDocs.forEach((userDoc) => { if (userDoc.exists()) usersMap[userDoc.id] = userDoc.data(); });
+          }));
+        }
+
+        const chatList: ChatItem[] = rawChats.map((raw) => {
+          const chatData = raw.c;
+          if (raw.isGroup) {
+            return {
+              uid: raw.id, chatId: raw.id, name: chatData.groupName || "Nhóm", username: "",
+              avatar: chatData.groupAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.groupName || "N")}&background=${isPlan? "22c55e" : "0a84ff"}&color=fff&bold=true`,
+              userId: "",
+              lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
+              lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
+              lastSenderName: chatData.lastSenderName,
+              updatedAt: chatData.updatedAt, unreadCount: chatData.unread?.[user.uid] || 0,
+              isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId!== user.uid && Boolean(isTyping)),
+              isGroup: true, members: chatData.members || [], isOnline: false,
+              blockedUsers: chatData.blockedUsers || [],
+              deletedFor: chatData.deletedFor || [],
+            };
+          } else {
+            const userData = usersMap[raw.other || ""] || {};
+            return {
+              uid: raw.other || "", chatId: raw.id, name: userData.name || "User", username: userData.username || "",
+              avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || "U")}&background=random`,
+              userId: userData.userId || "",
+              lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
+              lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
+              lastSenderName: "",
+              updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
+              isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
+              blockedUsers: chatData.blockedUsers || [],
+              deletedFor: chatData.deletedFor || [],
+            };
           }
+        });
 
-          const chatList: ChatItem[] = rawChats.map((raw) => {
-            const chatData = raw.c;
-            if (raw.isGroup) {
-              return {
-                uid: raw.id, chatId: raw.id, name: chatData.groupName || "Nhóm", username: "",
-                avatar: chatData.groupAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.groupName || "N")}&background=${isPlan? "22c55e" : "0a84ff"}&color=fff&bold=true`,
-                userId: "",
-                lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
-                lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
-                lastSenderName: chatData.lastSenderName,
-                updatedAt: chatData.updatedAt, unreadCount: chatData.unread?.[user.uid] || 0,
-                isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId!== user.uid && Boolean(isTyping)),
-                isGroup: true, members: chatData.members || [], isOnline: false,
-                blockedUsers: chatData.blockedUsers || [],
-                deletedFor: chatData.deletedFor || [],
-              };
-            } else {
-              const userData = usersMap[raw.other || ""] || {};
-              return {
-                uid: raw.other || "", chatId: raw.id, name: userData.name || "User", username: userData.username || "",
-                avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || "U")}&background=random`,
-                userId: userData.userId || "",
-                lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
-                lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
-                lastSenderName: "",
-                updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
-                isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
-                blockedUsers: chatData.blockedUsers || [],
-                deletedFor: chatData.deletedFor || [],
-              };
-            }
-          });
+        const visibleChats = chatList.filter(chat =>!chat.deletedFor?.includes(user.uid));
+        const pinnedChats = JSON.parse(localStorage.getItem(PINNED_KEY) || "[]");
+        visibleChats.sort((a, b) => {
+          const aIsPinned = pinnedChats.includes(a.chatId)? 1 : 0;
+          const bIsPinned = pinnedChats.includes(b.chatId)? 1 : 0;
+          if (aIsPinned!== bIsPinned) return bIsPinned - aIsPinned;
+          const aTime = a.updatedAt?.seconds || 0;
+          const bTime = b.updatedAt?.seconds || 0;
+          return bTime - aTime;
+        });
 
-          const visibleChats = chatList.filter(chat =>!chat.deletedFor?.includes(user.uid));
-          const pinnedChats = JSON.parse(localStorage.getItem(PINNED_KEY) || "[]");
-          visibleChats.sort((a, b) => {
-            const aIsPinned = pinnedChats.includes(a.chatId)? 1 : 0;
-            const bIsPinned = pinnedChats.includes(b.chatId)? 1 : 0;
-            if (aIsPinned!== bIsPinned) return bIsPinned - aIsPinned;
-            const aTime = a.updatedAt?.seconds || 0;
-            const bTime = b.updatedAt?.seconds || 0;
-            return bTime - aTime;
-          });
+        if (isMounted) setItems(visibleChats);
+      } catch (error) {
+        console.error("Error processing chats:", error);
+        if (isMounted) toast.error("Lỗi tải danh sách chat");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }, (error) => {
+      console.error("Realtime listener error:", error);
+      if (!isMounted) return;
+      if (retryCount < MAX_RETRIES && error.code!== "permission-denied") {
+        retryCount++;
+        const delay = RETRY_DELAY * retryCount;
+        setTimeout(() => { if (isMounted) setupListener(); }, delay);
+      } else if (error.code!== "permission-denied") {
+        toast.error("Không thể kết nối realtime");
+      }
+      setLoading(false);
+    });
 
-          if (isMounted) setItems(visibleChats);
-        } catch (error) {
-          console.error("Error processing chats:", error);
-          if (isMounted) toast.error("Lỗi tải danh sách chat");
-        } finally {
-          if (isMounted) setLoading(false);
-        }
-      }, (error) => {
-        console.error("Realtime listener error:", error);
-        if (!isMounted) return;
-        if (retryCount < MAX_RETRIES && error.code!== "permission-denied") {
-          retryCount++;
-          const delay = RETRY_DELAY * retryCount;
-          setTimeout(() => { if (isMounted) setupListener(); }, delay);
-        } else if (error.code!== "permission-denied") {
-          toast.error("Không thể kết nối realtime");
-        }
-        setLoading(false);
-      });
+    unsubRef.current = unsubscribe;
+    return unsubscribe;
+  };
 
-      unsubRef.current = unsubscribe;
-      return unsubscribe;
-    };
-
-    const unsubscribe = setupListener();
-    return () => { 
-      isMounted = false; 
-      if (unsubscribe) unsubscribe(); 
-      if (unsubRef.current) unsubRef.current();
-    };
-  }, [user?.uid, authLoading, db, mode]); // đổi isPlan -> mode
+  const unsubscribe = setupListener();
+  return () => { 
+    isMounted = false; 
+    if (unsubscribe) unsubscribe(); 
+    if (unsubRef.current) unsubRef.current();
+  };
+}, [user?.uid, authLoading, db, mode]);
 
   
   
