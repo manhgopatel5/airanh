@@ -958,17 +958,42 @@ export default function FriendsPage() {
         )}
       </AnimatePresence>
 
-      {showScanQR && (
-        <div className="fixed inset-0 bg-black z-[70]">
-          <div id="qr-reader-add" className={scanMode === "camera"? "w-full h-full" : "hidden"} />
-          <div id="qr-reader-file-add" className="hidden" />
-          <button
-            onClick={() => stopScan()}
-            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center active:scale-90 transition"
-            style={{ top: "max(24px, env(safe-area-inset-top))" }}
-          >
-            <FiX className="w-5 h-5 text-white" />
-          </button>
+  {showScanQR && (
+  <div className="fixed inset-0 bg-black z-[70]">
+    <div id="qr-reader-add" className={scanMode === "camera"? "w-full h-full" : "hidden"} />
+    <div id="qr-reader-file-add" className={scanMode === "upload"? "w-full h-full" : "hidden"} />
+
+    <button
+      onClick={() => stopScan()}
+      className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center active:scale-90 transition"
+      style={{ top: "max(24px, env(safe-area-inset-top))" }}
+    >
+      <FiX className="w-5 h-5 text-white" />
+    </button>
+
+    <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur rounded-xl p-1 flex gap-1"
+         style={{ top: "max(24px, env(safe-area-inset-top))" }}>
+      <button
+        onClick={() => setScanMode("camera")}
+        className={`px-4 h-9 rounded-lg text-sm font-[600] transition-all ${
+          scanMode === "camera"
+         ? 'bg-white text-black'
+          : 'text-white/70'
+        }`}
+      >
+        Camera
+      </button>
+      <button
+        onClick={() => setScanMode("upload")}
+        className={`px-4 h-9 rounded-lg text-sm font-[600] transition-all ${
+          scanMode === "upload"
+         ? 'bg-white text-black'
+          : 'text-white/70'
+        }`}
+      >
+        Tải ảnh
+      </button>
+    </div>
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
             <p className="font-bold">Đưa mã QR vào khung</p>
             <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
