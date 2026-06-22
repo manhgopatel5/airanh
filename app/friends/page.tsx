@@ -912,6 +912,7 @@ export default function FriendsPage() {
                   <p className="text-lg font-[600]">{selectedFriend.name}</p>
                   <p className="text-sm text-[#8e8e93]">@{selectedFriend.username}</p>
                 </div>
+              </div>
               <div className="space-y-3">
                 <button
                   onClick={() => { handleStartChat(selectedFriend.uid); setSelectedFriend(null); }}
