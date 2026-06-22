@@ -7,7 +7,7 @@ import { getAuth } from "firebase/auth";
 import { FiUsers, FiShield, FiSearch, FiMessageCircle, FiUserX, FiMapPin, FiRefreshCw, FiX } from "react-icons/fi";
 import { RiVipCrownLine } from "react-icons/ri";
 import { IoStatsChart, IoRibbon } from "react-icons/io5";
-import { ScanLine, SlidersHorizontal } from "lucide-react";
+import {  SlidersHorizontal } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
