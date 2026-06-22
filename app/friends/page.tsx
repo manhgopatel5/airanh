@@ -574,26 +574,34 @@ export default function FriendsPage() {
           </div>
         )}
 
-        {tab === 'suggestions' && (
-          <div className="space-y-4">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                    <FiMapPin className="text-white" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-base font-[700]">Tìm xung quanh</p>
-                    <p className="text-sm text-[#8e8e93]">Bạn bè gần bạn</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowFilter(!showFilter)}
-                  className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all"
-                >
-                  <SlidersHorizontal size={18} />
-                </button>
-              </div>
+     {tab === 'suggestions' && (
+  <div className="space-y-4">
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+            <FiMapPin className="text-white" size={20} />
+          </div>
+          <div>
+            <p className="text-base font-[700]">Tìm xung quanh</p>
+            <p className="text-sm text-[#8e8e93]">Bạn bè gần bạn</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowScanQR(true)}
+            className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all"
+          >
+            <FiUsers size={18} />
+          </button>
+          <button
+            onClick={() => setShowFilter(!showFilter)}
+            className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all"
+          >
+            <SlidersHorizontal size={18} />
+          </button>
+        </div>
+      </div>
 
               <AnimatePresence>
                 {showFilter && (
