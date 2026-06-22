@@ -1031,29 +1031,28 @@ return (
       <div className="sticky top-0 z-40 pt-3 px-4">
         <div className="space-y-2.5">
 {/* Hàng 1: 4 nút - 1 khung riêng */}
-<div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] dark:shadow-black/20 border border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3.5">
-  <div className="grid grid-cols-5 gap-2">
+<div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] dark:shadow-black/20 border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3.5">
+  <div className="grid grid-cols-4 gap-3">
     {[
       { label: "Trang chủ", icon: FiHome, color: "bg-gradient-to-br from-[#0a84ff] to-purple-500", onClick: () => setActiveTab("all") },
-{ label: "Mời bạn", icon: FiUserPlus, color: "bg-blue-500", onClick: () => router.push('/friends/add') },
-{ label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => router.push('/friends') },
+      { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => router.push('/friends') },
       { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => setActiveTab("group") },
       { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => setActiveTab("notifications") },
     ].map((item) => (
       <button
         key={item.label}
         onClick={item.onClick}
-        className="flex flex-col items-center gap-1 active:scale-95 transition-transform duration-150"
+        className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform duration-150"
       >
-        <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center relative`}>
-          <item.icon className="text-white" size={20} strokeWidth={2.5} />
+        <div className={`w-14 h-14 ${item.color} rounded-xl flex items-center justify-center relative`}>
+          <item.icon className="text-white" size={22} strokeWidth={2.5} />
           {item.label === "Thông báo" && unreadNotifications > 0 && (
             <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
               <span className="text-[10px] font-[700] text-white">{unreadNotifications > 9? '9+' : unreadNotifications}</span>
             </div>
           )}
         </div>
-        <span className="text-[10px] leading-3 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
+        <span className="text-xs leading-4 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
           {item.label}
         </span>
       </button>
