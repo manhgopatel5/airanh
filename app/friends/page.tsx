@@ -508,74 +508,80 @@ export default function FriendsPage() {
   const onlineCount = friends.filter(f => f.isOnline).length;
 
   const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
-    const x = useMotionValue(0);
-    const opacity = useTransform(x, [-100, 0], [1, 0]);
-    const isStranger = 'isStranger' in friend && friend.isStranger;
+  const x = useMotionValue(0);
+  const opacity = useTransform(x, [-100, 0], [1, 0]);
+  const isStranger = 'isStranger' in friend && friend.isStranger;
 
-    return (
-      <motion.div className="relative overflow-hidden rounded-xl">
-        <motion.div
-          className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 flex items-center justify-center rounded-r-xl"
-          style={{ opacity }}
+  return (
+    <motion.div className="relative overflow-hidden rounded-xl">
+      <motion.div
+        className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 flex items-center justify-center rounded-r-xl"
+        style={{ opacity }}
+      >
+        <FiUserX className="text-white" size={20} />
+      </motion.div>
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: -80, right: 0 }}
+        style={{ x }}
+        onDragEnd={(_, info) => {
+          if (info.offset.x < -60 &&!isStranger) handleRemoveFriend(friend as FriendItem);
+        }}
+        className="bg-white dark:bg-zinc-900 border border-black/[0.06] dark:border-white/[0.06] rounded-xl shadow-sm hover:shadow-md transition-shadow"
+      >
+        <button
+          onClick={() => isStranger? router.push(`/chat/${(friend as StrangerChatItem).chatId}`) : handleStartChat(friend.uid)}
+          onContextMenu={(e) => { e.preventDefault(); if (!isStranger) setSelectedFriend(friend as FriendItem); }}
+          className="flex items-center gap-3 p-4 w-full active:bg-gray-50 dark:active:bg-zinc-800 rounded-xl"
         >
-          <FiUserX className="text-white" size={20} />
-        </motion.div>
-        <motion.div
-          drag="x"
-          dragConstraints={{ left: -80, right: 0 }}
-          style={{ x }}
-          onDragEnd={(_, info) => {
-            if (info.offset.x < -60 &&!isStranger) handleRemoveFriend(friend as FriendItem);
-          }}
-          className="bg-white dark:bg-zinc-900 border-black/[0.06] dark:border-white/[0.06] rounded-xl shadow-sm hover:shadow-md transition-shadow"
-        >
-          <button
-            onClick={() => isStranger? router.push(`/chat/${(friend as StrangerChatItem).chatId}`) : handleStartChat(friend.uid)}
-            onContextMenu={(e) => { e.preventDefault(); if (!isStranger) setSelectedFriend(friend as FriendItem); }}
-            className="flex items-center gap-3 p-4 w-full active:bg-gray-50 dark:active:bg-zinc-800 rounded-xl"
-          >
-            <div className="relative flex-shrink-0">
-              <img src={friend.avatar} alt={friend.name} className="w-14 h-14 rounded-full object-cover" />
-              {friend.isOnline && (
-                <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#30d158] rounded-full border-[3px] border-white dark:border-zinc-900" />
-              )}
-              {isStranger && (
-                <div className="absolute -top-1 -right-1 bg-gradient-to-br from-pink-500 to-purple-500 rounded-full p-1">
-                  <FiZap className="text-white" size={12} />
-                </div>
-              )}
-              {friend.vip?.tier === 'elite' && (
-                <div className="absolute -top-1 -right-1 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full p-1">
-                  <RiVipCrownLine className="text-white" size={12} />
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0 text-left">
-              <div className="flex items-center gap-1.5">
-                <p className="text-base leading-5 font-[600] truncate font-serif">{friend.name}</p>
-                {isStranger && <span className="text-xs px-1.5 py-0.5 bg-gradient-to-r from-pink-500/15 to-purple-500/15 text-pink-600 dark:text-pink-400 rounded-md font-[600]">Người lạ</span>}
-                {friend.vip?.tier === 'pro' && <span className="text-sm">💎</span>}
-              </div>
-              <div className="flex items-center gap-2 text-sm leading-4 text-[#8e8e93] dark:text-zinc-500 font-serif">
-                <span>{friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</span>
-                {friend.mutualFriends! > 0 && (
-                  <>
-                    <span>•</span>
-                    <span>{friend.mutualFriends} bạn chung</span>
-                  </>
-                )}
-              </div>
-            </div>
-            {'unreadCount' in friend && friend.unreadCount! > 0 && (
-              <div className="min-w-5 h-5 px-1.5 bg-[#0a84ff] rounded-full flex items-center justify-center">
-                <span className="text-xs font-[700] text-white">{friend.unreadCount}</span>
+          <div className="relative flex-shrink-0">
+            <img src={friend.avatar} alt={friend.name} className="w-14 h-14 rounded-full object-cover" />
+            {friend.isOnline && (
+              <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#30d158] rounded-full border-[3px] border-white dark:border-zinc-900" />
+            )}
+            {isStranger && (
+              <div className="absolute -top-1 -right-1 bg-gradient-to-br from-pink-500 to-purple-500 rounded-full p-1 shadow-md">
+                <FiZap className="text-white" size={12} />
               </div>
             )}
-          </button>
-        </motion.div>
+            {!isStranger && (friend as FriendItem).vip?.tier === 'elite' && (
+              <div className="absolute -top-1 -right-1 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full p-1 shadow-md">
+                <RiVipCrownLine className="text-white" size={12} />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <div className="flex items-center gap-1.5">
+              <p className="text-base leading-5 font-[600] truncate font-serif">{friend.name}</p>
+              {isStranger && <span className="text-xs px-1.5 py-0.5 bg-gradient-to-r from-pink-500/15 to-purple-500/15 text-pink-600 dark:text-pink-400 rounded-md font-[600]">Người lạ</span>}
+              {!isStranger && (friend as FriendItem).vip?.tier === 'pro' && <span className="text-sm">💎</span>}
+            </div>
+            <div className="flex items-center gap-2 text-sm leading-4 text-[#8e8e93] dark:text-zinc-500 font-serif">
+              <span>{friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</span>
+              {!isStranger && (friend as FriendItem).mutualFriends! > 0 && (
+                <>
+                  <span>•</span>
+                  <span>{(friend as FriendItem).mutualFriends} bạn chung</span>
+                </>
+              )}
+              {isStranger && 'lastMessage' in friend && (
+                <>
+                  <span>•</span>
+                  <span className="truncate">{friend.lastMessage}</span>
+                </>
+              )}
+            </div>
+          </div>
+          {'unreadCount' in friend && friend.unreadCount! > 0 && (
+            <div className="min-w-5 h-5 px-1.5 bg-[#0a84ff] rounded-full flex items-center justify-center shadow-md shadow-[#0a84ff]/30">
+              <span className="text-xs font-[700] text-white">{friend.unreadCount}</span>
+            </div>
+          )}
+        </button>
       </motion.div>
-    );
-  };
+    </motion.div>
+  );
+};
 
   return (
   <div className="min-h-[100dvh] bg-[#F7F8FA] dark:bg-[#0A0A0B] font-serif">
