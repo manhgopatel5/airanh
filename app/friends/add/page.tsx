@@ -894,9 +894,10 @@ export default function FriendsPage() {
                   )}
                 </div>
               </div>
+        </div>
             )}
           </div>
-        </div>
+
 
       <AnimatePresence>
         {selectedFriend && (
