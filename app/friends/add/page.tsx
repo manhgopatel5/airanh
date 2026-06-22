@@ -59,7 +59,7 @@ export default function AddFriendPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const db = getFirebaseDB();
-  const router = useRouter();
+
 
   // Chặn scroll bounce
   useEffect(() => {
