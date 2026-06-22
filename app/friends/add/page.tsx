@@ -723,6 +723,7 @@ export default function FriendsPage() {
              <span className="absolute right-4 top-1/2 -translate-y-1/2 text- font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
 </div>
 </div>
+</div>
 </motion.div>
 </AnimatePresence>
 
