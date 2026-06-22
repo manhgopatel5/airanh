@@ -1,16 +1,42 @@
 "use client";
-
-import { useState, useRef, useEffect } from "react";
-import { FiSearch, FiX, FiLoader, FiUpload, FiCheck, FiClock, FiShare2, FiMapPin, FiNavigation, FiRefreshCw, FiUsers } from "react-icons/fi";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useAuth } from "@/lib/AuthContext";
+import { getFirebaseDB } from "@/lib/firebase";
+import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp, query, where, limit, getDocs } from "firebase/firestore";
+import { FiUsers, FiShield, FiUserPlus, FiSearch, FiMessageCircle, FiUserX, FiMapPin, FiRefreshCw, FiShare2, FiUpload } from "react-icons/fi";
+import { RiVipCrownLine, RiUserSearchLine } from "react-icons/ri";
+import { IoStatsChart, IoRibbon } from "react-icons/io5";
 import { ScanLine, SlidersHorizontal } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { getAuth } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp, collection, query, getDocs, limit } from "firebase/firestore";
-import { getFirebaseDB } from "@/lib/firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { getApp } from "firebase/app";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
 
+type FriendItem = {
+  uid: string;
+  name: string;
+  username: string;
+  avatar: string;
+  userId: string;
+  isOnline: boolean;
+  lastSeen?: any;
+  isDeletedByThem?: boolean;
+  mutualFriends?: number;
+  vip?: { tier: 'free' | 'pro' | 'elite' };
+};
+
+type RequestItem = {
+  uid: string;
+  name: string;
+  avatar: string;
+  mutualFriends: number;
+  time: any;
+};
 
 type UserSuggestion = {
   uid: string;
@@ -24,58 +50,124 @@ type UserSuggestion = {
   mutualFriends?: number;
 };
 
-
-
-const RECENT_SEARCH_KEY = "friend_search_recent";
-
-export default function AddFriendPage() {
+export default function FriendsPage() {
+  const { user } = useAuth();
+  const db = getFirebaseDB();
+  const router = useRouter();
+  const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions'>('friends');
+  const [friends, setFriends] = useState<FriendItem[]>([]);
+  const [requests, setRequests] = useState<RequestItem[]>([]);
+  const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
+  const [nearbyUsers, setNearbyUsers] = useState<UserSuggestion[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [adding, setAdding] = useState(false);
-  const [showScanQR, setShowScanQR] = useState(false);
-  const [scanMode, setScanMode] = useState<"camera" | "upload">("camera");
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [myUsername, setMyUsername] = useState("");
+  const [selectedFriend, setSelectedFriend] = useState<FriendItem | null>(null);
+  const [showFilter, setShowFilter] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationDenied, setLocationDenied] = useState(false);
-  const [nearbyUsers, setNearbyUsers] = useState<UserSuggestion[]>([]);
-  const [suggestedUsers, setSuggestedUsers] = useState<UserSuggestion[]>([]);
-  const [searchResult, setSearchResult] = useState<UserSuggestion | null>(null);
   const [loadingNearby, setLoadingNearby] = useState(false);
   const [loadingSuggested, setLoadingSuggested] = useState(false);
-  const [loadingSearch, setLoadingSearch] = useState(false);
-  const [showFilter, setShowFilter] = useState(false);
-const [filters, setFilters] = useState<{
-  gender: "all" | "male" | "female";
-  minAge: number | '';
-  maxAge: number | '';
-  maxDistance: number | '';
-}>({
-  gender: "all",
-  minAge: 18,
-  maxAge: 25,
-  maxDistance: 50
-});
-
+  const [showScanQR, setShowScanQR] = useState(false);
+  const [scanMode, setScanMode] = useState<"camera" | "upload">("camera");
+  const [filters, setFilters] = useState<{
+    gender: "all" | "male" | "female";
+    minAge: number | '';
+    maxAge: number | '';
+    maxDistance: number | '';
+  }>({
+    gender: "all",
+    minAge: 18,
+    maxAge: 25,
+    maxDistance: 50
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
-const db = getFirebaseDB();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-// Thêm đoạn này
-useEffect(() => {
-  document.body.style.paddingTop = 'env(safe-area-inset-top)';
-  document.body.style.paddingBottom = 'env(safe-area-inset-bottom)';
-  document.documentElement.style.overscrollBehavior = 'none';
-  return () => {
-    document.body.style.paddingTop = '';
-    document.body.style.paddingBottom = '';
-    document.documentElement.style.overscrollBehavior = 'auto';
-  };
-}, []);
+  // Safe area
+  useEffect(() => {
+    document.body.style.paddingTop = 'env(safe-area-inset-top)';
+    document.body.style.paddingBottom = 'env(safe-area-inset-bottom)';
+    document.documentElement.style.overscrollBehavior = 'none';
+    return () => {
+      document.body.style.paddingTop = '';
+      document.body.style.paddingBottom = '';
+      document.documentElement.style.overscrollBehavior = 'auto';
+    };
+  }, []);
 
+  // Fetch friends
+  useEffect(() => {
+    if (!user?.uid) return;
+    setFriendsLoading(true);
 
+    const friendsRef = collection(db, "users", user.uid, "friends");
+    const unsub = onSnapshot(friendsRef, async (snapshot) => {
+      const activeFriendIds = snapshot.docs.filter(d => d.data()?.status!== "removed").map(d => d.id);
+      if (activeFriendIds.length === 0) {
+        setFriends([]);
+        setFriendsLoading(false);
+        return;
+      }
 
+      const userDocs = await Promise.all(activeFriendIds.map(id => getDoc(doc(db, "users", id))));
+      const friendsData = await Promise.all(
+        userDocs.map(async (userDoc) => {
+          if (!userDoc.exists()) return null;
+          const data = userDoc.data();
+          const theirFriendsSnap = await getDoc(doc(db, "users", userDoc.id, "friends", user.uid));
+          const mutualCount = theirFriendsSnap.exists()
+        ? Object.keys(data.friends || {}).filter(fid => activeFriendIds.includes(fid)).length
+            : 0;
 
-  // Yêu cầu định vị ngay khi vào
+          const friend: FriendItem = {
+            uid: userDoc.id,
+            name: data.name || "User",
+            username: data.username || "",
+            avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
+            userId: data.userId || "",
+            isOnline: Boolean(data.isOnline),
+            lastSeen: data.lastSeen,
+            isDeletedByThem: Boolean(snapshot.docs.find(d => d.id === userDoc.id)?.data()?.removedBy),
+            mutualFriends: mutualCount,
+            vip: data.vip || { tier: 'free' }
+          };
+          return friend;
+        })
+      );
+
+      const filtered = friendsData.filter(f => f!== null) as FriendItem[];
+      setFriends(filtered);
+      setFriendsLoading(false);
+    });
+
+    return () => unsub();
+  }, [user?.uid, db]);
+
+  // Fetch requests
+  useEffect(() => {
+    if (!user?.uid) return;
+    const reqRef = collection(db, "users", user.uid, "friendRequests");
+    const unsub = onSnapshot(reqRef, async (snapshot) => {
+      const reqs = await Promise.all(
+        snapshot.docs.map(async (d) => {
+          const userData = await getDoc(doc(db, "users", d.id));
+          if (!userData.exists()) return null;
+          return {
+            uid: d.id,
+            name: userData.data().name,
+            avatar: userData.data().avatar,
+            mutualFriends: 0,
+            time: d.data().createdAt
+          };
+        })
+      );
+      setRequests(reqs.filter(r => r!== null) as RequestItem[]);
+    });
+    return () => unsub();
+  }, [user?.uid, db]);
+
+  // Yêu cầu định vị
   useEffect(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -85,27 +177,13 @@ useEffect(() => {
         },
         () => {
           setLocationDenied(true);
-          toast.error("Cần bật định vị để tìm bạn bè gần bạn");
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
     }
   }, []);
 
-  useEffect(() => {
-    const recent = localStorage.getItem(RECENT_SEARCH_KEY);
-    if (recent) setRecentSearches(JSON.parse(recent).slice(0, 5));
-
-    const auth = getAuth();
-    const uid = auth.currentUser?.uid;
-    if (uid) {
-      getDoc(doc(db, "users", uid)).then((snap) => {
-        if (snap.exists()) setMyUsername(snap.data().username || "");
-      });
-    }
-  }, [db]);
-
-  // Load nearby users khi có location
+  // Fetch nearby + suggestions khi có location
   useEffect(() => {
     if (!userLocation) return;
     fetchNearbyUsers();
@@ -150,18 +228,17 @@ useEffect(() => {
           data.location.lng
         );
 
+        const maxDist = Number(filters.maxDistance) || 100;
+        const minAge = Number(filters.minAge) || 18;
+        const maxAge = Number(filters.maxAge) || 100;
 
-const maxDist = Number(filters.maxDistance) || 100;
-const minAge = Number(filters.minAge) || 18;
-const maxAge = Number(filters.maxAge) || 100;
-
-if (distance > maxDist) continue;
-if (filters.gender !== "all" && data.gender !== filters.gender) continue;
-if (data.age && (data.age < minAge || data.age > maxAge)) continue;
+        if (distance > maxDist) continue;
+        if (filters.gender!== "all" && data.gender!== filters.gender) continue;
+        if (data.age && (data.age < minAge || data.age > maxAge)) continue;
 
         let status: UserSuggestion["status"] = "none";
         const friendDoc = await getDoc(doc(db, "users", currentUid, "friends", docSnap.id));
-        if (friendDoc.exists()) continue; // Bỏ qua bạn bè
+        if (friendDoc.exists()) continue;
 
         const sentReq = await getDoc(doc(db, "friendRequests", `${currentUid}_${docSnap.id}`));
         if (sentReq.exists() && sentReq.data().status === "pending") {
@@ -195,837 +272,453 @@ if (data.age && (data.age < minAge || data.age > maxAge)) continue;
   };
 
   const fetchSuggestedUsers = async () => {
-  setLoadingSuggested(true);
-  try {
-    const auth = getAuth();
-    const currentUid = auth.currentUser?.uid;
-    if (!currentUid) return;
-
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, limit(50));
-    const snap = await getDocs(q);
-    const results: UserSuggestion[] = [];
-    const randomUsers: UserSuggestion[] = [];
-
-    for (const docSnap of snap.docs) {
-      if (docSnap.id === currentUid) continue;
-      const data = docSnap.data();
-
-      const friendDoc = await getDoc(doc(db, "users", currentUid, "friends", docSnap.id));
-      if (friendDoc.exists()) continue;
-
-      // Đếm bạn chung
-      const myFriendsSnap = await getDocs(collection(db, "users", currentUid, "friends"));
-      const theirFriendsSnap = await getDocs(collection(db, "users", docSnap.id, "friends"));
-      const myFriends = new Set(myFriendsSnap.docs.map(d => d.id));
-      const mutualCount = theirFriendsSnap.docs.filter(d => myFriends.has(d.id)).length;
-
-      const userData: UserSuggestion = {
-        uid: docSnap.id,
-        username: data.username || "",
-        name: data.name || "",
-        avatarUrl: data.avatarUrl,
-        status: "none",
-        mutualFriends: mutualCount,
-        age: data.age,
-        gender: data.gender
-      };
-
-      if (mutualCount > 0) {
-        results.push(userData);
-      } else {
-        randomUsers.push(userData);
-      }
-    }
-
-    results.sort((a, b) => (b.mutualFriends || 0) - (a.mutualFriends || 0));
-
-    // Nếu không có bạn chung thì lấy random 10 người
-    if (results.length === 0) {
-      const shuffled = randomUsers.sort(() => 0.5 - Math.random());
-      setSuggestedUsers(shuffled.slice(0, 10));
-    } else {
-      setSuggestedUsers(results.slice(0, 10));
-    }
-  } catch (e) {
-    console.error(e);
-  } finally {
-    setLoadingSuggested(false);
-  }
-};
-
-  const handleSearchUser = async () => {
-    const keyword = search.trim().replace("@", "").toLowerCase();
-    if (!keyword) {
-      toast.error("Vui lòng nhập username");
-      return;
-    }
-
-    setLoadingSearch(true);
-    setSearchResult(null);
-
+    setLoadingSuggested(true);
     try {
       const auth = getAuth();
       const currentUid = auth.currentUser?.uid;
       if (!currentUid) return;
 
-      const usernameDoc = await getDoc(doc(db, "usernames", keyword));
-      if (!usernameDoc.exists()) {
-        toast.error(`Không tìm thấy @${keyword}`);
-        setLoadingSearch(false);
-        return;
-      }
+      const friendIds = friends.map(f => f.uid);
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, limit(50));
+      const snap = await getDocs(q);
+      const results: UserSuggestion[] = [];
+      const randomUsers: UserSuggestion[] = [];
 
-      const targetUid = usernameDoc.data().uid;
-      if (targetUid === currentUid) {
-        toast.error("Không thể thêm chính mình");
-        setLoadingSearch(false);
-        return;
-      }
+      for (const docSnap of snap.docs) {
+        if (docSnap.id === currentUid) continue;
+        const data = docSnap.data();
 
-      const userDoc = await getDoc(doc(db, "users", targetUid));
-      if (!userDoc.exists()) {
-        toast.error("User không tồn tại");
-        setLoadingSearch(false);
-        return;
-      }
+        const friendDoc = await getDoc(doc(db, "users", currentUid, "friends", docSnap.id));
+        if (friendDoc.exists()) continue;
 
-      const data = userDoc.data();
-      let status: UserSuggestion["status"] = "none";
-      const friendDoc = await getDoc(doc(db, "users", currentUid, "friends", targetUid));
-      if (friendDoc.exists()) {
-        status = "friend";
-      } else {
-        const sentReq = await getDoc(doc(db, "friendRequests", `${currentUid}_${targetUid}`));
-        if (sentReq.exists() && sentReq.data().status === "pending") {
-          status = "sent";
+        const myFriendsSnap = await getDocs(collection(db, "users", currentUid, "friends"));
+        const theirFriendsSnap = await getDocs(collection(db, "users", docSnap.id, "friends"));
+        const myFriends = new Set(myFriendsSnap.docs.map(d => d.id));
+        const mutualCount = theirFriendsSnap.docs.filter(d => myFriends.has(d.id)).length;
+
+        const userData: UserSuggestion = {
+          uid: docSnap.id,
+          username: data.username || "",
+          name: data.name || "",
+          avatarUrl: data.avatarUrl,
+          status: "none",
+          mutualFriends: mutualCount,
+          age: data.age,
+          gender: data.gender
+        };
+
+        if (mutualCount > 0) {
+          results.push(userData);
         } else {
-          const receivedReq = await getDoc(doc(db, "friendRequests", `${targetUid}_${currentUid}`));
-          if (receivedReq.exists() && receivedReq.data().status === "pending") {
-            status = "received";
-          }
+          randomUsers.push(userData);
         }
       }
 
-      setSearchResult({
-        uid: targetUid,
-        username: data.username || "",
-        name: data.name || "",
-        avatarUrl: data.avatarUrl,
-        status,
-        age: data.age,
-        gender: data.gender
-      });
+      results.sort((a, b) => (b.mutualFriends || 0) - (a.mutualFriends || 0));
+
+      if (results.length === 0) {
+        const shuffled = randomUsers.sort(() => 0.5 - Math.random());
+        setSuggestions(shuffled.slice(0, 10));
+      } else {
+        setSuggestions(results.slice(0, 10));
+      }
     } catch (e) {
       console.error(e);
-      toast.error("Lỗi tìm kiếm");
     } finally {
-      setLoadingSearch(false);
+      setLoadingSuggested(false);
     }
   };
 
-  const stopScan = async (closeModal = true) => {
-    try {
-      if (scannerRef.current) {
-        if (scannerRef.current.isScanning) {
-          await scannerRef.current.stop();
-        }
-        await scannerRef.current.clear();
-        scannerRef.current = null;
+  const handleStartChat = async (friendId: string) => {
+    if (!user?.uid) return;
+    const chatId = [user.uid, friendId].sort().join("_");
+    const [currentUserDoc, friendDoc] = await Promise.all([
+      getDoc(doc(db, "users", user.uid)),
+      getDoc(doc(db, "users", friendId))
+    ]);
+    const currentData = currentUserDoc.data();
+    const friendData = friendDoc.data();
+
+    await setDoc(doc(db, "chats", chatId), {
+      members: [user.uid, friendId],
+      isGroup: false,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      membersInfo: {
+        [user.uid]: { name: currentData?.name || "User", avatar: currentData?.avatar || "", username: currentData?.username || "" },
+        [friendId]: { name: friendData?.name || "User", avatar: friendData?.avatar || "", username: friendData?.username || "" }
       }
-    } catch {}
-    if (closeModal) setShowScanQR(false);
+    }, { merge: true });
+
+    router.push(`/chat/${chatId}`);
   };
 
-  useEffect(() => {
-    return () => {
-      void stopScan(false);
-      const el = document.getElementById("qr-reader-file-add");
-      if (el) el.remove();
-    };
-  }, []);
-
-  const handleScanFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    let qrReader = document.getElementById("qr-reader-file-add");
-    if (!qrReader) {
-      qrReader = document.createElement("div");
-      qrReader.id = "qr-reader-file-add";
-      qrReader.style.display = "none";
-      document.body.appendChild(qrReader);
-    }
-
-    const html5QrCode = new Html5Qrcode("qr-reader-file-add");
-    try {
-      const result = await html5QrCode.scanFile(file, false);
-      let userId = "";
-
-      if (result.includes("/u/")) {
-        userId = result.split("/u/")[1] || "";
-      } else if (result.startsWith("@")) {
-        userId = result.slice(1);
-      } else {
-        userId = result.trim();
-      }
-
-      if (userId) {
-        setSearch(userId);
-        if ("vibrate" in navigator) navigator.vibrate([10, 30, 10]);
-        toast.success("Đã quét QR thành công");
-        handleSearchUser();
-      } else {
-        toast.error("Mã QR không hợp lệ");
-      }
-    } catch {
-      toast.error("Không đọc được QR từ ảnh");
-    } finally {
-      await html5QrCode.clear();
-      e.target.value = "";
-    }
+  const handleAccept = async (uid: string) => {
+    const functions = getFunctions(getApp(), "asia-southeast1");
+    const accept = httpsCallable(functions, 'acceptFriendRequest');
+    await accept({ fromUid: uid });
+    toast.success("Đã chấp nhận");
   };
 
-  useEffect(() => {
-    if (!showScanQR || scanMode!== "camera") return;
-
-    const startScan = async () => {
-      const html5QrCode = new Html5Qrcode("qr-reader-add");
-      scannerRef.current = html5QrCode;
-
-      try {
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          (decodedText) => {
-            if ("vibrate" in navigator) navigator.vibrate([10, 30, 10]);
-            let userId = "";
-
-            if (decodedText.includes("/u/")) {
-              userId = decodedText.split("/u/")[1] || "";
-            } else if (decodedText.startsWith("@")) {
-              userId = decodedText.slice(1);
-            } else {
-              userId = decodedText.trim();
-            }
-
-            if (userId) {
-              setSearch(userId);
-              stopScan();
-              toast.success("Đã quét QR");
-              handleSearchUser();
-            } else {
-              toast.error("Mã QR không hợp lệ");
-            }
-          },
-          () => {}
-        );
-      } catch {
-        toast.error("Không mở được camera");
-        setShowScanQR(false);
-      }
-    };
-
-    startScan();
-    return () => {
-      void stopScan(false);
-    };
-  }, [showScanQR, scanMode]);
-
-  const saveRecentSearch = (username: string) => {
-    const updated = [username,...recentSearches.filter(s => s!== username)].slice(0, 5);
-    setRecentSearches(updated);
-    localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(updated));
+  const handleAddFriend = async (friendId: string, username?: string) => {
+    const functions = getFunctions(getApp(), "asia-southeast1");
+    const sendRequest = httpsCallable(functions, 'sendFriendRequest');
+    await sendRequest({ toUid: friendId });
+    toast.success("Đã gửi lời mời");
+    fetchNearbyUsers();
+    fetchSuggestedUsers();
   };
 
-  const handleAddFriend = async (userId?: string, username?: string) => {
-    setAdding(true);
-
-    try {
-      const auth = getAuth();
-      await auth.authStateReady();
-      const currentUser = auth.currentUser;
-      if (!currentUser?.uid) {
-        toast.error("Chưa đăng nhập");
-        return;
-      }
-
-      const keyword = userId || search.trim().replace("@", "");
-      if (!keyword) {
-        toast.error("Vui lòng nhập username");
-        return;
-      }
-
-      let targetUserId: string | null = userId || null;
-      const lowerKeyword = keyword.toLowerCase();
-
-      if (!targetUserId) {
-        const usernameDoc = await getDoc(doc(db, "usernames", lowerKeyword));
-        if (usernameDoc.exists()) targetUserId = usernameDoc.data().uid;
-      }
-
-      if (!targetUserId) {
-        toast.error(`Không tìm thấy @${keyword}`);
-        return;
-      }
-
-      if (targetUserId === currentUser.uid) {
-        toast.error("Không thể thêm chính mình");
-        return;
-      }
-
-      const friendDoc = await getDoc(doc(db, "users", currentUser.uid, "friends", targetUserId));
-      if (friendDoc.exists()) {
-        toast.error("Các bạn đã là bạn bè");
-        return;
-      }
-
-      const requestId = `${currentUser.uid}_${targetUserId}`;
-      const requestDoc = await getDoc(doc(db, "friendRequests", requestId));
-      if (requestDoc.exists() && requestDoc.data().status === "pending") {
-        toast.error("Đã gửi lời mời rồi");
-        return;
-      }
-
-      await setDoc(doc(db, "friendRequests", requestId), {
-        from: currentUser.uid,
-        to: targetUserId,
-        status: "pending",
-        createdAt: serverTimestamp()
-      });
-
-      if (username) saveRecentSearch(username);
-      toast.success("Đã gửi lời mời kết bạn");
-      setSearch("");
-      setSearchResult(null);
-      fetchNearbyUsers();
-      fetchSuggestedUsers();
-    } catch (error: any) {
-      console.error("Add friend error:", error.code, error.message);
-      toast.error(error.code === 'permission-denied'? "Đã gửi lời mời hoặc các bạn đã là bạn bè" : `Lỗi: ${error.message}`);
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  const copyMyLink = () => {
-    if (!myUsername) {
-      toast.error("Chưa có username");
-      return;
-    }
-    const link = `${window.location.origin}/u/${myUsername}`;
-    navigator.clipboard.writeText(link);
+  const handleRemoveFriend = async (friend: FriendItem) => {
+    if (!confirm(`Xóa ${friend.name} khỏi danh sách bạn bè?`)) return;
+    const functions = getFunctions(getApp(), "asia-southeast1");
+    const unfriend = httpsCallable(functions, 'unfriend');
+    await unfriend({ friendUid: friend.uid });
+    toast.success("Đã hủy kết bạn");
+    setSelectedFriend(null);
     if ("vibrate" in navigator) navigator.vibrate(10);
-    toast.success("Đã copy link");
   };
 
-  const requestLocation = () => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setLocationDenied(false);
-          toast.success("Đã bật định vị");
-        },
-        () => {
-          toast.error("Vui lòng bật định vị trong cài đặt");
-        }
-      );
+  const formatLastSeen = (timestamp?: any): string => {
+    if (!timestamp?.toDate) return "Lâu rồi";
+    return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
+  };
+
+  const filteredFriends = useMemo(() => {
+    let result = friends;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(f => f.name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q));
     }
-  };
+    return result.sort((a, b) => {
+      if (a.isOnline!== b.isOnline) return b.isOnline? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [friends, search]);
+  
+  const onlineCount = friends.filter(f => f.isOnline).length;
 
+  const FriendRow = ({ friend }: { friend: FriendItem }) => {
+    const x = useMotionValue(0);
+    const opacity = useTransform(x, [-100, 0], [1, 0]);
 
-return (
-  <div className="min-h-[100dvh] bg-white dark:bg-black">
-    <div className="px-4 pt-2 pb-6 space-y-4">
-      {locationDenied && (
-          <div className="p-4 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900 rounded-2xl">
-            <div className="flex items-start gap-3">
-              <FiMapPin className="text-orange-600 dark:text-orange-400 mt-0.5" size={20} />
-              <div className="flex-1">
-                <p className="text-sm font-[600] text-orange-900 dark:text-orange-100">Cần bật định vị</p>
-                <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">Bật định vị để tìm bạn bè gần bạn</p>
-                <button
-                  onClick={requestLocation}
-                  className="mt-3 px-4 h-9 bg-orange-600 text-white rounded-xl text-sm font-[600] active:scale-95 transition"
-                >
-                  Bật định vị
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-<AnimatePresence>
-  {showFilter && (
-    <motion.div
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: "auto", opacity: 1 }}
-      exit={{ height: 0, opacity: 0 }}
-      className="overflow-hidden mb-4"
-    >
-      <div className="p-4 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl space-y-5">
-        {/* Giới tính */}
-        <div>
-          <p className="text- font-[600] mb-3">Giới tính</p>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: "Tất cả", value: "all" },
-              { label: "Nam", value: "male" },
-              { label: "Nữ", value: "female" }
-            ].map((g) => (
-              <button
-                key={g.value}
-                onClick={() => setFilters({...filters, gender: g.value as any })}
-                className={`h-11 rounded-xl text- font-[600] transition-all active:scale-95 ${
-                  filters.gender === g.value
-             ? "bg-gradient-to-br from-[#0a84ff] to-purple-500 text-white shadow-lg shadow-blue-500/30"
-                    : "bg-white dark:bg-zinc-700"
-                }`}
-              >
-                {g.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
- {/* Tuổi - 2 ô input */}
-<div>
-  <p className="text- font-[600] mb-3">Tuổi</p>
-  <div className="flex items-center gap-3">
-    <div className="flex-1">
-      <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Từ</p>
-      <input
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        value={filters.minAge}
-        onChange={(e) => {
-          const val = e.target.value.replace(/\D/g, '');
-          setFilters({...filters, minAge: val? Number(val) : ''});
-        }}
-        onBlur={(e) => {
-          let val = Number(e.target.value) || 18;
-          if (val < 18) {
-            toast.error("Tuổi tối thiểu phải từ 18 trở lên");
-            val = 18;
-          }
-          if (val > 100) val = 100;
-          setFilters({
-           ...filters,
-            minAge: val,
-            maxAge: Math.max(val, Number(filters.maxAge) || val)
-          });
-        }}
-        className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-        placeholder="18"
-      />
-    </div>
-    <div className="w-4 h-[2px] bg-zinc-300 dark:bg-zinc-600 mt-6" />
-    <div className="flex-1">
-      <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Đến</p>
-      <input
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        value={filters.maxAge}
-        onChange={(e) => {
-          const val = e.target.value.replace(/\D/g, '');
-          setFilters({...filters, maxAge: val? Number(val) : ''});
-        }}
-        onBlur={(e) => {
-          let val = Number(e.target.value) || 25;
-          if (val < 18) {
-            toast.error("Tuổi tối thiểu phải từ 18 trở lên");
-            val = 18;
-          }
-          if (val > 100) val = 100;
-          setFilters({
-           ...filters,
-            maxAge: val,
-            minAge: Math.min(val, Number(filters.minAge) || val)
-          });
-        }}
-        className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-        placeholder="25"
-      />
-    </div>
-  </div>
-</div>
-
-{/* Khoảng cách - 0 tới 100 */}
-<div>
-  <p className="text- font-[600] mb-3">Khoảng cách tối đa</p>
-  <div className="relative">
-    <input
-      type="text"
-      inputMode="numeric"
-      pattern="[0-9]*"
-      value={filters.maxDistance}
-      onChange={(e) => {
-        const val = e.target.value.replace(/\D/g, '');
-        setFilters({...filters, maxDistance: val? Number(val) : ''});
-      }}
-      onBlur={(e) => {
-        let val = Number(e.target.value);
-        if (e.target.value === '') val = 50;
-        val = Math.max(0, Math.min(100, val));
-        setFilters({...filters, maxDistance: val});
-      }}
-      className="w-full h-12 px-4 pr-12 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-      placeholder="50"
-    />
-    <span className="absolute right-4 top-1/2 -translate-y-1/2 text- font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
-  </div>
-</div>
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
-
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => { setShowScanQR(true); setScanMode("camera"); }}
-            className="h-12 bg-gradient-to-br from-blue-500 to-purple-500 text-white rounded-2xl text- font-[600] flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-500/30"
-          >
-            <ScanLine size={18} /> Quét QR
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="h-12 bg-zinc-100 dark:bg-zinc-800 border border-black/5 dark:border-white/5 rounded-2xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition"
-          >
-            <FiUpload size={18} /> Ảnh QR
-          </button>
-        </div>
-
-        <form onSubmit={(e) => { e.preventDefault(); handleSearchUser(); }} className="space-y-3">
-          <div className="relative">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8e8e93] pointer-events-none z-10" size={20} />
-            <input
-              type="search"
-              inputMode="search"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setSearchResult(null);
-              }}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearchUser()}
-              placeholder="Nhập ID hoặc @username"
-              className="w-full h-12 pl-12 pr-4 bg-zinc-100 dark:bg-zinc-800 rounded-2xl text- outline-none focus:ring-4 focus:ring-[#0a84ff]/20 focus:bg-white dark:focus:bg-zinc-700 transition-all"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loadingSearch ||!search.trim()}
-            className="w-full h-12 bg-gradient-to-r from-[#0a84ff] to-purple-500 hover:from-[#007aff] hover:to-purple-600 active:from-[#0051d5] active:to-purple-700 disabled:opacity-40 text-white rounded-2xl text- font-[600] transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30"
-          >
-            {loadingSearch && <FiLoader className="animate-spin" size={18} />}
-            {loadingSearch? "Đang tìm..." : "Tìm kiếm"}
-          </button>
-        </form>
-
-        {searchResult && (
-          <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-2xl">
-            <p className="text- font-[600] text-[#8e8e93] dark:text-zinc-500 mb-3">Kết quả tìm kiếm</p>
-            <div className="flex items-center gap-3">
-              {searchResult.avatarUrl? (
-                <Image src={searchResult.avatarUrl} alt={searchResult.name} width={48} height={48} className="rounded-full" />
-              ) : (
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  {searchResult.name[0]?.toUpperCase()}
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="font-[600] text- truncate">{searchResult.name}</p>
-                <p className="text- text-[#8e8e93] dark:text-zinc-500">@{searchResult.username}</p>
-              </div>
-              {searchResult.status === "friend" && (
-                <div className="px-3 py-1.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-lg text- font-[600] flex items-center gap-1">
-                  <FiCheck size={14} /> Bạn bè
-                </div>
-              )}
-              {searchResult.status === "sent" && (
-                <div className="px-3 py-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text- font-[600]">
-                  Đã gửi
-                </div>
-              )}
-              {searchResult.status === "received" && (
-                <div className="px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text- font-[600]">
-                  Chờ xác nhận
-                </div>
-              )}
-              {searchResult.status === "none" && (
-                <button
-                  onClick={() => handleAddFriend(searchResult.uid, searchResult.username)}
-                  disabled={adding}
-                  className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text- font-[600] active:scale-95 transition-all disabled:opacity-40"
-                >
-                  Kết bạn
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {recentSearches.length > 0 &&!searchResult && (
-          <div>
-            <p className="text- font-[600] text-[#8e8e93] dark:text-zinc-500 mb-2">Tìm kiếm gần đây</p>
-            <div className="flex flex-wrap gap-2">
-              {recentSearches.map((uname) => (
-                <button
-                  key={uname}
-                  onClick={() => {
-                    setSearch(uname);
-                    handleSearchUser();
-                  }}
-                  className="px-3 h-8 bg-zinc-100 dark:bg-zinc-800 rounded-lg text- flex items-center gap-1.5 active:scale-95 transition"
-                >
-                  <FiClock size={14} className="text-[#8e8e93]" />
-                  @{uname}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-     {/* Tìm xung quanh */}
-<div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-2xl">
-  <div className="flex items-center justify-between mb-4">
-    <div className="flex items-center gap-2">
-      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-        <FiNavigation className="text-white" size={20} />
-      </div>
-      <div>
-        <p className="text- font-[700]">Tìm xung quanh</p>
-        <p className="text- text-[#8e8e93] dark:text-zinc-500">Bạn bè gần bạn</p>
-      </div>
-    </div>
-    {/* Nút filter chuyển vào đây */}
-    <button
-      onClick={() => setShowFilter(!showFilter)}
-      className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all"
-    >
-      <SlidersHorizontal size={18} />
-    </button>
-  </div>
-
-  {/* Panel filter */}
-  <AnimatePresence>
-    {showFilter && (
-      <motion.div
-        initial={{ height: 0, opacity: 0 }}
-        animate={{ height: "auto", opacity: 1 }}
-        exit={{ height: 0, opacity: 0 }}
-        className="overflow-hidden mb-4"
-      >
-        <div className="p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl space-y-4">
-          {/* code filter tuổi + khoảng cách giữ nguyên */}
-        </div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-
-  {loadingNearby && (
-    <div className="py-12 text-center text-[#8e8e93]">
-      <FiLoader className="animate-spin mx-auto mb-2" size={24} />
-      <p className="text-">Đang tìm bạn bè gần bạn...</p>
-    </div>
-  )}
-
-  {!loadingNearby && nearbyUsers.length === 0 && userLocation && (
-    <div className="py-8 text-center">
-      <div className="w-16 h-16 bg-white/50 dark:bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
-        <FiMapPin className="text-[#8e8e93]" size={28} />
-      </div>
-      <p className="text- font-[600]">Không tìm thấy ai gần bạn</p>
-      <p className="text- text-[#8e8e93] dark:text-zinc-500 mt-1">Thử mở rộng khoảng cách tìm kiếm</p>
-    </div>
-  )}
-
-  {!loadingNearby && nearbyUsers.length > 0 && (
-    <div className="space-y-2 mb-3">
-      {nearbyUsers.map((user) => (
-        <div
-          key={user.uid}
-          className="flex items-center gap-3 p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl"
+    return (
+      <motion.div className="relative overflow-hidden rounded-">
+        <motion.div
+          className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 flex items-center justify-center rounded-r-"
+          style={{ opacity }}
         >
-          {user.avatarUrl? (
-            <Image src={user.avatarUrl} alt={user.name} width={48} height={48} className="rounded-full" />
-          ) : (
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-              {user.name[0]?.toUpperCase()}
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="font-[600] text- truncate">{user.name}</p>
-            <div className="flex items-center gap-2 text- text-[#8e8e93] dark:text-zinc-500">
-              <span>@{user.username}</span>
-              {user.distance!== undefined && (
-                <>
-                  <span>•</span>
-                  <span className="flex items-center gap-0.5 font-[600] text-[#0a84ff]">
-                    <FiMapPin size={12} />
-                    {user.distance}km
-                  </span>
-                </>
-              )}
-              {user.age && (
-                <>
-                  <span>•</span>
-                  <span>{user.age}t</span>
-                </>
-              )}
-            </div>
-          </div>
-          {user.status === "sent" && (
-            <div className="px-3 py-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text- font-[600]">
-              Đã gửi
-            </div>
-          )}
-          {user.status === "received" && (
-            <div className="px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text- font-[600]">
-              Chờ xác nhận
-            </div>
-          )}
-          {user.status === "none" && (
-            <button
-              onClick={() => handleAddFriend(user.uid, user.username)}
-              disabled={adding}
-              className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text- font-[600] active:scale-95 transition-all disabled:opacity-40"
-            >
-              Kết bạn
-            </button>
-          )}
-        </div>
-      ))}
-    </div>
-  )}
-
-  {/* Nút Làm mới đưa xuống cuối, căn giữa */}
-  {userLocation && (
-    <button
-      onClick={fetchNearbyUsers}
-      disabled={loadingNearby}
-      className="w-full h-10 flex items-center justify-center gap-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl text-[#0a84ff] font-[600] active:scale-95 transition-all disabled:opacity-40"
-    >
-      <FiRefreshCw size={18} className={loadingNearby? "animate-spin" : ""} />
-      Làm mới
-    </button>
-  )}
-</div>
-
-{/* Gợi ý cho bạn */}
-{!loadingSuggested && (
-  <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-2xl">
-    <div className="flex items-center gap-2 mb-4">
-      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-        <FiUsers className="text-white" size={20} />
-      </div>
-      <div>
-        <p className="text- font-[700]">
-          {suggestedUsers.some(u => u.mutualFriends && u.mutualFriends > 0)
-  ? "Những người bạn có thể biết"
-            : "Gợi ý cho bạn"}
-        </p>
-        <p className="text- text-[#8e8e93] dark:text-zinc-500">
-          {suggestedUsers.some(u => u.mutualFriends && u.mutualFriends > 0)
-  ? "Dựa trên bạn chung"
-            : "Người dùng mới"}
-        </p>
-      </div>
-    </div>
-
-    {suggestedUsers.length === 0? (
-      <div className="py-12 text-center">
-        <div className="w-16 h-16 bg-white/50 dark:bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
-          <FiUsers className="text-[#8e8e93]" size={28} />
-        </div>
-        <p className="text- font-[600]">Chưa có gợi ý nào</p>
-        <p className="text- text-[#8e8e93] dark:text-zinc-500 mt-1">Hãy thử lại sau</p>
-      </div>
-    ) : (
-      <div className="space-y-2">
-        {suggestedUsers.map((user) => (
-          <div
-            key={user.uid}
-            className="flex items-center gap-3 p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl"
+          <FiUserX className="text-white" size={20} />
+        </motion.div>
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: -80, right: 0 }}
+          style={{ x }}
+          onDragEnd={(_, info) => {
+            if (info.offset.x < -60) handleRemoveFriend(friend);
+          }}
+          className="bg-white dark:bg-zinc-900 border border-black/[0.06] dark:border-white/[0.06] rounded-"
+        >
+          <button
+            onClick={() => handleStartChat(friend.uid)}
+            onContextMenu={(e) => { e.preventDefault(); setSelectedFriend(friend); }}
+            className="flex items-center gap-3 p-4 w-full active:bg-gray-50 dark:active:bg-zinc-800 rounded-"
           >
-            {user.avatarUrl? (
-              <Image src={user.avatarUrl} alt={user.name} width={48} height={48} className="rounded-full" />
-            ) : (
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                {user.name[0]?.toUpperCase()}
+            <div className="relative flex-shrink-0">
+              <img src={friend.avatar} alt={friend.name} className="w-14 h-14 rounded-full object-cover" />
+              {friend.isOnline && (
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#30d158] rounded-full border-[3px] border-white dark:border-zinc-900" />
+              )}
+              {friend.vip?.tier === 'elite' && (
+                <div className="absolute -top-1 -right-1 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full p-1">
+                  <RiVipCrownLine className="text-white" size={12} />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <div className="flex items-center gap-1.5">
+                <p className="text- leading-5 font-[600] truncate font-serif">{friend.name}</p>
+                {friend.vip?.tier === 'pro' && <span className="text-sm">💎</span>}
               </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="font-[600] text- truncate">{user.name}</p>
-              <div className="flex items-center gap-2 text- text-[#8e8e93] dark:text-zinc-500">
-                <span>@{user.username}</span>
-                {user.mutualFriends && user.mutualFriends > 0? (
+              <div className="flex items-center gap-2 text- leading-4 text-[#8e8e93] dark:text-zinc-500 font-serif">
+                <span>{friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</span>
+                {friend.mutualFriends! > 0 && (
                   <>
                     <span>•</span>
-                    <span className="flex items-center gap-0.5 font-[600] text-purple-600 dark:text-purple-400">
-                      <FiUsers size={12} />
-                      {user.mutualFriends} bạn chung
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span>•</span>
-                    <span className="font-[600] text-green-600 dark:text-green-400">Mới tham gia</span>
+                    <span>{friend.mutualFriends} bạn chung</span>
                   </>
                 )}
               </div>
             </div>
-            <button
-              onClick={() => handleAddFriend(user.uid, user.username)}
-              disabled={adding}
-              className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text- font-[600] active:scale-95 transition-all disabled:opacity-40"
-            >
-              Kết bạn
-            </button>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-)}
-
-{myUsername && (
-  <button
-    onClick={copyMyLink}
-    className="w-full h-11 bg-zinc-100 dark:bg-zinc-800 rounded-2xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition"
-  >
-    <FiShare2 size={18} /> Chia sẻ link của tôi
-  </button>
-)}
-
-<input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleScanFromFile} />
-</div>
-
-{showScanQR && (
-        <div className="fixed inset-0 bg-black z-[70]">
-          <div id="qr-reader-add" className={scanMode === "camera"? "w-full h-full" : "hidden"} />
-          <div id="qr-reader-file-add" className="hidden" />
-          <button
-            onClick={() => stopScan()}
-            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center active:scale-90 transition"
-            style={{ top: "max(24px, env(safe-area-inset-top))" }}
-          >
-            <FiX className="w-5 h-5 text-white" />
           </button>
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
-            <p className="font-bold">Đưa mã QR vào khung</p>
-            <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
+        </motion.div>
+      </motion.div>
+    );
+  };
+
+  return (
+    <div className="min-h-[100dvh] bg-[#F7F8FA] dark:bg-[#0A0A0B] font-serif">
+      {/* Header */}
+      <div className="sticky top-0 z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-black/[0.06] dark:border-white/[0.06]">
+        <div className="px-5 pt-5 pb-3">
+          {/* Search */}
+          <div className="relative mb-4">
+            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={20} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm bạn bè"
+              className="w-full h- pl-12 pr-4 bg-[#F2F2F7] dark:bg-zinc-800 rounded- text- outline-none border border-black/[0.04] dark:border-white/[0.06] focus:ring-2 focus:ring-[#007AFF]/20"
+            />
+          </div>
+
+          {/* Segmented Control */}
+          <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded- p-1 flex gap-1">
+            {(['friends', 'requests', 'suggestions'] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`flex-1 h- rounded- text- font-[600] transition-all flex items-center justify-center gap-1.5 ${
+                  tab === t
+               ? 'bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm'
+                    : 'text-[#8e8e93]'
+                }`}
+              >
+                {t === 'friends' && <><FiUsers size={16} /> Bạn bè</>}
+                {t === 'requests' && <><IoRibbon size={16} /> Lời mời{requests.length > 0? ` (${requests.length})` : ''}</>}
+                {t === 'suggestions' && <><IoStatsChart size={16} /> Gợi ý</>}
+              </button>
+            ))}
           </div>
         </div>
-      )}
-    </div>
-  );
-}
+      </div>
+
+      <div ref={scrollRef} className="overflow-auto pb-20 px-5 pt-4">
+        {tab === 'friends' && (
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-white dark:bg-zinc-900 rounded- p-4 border border-black/[0.06] dark:border-white/[0.06]">
+                <div className="flex items-center gap-2 mb-1">
+                  <FiUsers className="text-[#8e8e93]" size={18} />
+                  <span className="text- text-[#8e8e93]">Bạn bè</span>
+                </div>
+                <p className="text- font-[700] leading-8">{friends.length}</p>
+              </div>
+              <div className="bg-white dark:bg-zinc-900 rounded- p-4 border border-black/[0.06] dark:border-white/[0.06]">
+                <div className="flex items-center gap-2 mb-1">
+                  <FiShield className="text-[#8e8e93]" size={18} />
+                  <span className="text- text-[#8e8e93]">Đang hoạt động</span>
+                </div>
+                <p className="text- font-[700] leading-8">{onlineCount}</p>
+              </div>
+            </div>
+
+            {friendsLoading? (
+              <div className="space-y-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-white dark:bg-zinc-900 rounded- p-4 border border-black/[0.06] dark:border-white/[0.06]">
+                    <div className="flex items-center gap-3 animate-pulse">
+                      <div className="w-14 h-14 bg-gray-200 dark:bg-zinc-800 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
+                        <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/4" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredFriends.length === 0? (
+              <div className="bg-white dark:bg-zinc-900 rounded- p-10 border-black/[0.06] dark:border-white/[0.06] text-center">
+                <div className="w- h- bg-[#F2F2F7] dark:bg-zinc-800 rounded- flex items-center justify-center mx-auto mb-4">
+                  <FiUsers className="text-[#8e8e93]" size={32} strokeWidth={1.5} />
+                </div>
+                <h3 className="text- font-[700] mb-2">
+                  {search? "Không tìm thấy" : "Chưa có bạn"}
+                </h3>
+                <p className="text- text-[#8e8e93] mb-6">
+                  {search? "Thử tìm kiếm khác" : "Mời kết bạn để bắt đầu trò chuyện"}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredFriends.map((friend) => <FriendRow key={friend.uid} friend={friend} />)}
+              </div>
+            )}
+          </>
+        )}
+
+        {tab === 'requests' && (
+          <div className="space-y-3">
+            {requests.length === 0? (
+              <div className="bg-white dark:bg-zinc-900 rounded- p-10 border-black/[0.06] dark:border-white/[0.06] text-center text-[#8e8e93]">
+                Chưa có lời mời nào
+              </div>
+            ) : (
+              requests.map(req => (
+                <div key={req.uid} className="bg-white dark:bg-zinc-900 rounded- p-4 border border-black/[0.06] dark:border-white/[0.06]">
+                  <div className="flex items-center gap-3 mb-4">
+                    <img src={req.avatar} className="w-14 h-14 rounded-full" />
+                    <div className="flex-1">
+                      <p className="text- font-[600]">{req.name}</p>
+                      <p className="text- text-[#8e8e93]">{req.mutualFriends} bạn chung</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleAccept(req.uid)}
+                      className="flex-1 h- bg-[#007AFF] text-white rounded- text- font-[600] active:scale-95"
+                    >
+                      Chấp nhận
+                    </button>
+                    <button className="flex-1 h- bg-[#F2F2F7] dark:bg-zinc-800 text-[#8e8e93] rounded- text- font-[600]">
+                      Xóa
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {tab === 'suggestions' && (
+          <div className="space-y-4">
+            {/* Tìm xung quanh */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded- p-4 border border-black/[0.06] dark:border-white/[0.06]">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                    <FiMapPin className="text-white" size={20} />
+                  </div>
+                  <div>
+                    <p className="text- font-[700]">Tìm xung quanh</p>
+                    <p className="text- text-[#8e8e93]">Bạn bè gần bạn</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowFilter(!showFilter)}
+                  className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all"
+                >
+                  <SlidersHorizontal size={18} />
+                </button>
+              </div>
+
+              <AnimatePresence>
+                {showFilter && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden mb-4"
+                  >
+                    <div className="p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl space-y-4">
+                      <div>
+                        <p className="text- font-[600] mb-3">Giới tính</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: "Tất cả", value: "all" },
+                            { label: "Nam", value: "male" },
+                            { label: "Nữ", value: "female" }
+                          ].map((g) => (
+                            <button
+                              key={g.value}
+                              onClick={() => setFilters({...filters, gender: g.value as any })}
+                              className={`h-11 rounded-xl text- font-[600] transition-all active:scale-95 ${
+                                filters.gender === g.value
+                         ? "bg-gradient-to-br from-[#0a84ff] to-purple-500 text-white shadow-lg shadow-blue-500/30"
+                                  : "bg-white dark:bg-zinc-700"
+                              }`}
+                            >
+                              {g.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text- font-[600] mb-3">Tuổi</p>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1">
+                            <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Từ</p>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={filters.minAge}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '');
+                                setFilters({...filters, minAge: val? Number(val) : ''});
+                              }}
+                              onBlur={(e) => {
+                                let val = Number(e.target.value) || 18;
+                                if (val < 18) {
+                                  toast.error("Tuổi tối thiểu phải từ 18 trở lên");
+                                  val = 18;
+                                }
+                                if (val > 100) val = 100;
+                                setFilters({
+                               ...filters,
+                                  minAge: val,
+                                  maxAge: Math.max(val, Number(filters.maxAge) || val)
+                                });
+                              }}
+                              className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+                              placeholder="18"
+                            />
+                          </div>
+                          <div className="w-4 h-[2px] bg-zinc-300 dark:bg-zinc-600 mt-6" />
+                          <div className="flex-1">
+                            <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Đến</p>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={filters.maxAge}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '');
+                                setFilters({...filters, maxAge: val? Number(val) : ''});
+                              }}
+                              onBlur={(e) => {
+                                let val = Number(e.target.value) || 25;
+                                if (val < 18) {
+                                  toast.error("Tuổi tối thiểu phải từ 18 trở lên");
+                                  val = 18;
+                                }
+                                if (val > 100) val = 100;
+                                setFilters({
+                               ...filters,
+                                  maxAge: val,
+                                  minAge: Math.min(val, Number(filters.minAge) || val)
+                                });
+                              }}
+                              className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+                              placeholder="25"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text- font-[600] mb-3">Khoảng cách tối đa</p>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={filters.maxDistance}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '');
+                              setFilters({...filters, maxDistance: val? Number(val) : ''});
+                            }}
+                            onBlur={(e) => {
+                              let val = Number(e.target.value);
+                              if (e.target.value === '') val = 50;
+                              val = Math.max(0, Math.min(100, val));
+                              setFilters({...filters, maxDistance: val});
+                            }}
+                            className="w-full h-12 px-4 pr-12 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+                            placeholder="50"
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text- font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
+                        </
