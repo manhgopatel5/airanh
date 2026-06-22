@@ -7,7 +7,7 @@ import GroupsTab from "@/components/GroupsTab";
 import CreateGroupModal from "@/components/CreateGroupModal";
 import { FiUsers, FiSearch, FiHash } from "react-icons/fi";
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
-import { collection, query, where, onSnapshot, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, onSnapshot, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
 
 type ChatItem = {
@@ -45,6 +45,7 @@ export default function GroupsPage() {
   const [search, setSearch] = useState("");
   const [searchCode, setSearchCode] = useState("");
   const [finding, setFinding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -61,7 +62,7 @@ export default function GroupsPage() {
 
   const handleTogglePin = (chatId: string) => {
     const newPinned = pinned.includes(chatId)
-    ? pinned.filter(id => id!== chatId)
+   ? pinned.filter(id => id!== chatId)
       : [...pinned, chatId];
     savePinned(newPinned);
     toast.success(newPinned.includes(chatId)? "Đã ghim nhóm" : "Đã bỏ ghim");
@@ -70,10 +71,10 @@ export default function GroupsPage() {
   useEffect(() => {
     if (authLoading ||!user?.uid) return;
 
+    // Bỏ orderBy để tránh lỗi index - sort bằng JS
     const q = query(
       collection(db, "groups"),
-      where("members", "array-contains", user.uid),
-      orderBy("updatedAt", "desc")
+      where("members", "array-contains", user.uid)
     );
 
     const unsub = onSnapshot(q, (snap) => {
@@ -98,11 +99,20 @@ export default function GroupsPage() {
           createdAt: data.createdAt,
         };
       });
+
+      // Sort JS thay vì orderBy Firestore
+      list.sort((a, b) => {
+        const timeA = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+        const timeB = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
+
       setGroupItems(list);
       setLoading(false);
+      setError(null);
     }, (err) => {
       console.error("Groups error:", err);
-      toast.error("Lỗi tải danh sách nhóm");
+      setError("Không thể tải danh sách nhóm");
       setLoading(false);
     });
 
@@ -135,13 +145,8 @@ export default function GroupsPage() {
       }
 
       const groupId = snap.docs[0]?.id;
-      if (!groupId) {
-        toast.error("Không tìm thấy nhóm");
-        return;
-      }
-
       const groupData = snap.docs[0]?.data();
-      if (!groupData?.members?.includes(user?.uid)) {
+      if (!groupId ||!groupData?.members?.includes(user?.uid)) {
         toast.error("Bạn không phải thành viên nhóm này");
         return;
       }
@@ -164,6 +169,16 @@ export default function GroupsPage() {
   return (
     <div className="min-h-[100dvh] bg-white dark:bg-black">
       <div className="px-4 pt-4 pb-3 space-y-3">
+        {/* Error banner */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-xl p-3.5 flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-sm font-[700]">!</span>
+            </div>
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          </div>
+        )}
+
         {/* Search */}
         <div className="relative">
           <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={18} />
@@ -200,7 +215,7 @@ export default function GroupsPage() {
           </button>
         </div>
 
-        {/* Stats cards - giống /friends */}
+        {/* Stats cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 rounded-2xl p-3.5">
             <div className="flex items-center gap-2 mb-1">
