@@ -5,7 +5,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp, query, limit, getDocs } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { FiUsers, FiShield, FiSearch, FiMessageCircle, FiUserX, FiMapPin, FiRefreshCw, FiX } from "react-icons/fi";
-import { RiVipCrownLine, RiUserSearchLine } from "react-icons/ri";
+import { RiVipCrownLine } from "react-icons/ri";
 import { IoStatsChart, IoRibbon } from "react-icons/io5";
 import { ScanLine, SlidersHorizontal } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
