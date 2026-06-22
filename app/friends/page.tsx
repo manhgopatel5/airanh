@@ -214,17 +214,19 @@ setFriendsLoading(false);
   }, [friends, search, filterOnline]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (scrollRef.current?.scrollTop === 0) touchStartY.current = e.touches[0].clientY;
-  };
+  if (scrollRef.current?.scrollTop === 0) touchStartY.current = e.touches[0]?.clientY?? 0;
+};
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    const deltaY = e.touches[0].clientY - touchStartY.current;
-    if (deltaY > 80 && scrollRef.current?.scrollTop === 0 &&!isRefreshing) {
-      setIsRefreshing(true);
-      setTimeout(() => setIsRefreshing(false), 1000);
-      if ("vibrate" in navigator) navigator.vibrate(10);
-    }
-  };
+const handleTouchMove = (e: React.TouchEvent) => {
+  const touch = e.touches[0];
+  if (!touch) return;
+  const deltaY = touch.clientY - touchStartY.current;
+  if (deltaY > 80 && scrollRef.current?.scrollTop === 0 &&!isRefreshing) {
+    setIsRefreshing(true);
+    setTimeout(() => setIsRefreshing(false), 1000);
+    if ("vibrate" in navigator) navigator.vibrate(10);
+  }
+};
 
   const onlineCount = friends.filter(f => f.isOnline).length;
 
