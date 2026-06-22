@@ -937,12 +937,12 @@ return (
       <div>
         <p className="text- font-[700]">
           {suggestedUsers.some(u => u.mutualFriends && u.mutualFriends > 0)
-   ? "Những người bạn có thể biết"
+  ? "Những người bạn có thể biết"
             : "Gợi ý cho bạn"}
         </p>
         <p className="text- text-[#8e8e93] dark:text-zinc-500">
           {suggestedUsers.some(u => u.mutualFriends && u.mutualFriends > 0)
-   ? "Dựa trên bạn chung"
+  ? "Dựa trên bạn chung"
             : "Người dùng mới"}
         </p>
       </div>
@@ -989,6 +989,7 @@ return (
                   </>
                 )}
               </div>
+            </div>
             <button
               onClick={() => handleAddFriend(user.uid, user.username)}
               disabled={adding}
