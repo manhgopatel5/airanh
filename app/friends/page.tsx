@@ -70,8 +70,9 @@ export default function FriendsPage() {
 
     // Đếm bạn chung
     const theirFriendsSnap = await getDoc(doc(db, "users", userDoc.id, "friends", user.uid));
-    const mutualCount = theirFriendsSnap.exists()?
-      Object.keys(data.friends || {}).filter(fid => activeFriendIds.includes(fid)).length : 0;
+    const mutualCount = theirFriendsSnap.exists()
+      ? Object.keys(data.friends || {}).filter(fid => activeFriendIds.includes(fid)).length
+      : 0;
 
     return {
       uid: userDoc.id,
@@ -88,7 +89,8 @@ export default function FriendsPage() {
   })
 );
 
-setFriends(friendsData.filter((f): f is FriendItem => f !== null));
+const filtered: FriendItem[] = friendsData.filter((f): f is FriendItem => f !== null);
+setFriends(filtered);
 setFriendsLoading(false);
     });
 
