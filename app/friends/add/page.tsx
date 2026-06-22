@@ -699,50 +699,49 @@ export default function FriendsPage() {
                         </div>
                       </div>
 
-             <div>
-  <p className="text- font-[600] mb-3">Khoảng cách tối đa</p>
-  <div className="relative">
-    <input
-      type="text"
-      inputMode="numeric"
-      pattern="[0-9]*"
-      value={filters.maxDistance}
-      onChange={(e) => {
-        const val = e.target.value.replace(/\D/g, '');
-        setFilters({...filters, maxDistance: val? Number(val) : ''});
-      }}
-      onBlur={(e) => {
-        let val = Number(e.target.value);
-        if (e.target.value === '') val = 50;
-        val = Math.max(0, Math.min(100, val));
-        setFilters({...filters, maxDistance: val});
-      }}
-      className="w-full h-12 px-4 pr-12 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-      placeholder="50"
-    />
-    <span className="absolute right-4 top-1/2 -translate-y-1/2 text- font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
-  </div>
+                      <div>
+                        <p className="text- font-[600] mb-3">Khoảng cách tối đa</p>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={filters.maxDistance}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '');
+                              setFilters({...filters, maxDistance: val? Number(val) : ''});
+                            }}
+                            onBlur={(e) => {
+                              let val = Number(e.target.value);
+                              if (e.target.value === '') val = 50;
+                              val = Math.max(0, Math.min(100, val));
+                              setFilters({...filters, maxDistance: val});
+                            }}
+                            className="w-full h-12 px-4 pr-12 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+                            placeholder="50"
+                          />
+             <span className="absolute right-4 top-1/2 -translate-y-1/2 text- font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
 </div>
 </div>
 </motion.div>
 </AnimatePresence>
 
-{loadingNearby && (
-  <div className="py-12 text-center text-[#8e8e93]">
-    <FiRefreshCw className="animate-spin mx-auto mb-2" size={24} />
-    <p className="text-">Đang tìm bạn bè gần bạn...</p>
-  </div>
-)}
+                  {loadingNearby && (
+                    <div className="py-12 text-center text-[#8e8e93]">
+                      <FiRefreshCw className="animate-spin mx-auto mb-2" size={24} />
+                      <p className="text-">Đang tìm bạn bè gần bạn...</p>
+                    </div>
+                  )}
 
-{!loadingNearby && nearbyUsers.length === 0 && userLocation && (
-  <div className="py-8 text-center">
-    <div className="w-16 h-16 bg-white/50 dark:bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
-      <FiMapPin className="text-[#8e8e93]" size={28} />
-    </div>
-    <p className="text- font-[600]">Không tìm thấy ai gần bạn</p>
-    <p className="text- text-[#8e8e93] dark:text-zinc-500 mt-1">Thử mở rộng khoảng cách tìm kiếm</p>
-  </div>
-)}
+                  {!loadingNearby && nearbyUsers.length === 0 && userLocation && (
+                    <div className="py-8 text-center">
+                      <div className="w-16 h-16 bg-white/50 dark:bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <FiMapPin className="text-[#8e8e93]" size={28} />
+                      </div>
+                      <p className="text- font-[600]">Không tìm thấy ai gần bạn</p>
+                      <p className="text- text-[#8e8e93] dark:text-zinc-500 mt-1">Thử mở rộng khoảng cách tìm kiếm</p>
+                    </div>
+                  )}
 
                   {!loadingNearby && nearbyUsers.length > 0 && (
                     <div className="space-y-2 mb-3">
