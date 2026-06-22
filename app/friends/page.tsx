@@ -2,12 +2,12 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp, query, limit, getDocs } from "firebase/firestore";
+import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp, query, limit, getDocs, where, orderBy } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { FiUsers, FiShare2, FiShield, FiSearch, FiMessageCircle, FiUserX, FiMapPin, FiRefreshCw, FiX } from "react-icons/fi";
+import { FiUsers, FiShare2, FiShield, FiSearch, FiMessageCircle, FiUserX, FiMapPin, FiRefreshCw, FiX, FiZap } from "react-icons/fi";
 import { RiVipCrownLine } from "react-icons/ri";
 import { IoStatsChart, IoRibbon } from "react-icons/io5";
-import {  SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -29,6 +29,21 @@ type FriendItem = {
   isDeletedByThem?: boolean;
   mutualFriends?: number;
   vip?: { tier: 'free' | 'pro' | 'elite' };
+};
+
+type StrangerChatItem = {
+  uid: string;
+  chatId: string;
+  name: string;
+  username: string;
+  avatar: string;
+  userId: string;
+  isOnline: boolean;
+  lastSeen?: any;
+  isStranger: boolean;
+  lastMessage?: string;
+  updatedAt?: any;
+  unreadCount?: number;
 };
 
 type RequestItem = {
@@ -57,12 +72,13 @@ export default function FriendsPage() {
   const router = useRouter();
   const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions'>('friends');
   const [friends, setFriends] = useState<FriendItem[]>([]);
+  const [strangerChats, setStrangerChats] = useState<StrangerChatItem[]>([]);
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
   const [nearbyUsers, setNearbyUsers] = useState<UserSuggestion[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [selectedFriend, setSelectedFriend] = useState<FriendItem | null>(null);
+  const [selectedFriend, setSelectedFriend] = useState<FriendItem | StrangerChatItem | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationDenied, setLocationDenied] = useState(false);
@@ -81,55 +97,54 @@ export default function FriendsPage() {
     maxAge: 25,
     maxDistance: 50
   });
-const [myUsername, setMyUsername] = useState("");
+  const [myUsername, setMyUsername] = useState("");
 
-// Lấy username của mình
-useEffect(() => {
-  if (user?.uid) {
-    getDoc(doc(db, "users", user.uid)).then((snap) => {
-      if (snap.exists()) setMyUsername(snap.data().username || "");
-    });
-  }
-}, [user?.uid, db]);
-const stopScan = async () => {
-  if (scannerRef.current) {
+  useEffect(() => {
+    if (user?.uid) {
+      getDoc(doc(db, "users", user.uid)).then((snap) => {
+        if (snap.exists()) setMyUsername(snap.data().username || "");
+      });
+    }
+  }, [user?.uid, db]);
+
+  const stopScan = async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+      } catch (e) {}
+    }
+    setShowScanQR(false);
+  };
+
+  const startScan = async () => {
+    const scanner = new Html5Qrcode("qr-reader-add");
+    scannerRef.current = scanner;
     try {
-      await scannerRef.current.stop();
-      scannerRef.current.clear();
-    } catch (e) {}
-  }
-  setShowScanQR(false);
-};
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        (decodedText) => {
+          toast.success(`Đã quét: ${decodedText}`);
+          stopScan();
+          router.push(`/profile/${decodedText}`);
+        },
+        () => {}
+      );
+    } catch (e) {
+      toast.error("Không mở được camera");
+      stopScan();
+    }
+  };
 
-const startScan = async () => {
-  const scanner = new Html5Qrcode("qr-reader-add");
-  scannerRef.current = scanner;
-  try {
-    await scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      (decodedText) => {
-        toast.success(`Đã quét: ${decodedText}`);
-        stopScan();
-        router.push(`/profile/${decodedText}`);
-      },
-      () => {}
-    );
-  } catch (e) {
-    toast.error("Không mở được camera");
-    stopScan();
-  }
-};
+  useEffect(() => {
+    if (showScanQR && scanMode === "camera") startScan();
+    return () => { stopScan(); };
+  }, [showScanQR, scanMode]);
 
-useEffect(() => {
-  if (showScanQR && scanMode === "camera") startScan();
-  return () => { stopScan(); };
-}, [showScanQR, scanMode]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -151,7 +166,7 @@ useEffect(() => {
           const data = userDoc.data();
           const theirFriendsSnap = await getDoc(doc(db, "users", userDoc.id, "friends", user.uid));
           const mutualCount = theirFriendsSnap.exists()
-           ? Object.keys(data.friends || {}).filter(fid => activeFriendIds.includes(fid)).length
+        ? Object.keys(data.friends || {}).filter(fid => activeFriendIds.includes(fid)).length
             : 0;
 
           const friend: FriendItem = {
@@ -177,6 +192,51 @@ useEffect(() => {
 
     return () => unsub();
   }, [user?.uid, db]);
+
+  // QUERY CHAT NGƯỜI LẠ CHƯA KẾT BẠN
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const q = query(
+      collection(db, "chats"),
+      where("members", "array-contains", user.uid),
+      where("isGroup", "==", false),
+      where("isStranger", "==", true),
+      orderBy("updatedAt", "desc")
+    );
+
+    const unsub = onSnapshot(q, async (snap) => {
+      const friendIds = new Set(friends.map(f => f.uid));
+      const list: StrangerChatItem[] = [];
+
+      for (const d of snap.docs) {
+        const data = d.data();
+        const otherUid = data.members?.find((m: string) => m!== user.uid);
+        if (!otherUid || friendIds.has(otherUid)) continue;
+
+        const userDoc = await getDoc(doc(db, "users", otherUid));
+        const userData = userDoc.data() || {};
+
+        list.push({
+          uid: otherUid,
+          chatId: d.id,
+          name: userData.name || "Người lạ",
+          username: userData.username || "",
+          avatar: userData.avatar || `https://ui-avatars.com/api/?name=?&background=ec4899&color=fff&bold=true`,
+          userId: userData.userId || "",
+          isOnline: Boolean(userData.isOnline),
+          lastSeen: userData.lastSeen,
+          isStranger: true,
+          lastMessage: data.lastMessage || "Bắt đầu trò chuyện",
+          updatedAt: data.updatedAt,
+          unreadCount: data.unread?.[user.uid] || 0
+        });
+      }
+      setStrangerChats(list);
+    });
+
+    return () => unsub();
+  }, [user?.uid, db, friends]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -303,25 +363,24 @@ useEffect(() => {
   };
 
   const fetchSuggestedUsers = async () => {
-  setLoadingSuggested(true);
-  try {
-    const auth = getAuth();
-    const currentUid = auth.currentUser?.uid;
-    if (!currentUid) return;
+    setLoadingSuggested(true);
+    try {
+      const auth = getAuth();
+      const currentUid = auth.currentUser?.uid;
+      if (!currentUid) return;
 
-    const friendIds = friends.map(f => f.uid); // giữ lại
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, limit(50));
-    const snap = await getDocs(q);
-    const results: UserSuggestion[] = [];
-    const randomUsers: UserSuggestion[] = [];
+      const friendIds = friends.map(f => f.uid);
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, limit(50));
+      const snap = await getDocs(q);
+      const results: UserSuggestion[] = [];
+      const randomUsers: UserSuggestion[] = [];
 
-    for (const docSnap of snap.docs) {
-      if (docSnap.id === currentUid) continue;
-      if (friendIds.includes(docSnap.id)) continue; // dùng ở đây
-      
-      const data = docSnap.data();
-      // bỏ đoạn getDoc check friend đi vì check ở trên rồi
+      for (const docSnap of snap.docs) {
+        if (docSnap.id === currentUid) continue;
+        if (friendIds.includes(docSnap.id)) continue;
+
+        const data = docSnap.data();
 
         const friendDoc = await getDoc(doc(db, "users", currentUid, "friends", docSnap.id));
         if (friendDoc.exists()) continue;
@@ -395,24 +454,26 @@ useEffect(() => {
     toast.success("Đã chấp nhận");
   };
 
-const handleAddFriend = async (friendId: string, username?: string) => {
-  const functions = getFunctions(getApp(), "asia-southeast1");
-  const sendRequest = httpsCallable(functions, 'sendFriendRequest');
-  await sendRequest({ toUid: friendId });
-  toast.success(`Đã gửi lời mời tới ${username || 'người dùng'}`); // dùng ở đây
-  fetchNearbyUsers();
-  fetchSuggestedUsers();
-};
-const copyMyLink = () => {
-  if (!myUsername) {
-    toast.error("Chưa có username");
-    return;
-  }
-  const link = `${window.location.origin}/u/${myUsername}`;
-  navigator.clipboard.writeText(link);
-  if ("vibrate" in navigator) navigator.vibrate(10);
-  toast.success("Đã copy link mời bạn");
-};
+  const handleAddFriend = async (friendId: string, username?: string) => {
+    const functions = getFunctions(getApp(), "asia-southeast1");
+    const sendRequest = httpsCallable(functions, 'sendFriendRequest');
+    await sendRequest({ toUid: friendId });
+    toast.success(`Đã gửi lời mời tới ${username || 'người dùng'}`);
+    fetchNearbyUsers();
+    fetchSuggestedUsers();
+  };
+
+  const copyMyLink = () => {
+    if (!myUsername) {
+      toast.error("Chưa có username");
+      return;
+    }
+    const link = `${window.location.origin}/u/${myUsername}`;
+    navigator.clipboard.writeText(link);
+    if ("vibrate" in navigator) navigator.vibrate(10);
+    toast.success("Đã copy link mời bạn");
+  };
+
   const handleRemoveFriend = async (friend: FriendItem) => {
     if (!confirm(`Xóa ${friend.name} khỏi danh sách bạn bè?`)) return;
     const functions = getFunctions(getApp(), "asia-southeast1");
@@ -428,8 +489,12 @@ const copyMyLink = () => {
     return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
   };
 
+  const allItems = useMemo(() => {
+    return [...friends,...strangerChats];
+  }, [friends, strangerChats]);
+
   const filteredFriends = useMemo(() => {
-    let result = friends;
+    let result = allItems;
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(f => f.name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q));
@@ -438,13 +503,14 @@ const copyMyLink = () => {
       if (a.isOnline!== b.isOnline) return b.isOnline? 1 : -1;
       return a.name.localeCompare(b.name);
     });
-  }, [friends, search]);
+  }, [allItems, search]);
 
   const onlineCount = friends.filter(f => f.isOnline).length;
 
-  const FriendRow = ({ friend }: { friend: FriendItem }) => {
+  const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
     const x = useMotionValue(0);
     const opacity = useTransform(x, [-100, 0], [1, 0]);
+    const isStranger = 'isStranger' in friend && friend.isStranger;
 
     return (
       <motion.div className="relative overflow-hidden rounded-xl">
@@ -459,19 +525,24 @@ const copyMyLink = () => {
           dragConstraints={{ left: -80, right: 0 }}
           style={{ x }}
           onDragEnd={(_, info) => {
-            if (info.offset.x < -60) handleRemoveFriend(friend);
+            if (info.offset.x < -60 &&!isStranger) handleRemoveFriend(friend as FriendItem);
           }}
-          className="bg-white dark:bg-zinc-900 border border-black/[0.06] dark:border-white/[0.06] rounded-xl"
+          className="bg-white dark:bg-zinc-900 border-black/[0.06] dark:border-white/[0.06] rounded-xl shadow-sm hover:shadow-md transition-shadow"
         >
           <button
-            onClick={() => handleStartChat(friend.uid)}
-            onContextMenu={(e) => { e.preventDefault(); setSelectedFriend(friend); }}
+            onClick={() => isStranger? router.push(`/chat/${(friend as StrangerChatItem).chatId}`) : handleStartChat(friend.uid)}
+            onContextMenu={(e) => { e.preventDefault(); if (!isStranger) setSelectedFriend(friend as FriendItem); }}
             className="flex items-center gap-3 p-4 w-full active:bg-gray-50 dark:active:bg-zinc-800 rounded-xl"
           >
             <div className="relative flex-shrink-0">
               <img src={friend.avatar} alt={friend.name} className="w-14 h-14 rounded-full object-cover" />
               {friend.isOnline && (
                 <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#30d158] rounded-full border-[3px] border-white dark:border-zinc-900" />
+              )}
+              {isStranger && (
+                <div className="absolute -top-1 -right-1 bg-gradient-to-br from-pink-500 to-purple-500 rounded-full p-1">
+                  <FiZap className="text-white" size={12} />
+                </div>
               )}
               {friend.vip?.tier === 'elite' && (
                 <div className="absolute -top-1 -right-1 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full p-1">
@@ -482,6 +553,7 @@ const copyMyLink = () => {
             <div className="flex-1 min-w-0 text-left">
               <div className="flex items-center gap-1.5">
                 <p className="text-base leading-5 font-[600] truncate font-serif">{friend.name}</p>
+                {isStranger && <span className="text-xs px-1.5 py-0.5 bg-gradient-to-r from-pink-500/15 to-purple-500/15 text-pink-600 dark:text-pink-400 rounded-md font-[600]">Người lạ</span>}
                 {friend.vip?.tier === 'pro' && <span className="text-sm">💎</span>}
               </div>
               <div className="flex items-center gap-2 text-sm leading-4 text-[#8e8e93] dark:text-zinc-500 font-serif">
@@ -494,6 +566,11 @@ const copyMyLink = () => {
                 )}
               </div>
             </div>
+            {'unreadCount' in friend && friend.unreadCount! > 0 && (
+              <div className="min-w-5 h-5 px-1.5 bg-[#0a84ff] rounded-full flex items-center justify-center">
+                <span className="text-xs font-[700] text-white">{friend.unreadCount}</span>
+              </div>
+            )}
           </button>
         </motion.div>
       </motion.div>
@@ -513,14 +590,14 @@ const copyMyLink = () => {
         />
       </div>
 
-      <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl p-1 flex gap-1">
+      <div className="bg-[#F2F7] dark:bg-zinc-800 rounded-xl p-1 flex gap-1">
         {(['friends', 'requests', 'suggestions'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`flex-1 h-9 rounded-lg text-sm font-[600] transition-all flex items-center justify-center gap-1.5 ${
               tab === t
-            ? 'bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm'
+          ? 'bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm'
               : 'text-[#8e8e93]'
             }`}
           >
@@ -536,14 +613,14 @@ const copyMyLink = () => {
       {tab === 'friends' && (
         <>
           <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
+            <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
               <div className="flex items-center gap-2 mb-1">
                 <FiUsers className="text-[#8e8e93]" size={18} />
                 <span className="text-sm text-[#8e8e93]">Bạn bè</span>
               </div>
               <p className="text-2xl font-[700] leading-8">{friends.length}</p>
             </div>
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
+            <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
               <div className="flex items-center gap-2 mb-1">
                 <FiShield className="text-[#8e8e93]" size={18} />
                 <span className="text-sm text-[#8e8e93]">Đang hoạt động</span>
@@ -567,7 +644,7 @@ const copyMyLink = () => {
               ))}
             </div>
           ) : filteredFriends.length === 0? (
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center">
+            <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center shadow-sm">
               <div className="w-16 h-16 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <FiUsers className="text-[#8e8e93]" size={32} strokeWidth={1.5} />
               </div>
@@ -581,13 +658,13 @@ const copyMyLink = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setTab('suggestions')}
-                    className="h-11 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition-all"
+                    className="h-11 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md shadow-[#0a84ff]/30"
                   >
                     <FiUsers size={18} /> Tìm bạn
                   </button>
                   <button
                     onClick={copyMyLink}
-                    className="h-11 bg-zinc-100 dark:bg-zinc-800 border border-black/5 dark:border-white/5 rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition"
+                    className="h-11 bg-zinc-100 dark:bg-zinc-800 border-black/5 dark:border-white/5 rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition shadow-sm"
                   >
                     <FiShare2 size={18} /> Mời bạn
                   </button>
@@ -596,7 +673,7 @@ const copyMyLink = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredFriends.map((friend) => <FriendRow key={friend.uid} friend={friend} />)}
+              {filteredFriends.map((friend) => <FriendRow key={'uid' in friend? friend.uid : friend.chatId} friend={friend} />)}
             </div>
           )}
         </>
@@ -605,12 +682,12 @@ const copyMyLink = () => {
       {tab === 'requests' && (
         <div className="space-y-3">
           {requests.length === 0? (
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center text-[#8e8e93]">
+            <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center text-[#8e8e93] shadow-sm">
               Chưa có lời mời nào
             </div>
           ) : (
             requests.map(req => (
-              <div key={req.uid} className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
+              <div key={req.uid} className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
                   <img src={req.avatar} className="w-14 h-14 rounded-full" />
                   <div className="flex-1">
@@ -621,11 +698,11 @@ const copyMyLink = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleAccept(req.uid)}
-                    className="flex-1 h-11 bg-[#007AFF] text-white rounded-xl text-base font-[600] active:scale-95"
+                    className="flex-1 h-11 bg-[#007AFF] text-white rounded-xl text-base font-[600] active:scale-95 shadow-md shadow-[#007AFF]/30"
                   >
                     Chấp nhận
                   </button>
-                  <button className="flex-1 h-11 bg-[#F2F2F7] dark:bg-zinc-800 text-[#8e8e93] rounded-xl text-base font-[600]">
+                  <button className="flex-1 h-11 bg-[#F2F7] dark:bg-zinc-800 text-[#8e8e93] rounded-xl text-base font-[600]">
                     Xóa
                   </button>
                 </div>
@@ -637,10 +714,10 @@ const copyMyLink = () => {
 
       {tab === 'suggestions' && (
         <div className="space-y-4">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/30">
                   <FiMapPin className="text-white" size={20} />
                 </div>
                 <div>
@@ -651,13 +728,13 @@ const copyMyLink = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowScanQR(true)}
-                  className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all"
+                  className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all shadow-sm"
                 >
                   <FiUsers size={18} />
                 </button>
                 <button
                   onClick={() => setShowFilter(!showFilter)}
-                  className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all"
+                  className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all shadow-sm"
                 >
                   <SlidersHorizontal size={18} />
                 </button>
@@ -672,7 +749,7 @@ const copyMyLink = () => {
                   exit={{ height: 0, opacity: 0 }}
                   className="overflow-hidden mb-4"
                 >
-                  <div className="p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl space-y-4">
+                  <div className="p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl space-y-4 shadow-sm">
                     <div>
                       <p className="text-sm font-[600] mb-3">Giới tính</p>
                       <div className="grid grid-cols-3 gap-2">
@@ -686,7 +763,7 @@ const copyMyLink = () => {
                             onClick={() => setFilters({...filters, gender: g.value as any })}
                             className={`h-11 rounded-xl text-sm font-[600] transition-all active:scale-95 ${
                               filters.gender === g.value
-                            ? "bg-gradient-to-br from-[#0a84ff] to-purple-500 text-white shadow-lg shadow-blue-500/30"
+                         ? "bg-gradient-to-br from-[#0a84ff] to-purple-500 text-white shadow-lg shadow-blue-500/30"
                               : "bg-white dark:bg-zinc-700"
                             }`}
                           >
@@ -718,7 +795,7 @@ const copyMyLink = () => {
                               }
                               if (val > 100) val = 100;
                               setFilters({
-                             ...filters,
+                            ...filters,
                                 minAge: val,
                                 maxAge: Math.max(val, Number(filters.maxAge) || val)
                               });
@@ -747,7 +824,7 @@ const copyMyLink = () => {
                               }
                               if (val > 100) val = 100;
                               setFilters({
-                             ...filters,
+                            ...filters,
                                 maxAge: val,
                                 minAge: Math.min(val, Number(filters.minAge) || val)
                               });
@@ -793,12 +870,12 @@ const copyMyLink = () => {
       <FiMapPin className="text-red-500" size={28} />
     </div>
     <p className="text-base font-[600]">Bạn đã từ chối quyền vị trí</p>
-    <p className="text-sm text-[#8e8e93] dark:text-zinc-500 mt-1">
+    <p className="text-sm text-[#8e93] dark:text-zinc-500 mt-1">
       Bật quyền vị trí trong cài đặt trình duyệt để tìm bạn bè gần bạn
     </p>
     <button
       onClick={() => window.location.reload()}
-      className="mt-4 px-4 h-10 bg-[#0a84ff] text-white rounded-xl text-sm font-[600]"
+      className="mt-4 px-4 h-10 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] shadow-md shadow-[#0a84ff]/30"
     >
       Thử lại
     </button>
@@ -826,7 +903,7 @@ const copyMyLink = () => {
                   {nearbyUsers.map((user) => (
                     <div
                       key={user.uid}
-                      className="flex items-center gap-3 p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl"
+                      className="flex items-center gap-3 p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl shadow-sm hover:shadow-md transition-shadow"
                     >
                       {user.avatarUrl? (
                         <Image src={user.avatarUrl} alt={user.name} width={48} height={48} className="rounded-full" />
@@ -855,7 +932,6 @@ const copyMyLink = () => {
                             </>
                           )}
                         </div>
-                      </div>
                       {user.status === "sent" && (
                         <div className="px-3 py-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text-sm font-[600]">
                           Đã gửi
@@ -869,7 +945,7 @@ const copyMyLink = () => {
                       {user.status === "none" && (
                         <button
                           onClick={() => handleAddFriend(user.uid, user.username)}
-                          className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] active:scale-95 transition-all"
+                          className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] active:scale-95 transition-all shadow-md shadow-[#0a84ff]/30"
                         >
                           Kết bạn
                         </button>
@@ -883,7 +959,7 @@ const copyMyLink = () => {
                 <button
                   onClick={fetchNearbyUsers}
                   disabled={loadingNearby}
-                  className="w-full h-10 flex items-center justify-center gap-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl text-[#0a84ff] font-[600] active:scale-95 transition-all disabled:opacity-40"
+                  className="w-full h-10 flex items-center justify-center gap-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl text-[#0a84ff] font-[600] active:scale-95 transition-all disabled:opacity-40 shadow-sm"
                 >
                   <FiRefreshCw size={18} className={loadingNearby? "animate-spin" : ""} />
                   Làm mới
@@ -891,21 +967,20 @@ const copyMyLink = () => {
               )}
             </div>
 
-            {/* Gợi ý cho bạn */}
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06]">
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-md shadow-purple-500/30">
                   <FiUsers className="text-white" size={20} />
                 </div>
                 <div>
                   <p className="text-base font-[700]">
                     {suggestions.some(u => u.mutualFriends && u.mutualFriends > 0)
-                   ? "Những người bạn có thể biết"
+                  ? "Những người bạn có thể biết"
                       : "Gợi ý cho bạn"}
                   </p>
                   <p className="text-sm text-[#8e8e93] dark:text-zinc-500">
                     {suggestions.some(u => u.mutualFriends && u.mutualFriends > 0)
-                   ? "Dựa trên bạn chung"
+                  ? "Dựa trên bạn chung"
                       : "Người dùng mới"}
                   </p>
                 </div>
@@ -929,7 +1004,7 @@ const copyMyLink = () => {
                   {suggestions.map((user) => (
                     <div
                       key={user.uid}
-                      className="flex items-center gap-3 p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl"
+                      className="flex items-center gap-3 p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl shadow-sm hover:shadow-md transition-shadow"
                     >
                       {user.avatarUrl? (
                         <Image src={user.avatarUrl} alt={user.name} width={48} height={48} className="rounded-full" />
@@ -960,7 +1035,7 @@ const copyMyLink = () => {
                       </div>
                       <button
                         onClick={() => handleAddFriend(user.uid, user.username)}
-                        className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] active:scale-95 transition-all"
+                        className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] active:scale-95 transition-all shadow-md shadow-[#0a84ff]/30"
                       >
                         Kết bạn
                       </button>
@@ -988,27 +1063,27 @@ const copyMyLink = () => {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 rounded-t-2xl z-50 p-5 pb-10"
+              className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 rounded-t-2xl z-50 p-5 pb-10 shadow-2xl"
             >
               <div className="w-12 h-1.5 bg-gray-300 dark:bg-zinc-700 rounded-full mx-auto mb-5" />
               <div className="flex items-center gap-3 mb-6">
                 <img src={selectedFriend.avatar} className="w-16 h-16 rounded-full" />
                 <div>
                   <p className="text-lg font-[600]">{selectedFriend.name}</p>
-                  <p className="text-sm text-[#8e8e93]">@{selectedFriend.username}</p>
+                  <p className="text-sm text-[#8e93]">@{selectedFriend.username}</p>
                 </div>
               </div>
               <div className="space-y-3">
                 <button
                   onClick={() => { handleStartChat(selectedFriend.uid); setSelectedFriend(null); }}
-                  className="w-full h-12 flex items-center gap-3 px-5 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl active:scale-98"
+                  className="w-full h-12 flex items-center gap-3 px-5 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl active:scale-98 shadow-sm"
                 >
                   <FiMessageCircle size={22} />
                   <span className="text-base font-[500]">Nhắn tin</span>
                 </button>
                 <button
                   onClick={() => { handleRemoveFriend(selectedFriend); }}
-                  className="w-full h-12 flex items-center gap-3 px-5 bg-red-50 dark:bg-red-950/30 text-red-500 rounded-xl active:scale-98"
+                  className="w-full h-12 flex items-center gap-3 px-5 bg-red-50 dark:bg-red-950/30 text-red-500 rounded-xl active:scale-98 shadow-sm"
                 >
                   <FiUserX size={22} />
                   <span className="text-base font-[500]">Hủy kết bạn</span>
@@ -1038,7 +1113,7 @@ const copyMyLink = () => {
         onClick={() => setScanMode("camera")}
         className={`px-4 h-9 rounded-lg text-sm font-[600] transition-all ${
           scanMode === "camera"
-         ? 'bg-white text-black'
+        ? 'bg-white text-black'
           : 'text-white/70'
         }`}
       >
@@ -1048,7 +1123,7 @@ const copyMyLink = () => {
         onClick={() => setScanMode("upload")}
         className={`px-4 h-9 rounded-lg text-sm font-[600] transition-all ${
           scanMode === "upload"
-         ? 'bg-white text-black'
+        ? 'bg-white text-black'
           : 'text-white/70'
         }`}
       >
@@ -1081,7 +1156,7 @@ const copyMyLink = () => {
 />
 
       <style jsx global>{`
-      .animate-shimmer {
+     .animate-shimmer {
           background-size: 200% 100%;
           animation: shimmer 1.5s infinite;
         }
