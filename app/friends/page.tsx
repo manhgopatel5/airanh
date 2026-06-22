@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp, query, limit, getDocs } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { FiUsers, FiShield, FiSearch, FiMessageCircle, FiUserX, FiMapPin, FiRefreshCw, FiX } from "react-icons/fi";
+import { FiUsers, FiShare2, FiShield, FiSearch, FiMessageCircle, FiUserX, FiMapPin, FiRefreshCw, FiX } from "react-icons/fi";
 import { RiVipCrownLine } from "react-icons/ri";
 import { IoStatsChart, IoRibbon } from "react-icons/io5";
 import {  SlidersHorizontal } from "lucide-react";
@@ -81,6 +81,16 @@ export default function FriendsPage() {
     maxAge: 25,
     maxDistance: 50
   });
+const [myUsername, setMyUsername] = useState("");
+
+// Lấy username của mình
+useEffect(() => {
+  if (user?.uid) {
+    getDoc(doc(db, "users", user.uid)).then((snap) => {
+      if (snap.exists()) setMyUsername(snap.data().username || "");
+    });
+  }
+}, [user?.uid, db]);
 const stopScan = async () => {
   if (scannerRef.current) {
     try {
@@ -119,16 +129,7 @@ useEffect(() => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    document.body.style.paddingTop = 'env(safe-area-inset-top)';
-    document.body.style.paddingBottom = 'env(safe-area-inset-bottom)';
-    document.documentElement.style.overscrollBehavior = 'none';
-    return () => {
-      document.body.style.paddingTop = '';
-      document.body.style.paddingBottom = '';
-      document.documentElement.style.overscrollBehavior = 'auto';
-    };
-  }, []);
+
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -402,7 +403,16 @@ const handleAddFriend = async (friendId: string, username?: string) => {
   fetchNearbyUsers();
   fetchSuggestedUsers();
 };
-
+const copyMyLink = () => {
+  if (!myUsername) {
+    toast.error("Chưa có username");
+    return;
+  }
+  const link = `${window.location.origin}/u/${myUsername}`;
+  navigator.clipboard.writeText(link);
+  if ("vibrate" in navigator) navigator.vibrate(10);
+  toast.success("Đã copy link mời bạn");
+};
   const handleRemoveFriend = async (friend: FriendItem) => {
     if (!confirm(`Xóa ${friend.name} khỏi danh sách bạn bè?`)) return;
     const functions = getFunctions(getApp(), "asia-southeast1");
@@ -491,38 +501,38 @@ const handleAddFriend = async (friendId: string, username?: string) => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#F7F8FA] dark:bg-[#0A0A0B] font-serif">
-      <div className="sticky top-0 z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-black/[0.06] dark:border-white/[0.06]">
-        <div className="px-5 pt-5 pb-3">
-          <div className="relative mb-4">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={20} />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm bạn bè"
-              className="w-full h-11 pl-12 pr-4 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl text-base outline-none border border-black/[0.04] dark:border-white/[0.06] focus:ring-2 focus:ring-[#007AFF]/20"
-            />
-          </div>
+  <div className="min-h-[100dvh] bg-[#F7F8FA] dark:bg-[#0A0A0B] font-serif pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+    <div className="sticky top-0 z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-black/[0.06] dark:border-white/[0.06]" style={{ top: 'env(safe-area-inset-top)' }}>
+      <div className="px-5 pt-3 pb-3">
+        <div className="relative mb-4">
+          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={20} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm bạn bè"
+            className="w-full h-11 pl-12 pr-4 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl text-base outline-none border border-black/[0.04] dark:border-white/[0.06] focus:ring-2 focus:ring-[#007AFF]/20"
+          />
+        </div>
 
-          <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl p-1 flex gap-1">
-            {(['friends', 'requests', 'suggestions'] as const).map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`flex-1 h-9 rounded-lg text-sm font-[600] transition-all flex items-center justify-center gap-1.5 ${
-                  tab === t
-                  ? 'bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm'
-                    : 'text-[#8e8e93]'
-                }`}
-              >
-                {t === 'friends' && <><FiUsers size={16} /> Bạn bè</>}
-                {t === 'requests' && <><IoRibbon size={16} /> Lời mời{requests.length > 0? ` (${requests.length})` : ''}</>}
-                {t === 'suggestions' && <><IoStatsChart size={16} /> Gợi ý</>}
-              </button>
-            ))}
-          </div>
+        <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl p-1 flex gap-1">
+          {(['friends', 'requests', 'suggestions'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`flex-1 h-9 rounded-lg text-sm font-[600] transition-all flex items-center justify-center gap-1.5 ${
+                tab === t
+               ? 'bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm'
+                : 'text-[#8e8e93]'
+              }`}
+            >
+              {t === 'friends' && <><FiUsers size={16} /> Bạn bè</>}
+              {t === 'requests' && <><IoRibbon size={16} /> Lời mời{requests.length > 0? ` (${requests.length})` : ''}</>}
+              {t === 'suggestions' && <><IoStatsChart size={16} /> Gợi ý</>}
+            </button>
+          ))}
         </div>
       </div>
+    </div>
 
       <div ref={scrollRef} className="overflow-auto pb-20 px-5 pt-4">
         {tab === 'friends' && (
@@ -558,27 +568,43 @@ const handleAddFriend = async (friendId: string, username?: string) => {
                   </div>
                 ))}
               </div>
-            ) : filteredFriends.length === 0? (
-              <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center">
-                <div className="w-16 h-16 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <FiUsers className="text-[#8e8e93]" size={32} strokeWidth={1.5} />
-                </div>
-                <h3 className="text-lg font-[700] mb-2">
-                  {search? "Không tìm thấy" : "Chưa có bạn"}
-                </h3>
-                <p className="text-sm text-[#8e8e93] mb-6">
-                  {search? "Thử tìm kiếm khác" : "Mời kết bạn để bắt đầu trò chuyện"}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredFriends.map((friend) => <FriendRow key={friend.uid} friend={friend} />)}
-              </div>
-            )}
-          </>
-        )}
+         ) : filteredFriends.length === 0? (
+  <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center">
+    <div className="w-16 h-16 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl flex items-center justify-center mx-auto mb-4">
+      <FiUsers className="text-[#8e8e93]" size={32} strokeWidth={1.5} />
+    </div>
+    <h3 className="text-lg font-[700] mb-2">
+      {search? "Không tìm thấy" : "Chưa có bạn"}
+    </h3>
+    <p className="text-sm text-[#8e8e93] mb-6">
+      {search? "Thử tìm kiếm khác" : "Mời kết bạn để bắt đầu trò chuyện"}
+    </p>
+    {!search && (
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={() => setTab('suggestions')}
+          className="h-11 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition-all"
+        >
+          <FiUsers size={18} /> Tìm bạn
+        </button>
+        <button
+          onClick={copyMyLink}
+          className="h-11 bg-zinc-100 dark:bg-zinc-800 border border-black/5 dark:border-white/5 rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition"
+        >
+          <FiShare2 size={18} /> Mời bạn
+        </button>
+      </div>
+    )}
+  </div>
+) : (
+  <div className="space-y-3">
+    {filteredFriends.map((friend) => <FriendRow key={friend.uid} friend={friend} />)}
+  </div>
+)}
+</>
+)}
 
-        {tab === 'requests' && (
+{tab === 'requests' && (
           <div className="space-y-3">
             {requests.length === 0? (
               <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center text-[#8e8e93]">
