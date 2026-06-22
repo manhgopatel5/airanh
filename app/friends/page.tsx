@@ -394,14 +394,14 @@ useEffect(() => {
     toast.success("Đã chấp nhận");
   };
 
-  const handleAddFriend = async (friendId: string, username?: string) => {
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const sendRequest = httpsCallable(functions, 'sendFriendRequest');
-    await sendRequest({ toUid: friendId });
-    toast.success("Đã gửi lời mời");
-    fetchNearbyUsers();
-    fetchSuggestedUsers();
-  };
+const handleAddFriend = async (friendId: string, username?: string) => {
+  const functions = getFunctions(getApp(), "asia-southeast1");
+  const sendRequest = httpsCallable(functions, 'sendFriendRequest');
+  await sendRequest({ toUid: friendId });
+  toast.success(`Đã gửi lời mời tới ${username || 'người dùng'}`); // dùng ở đây
+  fetchNearbyUsers();
+  fetchSuggestedUsers();
+};
 
   const handleRemoveFriend = async (friend: FriendItem) => {
     if (!confirm(`Xóa ${friend.name} khỏi danh sách bạn bè?`)) return;
