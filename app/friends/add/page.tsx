@@ -541,7 +541,7 @@ const RangeSlider = ({ min, max, value, onChange, label, unit = "" }: {
   const handleMove = (e: TouchEvent | MouseEvent) => {
     if (!active ||!sliderRef.current) return;
     const rect = sliderRef.current.getBoundingClientRect();
-    const clientX = 'touches' in e? e.touches[0].clientX : e.clientX;
+    const clientX = 'touches' in e? e.touches[0]?.clientX?? 0 : e.clientX;
     const percent = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
     const val = Math.round(min + (percent / 100) * (max - min));
 
@@ -558,7 +558,7 @@ const RangeSlider = ({ min, max, value, onChange, label, unit = "" }: {
     const up = () => setActive(null);
     window.addEventListener('mousemove', move);
     window.addEventListener('mouseup', up);
-    window.addEventListener('touchmove', move);
+    window.addEventListener('touchmove', move, { passive: false });
     window.addEventListener('touchend', up);
     return () => {
       window.removeEventListener('mousemove', move);
@@ -599,7 +599,6 @@ const RangeSlider = ({ min, max, value, onChange, label, unit = "" }: {
     </div>
   );
 };
-
   return (
   <div className="h-screen bg-white dark:bg-black flex flex-col overflow-hidden">
     {/* Header fixed */}
