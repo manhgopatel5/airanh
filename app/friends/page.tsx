@@ -68,13 +68,12 @@ export default function FriendsPage() {
     if (!userDoc.exists()) return null;
     const data = userDoc.data();
 
-    // Đếm bạn chung
     const theirFriendsSnap = await getDoc(doc(db, "users", userDoc.id, "friends", user.uid));
     const mutualCount = theirFriendsSnap.exists()
       ? Object.keys(data.friends || {}).filter(fid => activeFriendIds.includes(fid)).length
       : 0;
 
-    return {
+    const friend: FriendItem = {
       uid: userDoc.id,
       name: data.name || "User",
       username: data.username || "",
@@ -85,11 +84,13 @@ export default function FriendsPage() {
       isDeletedByThem: Boolean(snapshot.docs.find(d => d.id === userDoc.id)?.data()?.removedBy),
       mutualFriends: mutualCount,
       vip: data.vip || { tier: 'free' }
-    } satisfies FriendItem;
+    };
+    return friend;
   })
 );
 
-const filtered: FriendItem[] = friendsData.filter((f): f is FriendItem => f !== null);
+// Lọc null + ép kiểu tường minh
+const filtered = friendsData.filter(f => f !== null) as FriendItem[];
 setFriends(filtered);
 setFriendsLoading(false);
     });
@@ -100,7 +101,6 @@ setFriendsLoading(false);
   // Gợi ý bạn bè
   useEffect(() => {
     if (!user?.uid || friends.length === 0) return;
-
     const fetchSuggestions = async () => {
       const friendIds = friends.map(f => f.uid);
       const q = query(
