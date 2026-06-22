@@ -1,5 +1,6 @@
 "use client";
-import { FiUsers, FiSearch, FiPlus, FiHash, FiLock, FiChevronRight } from "react-icons/fi";
+import { useMemo } from "react";
+import { FiUsers, FiLock, FiChevronRight } from "react-icons/fi";
 import { RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -23,8 +24,6 @@ interface GroupsTabProps {
   onTogglePin: (chatId: string) => void;
   onCreateGroup: () => void;
   loading: boolean;
-  search: string;
-  setSearch: (v: string) => void;
 }
 
 export default function GroupsTab({
@@ -32,9 +31,7 @@ export default function GroupsTab({
   pinned,
   onTogglePin,
   onCreateGroup,
-  loading,
-  search,
-  setSearch
+  loading
 }: GroupsTabProps) {
   const formatTime = (timestamp?: any): string => {
     if (!timestamp?.toDate) return "";
@@ -73,109 +70,69 @@ export default function GroupsTab({
     );
   }
 
+  if (groups.length === 0) {
+    return (
+      <div className="mx-4 mt-4 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 rounded-2xl p-8">
+        <div className="flex flex-col items-center text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-[#0a84ff]/10 to-purple-500/10 rounded-2xl flex items-center justify-center mb-4">
+            <FiUsers className="text-[#0a84ff]" size={32} strokeWidth={1.5} />
+          </div>
+          <h3 className="text-sm font-[600] mb-1.5">Chưa có nhóm nào</h3>
+          <p className="text-sm text-[#8e8e93] leading-5 mb-5 max-w-[260px]">
+            Tạo nhóm để trò chuyện với bạn bè
+          </p>
+          <button
+            onClick={onCreateGroup}
+            className="h-11 px-6 bg-gradient-to-r from-[#0a84ff] to-purple-500 text-white rounded-xl text-sm font-[600] flex items-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-[#0a84ff]/20"
+          >
+            Tạo nhóm mới
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      {/* Search */}
-      <div className="px-4 pt-4 pb-3">
-        <div className="relative">
-          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={18} />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm nhóm..."
-            className="w-full h-11 pl-11 pr-4 bg-[#F2F7] dark:bg-zinc-900 border border-black/10 dark:border-white/10 rounded-xl text-[15px] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff]"
-          />
+    <div className="bg-white dark:bg-zinc-900">
+      {pinnedGroups.length > 0 && (
+        <div>
+          <div className="px-4 py-2">
+            <p className="text-sm font-[600] text-[#8e8e93] uppercase tracking-wider">Đã ghim</p>
+          </div>
+          <div className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
+            {pinnedGroups.map((group) => (
+              <GroupItem
+                key={group.chatId}
+                group={group}
+                isPinned={true}
+                onTogglePin={onTogglePin}
+                formatTime={formatTime}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Stats cards - giống trang Bạn bè */}
-      <div className="px-4 grid grid-cols-2 gap-3 mb-3">
-        <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 rounded-2xl p-3.5">
-          <div className="flex items-center gap-2 mb-1">
-            <FiUsers className="text-[#0a84ff]" size={16} />
-            <span className="text-[13px] text-[#8e8e93]">Nhóm</span>
-          </div>
-          <p className="text-[22px] font-[700] tracking-tight">{groups.length}</p>
-        </div>
-        <div className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 rounded-2xl p-3.5">
-          <div className="flex items-center gap-2 mb-1">
-            <RiPushpinFill className="text-purple-500" size={16} />
-            <span className="text-[13px] text-[#8e8e93]">Đã ghim</span>
-          </div>
-          <p className="text-[22px] font-[700] tracking-tight">{pinned.length}</p>
-        </div>
-      </div>
-
-      {/* Empty state */}
-      {groups.length === 0? (
-        <div className="mx-4 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 rounded-2xl p-8">
-          <div className="flex flex-col items-center text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-[#0a84ff]/10 to-purple-500/10 rounded-2xl flex items-center justify-center mb-4">
-              <FiUsers className="text-[#0a84ff]" size={32} strokeWidth={1.5} />
-            </div>
-            <h3 className="text-[17px] font-[600] mb-1.5">
-              {search? "Không tìm thấy" : "Chưa có nhóm nào"}
-            </h3>
-            <p className="text-[15px] text-[#8e8e93] leading-[20px] mb-5 max-w-[260px]">
-              {search? "Thử tìm với từ khóa khác" : "Tạo nhóm để trò chuyện với bạn bè"}
-            </p>
-            {!search && (
-              <button
-                onClick={onCreateGroup}
-                className="h-11 px-6 bg-gradient-to-r from-[#0a84ff] to-purple-500 text-white rounded-xl text-[15px] font-[600] flex items-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-[#0a84ff]/20"
-              >
-                <FiPlus size={20} strokeWidth={2.5} />
-                Tạo nhóm mới
-              </button>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-zinc-900">
-          {/* Pinned groups */}
+      {normalGroups.length > 0 && (
+        <div>
           {pinnedGroups.length > 0 && (
-            <div>
-              <div className="px-4 py-2">
-                <p className="text-[12px] font-[600] text-[#8e8e93] uppercase tracking-wider">Đã ghim</p>
-              </div>
-              <div className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
-                {pinnedGroups.map((group) => (
-                  <GroupItem
-                    key={group.chatId}
-                    group={group}
-                    isPinned={true}
-                    onTogglePin={onTogglePin}
-                    formatTime={formatTime}
-                  />
-                ))}
-              </div>
+            <div className="px-4 py-2">
+              <p className="text-sm font-[600] text-[#8e8e93] uppercase tracking-wider">
+                Nhóm của tôi ({normalGroups.length})
+              </p>
             </div>
           )}
-
-          {/* Normal groups */}
-          {normalGroups.length > 0 && (
-            <div>
-              {pinnedGroups.length > 0 && (
-                <div className="px-4 py-2">
-                  <p className="text-[12px] font-[600] text-[#8e8e93] uppercase tracking-wider">
-                    Nhóm của tôi ({normalGroups.length})
-                  </p>
-                </div>
-              )}
-              <div className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
-                {normalGroups.map((group) => (
-                  <GroupItem
-                    key={group.chatId}
-                    group={group}
-                    isPinned={false}
-                    onTogglePin={onTogglePin}
-                    formatTime={formatTime}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+          <div className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
+            {normalGroups.map((group) => (
+              <GroupItem
+                key={group.chatId}
+                group={group}
+                isPinned={false}
+                onTogglePin={onTogglePin}
+                formatTime={formatTime}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -207,7 +164,7 @@ function GroupItem({
           />
           {group.unreadCount && group.unreadCount > 0 && (
             <div className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 bg-red-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
-              <span className="text-[10px] font-[700] text-white">
+              <span className="text-sm font-[700] text-white">
                 {group.unreadCount > 99? "99+" : group.unreadCount}
               </span>
             </div>
@@ -217,20 +174,20 @@ function GroupItem({
         <div className="flex-1 min-w-0 py-0.5">
           <div className="flex items-baseline justify-between gap-2 mb-0.5">
             <div className="flex items-center gap-1.5 min-w-0">
-              <p className="text-[16px] leading-[22px] font-[600] truncate">{group.name}</p>
+              <p className="text-sm leading-5 font-[600] truncate">{group.name}</p>
               {isPinned && <RiPushpinFill size={14} className="text-[#0a84ff] flex-shrink-0" />}
               {group.hasPassword && <FiLock size={12} className="text-[#8e8e93] flex-shrink-0" />}
             </div>
-            <span className="text-[13px] leading-[18px] text-[#8e8e93] flex-shrink-0 tabular-nums">
+            <span className="text-sm leading-5 text-[#8e8e93] flex-shrink-0 tabular-nums">
               {formatTime(group.updatedAt)}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <p className="text-[15px] leading-[20px] text-[#8e8e93] truncate flex-1">
+            <p className="text-sm leading-5 text-[#8e8e93] truncate flex-1">
               {group.lastSenderName && group.lastSenderName!== "Bạn"? `${group.lastSenderName}: ` : ""}
               {group.lastMessage || "Chưa có tin nhắn"}
             </p>
-            <span className="text-[13px] text-[#8e8e93] flex items-center gap-1 flex-shrink-0">
+            <span className="text-sm text-[#8e8e93] flex items-center gap-1 flex-shrink-0">
               <FiUsers size={12} />
               {group.members?.length || 0}
             </span>
