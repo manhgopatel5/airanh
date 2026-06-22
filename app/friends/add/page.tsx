@@ -49,12 +49,19 @@ export default function AddFriendPage() {
   const [loadingSuggested, setLoadingSuggested] = useState(false);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
-  const [filters, setFilters] = useState<FilterOptions>({
-    gender: "all",
-    minAge: 18,
-    maxAge: 50,
-    maxDistance: 50
-  });
+type FilterOptions = {
+  gender: "all" | "male" | "female";
+  minAge: number | '';
+  maxAge: number | '';
+  maxDistance: number | '';
+};
+
+const [filters, setFilters] = useState<FilterOptions>({
+  gender: "all",
+  minAge: 18,
+  maxAge: 25,
+  maxDistance: 50
+});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -584,63 +591,95 @@ return (
           </div>
         </div>
 
-        {/* Tuổi - 2 ô input */}
-        <div>
-          <p className="text- font-[600] mb-3">Tuổi</p>
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Từ</p>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={18}
-                max={70}
-                value={filters.minAge}
-                onChange={(e) => {
-                  const val = Math.max(18, Math.min(70, Number(e.target.value) || 18));
-                  setFilters({...filters, minAge: val, maxAge: Math.max(val, filters.maxAge)});
-                }}
-                className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-              />
-            </div>
-            <div className="w-4 h-[2px] bg-zinc-300 dark:bg-zinc-600 mt-6" />
-            <div className="flex-1">
-              <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Đến</p>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={18}
-                max={70}
-                value={filters.maxAge}
-                onChange={(e) => {
-                  const val = Math.max(18, Math.min(70, Number(e.target.value) || 18));
-                  setFilters({...filters, maxAge: val, minAge: Math.min(val, filters.minAge)});
-                }}
-                className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-              />
-            </div>
-          </div>
-        </div>
+ {/* Tuổi - 2 ô input */}
+<div>
+  <p className="text- font-[600] mb-3">Tuổi</p>
+  <div className="flex items-center gap-3">
+    <div className="flex-1">
+      <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Từ</p>
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={filters.minAge}
+        onChange={(e) => {
+          const val = e.target.value.replace(/\D/g, '');
+          setFilters({...filters, minAge: val? Number(val) : ''});
+        }}
+        onBlur={(e) => {
+          let val = Number(e.target.value) || 18;
+          if (val < 18) {
+            toast.error("Tuổi tối thiểu phải từ 18 trở lên");
+            val = 18;
+          }
+          if (val > 100) val = 100;
+          setFilters({
+           ...filters,
+            minAge: val,
+            maxAge: Math.max(val, Number(filters.maxAge) || val)
+          });
+        }}
+        className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+        placeholder="18"
+      />
+    </div>
+    <div className="w-4 h-[2px] bg-zinc-300 dark:bg-zinc-600 mt-6" />
+    <div className="flex-1">
+      <p className="text- text-[#8e8e93] dark:text-zinc-500 mb-1.5">Đến</p>
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={filters.maxAge}
+        onChange={(e) => {
+          const val = e.target.value.replace(/\D/g, '');
+          setFilters({...filters, maxAge: val? Number(val) : ''});
+        }}
+        onBlur={(e) => {
+          let val = Number(e.target.value) || 25;
+          if (val < 18) {
+            toast.error("Tuổi tối thiểu phải từ 18 trở lên");
+            val = 18;
+          }
+          if (val > 100) val = 100;
+          setFilters({
+           ...filters,
+            maxAge: val,
+            minAge: Math.min(val, Number(filters.minAge) || val)
+          });
+        }}
+        className="w-full h-12 px-4 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+        placeholder="25"
+      />
+    </div>
+  </div>
+</div>
 
-        {/* Khoảng cách - 1 ô input */}
-        <div>
-          <p className="text- font-[600] mb-3">Khoảng cách tối đa</p>
-          <div className="relative">
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={100}
-              value={filters.maxDistance}
-              onChange={(e) => {
-                const val = Math.max(1, Math.min(100, Number(e.target.value) || 1));
-                setFilters({...filters, maxDistance: val});
-              }}
-              className="w-full h-12 px-4 pr-12 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text- font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
-          </div>
-        </div>
+{/* Khoảng cách - 0 tới 100 */}
+<div>
+  <p className="text- font-[600] mb-3">Khoảng cách tối đa</p>
+  <div className="relative">
+    <input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      value={filters.maxDistance}
+      onChange={(e) => {
+        const val = e.target.value.replace(/\D/g, '');
+        setFilters({...filters, maxDistance: val? Number(val) : ''});
+      }}
+      onBlur={(e) => {
+        let val = Number(e.target.value);
+        if (e.target.value === '') val = 50;
+        val = Math.max(0, Math.min(100, val));
+        setFilters({...filters, maxDistance: val});
+      }}
+      className="w-full h-12 px-4 pr-12 bg-white dark:bg-zinc-700 rounded-xl text-center text- font-[600] outline-none focus:ring-4 focus:ring-[#0a84ff]/20 transition-all"
+      placeholder="50"
+    />
+    <span className="absolute right-4 top-1/2 -translate-y-1/2 text- font-[600] text-[#8e8e93] dark:text-zinc-500">km</span>
+  </div>
+</div>
       </div>
     </motion.div>
   )}
