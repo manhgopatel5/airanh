@@ -37,6 +37,7 @@ type StrangerChatItem = {
   name: string;
   username: string;
   avatar: string;
+  uid: string; 
   userId: string;
   isOnline: boolean;
   lastSeen?: any;
@@ -195,48 +196,48 @@ export default function FriendsPage() {
 
   // QUERY CHAT NGƯỜI LẠ CHƯA KẾT BẠN
   useEffect(() => {
-    if (!user?.uid) return;
+  if (!user?.uid) return;
 
-    const q = query(
-      collection(db, "chats"),
-      where("members", "array-contains", user.uid),
-      where("isGroup", "==", false),
-      where("isStranger", "==", true),
-      orderBy("updatedAt", "desc")
-    );
+  const q = query(
+    collection(db, "chats"),
+    where("members", "array-contains", user.uid),
+    where("isGroup", "==", false),
+    where("isStranger", "==", true),
+    orderBy("updatedAt", "desc")
+  );
 
-    const unsub = onSnapshot(q, async (snap) => {
-      const friendIds = new Set(friends.map(f => f.uid));
-      const list: StrangerChatItem[] = [];
+  const unsub = onSnapshot(q, async (snap) => {
+    const friendIds = new Set(friends.map(f => f.uid));
+    const list: StrangerChatItem[] = [];
 
-      for (const d of snap.docs) {
-        const data = d.data();
-        const otherUid = data.members?.find((m: string) => m!== user.uid);
-        if (!otherUid || friendIds.has(otherUid)) continue;
+    for (const d of snap.docs) {
+      const data = d.data();
+      const otherUid = data.members?.find((m: string) => m!== user.uid);
+      if (!otherUid || friendIds.has(otherUid)) continue;
 
-        const userDoc = await getDoc(doc(db, "users", otherUid));
-        const userData = userDoc.data() || {};
+      const userDoc = await getDoc(doc(db, "users", otherUid));
+      const userData = userDoc.data() || {};
 
-        list.push({
-          uid: otherUid,
-          chatId: d.id,
-          name: userData.name || "Người lạ",
-          username: userData.username || "",
-          avatar: userData.avatar || `https://ui-avatars.com/api/?name=?&background=ec4899&color=fff&bold=true`,
-          userId: userData.userId || "",
-          isOnline: Boolean(userData.isOnline),
-          lastSeen: userData.lastSeen,
-          isStranger: true,
-          lastMessage: data.lastMessage || "Bắt đầu trò chuyện",
-          updatedAt: data.updatedAt,
-          unreadCount: data.unread?.[user.uid] || 0
-        });
-      }
-      setStrangerChats(list);
-    });
+      list.push({
+        uid: otherUid, // QUAN TRỌNG: Phải có uid
+        chatId: d.id,
+        name: userData.name || "Người lạ",
+        username: userData.username || "",
+        avatar: userData.avatar || `https://ui-avatars.com/api/?name=?&background=ec4899&color=fff&bold=true`,
+        userId: userData.userId || "",
+        isOnline: Boolean(userData.isOnline),
+        lastSeen: userData.lastSeen,
+        isStranger: true,
+        lastMessage: data.lastMessage || "Bắt đầu trò chuyện",
+        updatedAt: data.updatedAt,
+        unreadCount: data.unread?.[user.uid] || 0
+      });
+    }
+    setStrangerChats(list);
+  });
 
-    return () => unsub();
-  }, [user?.uid, db, friends]);
+  return () => unsub();
+}, [user?.uid, db, friends]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -489,22 +490,21 @@ export default function FriendsPage() {
     return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
   };
 
-  const allItems = useMemo(() => {
-    return [...friends,...strangerChats];
-  }, [friends, strangerChats]);
+  const allItems = useMemo((): (FriendItem | StrangerChatItem)[] => {
+  return [...friends,...strangerChats];
+}, [friends, strangerChats]);
 
-  const filteredFriends = useMemo(() => {
-    let result = allItems;
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(f => f.name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q));
-    }
-    return result.sort((a, b) => {
-      if (a.isOnline!== b.isOnline) return b.isOnline? 1 : -1;
-      return a.name.localeCompare(b.name);
-    });
-  }, [allItems, search]);
-
+const filteredFriends = useMemo((): (FriendItem | StrangerChatItem)[] => {
+  let result = allItems;
+  if (search) {
+    const q = search.toLowerCase();
+    result = result.filter(f => f.name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q));
+  }
+  return result.sort((a, b) => {
+    if (a.isOnline!== b.isOnline) return b.isOnline? 1 : -1;
+    return a.name.localeCompare(b.name);
+  });
+}, [allItems, search]);
   const onlineCount = friends.filter(f => f.isOnline).length;
 
   const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
@@ -679,7 +679,7 @@ export default function FriendsPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredFriends.map((friend) => <FriendRow key={'uid' in friend? friend.uid : friend.chatId} friend={friend} />)}
+{filteredFriends.map((friend) => <FriendRow key={friend.uid} friend={friend} />)}
             </div>
           )}
         </>
