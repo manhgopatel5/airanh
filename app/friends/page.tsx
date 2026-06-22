@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp, query, where, limit } from "firebase/firestore";
-import { FiUsers, FiUserPlus, FiSearch, FiMessageCircle, FiUserX } from "react-icons/fi";
+import { FiUsers, FiShield, FiUserPlus, FiSearch, FiMessageCircle, FiUserX } from "react-icons/fi";
 import { RiVipCrownLine, RiUserSearchLine } from "react-icons/ri";
 import { IoStatsChart, IoRibbon } from "react-icons/io5";
 import { useRouter } from "next/navigation";
@@ -45,7 +45,7 @@ export default function FriendsPage() {
   const [suggestions, setSuggestions] = useState<RequestItem[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(true);
   const [search, setSearch] = useState("");
-
+  const [filterOnline, setFilterOnline] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<FriendItem | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -202,17 +202,17 @@ export default function FriendsPage() {
   };
 
   const filteredFriends = useMemo(() => {
-  let result = friends;
-  // if (filterOnline) result = result.filter(f => f.isOnline); // Xóa dòng này
-  if (search) {
-    const q = search.toLowerCase();
-    result = result.filter(f => f.name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q));
-  }
-  return result.sort((a, b) => {
-    if (a.isOnline!== b.isOnline) return b.isOnline? 1 : -1;
-    return a.name.localeCompare(b.name);
-  });
-}, [friends, search]); // Xóa filterOnline khỏi deps
+    let result = friends;
+    if (filterOnline) result = result.filter(f => f.isOnline);
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(f => f.name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q));
+    }
+    return result.sort((a, b) => {
+      if (a.isOnline!== b.isOnline) return b.isOnline? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [friends, search, filterOnline]);
 
   const onlineCount = friends.filter(f => f.isOnline).length;
 
