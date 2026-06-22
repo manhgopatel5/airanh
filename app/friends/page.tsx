@@ -596,7 +596,7 @@ const filteredFriends = useMemo((): (FriendItem | StrangerChatItem)[] => {
         />
       </div>
 
-      <div className="bg-[#F2F7] dark:bg-zinc-800 rounded-xl p-1 flex gap-1">
+      <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl p-1 flex gap-1">
         {(['friends', 'requests', 'suggestions'] as const).map(t => (
           <button
             key={t}
@@ -708,7 +708,7 @@ const filteredFriends = useMemo((): (FriendItem | StrangerChatItem)[] => {
                   >
                     Chấp nhận
                   </button>
-                  <button className="flex-1 h-11 bg-[#F2F7] dark:bg-zinc-800 text-[#8e8e93] rounded-xl text-base font-[600]">
+                  <button className="flex-1 h-11 bg-[#F2F2F7] dark:bg-zinc-800 text-[#8e8e93] rounded-xl text-base font-[600]">
                     Xóa
                   </button>
                 </div>
