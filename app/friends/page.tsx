@@ -37,7 +37,7 @@ type StrangerChatItem = {
   name: string;
   username: string;
   avatar: string;
-  uid: string; 
+
   userId: string;
   isOnline: boolean;
   lastSeen?: any;
