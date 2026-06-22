@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp, query, where, limit } from "firebase/firestore";
-import { FiUsers, FiX, FiLoader, FiUserPlus, FiSearch, FiRefreshCw, FiCheck } from "react-icons/fi";
+import { FiUsers, FiX, FiUserPlus, FiSearch, FiRefreshCw, FiCheck } from "react-icons/fi";
 import { RiVipCrownLine } from "react-icons/ri";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
