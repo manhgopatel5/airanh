@@ -1,6 +1,6 @@
 "use client";
 import { useMemo } from "react";
-import { FiUsers, FiLock, FiChevronRight } from "react-icons/fi";
+import { FiUsers, FiLock } from "react-icons/fi";
 import { RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { format } from "date-fns";
