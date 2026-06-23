@@ -549,23 +549,28 @@ useEffect(() => {
       try {
         const rawChats: RawChat[] = [];
         const userIdsToFetch = new Set<string>();
-        snapshot.forEach((document) => {
-          const chatData = document.data();
+    snapshot.forEach((document) => {
+  const chatData = document.data();
 
-          // ẨN PHÒNG PUBLIC VÀ CHAT NGƯỜI LẠ
-          if (document.id.startsWith('public_') || chatData.isPublicRoom === true || chatData.isStranger === true) {
-            return; // Bỏ qua, không thêm vào list inbox
-          }
+  // ẨN PHÒNG PUBLIC + CHAT NGƯỜI LẠ + CHAT 1-1 KHÔNG CÓ TÊN USER
+  if (
+    document.id.startsWith('public_') || 
+    chatData.isPublicRoom === true || 
+    chatData.isStranger === true ||
+    (!chatData.isGroup && chatData.members?.length === 2 && !chatData.groupName) // THÊM DÒNG NÀY
+  ) {
+    return; // Bỏ qua, không thêm vào list inbox
+  }
 
-          const isGroupChat = Boolean(chatData.isGroup);
-          if (isGroupChat) {
-            rawChats.push({ id: document.id, c: chatData, isGroup: true });
-          } else {
-            const otherUserId = chatData.members?.find((memberId: string) => memberId !== user.uid);
-            if (otherUserId) userIdsToFetch.add(otherUserId);
-            rawChats.push({ id: document.id, c: chatData, other: otherUserId, isGroup: false });
-          }
-        });
+  const isGroupChat = Boolean(chatData.isGroup);
+  if (isGroupChat) {
+    rawChats.push({ id: document.id, c: chatData, isGroup: true });
+  } else {
+    const otherUserId = chatData.members?.find((memberId: string) => memberId !== user.uid);
+    if (otherUserId) userIdsToFetch.add(otherUserId);
+    rawChats.push({ id: document.id, c: chatData, other: otherUserId, isGroup: false });
+  }
+});
 
         const usersMap: Record<string, any> = {};
         if (userIdsToFetch.size > 0) {
