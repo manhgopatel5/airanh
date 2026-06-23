@@ -91,7 +91,7 @@ export default function VipPage() {
   const [purchasingVip, setPurchasingVip] = useState<boolean>(false);
   const [showCompare, setShowCompare] = useState(false);
   const [showFAQ, setShowFAQ] = useState<number | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<{code: string, discount: number} | null>(null);
 
@@ -106,20 +106,7 @@ export default function VipPage() {
     return () => unsub();
   }, [user?.uid, db]);
 
-  useEffect(() => {
-    if (!user?.uid) return;
-    const fetchTransactions = async () => {
-      const q = query(
-        collection(db, "transactions"),
-        where("userId", "==", user.uid),
-        orderBy("createdAt", "desc"),
-        limit(5)
-      );
-      const snap = await getDocs(q);
-      setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() } as Transaction)));
-    };
-    fetchTransactions();
-  }, [user?.uid, db]);
+  
 
   const handlePurchaseVip = async (tierId: 'pro' | 'elite') => {
     if (!user?.uid) return toast.error("Vui lòng đăng nhập");
