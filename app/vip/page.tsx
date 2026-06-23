@@ -8,7 +8,7 @@ import { doc, onSnapshot, updateDoc, serverTimestamp, Timestamp, collection } fr
 import { toast } from "sonner";
 import { Crown } from "lucide-react";
 import {  differenceInDays } from "date-fns";
-
+import { FiX } from "react-icons/fi";
 
 type VipTier = {
   id: 'pro' | 'elite';
