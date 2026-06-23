@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import {
   FiBell, FiUserPlus, FiAtSign, FiUsers, FiHeart, FiMessageCircle,
-  FiInbox, FiTrash2, FiCheck, FiRefreshCw, FiX
+  FiInbox, FiTrash2, FiRefreshCw, FiX
 } from "react-icons/fi";
 import { toast, Toaster } from "sonner";
 import { formatDistanceToNow, isToday, isYesterday } from "date-fns";
