@@ -30,7 +30,7 @@ const VIP_TIERS: VipTier[] = [
     id: 'pro',
     name: 'VIP Pro',
     price: 49000,
-    priceText: '49K',
+    priceText: '49,000',
     duration: '/tháng',
     color: 'from-blue-500 to-cyan-500',
     badge: '🔥',
@@ -49,7 +49,7 @@ const VIP_TIERS: VipTier[] = [
     id: 'elite',
     name: 'VIP Elite',
     price: 149000,
-    priceText: '149K',
+    priceText: '149,000',
     duration: '/tháng',
     color: 'from-amber-400 via-orange-500 to-pink-500',
     badge: '👑',
@@ -71,10 +71,30 @@ const VIP_TIERS: VipTier[] = [
 ];
 
 const FAQ_ITEMS = [
-  { q: "VIP có tự động gia hạn không?", a: "Có, VIP tự động gia hạn hàng tháng. Bạn có thể hủy bất cứ lúc nào trong Cài đặt tài khoản." },
-  { q: "Tôi có thể nâng cấp từ Pro lên Elite?", a: "Có, bạn chỉ cần thanh toán phần chênh lệch. Thời gian VIP sẽ được cộng dồn." },
-  { q: "Nếu hủy VIP thì sao?", a: "Bạn vẫn giữ quyền VIP đến hết chu kỳ đã thanh toán. Sau đó tự động về Free." },
-  { q: "Thanh toán bằng cách nào?", a: "Hỗ trợ Momo, ZaloPay, VNPay, thẻ ngân hàng và thẻ quốc tế." },
+  { 
+    q: "VIP có tự động gia hạn không?", 
+    a: "Có. VIP tự động gia hạn mỗi 30 ngày qua cổng thanh toán bạn chọn. Trước khi gia hạn 3 ngày sẽ có thông báo qua app + email. Bạn có thể hủy bất cứ lúc nào trong Cài đặt > VIP > Quản lý gói. Hủy xong vẫn dùng VIP đến hết chu kỳ đã trả." 
+  },
+  { 
+    q: "Tôi có thể nâng cấp từ Pro lên Elite?", 
+    a: "Được. Vào trang VIP > Chọn Elite > Thanh toán phần chênh lệch. Ví dụ: Bạn còn 15 ngày Pro thì hệ thống tự tính tiền Elite trừ đi giá trị 15 ngày Pro còn lại. Thời gian VIP được cộng dồn, không mất ngày nào." 
+  },
+  { 
+    q: "Nếu hủy VIP thì mất gì?", 
+    a: "Bạn giữ toàn bộ quyền VIP đến đúng ngày hết hạn đã thanh toán. Sau đó tài khoản về Free: mất huy hiệu VIP, nhóm >10 thành viên vẫn hoạt động nhưng không thêm người mới được, ghim chat >3 sẽ tự bỏ ghim, file >10MB vẫn xem được nhưng không tải lên mới. Dữ liệu không bị xóa." 
+  },
+  { 
+    q: "Thanh toán bằng cách nào? Có an toàn không?", 
+    a: "Hỗ trợ Momo, ZaloPay, VNPay QR, thẻ ATM nội địa, Visa/Mastercard. Thanh toán qua cổng VNPay/PayOS đạt chuẩn PCI DSS, không lưu thông tin thẻ. Hóa đơn điện tử gửi về email sau khi thanh toán thành công." 
+  },
+  { 
+    q: "Mua nhầm gói có hoàn tiền được không?", 
+    a: "Có. Liên hệ hỗ trợ trong 24h từ lúc mua, chưa sử dụng tính năng VIP quá 10%. Hoàn tiền về ví thanh toán trong 3-7 ngày làm việc. Sau 24h hoặc đã dùng nhiều thì không hoàn, chỉ hỗ trợ nâng cấp gói." 
+  },
+  { 
+    q: "1 tài khoản dùng VIP cho nhiều thiết bị được không?", 
+    a: "Được. Đăng nhập cùng 1 tài khoản trên điện thoại, web, máy tính đều có VIP. Nhưng không chia sẻ tài khoản cho người khác, hệ thống check đăng nhập bất thường sẽ khóa VIP." 
+  },
 ];
 
 export default function VipPage() {
@@ -83,7 +103,7 @@ export default function VipPage() {
   const router = useRouter();
   const [userVip, setUserVip] = useState<{tier: 'free' | 'pro' | 'elite', expiresAt?: Timestamp} | null>(null);
   const [purchasingVip, setPurchasingVip] = useState<boolean>(false);
-  const [showCompare, setShowCompare] = useState(false);
+
   const [showFAQ, setShowFAQ] = useState<number | null>(null);
 
   const [promoCode, setPromoCode] = useState("");
@@ -166,18 +186,7 @@ export default function VipPage() {
 
   return (
     <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A]">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
-        <div className="flex items-center justify-between h-14 px-4">
-          <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center -ml-2 active:scale-90 transition-transform">
-            <FiX size={24} strokeWidth={2} />
-          </button>
-          <h1 className="text-base font-semibold">Nâng cấp VIP</h1>
-          <button onClick={() => setShowCompare(!showCompare)} className="text-sm font-medium text-[#0a84ff] active:opacity-60">
-            So sánh
-          </button>
-        </div>
-      </div>
+
 
       <div className="px-4 pt-6 pb-24 space-y-4">
         {/* Banner */}
@@ -291,9 +300,9 @@ export default function VipPage() {
                       {appliedPromo && (
                         <span className="text-lg line-through text-[#8e8e93]">{tier.priceText}</span>
                       )}
-                      <span className={`text-4xl font-black bg-gradient-to-r ${tier.color} bg-clip-text text-transparent`}>
-                        {Math.round(finalPrice / 1000)}K
-                      </span>
+                   <span className={`text-4xl font-black bg-gradient-to-r ${tier.color} bg-clip-text text-transparent`}>
+  {finalPrice.toLocaleString('vi-VN')}
+</span>
                       <span className="text-sm text-[#8e8e93] font-medium">{tier.duration}</span>
                     </div>
                     {tier.savePercent && (
@@ -333,34 +342,41 @@ export default function VipPage() {
           })}
         </div>
 
-        {/* Compare Features */}
-        {showCompare && (
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200/60 dark:border-zinc-800/60">
-            <h3 className="text-lg font-bold mb-4">So sánh gói VIP</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-200 dark:border-zinc-800">
-                    <th className="text-left py-2 font-semibold">Tính năng</th>
-                    <th className="text-center py-2 font-semibold">Free</th>
-                    <th className="text-center py-2 font-semibold text-blue-500">Pro</th>
-                    <th className="text-center py-2 font-semibold text-amber-500">Elite</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                  {['Tạo nhóm', 'Ghim chat', 'Tải file', 'Theme', 'Quảng cáo'].map((feat, i) => (
-                    <tr key={i}>
-                      <td className="py-2.5">{feat}</td>
-                      <td className="text-center text-[#8e8e93]">✕</td>
-                      <td className="text-center text-blue-500">✓</td>
-                      <td className="text-center text-amber-500">✓</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+      {/* Compare Features */}
+<div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200/60 dark:border-zinc-800/60">
+  <h3 className="text-lg font-bold mb-4">So sánh gói VIP</h3>
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b border-zinc-200 dark:border-zinc-800">
+          <th className="text-left py-2.5 font-semibold text-zinc-900 dark:text-zinc-100">Tính năng</th>
+          <th className="text-center py-2.5 font-semibold text-zinc-900 dark:text-zinc-100 w-16">Free</th>
+          <th className="text-center py-2.5 font-semibold text-blue-500 w-16">Pro</th>
+          <th className="text-center py-2.5 font-semibold text-amber-500 w-16">Elite</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+        {[
+          { name: 'Tạo nhóm', free: '10 nhóm', pro: '200 nhóm', elite: '500 nhóm' },
+          { name: 'Ghim chat', free: '3 chat', pro: '10 chat', elite: 'Không giới hạn' },
+          { name: 'Tải file', free: '10MB', pro: '100MB', elite: '500MB' },
+          { name: 'Theme độc quyền', free: '✕', pro: '✓', elite: '✓' },
+          { name: 'Không quảng cáo', free: '✕', pro: '✓', elite: '✓' },
+          { name: 'Huy hiệu VIP', free: '✕', pro: '🔥', elite: '👑' },
+          { name: 'Xem ai đọc tin', free: '✕', pro: '✕', elite: '✓' },
+          { name: 'Hỗ trợ 24/7', free: '✕', pro: '✕', elite: '✓' },
+        ].map((feat, i) => (
+          <tr key={i}>
+            <td className="py-3 text-zinc-700 dark:text-zinc-300">{feat.name}</td>
+            <td className="text-center text-zinc-500 dark:text-zinc-400 text-[13px]">{feat.free}</td>
+            <td className="text-center text-blue-500 font-medium text-[13px]">{feat.pro}</td>
+            <td className="text-center text-amber-500 font-medium text-[13px]">{feat.elite}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
 
         {/* FAQ */}
         <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200/60 dark:border-zinc-800/60">
