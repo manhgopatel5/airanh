@@ -58,7 +58,7 @@ import {
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Crown, Vote } from "lucide-react";
+import { Crown } from "lucide-react";
 
 import { format, isToday, isYesterday } from "date-fns";
 
@@ -299,7 +299,7 @@ const handleFindStranger = async () => {
   }
 };
 
-  const [showPoll, setShowPoll] = useState<boolean>(false);
+
   const [showVip, setShowVip] = useState<boolean>(false);
 const [userVip, setUserVip] = useState<{tier: 'free' | 'pro' | 'elite', expiresAt?: Timestamp} | null>(null);
 const [purchasingVip, setPurchasingVip] = useState<boolean>(false);
@@ -456,9 +456,7 @@ const VIP_TIERS: VipTier[] = [
     ]
   }
 ];
-const [pollQuestion, setPollQuestion] = useState<string>("");
-const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
-const [creatingPoll, setCreatingPoll] = useState<boolean>(false);
+
 
 
 
@@ -646,58 +644,7 @@ if (isMounted) setItems(visibleChats);
 
 
 
-const handleCreatePoll = useCallback(async (targetChatId?: string): Promise<void> => {
-  if (!user?.uid) return;
-  const q = pollQuestion.trim();
-  const opts = pollOptions.map(o => o.trim()).filter(o => o);
-  
-  if (!q) { toast.error("Nhập câu hỏi"); return; }
-  if (opts.length < 2) { toast.error("Cần ít nhất 2 lựa chọn"); return; }
 
-  setCreatingPoll(true);
-  try {
-    // Nếu đang trong chat thì gửi vào chat đó, không thì chọn chat đầu tiên
-    const chatId = targetChatId || items.find(i => !i.isGroup)?.chatId;
-    if (!chatId) throw new Error("Chọn cuộc trò chuyện để gửi bình chọn");
-
-    const pollRef = doc(collection(db, "chats", chatId, "polls"));
-    await setDoc(pollRef, {
-      question: q,
-      options: opts.map(text => ({ text, votes: [] })),
-      createdBy: user.uid,
-      createdByName: user.displayName || "Bạn",
-      createdAt: serverTimestamp(),
-      expiresAt: Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000)), // 24h
-      isActive: true,
-    });
-
-    // Gửi message báo có poll
-    const msgRef = doc(collection(db, "chats", chatId, "messages"));
-    await setDoc(msgRef, {
-      type: "poll",
-      pollId: pollRef.id,
-      text: `📊 ${q}`,
-      senderId: user.uid,
-      createdAt: serverTimestamp(),
-    });
-
-    await updateDoc(doc(db, "chats", chatId), {
-      lastMessage: `📊 Bình chọn: ${q}`,
-      lastSenderId: user.uid,
-      updatedAt: serverTimestamp(),
-    });
-
-    toast.success("Đã tạo bình chọn");
-    setShowPoll(false);
-    setPollQuestion("");
-    setPollOptions(["", ""]);
-    router.push(`/chat/${chatId}`);
-  } catch (error: any) {
-    toast.error(error.message || "Lỗi tạo bình chọn");
-  } finally {
-    setCreatingPoll(false);
-  }
-}, [user, pollQuestion, pollOptions, items, db, router]);
 const handlePurchaseVip = useCallback(async (tierId: 'pro' | 'elite') => {
   if (!user?.uid) return;
   const tier = VIP_TIERS.find(t => t.id === tierId);
@@ -881,30 +828,29 @@ return (
 </div>
 </div>
 
-{/* Hàng 2: 4 nút - 1 khung riêng */}
-    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] dark:shadow-black/20 border border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3.5">
-      <div className="grid grid-cols-4 gap-3">
-        {[
-          { label: "Bình chọn", icon: Vote, color: "bg-gradient-to-br from-indigo-500 to-purple-500", onClick: () => setShowPoll(true) },
-          { label: "VIP", icon: Crown, color: "bg-gradient-to-br from-amber-400 to-orange-500", onClick: () => setShowVip(true) },
-          { label: "Người lạ", icon: FiZap, color: "bg-gradient-to-br from-pink-500 to-rose-500", onClick: () => setShowStranger(true) },
-{ label: "Thành Tích", icon: FiAward, color: "bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500", onClick: () => setShowLeaderboard(true) },
-        ].map((item) => (
-          <button
-            key={item.label}
-            onClick={item.onClick}
-            className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform duration-150"
-          >
-            <div className={`w-14 h-14 ${item.color} rounded-xl flex items-center justify-center`}>
-              <item.icon className="text-white" size={22} strokeWidth={2.5} />
-            </div>
-            <span className="text-xs leading-4 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
-              {item.label}
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
+{/* Hàng 2: 3 nút - 1 khung riêng */}
+<div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] dark:shadow-black/20 border border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3.5">
+  <div className="grid grid-cols-3 gap-3">
+    {[
+      { label: "VIP", icon: Crown, color: "bg-gradient-to-br from-amber-400 to-orange-500", onClick: () => setShowVip(true) },
+      { label: "Người lạ", icon: FiZap, color: "bg-gradient-to-br from-pink-500 to-rose-500", onClick: () => setShowStranger(true) },
+      { label: "Thành Tích", icon: FiAward, color: "bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500", onClick: () => setShowLeaderboard(true) },
+    ].map((item) => (
+      <button
+        key={item.label}
+        onClick={item.onClick}
+        className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform duration-150"
+      >
+        <div className={`w-14 h-14 ${item.color} rounded-xl flex items-center justify-center`}>
+          <item.icon className="text-white" size={22} strokeWidth={2.5} />
+        </div>
+        <span className="text-xs leading-4 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
+          {item.label}
+        </span>
+      </button>
+    ))}
+  </div>
+</div>
   </div>
 </div>
 
@@ -1161,84 +1107,7 @@ return (
     
 
 
-{showPoll && (
-  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-    <div className="absolute inset-0 bg-black/40 backdrop-blur-2xl" onClick={() => setShowPoll(false)} />
-    <div className="relative w-full sm:max-w-md bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300">
-      <div className="w-9 h-1 bg-black/15 dark:bg-white/15 rounded-full mx-auto mt-2.5 sm:hidden" />
-      <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-black/5 dark:border-white/5">
-        <h2 className="text-xl font-semibold">Tạo bình chọn</h2>
-        <button onClick={() => setShowPoll(false)} className="w-7 h-7 -mr-1 flex items-center justify-center text-[#8e8e93]">
-          <FiX size={22} />
-        </button>
-      </div>
 
-      <div className="flex-1 overflow-auto p-5 space-y-4">
-        <div>
-          <label className="text-sm font-medium text-[#8e8e93] mb-2 block">Câu hỏi</label>
-          <input
-            type="text"
-            value={pollQuestion}
-         onChange={(e) => setPollQuestion(e.target.value)}
-            placeholder="Vd: Đi ăn ở đâu tối nay?"
-            className={`w-full h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm outline-none ${primaryBorder} focus:ring-4 ${primaryRing}`}
-            maxLength={100}
-          />
-        </div>
-
-        <div>
-          <label className="text-sm font-medium text-[#8e8e93] mb-2 block">Lựa chọn</label>
-          <div className="space-y-2">
-            {pollOptions.map((opt, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={opt}
-                  onChange={(e) => {
-                    const newOpts = [...pollOptions];
-                    newOpts[idx] = e.target.value;
-                    setPollOptions(newOpts);
-                  }}
-                  placeholder={`Lựa chọn ${idx + 1}`}
-               
-                  className="flex-1 h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#0a84ff]/20"
-                  maxLength={50}
-                />
-                {pollOptions.length > 2 && (
-                  <button
-                    onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== idx))}
-                    className="w-9 h-9 flex items-center justify-center text-red-500"
-                  >
-                    <FiX size={18} />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-          {pollOptions.length < 6 && (
-            <button
-              onClick={() => setPollOptions([...pollOptions, ""])}
-              className={`mt-2 text-sm ${primaryText} font-medium flex items-center gap-1`}
-            >
-              <RiAddLine size={18} /> Thêm lựa chọn
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="p-4 border-t border-black/5 dark:border-white/5">
-        <button
-          onClick={() => handleCreatePoll()}
-          disabled={creatingPoll || !pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
-          className={`w-full h-11 ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded-xl text-sm font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2`}
-        >
-          {creatingPoll && <FiLoader className="animate-spin" size={18} />}
-          {creatingPoll ? "Đang tạo..." : "Tạo bình chọn"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
   {showStranger && (
   <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl" onClick={() => setShowStranger(false)} />
