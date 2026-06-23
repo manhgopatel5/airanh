@@ -384,6 +384,7 @@ function Skeleton() {
           <div className="h-8 w-20 bg-zinc-200 dark:bg-zinc-800 rounded-full animate-pulse" />
           <div className="h-8 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-full animate-pulse" />
         </div>
+      </div>
       <SkeletonContent />
     </div>
   );
