@@ -91,15 +91,17 @@ export default function NotificationsPage() {
       orderBy("createdAt", "desc"),
       limit(1)
     );
-    const unsub = onSnapshot(q, (snap) => {
-      if (!snap.empty &&!loading) {
-        const newNotif = { id: snap.docs[0].id,...snap.docs[0].data() } as Notification;
-        setNotifications((prev) => {
-          if (prev.find((n) => n.id === newNotif.id)) return prev;
-          return [newNotif,...prev];
-        });
-      }
+ const unsub = onSnapshot(q, (snap) => {
+  if (!snap.empty &&!loading) {
+    const firstDoc = snap.docs[0];
+    if (!firstDoc) return;
+    const newNotif = { id: firstDoc.id,...firstDoc.data() } as Notification;
+    setNotifications((prev) => {
+      if (prev.find((n) => n.id === newNotif.id)) return prev;
+      return [newNotif,...prev];
     });
+  }
+});
     return () => unsub();
   }, [user?.uid, db, loading]);
 
