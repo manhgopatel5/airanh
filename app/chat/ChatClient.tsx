@@ -60,7 +60,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Crown, Vote } from "lucide-react";
 
-import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 import { vi } from "date-fns/locale";
 
 type ChatItem = {
