@@ -1,0 +1,415 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/AuthContext";
+import { getFirebaseDB } from "@/lib/firebase";
+import { doc, onSnapshot, updateDoc, serverTimestamp, Timestamp, collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
+import { toast } from "sonner";
+import { Crown, FiCheck, FiLoader, FiX, FiZap, FiShield, FiStar, FiGift, FiCreditCard, FiChevronDown, FiChevronUp, FiCopy } from "lucide-react";
+import { format, differenceInDays } from "date-fns";
+
+type VipTier = {
+  id: 'pro' | 'elite';
+  name: string;
+  price: number;
+  priceText: string;
+  duration: string;
+  features: string[];
+  color: string;
+  badge: string;
+  popular?: boolean;
+  savePercent?: number;
+};
+
+type Transaction = {
+  id: string;
+  tier: string;
+  amount: number;
+  createdAt: Timestamp;
+  status: 'success' | 'pending' | 'failed';
+};
+
+const VIP_TIERS: VipTier[] = [
+  {
+    id: 'pro',
+    name: 'VIP Pro',
+    price: 49000,
+    priceText: '49K',
+    duration: '/tháng',
+    color: 'from-blue-500 to-cyan-500',
+    badge: '🔥',
+    features: [
+      'Huy hiệu VIP xanh cạnh tên',
+      'Tạo nhóm 200 thành viên',
+      'Ghim 10 cuộc trò chuyện',
+      'Theme độc quyền + hiệu ứng',
+      'Tải file 100MB',
+      'Không quảng cáo',
+      'Xem trước tin nhắn',
+      'Thống kê chi tiết'
+    ]
+  },
+  {
+    id: 'elite',
+    name: 'VIP Elite',
+    price: 149000,
+    priceText: '149K',
+    duration: '/tháng',
+    color: 'from-amber-400 via-orange-500 to-pink-500',
+    badge: '👑',
+    popular: true,
+    savePercent: 67,
+    features: [
+      'Huy hiệu VIP vàng + hiệu ứng động',
+      'Tạo nhóm 500 thành viên',
+      'Ghim không giới hạn',
+      'Tất cả theme + avatar động',
+      'Tải file 500MB',
+      'Xem ai đã đọc tin nhắn',
+      'Thu hồi tin nhắn không giới hạn',
+      'Ưu tiên hỗ trợ 24/7',
+      'Booster tốc độ chat',
+      'Badge độc quyền sự kiện'
+    ]
+  }
+];
+
+const FAQ_ITEMS = [
+  { q: "VIP có tự động gia hạn không?", a: "Có, VIP tự động gia hạn hàng tháng. Bạn có thể hủy bất cứ lúc nào trong Cài đặt tài khoản." },
+  { q: "Tôi có thể nâng cấp từ Pro lên Elite?", a: "Có, bạn chỉ cần thanh toán phần chênh lệch. Thời gian VIP sẽ được cộng dồn." },
+  { q: "Nếu hủy VIP thì sao?", a: "Bạn vẫn giữ quyền VIP đến hết chu kỳ đã thanh toán. Sau đó tự động về Free." },
+  { q: "Thanh toán bằng cách nào?", a: "Hỗ trợ Momo, ZaloPay, VNPay, thẻ ngân hàng và thẻ quốc tế." },
+];
+
+export default function VipPage() {
+  const { user } = useAuth();
+  const db = getFirebaseDB();
+  const router = useRouter();
+  const [userVip, setUserVip] = useState<{tier: 'free' | 'pro' | 'elite', expiresAt?: Timestamp} | null>(null);
+  const [purchasingVip, setPurchasingVip] = useState<boolean>(false);
+  const [showCompare, setShowCompare] = useState(false);
+  const [showFAQ, setShowFAQ] = useState<number | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{code: string, discount: number} | null>(null);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setUserVip(data.vip || { tier: 'free' });
+      }
+    });
+    return () => unsub();
+  }, [user?.uid, db]);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    const fetchTransactions = async () => {
+      const q = query(
+        collection(db, "transactions"),
+        where("userId", "==", user.uid),
+        orderBy("createdAt", "desc"),
+        limit(5)
+      );
+      const snap = await getDocs(q);
+      setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() } as Transaction)));
+    };
+    fetchTransactions();
+  }, [user?.uid, db]);
+
+  const handlePurchaseVip = async (tierId: 'pro' | 'elite') => {
+    if (!user?.uid) return toast.error("Vui lòng đăng nhập");
+    const tier = VIP_TIERS.find(t => t.id === tierId);
+    if (!tier) return;
+
+    setPurchasingVip(true);
+    try {
+      // TODO: Tích hợp cổng thanh toán thật
+      await new Promise(r => setTimeout(r, 1500));
+
+      const finalPrice = appliedPromo? tier.price * (1 - appliedPromo.discount / 100) : tier.price;
+      const expiresAt = Timestamp.fromDate(new Date(Date.now() + 30 * 24 * 60 * 1000));
+      
+      await updateDoc(doc(db, "users", user.uid), {
+        vip: {
+          tier: tierId,
+          purchasedAt: serverTimestamp(),
+          expiresAt: expiresAt,
+          price: finalPrice
+        }
+      });
+
+      // Lưu lịch sử giao dịch
+      await updateDoc(doc(collection(db, "transactions")), {
+        userId: user.uid,
+        tier: tierId,
+        amount: finalPrice,
+        promoCode: appliedPromo?.code || null,
+        status: 'success',
+        createdAt: serverTimestamp()
+      });
+
+      toast.success(`Đã nâng cấp ${tier.name}!`, { icon: tier.badge });
+      if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+      setAppliedPromo(null);
+      setPromoCode("");
+    } catch (error: any) {
+      toast.error("Lỗi thanh toán: " + error.message);
+    } finally {
+      setPurchasingVip(false);
+    }
+  };
+
+  const applyPromoCode = () => {
+    const validCodes: Record<string, number> = {
+      'VIP10': 10,
+      'WELCOME20': 20,
+      'NEWUSER30': 30
+    };
+    if (validCodes[promoCode.toUpperCase()]) {
+      setAppliedPromo({ code: promoCode.toUpperCase(), discount: validCodes[promoCode.toUpperCase()] });
+      toast.success(`Áp dụng mã ${promoCode.toUpperCase()} - Giảm ${validCodes[promoCode.toUpperCase()]}%`);
+    } else {
+      toast.error("Mã không hợp lệ");
+    }
+  };
+
+  const daysLeft = userVip?.expiresAt? differenceInDays(userVip.expiresAt.toDate(), new Date()) : 0;
+
+  return (
+    <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A]">
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
+        <div className="flex items-center justify-between h-14 px-4">
+          <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center -ml-2 active:scale-90 transition-transform">
+            <FiX size={24} strokeWidth={2} />
+          </button>
+          <h1 className="text-base font-semibold">Nâng cấp VIP</h1>
+          <button onClick={() => setShowCompare(!showCompare)} className="text-sm font-medium text-[#0a84ff] active:opacity-60">
+            So sánh
+          </button>
+        </div>
+      </div>
+
+      <div className="px-4 pt-6 pb-24 space-y-4">
+        {/* Banner */}
+        <div className="relative bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 rounded-3xl p-6 text-center shadow-xl shadow-orange-500/20 overflow-hidden">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+          <div className="relative">
+            <div className="w-20 h-20 mx-auto mb-4 bg-white/20 backdrop-blur-xl rounded-3xl flex items-center justify-center animate-pulse">
+              <Crown className="text-white" size={40} strokeWidth={2.5} />
+            </div>
+            <h2 className="text-2xl font-black text-white mb-2">Mở khóa VIP</h2>
+            <p className="text-sm text-white/90 font-medium">
+              Trải nghiệm đầy đủ tính năng cao cấp nhất
+            </p>
+          </div>
+        </div>
+
+        {/* Current Plan */}
+        {userVip && userVip.tier!== 'free' && (
+          <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-0.5">
+                  Gói hiện tại
+                </p>
+                <p className="text-lg font-bold flex items-center gap-2">
+                  {VIP_TIERS.find(t => t.id === userVip?.tier)?.badge}
+                  {VIP_TIERS.find(t => t.id === userVip?.tier)?.name}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-[#8e8e93]">Còn lại</p>
+                <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                  {daysLeft} ngày
+                </p>
+              </div>
+            </div>
+            <div className="h-2 bg-emerald-500/20 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all"
+                style={{ width: `${Math.min((daysLeft / 30) * 100, 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Promo Code */}
+        {!appliedPromo && (
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200/60 dark:border-zinc-800/60">
+            <div className="flex items-center gap-2 mb-2">
+              <FiGift className="text-amber-500" size={18} />
+              <p className="text-sm font-semibold">Mã giảm giá</p>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+                placeholder="Nhập mã"
+                className="flex-1 h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#0a84ff]/20"
+              />
+              <button
+                onClick={applyPromoCode}
+                disabled={!promoCode}
+                className="px-4 h-10 bg-[#0a84ff] text-white rounded-xl text-sm font-semibold disabled:opacity-40 active:scale-95 transition-all"
+              >
+                Áp dụng
+              </button>
+            </div>
+          </div>
+        )}
+
+        {appliedPromo && (
+          <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FiCheck className="text-green-500" size={18} />
+              <span className="text-sm font-medium">Mã {appliedPromo.code} - Giảm {appliedPromo.discount}%</span>
+            </div>
+            <button onClick={() => setAppliedPromo(null)} className="text-sm text-red-500">Xóa</button>
+          </div>
+        )}
+
+        {/* VIP Tiers */}
+        <div className="space-y-3">
+          {VIP_TIERS.map((tier) => {
+            const isActive = userVip?.tier === tier.id;
+            const finalPrice = appliedPromo? Math.round(tier.price * (1 - appliedPromo.discount / 100)) : tier.price;
+            return (
+              <div
+                key={tier.id}
+                className={`relative bg-white dark:bg-zinc-900 rounded-3xl p-5 border-2 transition-all ${
+                  isActive
+                  ? 'border-emerald-500 shadow-lg shadow-emerald-500/10'
+                    : 'border-zinc-200/60 dark:border-zinc-800/60 shadow-md shadow-black/[0.04]'
+                } ${tier.popular? 'scale-[1.02]' : ''}`}
+              >
+                {tier.popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full shadow-lg">
+                    <span className="text- font-bold text-white flex items-center gap-1">
+                      <FiZap size={12} /> PHỔ BIẾN NHẤT
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-3xl">{tier.badge}</span>
+                      <h3 className="text-xl font-bold">{tier.name}</h3>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      {appliedPromo && (
+                        <span className="text-lg line-through text-[#8e8e93]">{tier.priceText}</span>
+                      )}
+                      <span className={`text-4xl font-black bg-gradient-to-r ${tier.color} bg-clip-text text-transparent`}>
+                        {Math.round(finalPrice / 1000)}K
+                      </span>
+                      <span className="text-sm text-[#8e8e93] font-medium">{tier.duration}</span>
+                    </div>
+                    {tier.savePercent && (
+                      <span className="inline-block mt-1 px-2 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-md text- font-bold">
+                        Tiết kiệm {tier.savePercent}%
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 mb-4">
+                  {tier.features.map((feat, i) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                        tier.id === 'elite'? 'bg-amber-500/10' : 'bg-blue-500/10'
+                      }`}>
+                        <FiCheck className={tier.id === 'elite'? 'text-amber-500' : 'text-blue-500'} size={13} strokeWidth={3} />
+                      </div>
+                      <span className="text- leading-5 text-zinc-700 dark:text-zinc-300">{feat}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => handlePurchaseVip(tier.id)}
+                  disabled={purchasingVip || isActive}
+                  className={`w-full h-12 rounded-2xl font-bold text- transition-all active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-2 ${
+                    isActive
+                    ? 'bg-emerald-500 text-white'
+                      : `bg-gradient-to-r ${tier.color} text-white shadow-lg shadow-${tier.id === 'elite'? 'orange' : 'blue'}-500/30`
+                  }`}
+                >
+                  {purchasingVip? <FiLoader className="animate-spin" size={20} /> : isActive? <><FiCheck size={18} /> Đang sử dụng</> : <><FiCreditCard size={18} /> Nâng cấp ngay</>}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Compare Features */}
+        {showCompare && (
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200/60 dark:border-zinc-800/60">
+            <h3 className="text-lg font-bold mb-4">So sánh gói VIP</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                    <th className="text-left py-2 font-semibold">Tính năng</th>
+                    <th className="text-center py-2 font-semibold">Free</th>
+                    <th className="text-center py-2 font-semibold text-blue-500">Pro</th>
+                    <th className="text-center py-2 font-semibold text-amber-500">Elite</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {['Tạo nhóm', 'Ghim chat', 'Tải file', 'Theme', 'Quảng cáo'].map((feat, i) => (
+                    <tr key={i}>
+                      <td className="py-2.5">{feat}</td>
+                      <td className="text-center text-[#8e8e93]">✕</td>
+                      <td className="text-center text-blue-500">✓</td>
+                      <td className="text-center text-amber-500">✓</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* FAQ */}
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200/60 dark:border-zinc-800/60">
+          <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+            <FiShield className="text-[#0a84ff]" size={20} />
+            Câu hỏi thường gặp
+          </h3>
+          <div className="space-y-2">
+            {FAQ_ITEMS.map((item, i) => (
+              <div key={i} className="border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+                <button
+                  onClick={() => setShowFAQ(showFAQ === i? null : i)}
+                  className="w-full py-3 flex items-center justify-between text-left"
+                >
+                  <span className="text-sm font-medium pr-2">{item.q}</span>
+                  {showFAQ === i? <FiChevronUp size={18} /> : <FiChevronDown size={18} />}
+                </button>
+                {showFAQ === i && (
+                  <p className="text-sm text-[#8e8e93] pb-3 leading-relaxed">{item.a}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="pt-2 pb-4">
+          <p className="text- text-center text-[#8e8e93] leading-relaxed">
+            Tự động gia hạn hàng tháng. Hủy bất cứ lúc nào trong Cài đặt.
+            <br />Bằng việc mua, bạn đồng ý với <span className="text-[#0a84ff]">Điều khoản VIP</span> và <span className="text-[#0a84ff]">Chính sách bảo mật</span>.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+sửa chuẩn theo luật mobile
