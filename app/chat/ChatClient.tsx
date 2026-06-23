@@ -203,7 +203,7 @@ useEffect(() => {
 
 
   const [debounced ] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(true);
+
 
 
 
@@ -512,7 +512,7 @@ useEffect(() => {
     const unsubscribe = onSnapshot(chatsQuery, async (snapshot: QuerySnapshot<DocumentData>) => {
       retryCount = 0;
       if (!isMounted) return;
-      setLoading(true);
+      
       try {
         const rawChats: RawChat[] = [];
         const userIdsToFetch = new Set<string>();
@@ -604,7 +604,7 @@ if (isMounted) setItems(visibleChats);
         console.error("Error processing chats:", error);
         if (isMounted) toast.error("Lỗi tải danh sách chat");
       } finally {
-        if (isMounted) setLoading(false);
+        // Xóa dòng này: if (isMounted) setLoading(false);
       }
     }, (error) => {
       console.error("Realtime listener error:", error);
@@ -616,7 +616,7 @@ if (isMounted) setItems(visibleChats);
       } else if (error.code!== "permission-denied") {
         toast.error("Không thể kết nối realtime");
       }
-      setLoading(false);
+      
     });
 
     unsubRef.current = unsubscribe;
