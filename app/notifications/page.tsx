@@ -241,7 +241,7 @@ export default function NotificationsPage() {
                       <div
                         key={n.id}
                         data-id={n.id}
-                        ref={(node) => setObserver(node, n.isRead, n.id)}
+
                         className={`p-3 flex items-start gap-3 active:bg-zinc-50 dark:active:bg-zinc-800 transition-colors ${
                          !n.isRead? "bg-[#0a84ff]/[0.04]" : ""
                         } ${i!== items.length - 1? "border-b border-black/[0.06] dark:border-white/[0.06]" : ""}`}
