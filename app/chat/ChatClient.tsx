@@ -39,7 +39,7 @@ import {
 import {
   
   FiStar,
-  FiUserPlus,
+  
   FiUsers,
   FiTrendingUp,
   FiCheck,
