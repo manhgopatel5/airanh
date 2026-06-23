@@ -61,7 +61,7 @@ import { toast } from "sonner";
 import { Crown, Vote } from "lucide-react";
 
 import { format, isToday, isYesterday } from "date-fns";
-import { vi } from "date-fns/locale";
+
 
 type ChatItem = {
   uid: string;
