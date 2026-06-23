@@ -55,7 +55,7 @@ import {
   
   
 } from "react-icons/fi";
-import { RiAddLine, RiPushpinFill } from "react-icons/ri";
+import {  RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Crown } from "lucide-react";
