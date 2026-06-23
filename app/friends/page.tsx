@@ -198,27 +198,33 @@ const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions' | 'strange
 useEffect(() => {
   if (!user?.uid) return;
 
+  // Bỏ orderBy để lấy cả doc cũ thiếu updatedAt
   const q = query(
     collection(db, "chats"),
     where("members", "array-contains", user.uid),
-    where("isGroup", "==", false),
-    orderBy("updatedAt", "desc")
+    where("isGroup", "==", false)
   );
 
   const unsub = onSnapshot(q, async (snap) => {
+    console.log('Total chats found:', snap.size); // Debug
+    
     const friendIds = new Set(friends.map(f => f.uid));
     const list: StrangerChatItem[] = [];
 
     for (const d of snap.docs) {
       const data = d.data();
+      console.log('Chat:', d.id, data); // Debug từng chat
       
-      // Bỏ qua nếu là bạn bè hoặc có isStranger: false
+      // Bỏ qua nếu set isStranger: false
       if (data.isStranger === false) continue;
       
       const otherUid = data.members?.find((m: string) => m !== user.uid);
-      if (!otherUid || friendIds.has(otherUid)) continue;
+      if (!otherUid || friendIds.has(otherUid)) {
+        console.log('Skip friend or no otherUid:', otherUid);
+        continue;
+      }
 
-      // Nếu không có field isStranger hoặc isStranger: true thì lấy
+      // Lấy cả chat không có isStranger hoặc isStranger: true
       if (data.isStranger === undefined || data.isStranger === true) {
         const userDoc = await getDoc(doc(db, "users", otherUid));
         const userData = userDoc.data() || {};
@@ -239,6 +245,8 @@ useEffect(() => {
         });
       }
     }
+    
+    console.log('Stranger chats:', list); // Debug kết quả
     setStrangerChats(list);
   });
 
