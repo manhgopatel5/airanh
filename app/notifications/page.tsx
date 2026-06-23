@@ -322,13 +322,13 @@ export default function NotificationsPage() {
                               i!== items.length - 1? "border-b border-zinc-100 dark:border-zinc-900" : ""
                             }`}
                           >
-                            <div
-                              onViewportEnter={() =>!n.isRead && markAsReadTimeout(n.id)}
-                              onClick={() => handleClickNotif(n)}
-                              className={`p-3 flex items-start gap-3 active:bg-zinc-50 dark:active:bg-zinc-900 transition-colors ${
-                               !n.isRead? "bg-[#0a84ff]/[0.04]" : ""
-                              }`}
-                            >
+                       <motion.div
+  onViewportEnter={() =>!n.isRead && markAsReadTimeout(n.id)}
+  onClick={() => handleClickNotif(n)}
+  className={`p-3 flex items-start gap-3 active:bg-zinc-50 dark:active:bg-zinc-900 transition-colors ${
+   !n.isRead? "bg-[#0a84ff]/[0.04]" : ""
+  }`}
+>
                               <div className="relative mt-0.5 flex-shrink-0">
                                 <img
                                   src={n.fromUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(n.fromUserName)}&background=random`}
