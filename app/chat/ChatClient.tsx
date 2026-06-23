@@ -611,18 +611,23 @@ useEffect(() => {
           }
         });
 
-        const visibleChats = chatList.filter(chat =>!chat.deletedFor?.includes(user.uid));
-        const pinnedChats = JSON.parse(localStorage.getItem(PINNED_KEY) || "[]");
-        visibleChats.sort((a, b) => {
-          const aIsPinned = pinnedChats.includes(a.chatId)? 1 : 0;
-          const bIsPinned = pinnedChats.includes(b.chatId)? 1 : 0;
-          if (aIsPinned!== bIsPinned) return bIsPinned - aIsPinned;
-          const aTime = a.updatedAt?.seconds || 0;
-          const bTime = b.updatedAt?.seconds || 0;
-          return bTime - aTime;
-        });
+        const visibleChats = chatList.filter(chat => 
+  !chat.deletedFor?.includes(user.uid) &&
+  !(chat as any).isStranger === true && // Ẩn chat có isStranger: true
+  !(chat.name === "User" && !chat.isGroup && !chat.username) // Ẩn chat lạ cũ tên User, không có username
+);
 
-        if (isMounted) setItems(visibleChats);
+const pinnedChats = JSON.parse(localStorage.getItem(PINNED_KEY) || "[]");
+visibleChats.sort((a, b) => {
+  const aIsPinned = pinnedChats.includes(a.chatId)? 1 : 0;
+  const bIsPinned = pinnedChats.includes(b.chatId)? 1 : 0;
+  if (aIsPinned!== bIsPinned) return bIsPinned - aIsPinned;
+  const aTime = a.updatedAt?.seconds || 0;
+  const bTime = b.updatedAt?.seconds || 0;
+  return bTime - aTime;
+});
+
+if (isMounted) setItems(visibleChats);
       } catch (error) {
         console.error("Error processing chats:", error);
         if (isMounted) toast.error("Lỗi tải danh sách chat");
@@ -1304,11 +1309,12 @@ return (
     <div className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-zinc-900">
       {[...pinnedChats,...normalChats].map((chat) => (
         <div key={chat.chatId} className="group relative">
-       <Link
-href={
-  chat.chatId.startsWith('public_') || chat.isGroup ? `/rooms/${chat.chatId}` : 
-  `/friends?chatId=${chat.chatId}`
-}
+  <Link
+  href={
+    (chat as any).isStranger ? `/friends` :
+    chat.chatId.startsWith('public_') || chat.isGroup ? `/rooms/${chat.chatId}` : 
+    `/chat/${chat.chatId}`
+  }
   className="flex items-center gap-3 px-4 py-2.5 active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150 select-none"
   onPointerDown={() => handleLongPressStart(chat.chatId)}
   onPointerUp={handleLongPressEnd}
