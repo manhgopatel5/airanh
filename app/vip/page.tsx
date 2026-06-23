@@ -412,4 +412,3 @@ export default function VipPage() {
     </div>
   );
 }
-sửa chuẩn theo luật mobile
