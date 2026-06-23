@@ -18,6 +18,7 @@ type Notification = {
   id: string;
   toUserId: string;
   fromUserId: string;
+
   fromUserName: string;
   fromUserAvatar: string;
   type: "like" | "comment" | "friend_request" | "task_apply" | "system" | "group_invite" | "mention";
