@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, serverTimestamp, Timestamp, collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
-import { Crown, FiChevronUp, FiCopy } from "lucide-react";
+import { Crown, FiCopy } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 
 
