@@ -146,18 +146,21 @@ export default function VipPage() {
   };
 
   const applyPromoCode = () => {
-    const validCodes: Record<string, number> = {
-      'VIP10': 10,
-      'WELCOME20': 20,
-      'NEWUSER30': 30
-    };
-    if (validCodes[promoCode.toUpperCase()]) {
-      setAppliedPromo({ code: promoCode.toUpperCase(), discount: validCodes[promoCode.toUpperCase()] });
-      toast.success(`Áp dụng mã ${promoCode.toUpperCase()} - Giảm ${validCodes[promoCode.toUpperCase()]}%`);
-    } else {
-      toast.error("Mã không hợp lệ");
-    }
+  const validCodes: Record<string, number> = {
+    'VIP10': 10,
+    'WELCOME20': 20,
+    'NEWUSER30': 30
   };
+  const code = promoCode.toUpperCase();
+  const discount = validCodes[code];
+
+  if (discount) {
+    setAppliedPromo({ code, discount });
+    toast.success(`Áp dụng mã ${code} - Giảm ${discount}%`);
+  } else {
+    toast.error("Mã không hợp lệ");
+  }
+};
 
   const daysLeft = userVip?.expiresAt? differenceInDays(userVip.expiresAt.toDate(), new Date()) : 0;
 
