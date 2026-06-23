@@ -68,10 +68,12 @@ export default function NotificationsPage() {
       const list = snap.docs.map((d) => ({ id: d.id,...d.data() } as Notification));
       setNotifications(list);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
-    } catch (err) {
-      console.error(err);
-      setError(true);
-      toast.error("Không tải được thông báo");
+} catch (err: any) {
+  console.error("Firestore error full:", err);
+  console.error("Error code:", err.code);
+  console.error("Error message:", err.message);
+  setError(true);
+  toast.error(`Lỗi: ${err.code || 'unknown'}`);
     } finally {
       setLoading(false);
       setRefreshing(false);
