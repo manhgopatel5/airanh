@@ -166,20 +166,7 @@ export default function NotificationsPage() {
     }
   }, [selectedIds]);
 
-  const setObserver = useCallback((node: HTMLDivElement | null, isRead: boolean, id: string) => {
-    if (!node || isRead) return;
-    if (!observerRef.current) {
-      observerRef.current = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const notifId = entry.target.getAttribute("data-id");
-            if (notifId) markAsRead(notifId);
-          }
-        });
-      }, { threshold: 0.5 });
-    }
-    observerRef.current.observe(node);
-  }, [markAsRead]);
+
 
   const formatTime = (time: Timestamp | null) => {
     if (!time?.toDate) return "";
