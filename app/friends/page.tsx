@@ -126,13 +126,7 @@ const handleAddFriend = async (toUid: string, username?: string) => {
   });
 
 
-  useEffect(() => {
-    if (user?.uid) {
-      getDoc(doc(db, "users", user.uid)).then((snap) => {
-        if (snap.exists()) setMyUsername(snap.data().username || "");
-      });
-    }
-  }, [user?.uid, db]);
+ 
 
   const stopScan = async () => {
     if (scannerRef.current) {
