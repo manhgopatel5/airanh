@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp, query, limit, getDocs, where } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { FiUsers, FiShield, FiSearch, FiMessageCircle, FiUserPlus, FiUserX, FiMapPin, FiRefreshCw, FiX, FiZap } from "react-icons/fi";
+import { FiUsers, FiShare2, FiShield, FiSearch, FiMessageCircle, FiUserPlus, FiUserX, FiMapPin, FiRefreshCw, FiX, FiZap } from "react-icons/fi";
 import { RiVipCrownLine } from "react-icons/ri";
 import { IoStatsChart, IoRibbon } from "react-icons/io5";
 import { SlidersHorizontal } from "lucide-react";
@@ -17,9 +17,6 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import Image from "next/image";
-
-
-
 
 type FriendItem = {
   uid: string;
@@ -90,29 +87,6 @@ const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions' | 'strange
   const [loadingSuggested, setLoadingSuggested] = useState(false);
   const [showScanQR, setShowScanQR] = useState(false);
   const [scanMode, setScanMode] = useState<"camera" | "upload">("camera");
-const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
-
-const handleAddFriend = async (toUid: string, username?: string) => {
-  if (!user?.uid || sentRequests.has(toUid)) return;
-  
-  try {
-    setSentRequests(prev => new Set(prev).add(toUid));
-    
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const sendRequest = httpsCallable(functions, 'sendFriendRequest');
-    await sendRequest({ toUid });
-    
-    toast.success(`Đã gửi lời mời đến @${username || toUid}`);
-    if ("vibrate" in navigator) navigator.vibrate(10);
-  } catch (e: any) {
-    setSentRequests(prev => {
-      const next = new Set(prev);
-      next.delete(toUid);
-      return next;
-    });
-    toast.error(e.message || "Lỗi gửi lời mời");
-  }
-};
   const [filters, setFilters] = useState<{
     gender: "all" | "male" | "female";
     minAge: number | '';
@@ -124,9 +98,15 @@ const handleAddFriend = async (toUid: string, username?: string) => {
     maxAge: 25,
     maxDistance: 50
   });
+  const [myUsername, setMyUsername] = useState("");
 
-
- 
+  useEffect(() => {
+    if (user?.uid) {
+      getDoc(doc(db, "users", user.uid)).then((snap) => {
+        if (snap.exists()) setMyUsername(snap.data().username || "");
+      });
+    }
+  }, [user?.uid, db]);
 
   const stopScan = async () => {
     if (scannerRef.current) {
@@ -222,28 +202,31 @@ const handleAddFriend = async (toUid: string, username?: string) => {
 useEffect(() => {
   if (!user?.uid) return;
 
+  // BỎ where("isGroup") - lấy tất cả chat của user rồi lọc tay
   const q = query(
     collection(db, "chats"),
     where("members", "array-contains", user.uid)
   );
 
   const unsub = onSnapshot(q, async (snap) => {
+    console.log('Total chats found:', snap.size);
+    
     const friendIds = new Set(friends.map(f => f.uid));
     const list: StrangerChatItem[] = [];
-    const sentSet = new Set<string>();
 
     for (const d of snap.docs) {
       const data = d.data();
       
+      // Chỉ lấy chat 1-1: không phải group, có đúng 2 members
       if (data.isGroup === true || data.members?.length !== 2) continue;
+      
+      // Bỏ qua nếu set isStranger: false
       if (data.isStranger === false) continue;
       
       const otherUid = data.members?.find((m: string) => m !== user.uid);
       if (!otherUid || friendIds.has(otherUid)) continue;
 
-      // Check đã gửi lời mời chưa
-      const reqDoc = await getDoc(doc(db, "friendRequests", `${user.uid}_${otherUid}`));
-      if (reqDoc.exists()) sentSet.add(otherUid);
+      console.log('Found stranger chat:', d.id, data);
 
       const userDoc = await getDoc(doc(db, "users", otherUid));
       const userData = userDoc.data() || {};
@@ -264,7 +247,7 @@ useEffect(() => {
       });
     }
     
-    setSentRequests(sentSet);
+    console.log('Stranger chats:', list);
     setStrangerChats(list);
   });
 
@@ -486,7 +469,40 @@ useEffect(() => {
     toast.success("Đã chấp nhận");
   };
 
+  const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
+
+const handleAddFriend = async (toUid: string, username?: string) => {
+  if (!user?.uid || sentRequests.has(toUid)) return;
   
+  try {
+    setSentRequests(prev => new Set(prev).add(toUid));
+    
+    const functions = getFunctions(getApp(), "asia-southeast1");
+    const sendRequest = httpsCallable(functions, 'sendFriendRequest');
+    await sendRequest({ toUid });
+    
+    toast.success(`Đã gửi lời mời đến @${username || toUid}`);
+    if ("vibrate" in navigator) navigator.vibrate(10);
+  } catch (e: any) {
+    setSentRequests(prev => {
+      const next = new Set(prev);
+      next.delete(toUid);
+      return next;
+    });
+    toast.error(e.message || "Lỗi gửi lời mời");
+  }
+};
+
+  const copyMyLink = () => {
+    if (!myUsername) {
+      toast.error("Chưa có username");
+      return;
+    }
+    const link = `${window.location.origin}/u/${myUsername}`;
+    navigator.clipboard.writeText(link);
+    if ("vibrate" in navigator) navigator.vibrate(10);
+    toast.success("Đã copy link mời bạn");
+  };
 
   const handleRemoveFriend = async (friend: FriendItem) => {
     if (!confirm(`Xóa ${friend.name} khỏi danh sách bạn bè?`)) return;
@@ -682,7 +698,12 @@ const filteredFriends = useMemo((): (FriendItem | StrangerChatItem)[] => {
                   >
                     <FiUsers size={18} /> Tìm bạn
                   </button>
-               
+                  <button
+                    onClick={copyMyLink}
+                    className="h-11 bg-zinc-100 dark:bg-zinc-800 border-black/5 dark:border-white/5 rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition shadow-sm"
+                  >
+                    <FiShare2 size={18} /> Mời bạn
+                  </button>
                 </div>
               )}
             </div>
@@ -766,7 +787,7 @@ const filteredFriends = useMemo((): (FriendItem | StrangerChatItem)[] => {
             </button>
 
             {/* NÚT KẾT BẠN GÓC PHẢI */}
-      <button
+         <button
   onClick={(e) => {
     e.stopPropagation();
     handleAddFriend(chat.uid, chat.username);
