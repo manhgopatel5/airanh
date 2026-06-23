@@ -682,12 +682,7 @@ const filteredFriends = useMemo((): (FriendItem | StrangerChatItem)[] => {
                   >
                     <FiUsers size={18} /> Tìm bạn
                   </button>
-                  <button
-                    onClick={copyMyLink}
-                    className="h-11 bg-zinc-100 dark:bg-zinc-800 border-black/5 dark:border-white/5 rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition shadow-sm"
-                  >
-                    <FiShare2 size={18} /> Mời bạn
-                  </button>
+               
                 </div>
               )}
             </div>
