@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, serverTimestamp, Timestamp, collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, serverTimestamp, Timestamp, collection, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
 import { Crown } from "lucide-react";
 import {  differenceInDays } from "date-fns";
