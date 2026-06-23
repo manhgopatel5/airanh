@@ -910,177 +910,174 @@ return (
 
 <div className="pt-2 pb-24">
   {activeTab === "all" && (
-<div>
-    <div className="px-4 pt-4 space-y-3">
-      {/* 1. Title Khám phá hôm nay */}
-      <div className="flex items-center justify-between mb-3 px-1">
-  <h3 className="text-sm font-[700] flex items-center gap-1.5">
-    <span className="text-lg">🔥</span>
-    Khám phá hôm nay
-  </h3>
-  <button
-    onClick={() => router.push('/explore')}
-    className="text-xs font-[600] text-[#0a84ff] active:opacity-60 transition-opacity"
-  >
-    Xem thêm
-  </button>
-</div>
-
-      {/* 2. Filter Category */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-        <button
-          onClick={() => setSelectedCategory(null)}
-          className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
-         !selectedCategory
-           ? `${primaryBg} text-white`
-              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
-          }`}
-        >
-          Tất cả
-        </button>
-        {Object.entries(CATEGORY_INFO).map(([key, cat]) => (
+    <div>
+      <div className="px-4 pt-4 space-y-3">
+        {/* 1. Title Khám phá hôm nay */}
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h3 className="text-sm font-[700] flex items-center gap-1.5">
+            <span className="text-lg">🔥</span>
+            Khám phá hôm nay
+          </h3>
           <button
-            key={key}
-            onClick={() => setSelectedCategory(key)}
-            className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap flex items-center gap-1 ${
-              selectedCategory === key
-              ? `${primaryBg} text-white`
+            onClick={() => router.push('/explore')}
+            className="text-xs font-[600] text-[#0a84ff] active:opacity-60 transition-opacity"
+          >
+            Xem thêm
+          </button>
+        </div>
+
+        {/* 2. Filter Category */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
+             !selectedCategory
+               ? `${primaryBg} text-white`
                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
             }`}
           >
-            <span>{cat.icon}</span>
-            {cat.label}
+            Tất cả
           </button>
-        ))}
+          {Object.entries(CATEGORY_INFO).map(([key, cat]) => (
+            <button
+              key={key}
+              onClick={() => setSelectedCategory(key)}
+              className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap flex items-center gap-1 ${
+                selectedCategory === key
+                 ? `${primaryBg} text-white`
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+              }`}
+            >
+              <span>{cat.icon}</span>
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 3. List event */}
+        <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4">
+          {eventsLoading? (
+            <div className="flex-shrink-0 w-full snap-center h-64 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
+          ) : (selectedCategory? eventsData.filter(e => e.category === selectedCategory) : eventsData)
+           .map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setSelectedEvent(item)}
+                className="flex-shrink-0 w-full snap-center bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
+              >
+                <div className="relative h-32">
+                  <img src={item.image} className="w-full h-full object-cover" loading="lazy" alt={item.title} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
+                  <div className={`absolute top-2 left-2 px-2 py-0.5 bg-gradient-to-r ${item.tagColor} rounded-md`}>
+                    <span className="text-[10px] font-[800] text-white">{item.tag}</span>
+                  </div>
+                  {(item.rating || 0) > 0 && (
+                    <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-md flex items-center gap-1">
+                      <FiStar className="text-amber-400" size={10} fill="currentColor" />
+                      <span className="text-xs font-[700] text-white">
+                        {item.rating}{(item.reviews || 0) > 0 && ` (${item.reviews})`}
+                      </span>
+                    </div>
+                  )}
+                  <div className="absolute bottom-2 left-3 right-3">
+                    <div className="flex items-center gap-1.5 text-white">
+                      <span className="text-lg">{item.icon}</span>
+                      <h4 className="text-base font-[700] drop-shadow-lg">{item.title}</h4>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3">
+                  <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 line-clamp-2">{item.desc}</p>
+                  <div className="flex items-center justify-between text-xs text-[#8e8e93]">
+                    <span className="flex items-center gap-1">
+                      <FiUsers size={12} />
+                      {item.joined} người
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <FiMapPin size={12} />
+                      {item.province} • {userLat && userLng && item.lat && item.lng
+                       ? formatDistance(getDistanceKm(userLat, userLng, item.lat, item.lng))
+                        : '?km'}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            ))}
+        </div>
       </div>
 
- {/* 3. List event */}
-<div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4">
-{eventsLoading? (
-  <div className="flex-shrink-0 w-full snap-center h-64 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
-) : (selectedCategory? eventsData.filter(e => e.category === selectedCategory) : eventsData)
-   .map((item) => (
+      <div className="px-4 pt-6">
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h3 className="text-sm font-[700] flex items-center gap-1.5">
+            <span className="text-lg">💬</span>
+            Phòng Chat Công Cộng
+          </h3>
           <button
-            key={item.id}
-            onClick={() => setSelectedEvent(item)}
-            className="flex-shrink-0 w-full snap-center bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
+            onClick={() => setShowPublicRooms(true)}
+            className="text-xs font-[600] text-[#0a84ff] active:opacity-60 transition-opacity"
           >
-            <div className="relative h-32">
-              <img src={item.image} className="w-full h-full object-cover" loading="lazy" alt={item.title} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
-              <div className={`absolute top-2 left-2 px-2 py-0.5 bg-gradient-to-r ${item.tagColor} rounded-md`}>
-                <span className="text-[10px] font-[800] text-white">{item.tag}</span>
+            Xem tất cả
+          </button>
+        </div>
+
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
+          {publicRoomsLoading? (
+            [1,2,3,4].map(i => (
+              <div key={i} className="flex-shrink-0 w-36 h-36 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
+            ))
+          ) : publicRooms.slice(0, 8).map((room) => (
+            <button
+              key={room.id}
+              onClick={() => handleJoinPublicRoom(room)}
+              className="flex-shrink-0 w-36 bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
+            >
+              <div className={`relative h-20 bg-gradient-to-br ${room.color} flex items-center justify-center`}>
+                <span className="text-4xl drop-shadow-lg">{room.emoji}</span>
+                {room.isHot && (
+                  <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-red-500 rounded-md flex items-center gap-0.5">
+                    <FiTrendingUp size={10} className="text-white" />
+                    <span className="text-sm font-[800] text-white">HOT</span>
+                  </div>
+                )}
+                {room.isJoined && (
+                  <div className="absolute top-1.5 left-1.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+                    <FiCheck className="text-white" size={12} strokeWidth={3} />
+                  </div>
+                )}
               </div>
-          {(item.rating || 0) > 0 && (
-  <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-md flex items-center gap-1">
-    <FiStar className="text-amber-400" size={10} fill="currentColor" />
-    <span className="text-xs font-[700] text-white">
-      {item.rating}{(item.reviews || 0) > 0 && ` (${item.reviews})`}
-    </span>
-  </div>
-)}
-              <div className="absolute bottom-2 left-3 right-3">
-                <div className="flex items-center gap-1.5 text-white">
-                  <span className="text-lg">{item.icon}</span>
-                  <h4 className="text-base font-[700] drop-shadow-lg">{item.title}</h4>
+              <div className="p-2.5">
+                <h4 className="text-sm font-[700] mb-1 tracking-tight">{room.name}</h4>
+                <div className="flex items-center justify-between text-sm text-[#8e8e93]">
+                  <span className="flex items-center gap-1">
+                    <FiUsers size={11} />
+                    <span className="font-[600]">{room.memberCount || 0}</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                    <span className="font-[600]">{room.onlineCount || 0}</span>
+                  </span>
                 </div>
               </div>
-            </div>
-         <div className="p-3">
-  <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 line-clamp-2">{item.desc}</p>
-  <div className="flex items-center justify-between text-xs text-[#8e8e93]">
-    <span className="flex items-center gap-1">
-      <FiUsers size={12} />
-      {item.joined} người
-    </span>
-  <span className="flex items-center gap-1">
-  <FiMapPin size={12} />
-  {item.province} • {userLat && userLng && item.lat && item.lng
-    ? formatDistance(getDistanceKm(userLat, userLng, item.lat, item.lng))
-    : '?km'}
-</span>
-  </div>
-</div>
-          </button>
-        ))}
-</div>
-    </div>
-
-
-<div className="px-4 pt-6">
-  <div className="flex items-center justify-between mb-3 px-1">
-    <h3 className="text-sm font-[700] flex items-center gap-1.5">
-      <span className="text-lg">💬</span>
-      Phòng Chat Công Cộng
-    </h3>
-    <button
-      onClick={() => setShowPublicRooms(true)}
-      className="text-xs font-[600] text-[#0a84ff] active:opacity-60 transition-opacity"
-    >
-      Xem tất cả
-    </button>
-  </div>
-
-<div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
-  {publicRoomsLoading? (
-    [1,2,3,4].map(i => (
-      <div key={i} className="flex-shrink-0 w-36 h-36 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
-    ))
-  ) : publicRooms.slice(0, 8).map((room) => (
-    <button
-      key={room.id}
-      onClick={() => handleJoinPublicRoom(room)}
-      className="flex-shrink-0 w-36 bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
-    >
-        <div className={`relative h-20 bg-gradient-to-br ${room.color} flex items-center justify-center`}>
-          <span className="text-4xl drop-shadow-lg">{room.emoji}</span>
-          {room.isHot && (
-            <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-red-500 rounded-md flex items-center gap-0.5">
-              <FiTrendingUp size={10} className="text-white" />
-              <span className="text-sm font-[800] text-white">HOT</span>
-            </div>
-          )}
-          {room.isJoined && (
-            <div className="absolute top-1.5 left-1.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-              <FiCheck className="text-white" size={12} strokeWidth={3} />
-            </div>
-          )}
-        </div>
-        <div className="p-2.5">
-          <h4 className="text-sm font-[700] mb-1 tracking-tight">{room.name}</h4>
-        <div className="flex items-center justify-between text-sm text-[#8e8e93]">
-  <span className="flex items-center gap-1">
-    <FiUsers size={11} />
-    <span className="font-[600]">{room.memberCount || 0}</span>
-  </span>
-  <span className="flex items-center gap-1">
-    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-    <span className="font-[600]">{room.onlineCount || 0}</span>
-  </span>
-</div>
-        </div>
-      </button>
-    ))}
-  </div>
-</div>
-     </div> 
-)} 
-
-
- 
- ) : loading? (
-  <div className="px-4 pt-4 space-y-0">
-    {Array.from({ length: 8 }).map((_, index) => (
-      <div key={index} className="flex items-center gap-3 py-3 animate-pulse">
-        <div className="w-12 h-12 bg-gray-200 dark:bg-zinc-800 rounded-full flex-shrink-0" />
-        <div className="flex-1 min-w-0 space-y-2">
-          <div className="h-[15px] bg-gray-200 dark:bg-zinc-800 rounded w-2/5" />
-          <div className="h-[13px] bg-gray-200 dark:bg-zinc-800 rounded w-3/5" />
+            </button>
+          ))}
         </div>
       </div>
-    ))}
-  </div>
-) : filteredChats.length === 0? null : (
+    </div>
+  )}
+
+  {loading? (
+    <div className="px-4 pt-4 space-y-0">
+      {Array.from({ length: 8 }).map((_, index) => (
+        <div key={index} className="flex items-center gap-3 py-3 animate-pulse">
+          <div className="w-12 h-12 bg-gray-200 dark:bg-zinc-800 rounded-full flex-shrink-0" />
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="h-[15px] bg-gray-200 dark:bg-zinc-800 rounded w-2/5" />
+            <div className="h-[13px] bg-gray-200 dark:bg-zinc-800 rounded w-3/5" />
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : filteredChats.length === 0? null : (
   <div>
     {pinnedChats.length > 0 && <div className="px-4 pt-3 pb-1"><p className="text-xs font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Đã ghim</p></div>}
     <div className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-zinc-900">
