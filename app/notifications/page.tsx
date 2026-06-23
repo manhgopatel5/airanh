@@ -348,13 +348,13 @@ export default function NotificationsPage() {
                                   {formatTime(n.createdAt)}
                                 </p>
                               </div>
-                              {!n.isRead && (
-                                <div className="w-2 h-2 bg-[#0a84ff] rounded-full flex-shrink-0 mt-2" />
-                              )}
-                            </div>
+                                      {!n.isRead && (
+                                  <div className="w-2 h-2 bg-[#0a84ff] rounded-full flex-shrink-0 mt-2" />
+                                )}
+                              </motion.div>
+                            </motion.div>
                           </motion.div>
-                        </motion.div>
-                      ))}
+                        ))}
                     </AnimatePresence>
                   </div>
                 </div>
