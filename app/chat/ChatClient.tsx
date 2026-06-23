@@ -1122,6 +1122,7 @@ return (
                       </>
                     )}
                   </div>
+                </div>
                 <div className="flex items-center gap-1">
                   {chat.isTyping? (
                     <div className="flex items-center gap-1.5">
