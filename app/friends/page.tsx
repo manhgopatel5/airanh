@@ -124,7 +124,7 @@ const handleAddFriend = async (toUid: string, username?: string) => {
     maxAge: 25,
     maxDistance: 50
   });
-  const [myUsername, setMyUsername] = useState("");
+
 
   useEffect(() => {
     if (user?.uid) {
