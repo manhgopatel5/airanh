@@ -167,7 +167,7 @@ useEffect(() => {
   }
 }, [user?.uid, requestGPS]);
   const primaryBg = isPlan? "bg-green-500" : "bg-[#0a84ff]";
-  const primaryHover = isPlan? "hover:bg-green-600" : "hover:bg-[#007aff]";
+
   const primaryActive = isPlan? "active:bg-green-700" : "active:bg-[#0051d5]";
   const primaryText = isPlan? "text-green-600 dark:text-green-400" : "text-[#0a84ff]";
   const primaryRing = isPlan? "focus:ring-green-500/20" : "focus:ring-[#0a84ff]/20";
