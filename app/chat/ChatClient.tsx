@@ -1153,7 +1153,7 @@ return (
       ))}
     </div>
   </div>
-
+)}
 
 <CreateGroupModal
   open={showCreateGroup}
