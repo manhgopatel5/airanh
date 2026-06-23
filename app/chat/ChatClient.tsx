@@ -300,9 +300,9 @@ const handleFindStranger = async () => {
 };
 
 
-  const [showVip, setShowVip] = useState<boolean>(false);
+
 const [userVip, setUserVip] = useState<{tier: 'free' | 'pro' | 'elite', expiresAt?: Timestamp} | null>(null);
-const [purchasingVip, setPurchasingVip] = useState<boolean>(false);
+
 const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 const [eventsData, setEventsData] = useState<EventItem[]>([]);
@@ -407,55 +407,7 @@ useEffect(() => {
 
   return () => unsubs.forEach((u) => u());
 }, [user?.uid, db]);
-type VipTier = {
-  id: 'pro' | 'elite';
-  name: string;
-  price: number;
-  priceText: string;
-  duration: string;
-  features: string[];
-  color: string;
-  badge: string;
-};
 
-const VIP_TIERS: VipTier[] = [
-  {
-    id: 'pro',
-    name: 'VIP Pro',
-    price: 49000,
-    priceText: '49K',
-    duration: '/tháng',
-    color: 'from-blue-500 to-cyan-500',
-    badge: '🔥',
-    features: [
-      'Huy hiệu VIP xanh cạnh tên',
-      'Tạo nhóm 200 thành viên',
-      'Ghim 10 cuộc trò chuyện',
-      'Theme độc quyền',
-      'Tải file 100MB',
-      'Không quảng cáo'
-    ]
-  },
-  {
-    id: 'elite',
-    name: 'VIP Elite',
-    price: 149000,
-    priceText: '149K',
-    duration: '/tháng',
-    color: 'from-amber-400 via-orange-500 to-pink-500',
-    badge: '👑',
-    features: [
-      'Huy hiệu VIP vàng + hiệu ứng',
-      'Tạo nhóm 500 thành viên',
-      'Ghim không giới hạn',
-      'Tất cả theme + avatar động',
-      'Tải file 500MB',
-      'Xem ai đã đọc tin nhắn',
-      'Thu hồi tin nhắn không giới hạn',
-      'Ưu tiên hỗ trợ 24/7'
-    ]
-  }
-];
 
 
 
@@ -645,35 +597,7 @@ if (isMounted) setItems(visibleChats);
 
 
 
-const handlePurchaseVip = useCallback(async (tierId: 'pro' | 'elite') => {
-  if (!user?.uid) return;
-  const tier = VIP_TIERS.find(t => t.id === tierId);
-  if (!tier) return;
 
-  setPurchasingVip(true);
-  try {
-    // TODO: Tích hợp cổng thanh toán thật. Tạm thời mock
-    await new Promise(r => setTimeout(r, 1500));
-
-    const expiresAt = Timestamp.fromDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
-    await updateDoc(doc(db, "users", user.uid), {
-      vip: {
-        tier: tierId,
-        purchasedAt: serverTimestamp(),
-        expiresAt: expiresAt,
-        price: tier.price
-      }
-    });
-
-    toast.success(`Đã nâng cấp ${tier.name}!`);
-    setShowVip(false);
-    if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
-  } catch (error: any) {
-    toast.error("Lỗi thanh toán: " + error.message);
-  } finally {
-    setPurchasingVip(false);
-  }
-}, [user, db]);
 const handleTogglePin = useCallback((chatId: string): void => {
   const newPinned = pinned.includes(chatId)? pinned.filter((id) => id!== chatId) : [...pinned, chatId];
   savePinned(newPinned);
@@ -832,7 +756,7 @@ return (
 <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] dark:shadow-black/20 border border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3.5">
   <div className="grid grid-cols-3 gap-3">
     {[
-      { label: "VIP", icon: Crown, color: "bg-gradient-to-br from-amber-400 to-orange-500", onClick: () => setShowVip(true) },
+{ label: "VIP", icon: Crown, color: "bg-gradient-to-br from-amber-400 to-orange-500", onClick: () => router.push('/vip') },
       { label: "Người lạ", icon: FiZap, color: "bg-gradient-to-br from-pink-500 to-rose-500", onClick: () => setShowStranger(true) },
       { label: "Thành Tích", icon: FiAward, color: "bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500", onClick: () => setShowLeaderboard(true) },
     ].map((item) => (
@@ -1209,96 +1133,7 @@ return (
     </div>
   </div>
 )}
-{showVip && (
-  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-    <div className="absolute inset-0 bg-black/40 backdrop-blur-2xl" onClick={() => setShowVip(false)} />
-    <div className="relative w-full sm:max-w-[520px] bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300">
-      <div className="w-9 h-1 bg-black/15 dark:bg-white/15 rounded-full mx-auto mt-2.5 sm:hidden" />
 
-      <div className="px-5 pt-4 pb-2 text-center">
-        <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/30">
-          <Crown className="text-white" size={32} strokeWidth={2.5} />
-        </div>
-        <h2 className="text-[22px] font-bold tracking-tight">Nâng cấp VIP</h2>
-        <p className="text-[14px] text-[#8e8e93] mt-1">Mở khóa tính năng cao cấp</p>
-      </div>
-
-{userVip && userVip.tier!== 'free' && (
-  <div className="mx-5 mb-3 px-4 py-2.5 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl">
-    <p className="text-[13px] font-medium text-emerald-600 dark:text-emerald-400">
-      Đang dùng: {VIP_TIERS.find(t => t.id === userVip?.tier)?.name}
-      {userVip?.expiresAt && ` • Hết hạn ${format(userVip.expiresAt.toDate(), 'dd/MM/yyyy')}`}
-    </p>
-  </div>
-)}
-
-      <div className="flex-1 overflow-auto px-5 pb-4 space-y-3">
-        {VIP_TIERS.map((tier) => {
-          const isActive = userVip?.tier === tier.id;
-          return (
-            <div
-              key={tier.id}
-              className={`relative p-4 rounded-2xl border-2 transition-all ${
-                isActive
-                 ? 'border-emerald-500 bg-emerald-500/5'
-                  : 'border-black/10 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/50'
-              }`}
-            >
-              {tier.id === 'elite' && (
-                <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full">
-                  <span className="text-[10px] font-bold text-white">HOT</span>
-                </div>
-              )}
-
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{tier.badge}</span>
-                    <h3 className="text-[18px] font-bold">{tier.name}</h3>
-                  </div>
-                  <div className="flex items-baseline gap-1 mt-1">
-                    <span className={`text-[28px] font-black bg-gradient-to-r ${tier.color} bg-clip-text text-transparent`}>
-                      {tier.priceText}
-                    </span>
-                    <span className="text-[13px] text-[#8e8e93]">{tier.duration}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1.5 mb-3">
-                {tier.features.map((feat, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <FiCheck className={`${tier.id === 'elite'? 'text-amber-500' : 'text-blue-500'}`} size={16} strokeWidth={3} />
-                    <span className="text-[13px] text-zinc-700 dark:text-zinc-300">{feat}</span>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                onClick={() => handlePurchaseVip(tier.id)}
-                disabled={purchasingVip || isActive}
-                className={`w-full h-11 rounded-xl font-semibold text-[15px] transition-all active:scale-[0.98] disabled:opacity-40 ${
-                  isActive
-                   ? 'bg-emerald-500 text-white'
-                    : `bg-gradient-to-r ${tier.color} text-white shadow-lg`
-                }`}
-              >
-                {purchasingVip? <FiLoader className="animate-spin mx-auto" size={20} /> : isActive? 'Đang sử dụng' : 'Nâng cấp ngay'}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="px-5 pb-5 pt-2">
-        <p className="text-[11px] text-center text-[#8e8e93] leading-4">
-          Tự động gia hạn. Hủy bất cứ lúc nào trong Cài đặt.
-          <br />Bằng việc mua, bạn đồng ý với Điều khoản VIP.
-        </p>
-      </div>
-    </div>
-  </div>
-)}
   </div>
 </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
