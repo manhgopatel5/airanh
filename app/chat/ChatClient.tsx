@@ -7,7 +7,7 @@ import CreateGroupModal from "@/components/CreateGroupModal";
 import { useAuth } from "@/lib/AuthContext";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebaseDB } from "@/lib/firebase";
-import { getAuth } from "firebase/auth";
+
 import { getApp } from "firebase/app";
 
 import LeaderboardModal from "@/components/LeaderboardModal";
