@@ -492,25 +492,7 @@ useEffect(() => {
     toast.success("Đã chấp nhận");
   };
 
-  const handleAddFriend = async (friendId: string, username?: string) => {
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const sendRequest = httpsCallable(functions, 'sendFriendRequest');
-    await sendRequest({ toUid: friendId });
-    toast.success(`Đã gửi lời mời tới ${username || 'người dùng'}`);
-    fetchNearbyUsers();
-    fetchSuggestedUsers();
-  };
-
-  const copyMyLink = () => {
-    if (!myUsername) {
-      toast.error("Chưa có username");
-      return;
-    }
-    const link = `${window.location.origin}/u/${myUsername}`;
-    navigator.clipboard.writeText(link);
-    if ("vibrate" in navigator) navigator.vibrate(10);
-    toast.success("Đã copy link mời bạn");
-  };
+  
 
   const handleRemoveFriend = async (friend: FriendItem) => {
     if (!confirm(`Xóa ${friend.name} khỏi danh sách bạn bè?`)) return;
