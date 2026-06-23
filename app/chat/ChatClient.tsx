@@ -85,20 +85,7 @@ type ChatItem = {
 
 
 
-type NotificationItem = {
-  id: string;
-  type: "friend_request" | "friend_accepted" | "group_invite" | "mention" | "message_request" | "system";
-  fromUid: string;
-  fromName: string;
-  fromAvatar: string;
-  title: string;
-  message: string;
-  chatId?: string;
-  groupId?: string;
-  read: boolean;
-  createdAt: Timestamp;
-  actionData?: any;
-};
+
 
 type RawChat = {
   id: string;
@@ -213,14 +200,14 @@ useEffect(() => {
 
   const [items, setItems] = useState<ChatItem[]>([]);
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
 
   const [debounced ] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
 
-  const [notifLoading, setNotifLoading] = useState<boolean>(false);
 
-const [activeTab, setActiveTab] = useState<"all" | "unread" | "notifications">("all");
+
+const [activeTab, setActiveTab] = useState<"all" | "unread">("all"); // Bỏ "notifications"
   const [pinned, setPinned] = useState<string[]>([]);
 
 
@@ -502,27 +489,7 @@ const [creatingPoll, setCreatingPoll] = useState<boolean>(false);
     }
   }, []);
 
-  useEffect(() => {
-    if (!user?.uid) return;
-
-    setNotifLoading(true);
-    const notifRef = collection(db, "notifications", user.uid, "items");
-    const q = query(notifRef, orderBy("createdAt", "desc"), limit(50));
-
-    const unsub = onSnapshot(q, (snapshot) => {
-      const notifs: NotificationItem[] = [];
-      snapshot.forEach((doc) => {
-        notifs.push({ id: doc.id,...doc.data() } as NotificationItem);
-      });
-      setNotifications(notifs);
-      setNotifLoading(false);
-    }, (error) => {
-      console.error("Notifications error:", error);
-      setNotifLoading(false);
-    });
-
-    return () => unsub();
-  }, [user?.uid, db]);
+  
 useEffect(() => {
   if (!user?.uid) return;
   const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
@@ -669,94 +636,13 @@ if (isMounted) setItems(visibleChats);
 
 
 
-const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) => {
-  if (!user?.uid) return;
-
-  try {
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const acceptFn = httpsCallable(functions, 'acceptFriendRequest');
-
-    const result = await acceptFn({
-      fromUid: notif.fromUid,
-      notifId: notif.id
-    });
-
-    const data = result.data as { chatId: string };
-    toast.success(`Đã kết bạn với ${notif.fromName}`);
-    router.push(`/chat/${data.chatId}`);
-
-  } catch (error: any) {
-    console.error(error);
-    if (error.code === 'functions/not-found') {
-      toast.error("Lời mời đã hết hạn");
-    } else if (error.code === 'functions/already-exists') {
-      toast.error("Các bạn đã là bạn bè");
-    } else {
-      toast.error("Lỗi: " + error.message);
-    }
-  }
-}, [user?.uid, router]);
 
 
 
-const handleDeclineFriendRequest = useCallback(async (notif: NotificationItem) => {
-  const auth = getAuth();
-  await auth.authStateReady();
-  const currentUser = auth.currentUser;
-  if (!currentUser?.uid) return;
 
-  try {
-    const batch = writeBatch(db);
-    batch.delete(doc(db, "notifications", currentUser.uid, "items", notif.id));
-    const requestId = `${notif.fromUid}_${currentUser.uid}`;
-    batch.delete(doc(db, "friendRequests", requestId));
-    await batch.commit();
-    toast.success("Đã từ chối lời mời");
-  } catch (error) {
-    console.error("Decline error:", error);
-    toast.error("Lỗi từ chối");
-  }
-}, [db]);
 
-const handleMarkNotificationRead = useCallback(async (notifId: string) => {
-  if (!user?.uid) return;
-  try {
-    await updateDoc(doc(db, "notifications", user.uid, "items", notifId), {
-      read: true
-    });
-  } catch (error) {
-    console.error("Mark read error:", error);
-  }
-}, [user?.uid, db]);
 
-const handleMarkAllRead = useCallback(async () => {
-  if (!user?.uid) return;
-  try {
-    const batch = writeBatch(db);
-    notifications.filter(n =>!n.read).forEach(notif => {
-      batch.update(doc(db, "notifications", user.uid, "items", notif.id), { read: true });
-    });
-    await batch.commit();
-    toast.success("Đã đánh dấu tất cả");
-  } catch (error) {
-    console.error("Mark all read error:", error);
-  }
-}, [user?.uid, db, notifications]);
 
-const handleClearAllNotifications = useCallback(async () => {
-  if (!user?.uid) return;
-  if (!confirm("Xóa tất cả thông báo?")) return;
-  try {
-    const batch = writeBatch(db);
-    notifications.forEach(notif => {
-      batch.delete(doc(db, "notifications", user.uid, "items", notif.id));
-    });
-    await batch.commit();
-    toast.success("Đã xóa tất cả");
-  } catch (error) {
-    console.error("Clear all error:", error);
-  }
-}, [user?.uid, db, notifications]);
 
 
 
@@ -877,10 +763,7 @@ const formatMessageTime = useCallback((timestamp?: Timestamp): string => {
 }, []);
 
 
-const formatNotifTime = useCallback((timestamp?: Timestamp): string => {
-  if (!timestamp?.toDate) return "";
-  return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
-}, []);
+
 
 const filteredChats = useMemo(() => {
   const query = debounced.toLowerCase().trim();
@@ -906,32 +789,10 @@ const { pinnedChats, normalChats } = useMemo(() => {
 }, [filteredChats, pinned]);
 
 
-const unreadNotifications = useMemo(() => notifications.filter(n =>!n.read).length, [notifications]);
 
-const groupedNotifications = useMemo(() => {
-  const today: NotificationItem[] = [];
-  const earlier: NotificationItem[] = [];
 
-  notifications.forEach(notif => {
-    if (notif.createdAt?.toDate && isToday(notif.createdAt.toDate())) {
-      today.push(notif);
-    } else {
-      earlier.push(notif);
-    }
-  });
 
-  return { today, earlier };
-}, [notifications]);
-const getNotificationIcon = (type: string) => {
-  switch (type) {
-    case "friend_request": return <FiUserPlus className="text-[#0a84ff]" size={18} />;
-    case "friend_accepted": return <FiCheck className="text-[#30d158]" size={18} />;
-    case "group_invite": return <FiUsers className="text-[#ff9500]" size={18} />;
-    case "mention": return <FiAtSign className="text-[#af52de]" size={18} />;
-    case "message_request": return <FiInbox className="text-[#ff3b30]" size={18} />;
-    default: return <FiBell className="text-gray-500" size={18} />;
-  }
-};
+
 
 
 
@@ -997,35 +858,30 @@ return (
         <div className="space-y-2.5">
 {/* Hàng 1: 4 nút - 1 khung riêng */}
 <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] dark:shadow-black/20 border border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3.5">
-  <div className="grid grid-cols-4 gap-3">
-    {[
-      { label: "Trang chủ", icon: FiHome, color: "bg-gradient-to-br from-[#0a84ff] to-purple-500", onClick: () => setActiveTab("all") },
-      { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => router.push('/friends') },
-      { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => router.push('/groups') },
-      { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => setActiveTab("notifications") },
-    ].map((item) => (
-      <button
-        key={item.label}
-        onClick={item.onClick}
-        className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform duration-150"
-      >
-        <div className={`w-14 h-14 ${item.color} rounded-xl flex items-center justify-center relative`}>
-          <item.icon className="text-white" size={22} strokeWidth={2.5} />
-          {item.label === "Thông báo" && unreadNotifications > 0 && (
-            <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
-              <span className="text-[10px] font-[700] text-white">{unreadNotifications > 9? '9+' : unreadNotifications}</span>
-            </div>
-          )}
-        </div>
-        <span className="text-xs leading-4 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
-          {item.label}
-        </span>
-      </button>
-    ))}
-  </div>
+<div className="grid grid-cols-4 gap-3">
+  {[
+    { label: "Trang chủ", icon: FiHome, color: "bg-gradient-to-br from-[#0a84ff] to-purple-500", onClick: () => setActiveTab("all") },
+    { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => router.push('/friends') },
+    { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => router.push('/groups') },
+    { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => router.push('/notifications') },
+  ].map((item) => (
+    <button
+      key={item.label}
+      onClick={item.onClick}
+      className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform duration-150"
+    >
+      <div className={`w-14 h-14 ${item.color} rounded-xl flex items-center justify-center`}>
+        <item.icon className="text-white" size={22} strokeWidth={2.5} />
+      </div>
+      <span className="text-xs leading-4 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
+        {item.label}
+      </span>
+    </button>
+  ))}
+</div>
 </div>
 
-    {/* Hàng 2: 4 nút - 1 khung riêng */}
+{/* Hàng 2: 4 nút - 1 khung riêng */}
     <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] dark:shadow-black/20 border border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3.5">
       <div className="grid grid-cols-4 gap-3">
         {[
@@ -1211,91 +1067,7 @@ return (
 )} 
 
 
-  {activeTab === "notifications"? (
-    notifLoading? (
-      <div className="px-4 pt-4 space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 py-3 animate-pulse">
-            <div className="w-12 h-12 bg-gray-200 dark:bg-zinc-800 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4" />
-              <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : notifications.length === 0? (
-              <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
-                <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
-                  <FiBell className="text-gray-400" size={30} strokeWidth={1.5} />
-                </div>
-                <h3 className="text-[20px] font-semibold mb-1.5">Chưa có thông báo</h3>
-                <p className="text-[15px] text-[#8e8e93] dark:text-zinc-500 max-w-[280px] leading-[20px]">Thông báo về lời mời kết bạn, nhóm và tin nhắn sẽ hiện ở đây</p>
-              </div>
-            ) : (
-              <div>
-                <div className="sticky top-[104px] z-10 px-4 py-2.5 bg-gray-50/80 dark:bg-zinc-950/50 backdrop-blur-sm border-b border-gray-100 dark:border-zinc-900 flex items-center justify-between">
-                  <p className="text-[12px] text-[#8e8e93] dark:text-zinc-500 font-medium">{unreadNotifications} chưa đọc</p>
-                  <div className="flex items-center gap-3">
-                    <button onClick={handleMarkAllRead} className={`text-[12px] ${primaryText} font-medium`}>Đọc tất cả</button>
-                    <button onClick={handleClearAllNotifications} className="text-[12px] text-[#ff3b30] font-medium">Xóa tất cả</button>
-                  </div>
-                </div>
-         {groupedNotifications.today.length > 0 && (
-  <div>
-    <div className="px-4 pt-3 pb-1"><p className="text-[12px] font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Hôm nay</p></div>
-    <div className="divide-y divide-gray-100 dark:divide-zinc-900">
-      {groupedNotifications.today.map((notif) => (
-        <div key={notif.id} className={`px-4 py-3 flex items-start gap-3 ${!notif.read? "bg-[#0a84ff]/[0.04] dark:bg-[#0a84ff]/[0.08]" : ""} hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors`}>
-          <div className="relative flex-shrink-0 mt-0.5">
-            <img src={notif.fromAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.fromName)}&background=random`} alt={notif.fromName} className="w-12 h-12 rounded-full object-cover" />
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white dark:bg-black rounded-full flex items-center justify-center border-2 border-white dark:border-black">
-              {getNotificationIcon(notif.type)}
-            </div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[15px] leading-[20px]"><span className="font-[550]">{notif.fromName}</span> <span className="text-[#3a3c] dark:text-zinc-300">{notif.message}</span></p>
-            <p className="text-[13px] text-[#8e8e93] mt-0.5">{formatNotifTime(notif.createdAt)}</p>
-            {notif.type === "friend_request" &&!notif.read && (
-              <div className="flex items-center gap-2 mt-2.5">
-                <button onClick={() => handleAcceptFriendRequest(notif)} className={`h-7 px-4 ${primaryBg} ${primaryHover} text-white rounded-full text-[13px] font-medium`}>Chấp nhận</button>
-                <button onClick={() => handleDeclineFriendRequest(notif)} className="h-7 px-4 bg-[#f2f2f7] dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full text-[13px] font-medium">Từ chối</button>
-              </div>
-            )}
-            {(notif.type === "group_invite" || notif.type === "mention") && notif.chatId && (
-              <button onClick={() => { handleMarkNotificationRead(notif.id); router.push(`/chat/${notif.chatId}`); }} className={`mt-2.5 h-7 px-4 ${primaryBg} ${primaryHover} text-white rounded-full text-[13px] font-medium`}>Xem</button>
-            )}
-          </div>
-          {!notif.read && <div className="w-2 h-2 bg-[#0a84ff] rounded-full flex-shrink-0 mt-2" />}
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-{groupedNotifications.earlier.length > 0 && (
-  <div>
-    <div className="px-4 pt-4 pb-1"><p className="text-[12px] font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Trước đó</p></div>
-    <div className="divide-y divide-gray-100 dark:divide-zinc-900">
-      {groupedNotifications.earlier.map((notif) => (
-        <div key={notif.id} className={`px-4 py-3 flex items-start gap-3 ${!notif.read? "bg-[#0a84ff]/[0.04] dark:bg-[#0a84ff]/[0.08]" : "opacity-70"} hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors`}>
-          <div className="relative flex-shrink-0 mt-0.5">
-            <img src={notif.fromAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.fromName)}&background=random`} alt={notif.fromName} className="w-12 h-12 rounded-full object-cover" />
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white dark:bg-black rounded-full flex items-center justify-center border-2 border-white dark:border-black">
-              {getNotificationIcon(notif.type)}
-            </div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[15px] leading-[20px]"><span className="font-[550]">{notif.fromName}</span> <span className="text-[#3a3a3c] dark:text-zinc-300">{notif.message}</span></p>
-            <p className="text-[13px] text-[#8e8e93] mt-0.5">{formatNotifTime(notif.createdAt)}</p>
-          </div>
-          {!notif.read && <div className="w-2 h-2 bg-[#0a84ff] rounded-full flex-shrink-0 mt-2" />}
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-              </div>
-            )
+ 
  ) : loading? (
   <div className="px-4 pt-4 space-y-0">
     {Array.from({ length: 8 }).map((_, index) => (
