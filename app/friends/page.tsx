@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp, query, limit, getDocs, where } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { FiUsers, FiShare2, FiShield, FiSearch, FiMessageCircle, FiUserX, FiMapPin, FiRefreshCw, FiX, FiZap } from "react-icons/fi";
+import { FiUsers, FiShare2, FiShield, FiSearch, FiMessageCircle, FiUserPlus, FiUserX, FiMapPin, FiRefreshCw, FiX, FiZap } from "react-icons/fi";
 import { RiVipCrownLine } from "react-icons/ri";
 import { IoStatsChart, IoRibbon } from "react-icons/io5";
 import { SlidersHorizontal } from "lucide-react";
@@ -165,9 +165,13 @@ const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions' | 'strange
         userDocs.map(async (userDoc) => {
           if (!userDoc.exists()) return null;
           const data = userDoc.data();
+          
+          // THÊM DÒNG NÀY: Bỏ qua nếu là người lạ
+          if (data.isStranger === true) return null;
+          
           const theirFriendsSnap = await getDoc(doc(db, "users", userDoc.id, "friends", user.uid));
           const mutualCount = theirFriendsSnap.exists()
-        ? Object.keys(data.friends || {}).filter(fid => activeFriendIds.includes(fid)).length
+         ? Object.keys(data.friends || {}).filter(fid => activeFriendIds.includes(fid)).length
             : 0;
 
           const friend: FriendItem = {
@@ -729,54 +733,69 @@ const filteredFriends = useMemo((): (FriendItem | StrangerChatItem)[] => {
         </div>
       )}
 
-      {tab === 'strangers' && (
-        <div className="space-y-3">
-          {strangerChats.length === 0? (
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center shadow-sm">
-              <div className="w-16 h-16 bg-gradient-to-br from-pink-500/10 to-purple-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <FiZap className="text-pink-500" size={32} strokeWidth={1.5} />
-              </div>
-              <h3 className="text-lg font-[700] mb-2">Chưa có tin nhắn người lạ</h3>
-              <p className="text-sm text-[#8e8e93]">Bắt đầu chat 1-1 để tìm bạn mới</p>
-            </div>
-          ) : (
-            strangerChats.map(chat => (
-              <div key={chat.chatId} className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-black/[0.06] dark:border-white/[0.06] overflow-hidden">
-                <button
-                  onClick={() => router.push(`/chat/${chat.chatId}`)}
-                  className="flex items-center gap-3 p-4 w-full active:bg-gray-50 dark:active:bg-zinc-800"
-                >
-                  <div className="relative flex-shrink-0">
-                    <img src={chat.avatar} alt={chat.name} className="w-14 h-14 rounded-full object-cover" />
-                    {chat.isOnline && (
-                      <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#30d158] rounded-full border-[3px] border-white dark:border-zinc-900" />
-                    )}
-                    <div className="absolute -top-1 -right-1 bg-gradient-to-br from-pink-500 to-purple-500 rounded-full p-1 shadow-md">
-                      <FiZap className="text-white" size={12} />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-base leading-5 font-[600] truncate font-serif">{chat.name}</p>
-                      <span className="text-xs px-1.5 py-0.5 bg-gradient-to-r from-pink-500/15 to-purple-500/15 text-pink-600 dark:text-pink-400 rounded-md font-[600]">Người lạ</span>
-                    </div>
-                    <p className="text-sm leading-4 text-[#8e8e93] dark:text-zinc-500 truncate">
-                      {chat.lastMessage || "Bắt đầu trò chuyện"}
-                    </p>
-                  </div>
-                  {chat.unreadCount! > 0 && (
-                    <div className="min-w-5 h-5 px-1.5 bg-[#0a84ff] rounded-full flex items-center justify-center shadow-md shadow-[#0a84ff]/30">
-                      <span className="text-xs font-[700] text-white">{chat.unreadCount}</span>
-                    </div>
-                  )}
-                </button>
-              </div>
-            ))
-          )}
+   {tab === 'strangers' && (
+  <div className="space-y-3">
+    {strangerChats.length === 0? (
+      <div className="bg-white dark:bg-zinc-900 rounded-xl p-10 border-black/[0.06] dark:border-white/[0.06] text-center shadow-sm">
+        <div className="w-16 h-16 bg-gradient-to-br from-pink-500/10 to-purple-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <FiZap className="text-pink-500" size={32} strokeWidth={1.5} />
         </div>
-      )}
+        <h3 className="text-lg font-[700] mb-2">Chưa có tin nhắn người lạ</h3>
+        <p className="text-sm text-[#8e8e93]">Bắt đầu chat 1-1 để tìm bạn mới</p>
+      </div>
+    ) : (
+      strangerChats.map(chat => (
+        <div key={chat.chatId} className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-black/[0.06] dark:border-white/[0.06] overflow-hidden">
+          <div className="flex items-center gap-3 p-4">
+            <button
+              onClick={() => router.push(`/chat/${chat.chatId}`)}
+              className="flex items-center gap-3 flex-1 min-w-0 active:opacity-70"
+            >
+              <div className="relative flex-shrink-0">
+                <img src={chat.avatar} alt={chat.name} className="w-14 h-14 rounded-full object-cover" />
+                {chat.isOnline && (
+                  <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#30d158] rounded-full border-[3px] border-white dark:border-zinc-900" />
+                )}
+                <div className="absolute -top-1 -right-1 bg-gradient-to-br from-pink-500 to-purple-500 rounded-full p-1 shadow-md">
+                  <FiZap className="text-white" size={12} />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-base leading-5 font-[600] truncate font-serif">{chat.name}</p>
+                  <span className="text-xs px-1.5 py-0.5 bg-gradient-to-r from-pink-500/15 to-purple-500/15 text-pink-600 dark:text-pink-400 rounded-md font-[600]">Người lạ</span>
+                </div>
+                <p className="text-sm leading-4 text-[#8e8e93] dark:text-zinc-500 truncate">
+                  {chat.lastMessage || "Bắt đầu trò chuyện"}
+                </p>
+              </div>
+            </button>
 
-      {tab === 'suggestions' && (
+            {/* NÚT KẾT BẠN GÓC PHẢI */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddFriend(chat.uid, chat.username);
+              }}
+              className="h-9 px-3 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] flex items-center gap-1.5 active:scale-95 transition-all shadow-md shadow-[#0a84ff]/30 flex-shrink-0"
+            >
+              <FiUserPlus size={16} />
+              Kết bạn
+            </button>
+
+            {chat.unreadCount! > 0 && (
+              <div className="min-w-5 h-5 px-1.5 bg-[#0a84ff] rounded-full flex items-center justify-center shadow-md shadow-[#0a84ff]/30 flex-shrink-0">
+                <span className="text-xs font-[700] text-white">{chat.unreadCount}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+)}
+
+{tab === 'suggestions' && (
         <div className="space-y-4">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
             <div className="flex items-center justify-between mb-4">
