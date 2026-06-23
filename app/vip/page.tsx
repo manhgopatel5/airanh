@@ -7,7 +7,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, serverTimestamp, Timestamp, collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
 import { Crown } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+import {  differenceInDays } from "date-fns";
 
 
 type VipTier = {
