@@ -1305,11 +1305,10 @@ return (
       {[...pinnedChats,...normalChats].map((chat) => (
         <div key={chat.chatId} className="group relative">
        <Link
-  href={
-    (chat as any).isStranger ? `/friends` :
-    chat.chatId.startsWith('public_') || chat.isGroup ? `/rooms/${chat.chatId}` : 
-    `/chat/${chat.chatId}`
-  }
+href={
+  chat.chatId.startsWith('public_') || chat.isGroup ? `/rooms/${chat.chatId}` : 
+  `/friends?chatId=${chat.chatId}`
+}
   className="flex items-center gap-3 px-4 py-2.5 active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150 select-none"
   onPointerDown={() => handleLongPressStart(chat.chatId)}
   onPointerUp={handleLongPressEnd}
