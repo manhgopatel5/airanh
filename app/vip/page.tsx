@@ -23,13 +23,7 @@ type VipTier = {
   savePercent?: number;
 };
 
-type Transaction = {
-  id: string;
-  tier: string;
-  amount: number;
-  createdAt: Timestamp;
-  status: 'success' | 'pending' | 'failed';
-};
+
 
 const VIP_TIERS: VipTier[] = [
   {
