@@ -195,14 +195,13 @@ const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions' | 'strange
   }, [user?.uid, db]);
 
   // QUERY CHAT NGƯỜI LẠ CHƯA KẾT BẠN
-  useEffect(() => {
+useEffect(() => {
   if (!user?.uid) return;
 
   const q = query(
     collection(db, "chats"),
     where("members", "array-contains", user.uid),
     where("isGroup", "==", false),
-    where("isStranger", "==", true),
     orderBy("updatedAt", "desc")
   );
 
@@ -212,26 +211,33 @@ const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions' | 'strange
 
     for (const d of snap.docs) {
       const data = d.data();
-      const otherUid = data.members?.find((m: string) => m!== user.uid);
+      
+      // Bỏ qua nếu là bạn bè hoặc có isStranger: false
+      if (data.isStranger === false) continue;
+      
+      const otherUid = data.members?.find((m: string) => m !== user.uid);
       if (!otherUid || friendIds.has(otherUid)) continue;
 
-      const userDoc = await getDoc(doc(db, "users", otherUid));
-      const userData = userDoc.data() || {};
+      // Nếu không có field isStranger hoặc isStranger: true thì lấy
+      if (data.isStranger === undefined || data.isStranger === true) {
+        const userDoc = await getDoc(doc(db, "users", otherUid));
+        const userData = userDoc.data() || {};
 
-      list.push({
-        uid: otherUid, // QUAN TRỌNG: Phải có uid
-        chatId: d.id,
-        name: userData.name || "Người lạ",
-        username: userData.username || "",
-        avatar: userData.avatar || `https://ui-avatars.com/api/?name=?&background=ec4899&color=fff&bold=true`,
-        userId: userData.userId || "",
-        isOnline: Boolean(userData.isOnline),
-        lastSeen: userData.lastSeen,
-        isStranger: true,
-        lastMessage: data.lastMessage || "Bắt đầu trò chuyện",
-        updatedAt: data.updatedAt,
-        unreadCount: data.unread?.[user.uid] || 0
-      });
+        list.push({
+          uid: otherUid,
+          chatId: d.id,
+          name: userData.name || "Người lạ",
+          username: userData.username || "",
+          avatar: userData.avatar || `https://ui-avatars.com/api/?name=?&background=ec4899&color=fff&bold=true`,
+          userId: userData.userId || "",
+          isOnline: Boolean(userData.isOnline),
+          lastSeen: userData.lastSeen,
+          isStranger: true,
+          lastMessage: data.lastMessage || "Bắt đầu trò chuyện",
+          updatedAt: data.updatedAt,
+          unreadCount: data.unread?.[user.uid] || 0
+        });
+      }
     }
     setStrangerChats(list);
   });
