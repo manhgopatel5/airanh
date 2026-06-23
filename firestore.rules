@@ -285,12 +285,11 @@ match /users/{userId} {
       allow update, delete: if false;
     }
 
-    match /notifications/{userId}/items/{notifId} {
-      allow read: if isOwner(userId);
-      allow create: if isSignedIn();
-      allow delete: if isOwner(userId);
-      allow update: if isOwner(userId);
-    }
+match /notifications/{notifId} {
+  allow read: if isSignedIn() && request.auth.uid == resource.data.toUserId;
+  allow create: if isSignedIn();
+  allow update, delete: if isSignedIn() && request.auth.uid == resource.data.toUserId;
+}
 
     // ========== STRANGER CHAT ==========
     match /stranger_chats/{chatId} {
