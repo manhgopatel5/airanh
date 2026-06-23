@@ -198,61 +198,57 @@ const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions' | 'strange
 useEffect(() => {
   if (!user?.uid) return;
 
-  // Bỏ orderBy để lấy cả doc cũ thiếu updatedAt
+  // BỎ where("isGroup") - lấy tất cả chat của user rồi lọc tay
   const q = query(
     collection(db, "chats"),
-    where("members", "array-contains", user.uid),
-    where("isGroup", "==", false)
+    where("members", "array-contains", user.uid)
   );
 
   const unsub = onSnapshot(q, async (snap) => {
-    console.log('Total chats found:', snap.size); // Debug
+    console.log('Total chats found:', snap.size);
     
     const friendIds = new Set(friends.map(f => f.uid));
     const list: StrangerChatItem[] = [];
 
     for (const d of snap.docs) {
       const data = d.data();
-      console.log('Chat:', d.id, data); // Debug từng chat
+      
+      // Chỉ lấy chat 1-1: không phải group, có đúng 2 members
+      if (data.isGroup === true || data.members?.length !== 2) continue;
       
       // Bỏ qua nếu set isStranger: false
       if (data.isStranger === false) continue;
       
       const otherUid = data.members?.find((m: string) => m !== user.uid);
-      if (!otherUid || friendIds.has(otherUid)) {
-        console.log('Skip friend or no otherUid:', otherUid);
-        continue;
-      }
+      if (!otherUid || friendIds.has(otherUid)) continue;
 
-      // Lấy cả chat không có isStranger hoặc isStranger: true
-      if (data.isStranger === undefined || data.isStranger === true) {
-        const userDoc = await getDoc(doc(db, "users", otherUid));
-        const userData = userDoc.data() || {};
+      console.log('Found stranger chat:', d.id, data);
 
-        list.push({
-          uid: otherUid,
-          chatId: d.id,
-          name: userData.name || "Người lạ",
-          username: userData.username || "",
-          avatar: userData.avatar || `https://ui-avatars.com/api/?name=?&background=ec4899&color=fff&bold=true`,
-          userId: userData.userId || "",
-          isOnline: Boolean(userData.isOnline),
-          lastSeen: userData.lastSeen,
-          isStranger: true,
-          lastMessage: data.lastMessage || "Bắt đầu trò chuyện",
-          updatedAt: data.updatedAt,
-          unreadCount: data.unread?.[user.uid] || 0
-        });
-      }
+      const userDoc = await getDoc(doc(db, "users", otherUid));
+      const userData = userDoc.data() || {};
+
+      list.push({
+        uid: otherUid,
+        chatId: d.id,
+        name: userData.name || "Người lạ",
+        username: userData.username || "",
+        avatar: userData.avatar || `https://ui-avatars.com/api/?name=?&background=ec4899&color=fff&bold=true`,
+        userId: userData.userId || "",
+        isOnline: Boolean(userData.isOnline),
+        lastSeen: userData.lastSeen,
+        isStranger: true,
+        lastMessage: data.lastMessage || "Bắt đầu trò chuyện",
+        updatedAt: data.updatedAt,
+        unreadCount: data.unread?.[user.uid] || 0
+      });
     }
     
-    console.log('Stranger chats:', list); // Debug kết quả
+    console.log('Stranger chats:', list);
     setStrangerChats(list);
   });
 
   return () => unsub();
 }, [user?.uid, db, friends]);
-
   useEffect(() => {
     if (!user?.uid) return;
     const reqRef = collection(db, "users", user.uid, "friendRequests");
