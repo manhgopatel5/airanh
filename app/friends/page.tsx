@@ -18,6 +18,9 @@ import { vi } from "date-fns/locale";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import Image from "next/image";
 
+
+
+
 type FriendItem = {
   uid: string;
   name: string;
@@ -87,6 +90,29 @@ const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions' | 'strange
   const [loadingSuggested, setLoadingSuggested] = useState(false);
   const [showScanQR, setShowScanQR] = useState(false);
   const [scanMode, setScanMode] = useState<"camera" | "upload">("camera");
+const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
+
+const handleAddFriend = async (toUid: string, username?: string) => {
+  if (!user?.uid || sentRequests.has(toUid)) return;
+  
+  try {
+    setSentRequests(prev => new Set(prev).add(toUid));
+    
+    const functions = getFunctions(getApp(), "asia-southeast1");
+    const sendRequest = httpsCallable(functions, 'sendFriendRequest');
+    await sendRequest({ toUid });
+    
+    toast.success(`Đã gửi lời mời đến @${username || toUid}`);
+    if ("vibrate" in navigator) navigator.vibrate(10);
+  } catch (e: any) {
+    setSentRequests(prev => {
+      const next = new Set(prev);
+      next.delete(toUid);
+      return next;
+    });
+    toast.error(e.message || "Lỗi gửi lời mời");
+  }
+};
   const [filters, setFilters] = useState<{
     gender: "all" | "male" | "female";
     minAge: number | '';
@@ -202,31 +228,28 @@ const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions' | 'strange
 useEffect(() => {
   if (!user?.uid) return;
 
-  // BỎ where("isGroup") - lấy tất cả chat của user rồi lọc tay
   const q = query(
     collection(db, "chats"),
     where("members", "array-contains", user.uid)
   );
 
   const unsub = onSnapshot(q, async (snap) => {
-    console.log('Total chats found:', snap.size);
-    
     const friendIds = new Set(friends.map(f => f.uid));
     const list: StrangerChatItem[] = [];
+    const sentSet = new Set<string>();
 
     for (const d of snap.docs) {
       const data = d.data();
       
-      // Chỉ lấy chat 1-1: không phải group, có đúng 2 members
       if (data.isGroup === true || data.members?.length !== 2) continue;
-      
-      // Bỏ qua nếu set isStranger: false
       if (data.isStranger === false) continue;
       
       const otherUid = data.members?.find((m: string) => m !== user.uid);
       if (!otherUid || friendIds.has(otherUid)) continue;
 
-      console.log('Found stranger chat:', d.id, data);
+      // Check đã gửi lời mời chưa
+      const reqDoc = await getDoc(doc(db, "friendRequests", `${user.uid}_${otherUid}`));
+      if (reqDoc.exists()) sentSet.add(otherUid);
 
       const userDoc = await getDoc(doc(db, "users", otherUid));
       const userData = userDoc.data() || {};
@@ -247,7 +270,7 @@ useEffect(() => {
       });
     }
     
-    console.log('Stranger chats:', list);
+    setSentRequests(sentSet);
     setStrangerChats(list);
   });
 
@@ -772,16 +795,21 @@ const filteredFriends = useMemo((): (FriendItem | StrangerChatItem)[] => {
             </button>
 
             {/* NÚT KẾT BẠN GÓC PHẢI */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAddFriend(chat.uid, chat.username);
-              }}
-              className="h-9 px-3 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] flex items-center gap-1.5 active:scale-95 transition-all shadow-md shadow-[#0a84ff]/30 flex-shrink-0"
-            >
-              <FiUserPlus size={16} />
-              Kết bạn
-            </button>
+      <button
+  onClick={(e) => {
+    e.stopPropagation();
+    handleAddFriend(chat.uid, chat.username);
+  }}
+  disabled={sentRequests.has(chat.uid)}
+  className={`h-9 px-3 rounded-xl text-sm font-[600] flex items-center gap-1.5 active:scale-95 transition-all flex-shrink-0 ${
+    sentRequests.has(chat.uid)
+      ? 'bg-zinc-100 dark:bg-zinc-800 text-[#8e8e93]'
+      : 'bg-[#0a84ff] text-white shadow-md shadow-[#0a84ff]/30'
+  }`}
+>
+  <FiUserPlus size={16} />
+  {sentRequests.has(chat.uid) ? "Đã gửi" : "Kết bạn"}
+</button>
 
             {chat.unreadCount! > 0 && (
               <div className="min-w-5 h-5 px-1.5 bg-[#0a84ff] rounded-full flex items-center justify-center shadow-md shadow-[#0a84ff]/30 flex-shrink-0">
