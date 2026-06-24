@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase'; // Dùng db export trực tiếp
-import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin'; // Dùng admin
+import { Timestamp } from 'firebase-admin/firestore';
 
 const VIP_PLANS = {
   pro: { price: 49000, name: 'VIP Pro' },
@@ -27,10 +27,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check user tồn tại
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
+    // Dùng adminDb() thay vì db
+    const db = adminDb();
+    
+    // Check user tồn tại - syntax admin
+    const userSnap = await db.collection('users').doc(userId).get();
+    if (!userSnap.exists) {
       return NextResponse.json(
         { message: 'User không tồn tại' }, 
         { status: 404 }
@@ -39,7 +41,8 @@ export async function POST(req: NextRequest) {
 
     // Check giá server-side
     const plan = VIP_PLANS[planId as PlanId];
-    if (amount!== plan.price) {
+    if (amount !== plan.price) {
+      console.error(`Price mismatch: client=${amount}, server=${plan.price}`);
       return NextResponse.json(
         { message: 'Số tiền không hợp lệ' }, 
         { status: 400 }
@@ -48,7 +51,8 @@ export async function POST(req: NextRequest) {
 
     const orderId = Date.now();
     
-    await setDoc(doc(db, 'orders', `${orderId}`), {
+    // setDoc syntax admin
+    await db.collection('orders').doc(`${orderId}`).set({
       userId,
       planId,
       planName: plan.name,
@@ -59,6 +63,8 @@ export async function POST(req: NextRequest) {
     });
 
     const qrUrl = `https://qr.sepay.vn/img?acc=ACB&bank=ACB&amount=${amount}&des=VIPELITE ${orderId}&template=compact`;
+    
+    console.log(`Order created: ${orderId} | User: ${userId} | Plan: ${planId}`);
     
     return NextResponse.json({ 
       qrUrl,
