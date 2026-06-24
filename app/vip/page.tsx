@@ -405,10 +405,16 @@ export default function VipPage() {
 
         {/* Footer */}
         <div className="pt-2 pb-4">
-          <p className="text- text-center text-[#8e8e93] leading-relaxed">
-            Tự động gia hạn hàng tháng. Hủy bất cứ lúc nào trong Cài đặt.
-            <br />Bằng việc mua, bạn đồng ý với <span className="text-[#0a84ff]">Điều khoản VIP</span> và <span className="text-[#0a84ff]">Chính sách bảo mật</span>.
-          </p>
+       <p className="text-[13px] text-center text-[#8e8e93] leading-relaxed">
+  Tự động gia hạn hàng tháng. Hủy bất cứ lúc nào trong Cài đặt.
+  <br />Bằng việc mua, bạn đồng ý với{" "}
+  <button onClick={() => router.push('/vip/terms')} className="text-[#0a84ff] active:opacity-60">
+    Điều khoản VIP
+  </button>{" "}và{" "}
+  <button onClick={() => router.push('/privacy')} className="text-[#0a84ff] active:opacity-60">
+    Chính sách bảo mật
+  </button>.
+</p>
         </div>
       </div>
     </div>
