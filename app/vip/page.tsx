@@ -293,26 +293,28 @@ activeTab === tab
     return (
       <>
         {/* Toggle chọn gói */}
-        <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl mb-5">
-          {VIP_TIERS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setSelectedTierId(t.id)}
-              className={cn(
-                "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5",
-                selectedTierId === t.id
-                  ? "bg-[#0a84ff] text-white shadow-sm shadow-blue-500/30"
-                  : "text-zinc-500 dark:text-zinc-400"
-              )}
-            >
-              <span className="text-lg">{t.badge}</span>
-              {t.name}
-              {t.popular && selectedTierId !== t.id && (
-                <FiStar size={12} className="text-amber-500" />
-              )}
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl mb-5">
+  {VIP_TIERS.map((t) => (
+    <button
+      key={t.id}
+      onClick={() => setSelectedTierId(t.id)}
+      className={cn(
+        "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5",
+        selectedTierId === t.id
+          ? t.id === 'elite'
+            ? "bg-amber-500 text-white shadow-sm shadow-amber-500/30"
+            : "bg-[#0a84ff] text-white shadow-sm shadow-blue-500/30"
+          : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+      )}
+    >
+      <span className="text-lg">{t.badge}</span>
+      {t.name}
+      {t.popular && selectedTierId !== t.id && (
+        <FiStar size={12} className="text-amber-500" />
+      )}
+    </button>
+  ))}
+</div>
 
    {/* Badge PHỔ BIẾN / CAO CẤP */}
 {tier.id === 'pro' && (
@@ -403,28 +405,48 @@ activeTab === tab
   ))}
 </div>
 
-        <button
-          onClick={() => handlePurchaseVip(tier.id)}
-          disabled={!!purchasingVip || isActive}
-          className={cn(
-            "w-full h-14 rounded-2xl font-bold text-base transition-all disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98]",
-            isActive
-              ? 'bg-emerald-500 text-white'
-              : 'bg-[#0a84ff] text-white shadow-lg shadow-blue-500/30'
-          )}
-        >
-          {purchasingVip === tier.id ? (
-            <FiLoader className="animate-spin" size={22} />
-          ) : isActive ? (
-            <>
-              <FiCheck size={20} strokeWidth={3} /> Đang sử dụng
-            </>
-          ) : (
-            <>
-              <FiCreditCard size={20} /> Nâng cấp ngay
-            </>
-          )}
-        </button>
+<button
+  onClick={() => handlePurchaseVip(tier.id)}
+  disabled={!!purchasingVip || isActive}
+  className={cn(
+    "group relative w-full h-14 rounded-2xl font-bold text-base transition-all disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98] overflow-hidden",
+    isActive
+      ? 'bg-emerald-500 text-white'
+      : tier.id === 'elite'
+        ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-[1.02]'
+        : 'bg-[#0a84ff] text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02]',
+    !isActive && 'animate-pulse-slow' // Pulse nhẹ liên tục
+  )}
+>
+  {/* Hiệu ứng shine chạy qua */}
+  {!isActive && (
+    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+  )}
+  
+  {/* Glow ring */}
+  {!isActive && (
+    <span className={cn(
+      "absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl",
+      tier.id === 'elite' ? 'bg-amber-500' : 'bg-[#0a84ff]'
+    )} />
+  )}
+
+  <span className="relative z-10 flex items-center gap-2">
+    {purchasingVip === tier.id ? (
+      <FiLoader className="animate-spin" size={22} />
+    ) : isActive ? (
+      <>
+        <FiCheck size={20} strokeWidth={3} /> Đang sử dụng
+      </>
+    ) : (
+      <>
+        <FiCreditCard size={20} className="group-hover:scale-110 transition-transform" /> 
+        Nâng cấp ngay
+        <FiZap size={18} className="group-hover:rotate-12 transition-transform" />
+      </>
+    )}
+  </span>
+</button>
       </>
     );
   })()}
