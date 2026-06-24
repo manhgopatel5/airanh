@@ -139,23 +139,21 @@ const [purchasingVip, setPurchasingVip] = useState<'pro' | 'elite' | null>(null)
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId: user.uid,
-        tier: tierId,
+        planId: tierId, // Đổi từ tier -> planId cho khớp API
         amount: finalPrice,
-        promoCode: appliedPromo?.code || null,
       })
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Lỗi tạo đơn thanh toán');
 
-    // Redirect sang PayOS quét QR
-    window.location.href = data.paymentUrl;
+    // Redirect sang SePay QR
+    window.location.href = data.qrUrl; // Đổi từ paymentUrl -> qrUrl
 
   } catch (error: any) {
     toast.error("Lỗi: " + error.message);
     setPurchasingVip(null);
   }
-  // Không setPurchasingVip(false) ở finally vì đã redirect rồi
 };
 
   const applyPromoCode = () => {
