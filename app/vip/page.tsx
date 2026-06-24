@@ -81,24 +81,6 @@ const COMPARE_DATA = [
   { name: 'Hỗ trợ', free: 'Email', pro: 'Ưu tiên', elite: '24/7' },
 ];
 
-const FAQ_ITEMS = [
-  {
-    q: "VIP có tự động gia hạn không?",
-    a: "Có. Tự động gia hạn mỗi 30 ngày. Hủy bất cứ lúc nào trong Cài đặt > VIP. Hủy xong vẫn dùng đến hết chu kỳ đã trả."
-  },
-  {
-    q: "Nâng cấp từ Pro lên Elite được không?",
-    a: "Được. Hệ thống tự tính tiền chênh lệch dựa trên số ngày Pro còn lại. Không mất ngày nào."
-  },
-  {
-    q: "Hủy VIP thì mất gì?",
-    a: "Giữ toàn bộ quyền đến ngày hết hạn. Sau đó về Free: mất huy hiệu, nhóm >10 không thêm người mới, ghim >3 tự bỏ, file >10MB không tải mới. Dữ liệu không xóa."
-  },
-  {
-    q: "Thanh toán có an toàn không?",
-    a: "Có. Momo, ZaloPay, VNPay QR, thẻ ATM/Visa. Cổng VNPay/PayOS chuẩn PCI DSS, không lưu thẻ. Hóa đơn gửi email."
-  },
-];
 
 type Tab = 'plans' | 'compare' | 'faq';
 
