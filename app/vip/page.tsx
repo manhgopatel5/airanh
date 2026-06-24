@@ -103,7 +103,7 @@ export default function VipPage() {
   const db = getFirebaseDB();
   const router = useRouter();
   const [userVip, setUserVip] = useState<{tier: 'free' | 'pro' | 'elite', expiresAt?: Timestamp} | null>(null);
-  const [purchasingVip, setPurchasingVip] = useState<boolean>(false);
+const [purchasingVip, setPurchasingVip] = useState<'pro' | 'elite' | null>(null);
 
   const [showFAQ, setShowFAQ] = useState<number | null>(null);
 
@@ -124,47 +124,39 @@ export default function VipPage() {
   
 
   const handlePurchaseVip = async (tierId: 'pro' | 'elite') => {
-    if (!user?.uid) return toast.error("Vui lòng đăng nhập");
-    const tier = VIP_TIERS.find(t => t.id === tierId);
-    if (!tier) return;
+  if (!user?.uid) return toast.error("Vui lòng đăng nhập");
+  const tier = VIP_TIERS.find(t => t.id === tierId);
+  if (!tier) return;
 
-    setPurchasingVip(true);
-    try {
-      // TODO: Tích hợp cổng thanh toán thật
-      await new Promise(r => setTimeout(r, 1500));
+  setPurchasingVip(tierId);
+  try {
+    const finalPrice = appliedPromo
+     ? Math.round(tier.price * (1 - appliedPromo.discount / 100))
+      : tier.price;
 
-      const finalPrice = appliedPromo? tier.price * (1 - appliedPromo.discount / 100) : tier.price;
-      const expiresAt = Timestamp.fromDate(new Date(Date.now() + 30 * 24 * 60 * 1000));
-      
-      await updateDoc(doc(db, "users", user.uid), {
-        vip: {
-          tier: tierId,
-          purchasedAt: serverTimestamp(),
-          expiresAt: expiresAt,
-          price: finalPrice
-        }
-      });
-
-      // Lưu lịch sử giao dịch
-      await updateDoc(doc(collection(db, "transactions")), {
+    const res = await fetch('/api/payment/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         userId: user.uid,
         tier: tierId,
         amount: finalPrice,
         promoCode: appliedPromo?.code || null,
-        status: 'success',
-        createdAt: serverTimestamp()
-      });
+      })
+    });
 
-      toast.success(`Đã nâng cấp ${tier.name}!`, { icon: tier.badge });
-      if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
-      setAppliedPromo(null);
-      setPromoCode("");
-    } catch (error: any) {
-      toast.error("Lỗi thanh toán: " + error.message);
-    } finally {
-      setPurchasingVip(false);
-    }
-  };
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Lỗi tạo đơn thanh toán');
+
+    // Redirect sang PayOS quét QR
+    window.location.href = data.paymentUrl;
+
+  } catch (error: any) {
+    toast.error("Lỗi: " + error.message);
+    setPurchasingVip(null);
+  }
+  // Không setPurchasingVip(false) ở finally vì đã redirect rồi
+};
 
   const applyPromoCode = () => {
   const validCodes: Record<string, number> = {
@@ -183,7 +175,9 @@ export default function VipPage() {
   }
 };
 
-  const daysLeft = userVip?.expiresAt? differenceInDays(userVip.expiresAt.toDate(), new Date()) : 0;
+const daysLeft = userVip?.expiresAt
+ ? Math.max(0, differenceInDays(userVip.expiresAt.toDate(), new Date()))
+  : 0;
 
   return (
     <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A]">
@@ -327,17 +321,27 @@ export default function VipPage() {
                   ))}
                 </div>
 
-                <button
-                  onClick={() => handlePurchaseVip(tier.id)}
-                  disabled={purchasingVip || isActive}
-                  className={`w-full h-12 rounded-2xl font-bold text- transition-all active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-2 ${
-                    isActive
-                    ? 'bg-emerald-500 text-white'
-                      : `bg-gradient-to-r ${tier.color} text-white shadow-lg shadow-${tier.id === 'elite'? 'orange' : 'blue'}-500/30`
-                  }`}
-                >
-                  {purchasingVip? <FiLoader className="animate-spin" size={20} /> : isActive? <><FiCheck size={18} /> Đang sử dụng</> : <><FiCreditCard size={18} /> Nâng cấp ngay</>}
-                </button>
+            <button
+  onClick={() => handlePurchaseVip(tier.id)}
+  disabled={!!purchasingVip || isActive}
+  className={`w-full h-12 rounded-2xl font-bold transition-all active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-2 ${
+    isActive
+   ? 'bg-emerald-500 text-white'
+      : `bg-gradient-to-r ${tier.color} text-white shadow-lg`
+  }`}
+>
+  {purchasingVip === tier.id? (
+    <FiLoader className="animate-spin" size={20} />
+  ) : isActive? (
+    <>
+      <FiCheck size={18} /> Đang sử dụng
+    </>
+  ) : (
+    <>
+      <FiCreditCard size={18} /> Nâng cấp ngay
+    </>
+  )}
+</button>
               </div>
             );
           })}
