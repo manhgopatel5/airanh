@@ -6,8 +6,9 @@ import { doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { getFirebaseDB } from '@/lib/firebase';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'sonner';
-import { Copy, CheckCircle2, Clock, AlertCircle, Download, Share2, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Copy, CheckCircle2, Clock, AlertCircle, Download, Share2, ShieldCheck, Sparkles, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Order = {
   userId: string;
@@ -30,6 +31,7 @@ export default function PaymentPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState('');
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (user) => {
@@ -46,7 +48,6 @@ export default function PaymentPage() {
         (snap) => {
           if (snap.exists()) {
             const data = snap.data() as Order;
-            console.log('Order data:', data, 'Your UID:', user.uid); // Debug
             setOrder(data);
           } else {
             toast.error('Không tìm thấy đơn hàng');
@@ -57,7 +58,7 @@ export default function PaymentPage() {
         (error) => {
           console.error('Firestore error:', error.code, error.message);
           toast.error(`Lỗi: ${error.code}`);
-          setLoading(false); // QUAN TRỌNG: Tắt loading khi lỗi
+          setLoading(false);
         }
       );
       
@@ -96,9 +97,13 @@ export default function PaymentPage() {
     }
   }, [order?.status, router]);
 
-  const copyInfo = async (text: string, label: string) => {
+  const copyInfo = async (text: string, label: string, field: string) => {
     await navigator.clipboard.writeText(text);
-    toast.success(`Đã copy ${label}`);
+    setCopiedField(field);
+    toast.success(`Đã copy ${label}`, {
+      icon: <CheckCircle2 className="text-emerald-500" size={16} />,
+    });
+    setTimeout(() => setCopiedField(null), 2000);
   };
 
   const downloadQR = () => {
@@ -107,179 +112,269 @@ export default function PaymentPage() {
     link.href = order.qrUrl;
     link.download = `QR_${order.planName}_${orderId}.png`;
     link.click();
+    toast.success('Đang tải QR');
+  };
+
+  const shareQR = async () => {
+    if (!order) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Đăng ký ${order.planName}`,
+          text: `Quét mã để đăng ký ${order.planName}`,
+          url: order.qrUrl,
+        });
+      } catch (err) {
+        copyInfo(order.qrUrl, 'link QR', 'qr');
+      }
+    } else {
+      copyInfo(order.qrUrl, 'link QR', 'qr');
+    }
   };
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center flex-col gap-2">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
-        <p>Đang tải...</p>
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-4">
+        <div className="mx-auto max-w-md pt-8">
+          <div className="overflow-hidden rounded-3xl bg-white dark:bg-zinc-900 shadow-xl">
+            <div className="h-24 bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+            <div className="p-6 space-y-4">
+              <div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded-xl animate-pulse" />
+              <div className="h-64 bg-zinc-200 dark:bg-zinc-800 rounded-2xl animate-pulse" />
+              <div className="h-32 bg-zinc-200 dark:bg-zinc-800 rounded-xl animate-pulse" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p>Không tìm thấy đơn hàng</p>
+      <div className="flex h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <div className="text-center">
+          <AlertCircle className="mx-auto h-16 w-16 text-red-500 mb-4" />
+          <p className="text-lg font-semibold">Không tìm thấy đơn hàng</p>
+        </div>
       </div>
     );
   }
 
   const isExpired = countdown === 'Đã hết hạn' || order.status === 'expired';
   const isPaid = order.status === 'paid';
+  const isElite = order.planId === 'elite';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-      <div className="mx-auto max-w-md pt-8">
-        <button 
-          onClick={() => router.back()} 
-          className="mb-4 flex items-center gap-2 text-sm font-medium hover:opacity-70"
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-4 pb-20">
+      <div className="mx-auto max-w-md pt-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="overflow-hidden rounded-3xl border-2 border-zinc-200 dark:border-zinc-800 shadow-2xl bg-white dark:bg-zinc-900"
         >
-          <ArrowLeft className="h-4 w-4" /> Quay lại
-        </button>
-
-        <div className="overflow-hidden rounded-2xl border-0 shadow-2xl bg-white dark:bg-zinc-900">
           <div className={cn(
-            "bg-gradient-to-r text-white p-6",
-            order.planId === 'elite' 
-             ? "from-amber-500 to-orange-600" 
-              : "from-blue-500 to-indigo-600"
+            "text-white p-6",
+            isElite ? "bg-amber-500" : "bg-[#0a84ff]"
           )}>
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">Thanh toán {order.planName}</h1>
-              <div className="rounded-full bg-white/20 px-3 py-1 text-sm font-semibold text-white">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2">
+                {isElite ? <Sparkles size={28} /> : <Zap size={28} />}
+                <h1 className="text-2xl font-black">Đăng ký {order.planName}</h1>
+              </div>
+              <div className="rounded-full bg-white/20 px-3 py-1.5 text-sm font-bold backdrop-blur-sm">
                 {order.amount.toLocaleString('vi-VN')}đ
               </div>
             </div>
-            <p className="text-sm text-white/80 mt-1">Mã đơn: #{orderId}</p>
+            <p className="text-sm text-white/90 font-medium">Mã đơn: #{orderId}</p>
           </div>
 
           <div className="p-6">
-            {isPaid? (
-              <div className="py-12 text-center">
-                <CheckCircle2 className="mx-auto h-16 w-16 text-green-500" />
-                <h3 className="mt-4 text-xl font-bold">Thanh toán thành công!</h3>
-                <p className="mt-2 text-sm text-zinc-500">
-                  VIP đã được kích hoạt. Đang chuyển hướng...
-                </p>
-              </div>
-            ) : isExpired? (
-              <div className="py-12 text-center">
-                <AlertCircle className="mx-auto h-16 w-16 text-red-500" />
-                <h3 className="mt-4 text-xl font-bold">Đơn hàng đã hết hạn</h3>
-                <p className="mt-2 text-sm text-zinc-500">Vui lòng tạo đơn mới</p>
-                <button 
-                  className="mt-4 h-10 px-6 bg-blue-500 text-white rounded-xl font-semibold"
-                  onClick={() => router.push('/vip')}
+            <AnimatePresence mode="wait">
+              {isPaid ? (
+                <motion.div
+                  key="paid"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="py-12 text-center"
                 >
-                  Tạo lại đơn
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="mb-6 flex items-center justify-center gap-2 rounded-lg bg-amber-50 p-3 dark:bg-amber-950/30">
-                  <Clock className="h-5 w-5 text-amber-600" />
-                  <span className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                    Hết hạn sau: <span className="font-mono text-lg">{countdown}</span>
-                  </span>
-                </div>
-
-              <div className="relative mx-auto mb-6 w-fit rounded-2xl border-4 border-slate-200 bg-white p-4 shadow-lg dark:border-slate-800">
-  <img 
-  src={order.qrUrl} 
-  alt="QR Code" 
-  className="h-64 w-64"
-  referrerPolicy="no-referrer"
-  crossOrigin="anonymous"
-  onError={() => {
-    console.error('QR Load Error:', order.qrUrl);
-    toast.error('Không tải được QR');
-  }}
-  onLoad={() => console.log('QR Loaded:', order.qrUrl)}
-/>
-  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-xs font-medium shadow dark:bg-slate-800">
-    VietQR
-  </div>
-</div>
-                <div className="mb-6 flex gap-2">
-                  <button 
-                    className="flex-1 h-10 rounded-xl border border-zinc-200 dark:border-zinc-800 font-semibold flex items-center justify-center gap-2"
-                    onClick={downloadQR}
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", duration: 0.6 }}
                   >
-                    <Download className="h-4 w-4" /> Tải QR
-                  </button>
+                    <CheckCircle2 className="mx-auto h-20 w-20 text-emerald-500" strokeWidth={2.5} />
+                  </motion.div>
+                  <h3 className="mt-4 text-2xl font-black">Thanh toán thành công!</h3>
+                  <p className="mt-2 text-sm text-zinc-500">
+                    VIP đã được kích hoạt. Đang chuyển hướng...
+                  </p>
+                </motion.div>
+              ) : isExpired ? (
+                <motion.div
+                  key="expired"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="py-12 text-center"
+                >
+                  <AlertCircle className="mx-auto h-20 w-20 text-red-500" strokeWidth={2.5} />
+                  <h3 className="mt-4 text-2xl font-black">Đơn hàng đã hết hạn</h3>
+                  <p className="mt-2 text-sm text-zinc-500">Vui lòng tạo đơn mới</p>
                   <button 
-                    className="flex-1 h-10 rounded-xl border border-zinc-200 dark:border-zinc-800 font-semibold flex items-center justify-center gap-2"
-                    onClick={() => copyInfo(order.qrUrl, 'link QR')}
+                    className={cn(
+                      "mt-6 h-12 px-8 rounded-2xl font-bold text-white shadow-lg active:scale-95 transition-all",
+                      isElite ? "bg-amber-500 shadow-amber-500/30" : "bg-[#0a84ff] shadow-blue-500/30"
+                    )}
+                    onClick={() => router.push('/vip')}
                   >
-                    <Share2 className="h-4 w-4" /> Chia sẻ
+                    Tạo lại đơn
                   </button>
-                </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="pending"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <div className="mb-6 flex items-center justify-center gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 p-4">
+                    <Clock className="h-5 w-5 text-amber-600 dark:text-amber-500" />
+                    <span className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                      Hết hạn sau: 
+                      <span className={cn(
+                        "font-mono text-lg ml-2",
+                        countdown.startsWith('0') && "animate-pulse text-red-500"
+                      )}>
+                        {countdown}
+                      </span>
+                    </span>
+                  </div>
 
-                <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-6" />
-
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold">Hoặc chuyển khoản thủ công:</h4>
-                  
-                  <div className="space-y-2 rounded-lg bg-slate-50 p-4 text-sm dark:bg-slate-900">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Ngân hàng:</span>
-                      <span className="font-medium">ACB</span>
+                  <div className="relative mx-auto mb-6 w-fit rounded-3xl border-4 border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-800">
+                    <img 
+                      src={order.qrUrl} 
+                      alt="QR Code" 
+                      className="h-64 w-64"
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
+                      onError={() => {
+                        console.error('QR Load Error:', order.qrUrl);
+                        toast.error('Không tải được QR');
+                      }}
+                    />
+                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-white px-4 py-1.5 text-xs font-bold shadow-lg dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+                      VietQR
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500">Số TK:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-medium">4187547</span>
-                        <button 
-                          className="h-6 w-6 flex items-center justify-center"
-                          onClick={() => copyInfo('4187547', 'số tài khoản')}
-                        >
-                          <Copy className="h-3 w-3" />
-                        </button>
+                  </div>
+
+                  <div className="mb-6 grid grid-cols-2 gap-3">
+                    <button 
+                      className="h-12 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 font-bold flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                      onClick={downloadQR}
+                    >
+                      <Download className="h-5 w-5" /> Tải QR
+                    </button>
+                    <button 
+                      className="h-12 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 font-bold flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                      onClick={shareQR}
+                    >
+                      <Share2 className="h-5 w-5" /> Chia sẻ
+                    </button>
+                  </div>
+
+                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-6" />
+
+                  <div className="space-y-4">
+                    <h4 className="text-base font-bold flex items-center gap-2">
+                      <span className="w-1 h-5 bg-[#0a84ff] rounded-full" />
+                      Hoặc chuyển khoản thủ công:
+                    </h4>
+                    
+                    <div className="space-y-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800/50 p-5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-zinc-500 font-medium">Ngân hàng:</span>
+                        <span className="text-sm font-bold text-right">ACB - Ngân hàng TMCP Á Châu</span>
                       </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Số tiền:</span>
-                      <span className="font-medium text-blue-600">{order.amount.toLocaleString('vi-VN')}đ</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500">Nội dung:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-medium">
-                          {order.planId === 'pro'? 'VIPPRO' : 'VIPELITE'} {orderId}
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-zinc-500 font-medium">Số TK:</span>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                            onClick={() => copyInfo('4187547', 'số tài khoản', 'stk')}
+                          >
+                            {copiedField === 'stk' ? (
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            ) : (
+                              <Copy className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+                            )}
+                          </button>
+                          <span className="font-mono font-bold text-base">4187547</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-zinc-500 font-medium">Số tiền:</span>
+                        <span className={cn(
+                          "font-black text-lg",
+                          isElite ? "text-amber-500" : "text-[#0a84ff]"
+                        )}>
+                          {order.amount.toLocaleString('vi-VN')}đ
                         </span>
-                        <button 
-                          className="h-6 w-6 flex items-center justify-center"
-                          onClick={() => copyInfo(`${order.planId === 'pro'? 'VIPPRO' : 'VIPELITE'} ${orderId}`, 'nội dung')}
-                        >
-                          <Copy className="h-3 w-3" />
-                        </button>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-zinc-500 font-medium">Nội dung:</span>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                            onClick={() => copyInfo(`${order.planId === 'pro' ? 'VIPPRO' : 'VIPELITE'} ${orderId}`, 'nội dung', 'nd')}
+                          >
+                            {copiedField === 'nd' ? (
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            ) : (
+                              <Copy className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+                            )}
+                          </button>
+                          <span className="font-mono font-bold text-sm">
+                            {order.planId === 'pro' ? 'VIPPRO' : 'VIPELITE'} {orderId}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/30">
-                  <div className="flex gap-2">
-                    <ShieldCheck className="h-5 w-5 flex-shrink-0 text-blue-600" />
-                    <div className="text-xs text-blue-900 dark:text-blue-200">
-                      <p className="font-medium">Lưu ý quan trọng:</p>
-                      <ul className="mt-1 list-inside list-disc space-y-1">
-                        <li>Chuyển đúng số tiền và nội dung để auto kích hoạt</li>
-                        <li>Hệ thống tự động xử lý sau 1-3 phút</li>
-                        <li>Không chuyển tiền nếu đơn đã hết hạn</li>
-                      </ul>
+                  <div className="mt-6 rounded-2xl border-2 border-blue-500/20 bg-blue-500/5 p-4">
+                    <div className="flex gap-3">
+                      <ShieldCheck className="h-6 w-6 flex-shrink-0 text-blue-500 mt-0.5" strokeWidth={2.5} />
+                      <div className="text-sm text-blue-900 dark:text-blue-200">
+                        <p className="font-bold mb-2">Lưu ý quan trọng:</p>
+                        <ul className="space-y-1.5 text-xs leading-relaxed">
+                          <li className="flex gap-2">
+                            <span className="text-blue-500 mt-0.5">•</span>
+                            <span>Chuyển đúng số tiền và nội dung để auto kích hoạt</span>
+                          </li>
+                          <li className="flex gap-2">
+                            <span className="text-blue-500 mt-0.5">•</span>
+                            <span>Hệ thống tự động xử lý sau 1-3 phút</span>
+                          </li>
+                          <li className="flex gap-2">
+                            <span className="text-blue-500 mt-0.5">•</span>
+                            <span>Không chuyển tiền nếu đơn đã hết hạn</span>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
 
-        <p className="mt-4 text-center text-xs text-zinc-500">
-          Cần hỗ trợ? Liên hệ <a href="mailto:support@huha.online" className="underline">support@huha.online</a>
+        <p className="mt-6 text-center text-xs text-zinc-500 leading-relaxed">
+          Cần hỗ trợ? Liên hệ{' '}
+          <a href="mailto:admin@huha.online" className="font-semibold text-[#0a84ff] hover:underline">
+            admin@huha.online
+          </a>
         </p>
       </div>
     </div>
