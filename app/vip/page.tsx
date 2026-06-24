@@ -35,13 +35,14 @@ const VIP_TIERS: VipTier[] = [
     priceText: '49.000',
     duration: 'đ/tháng',
     badge: '⚡',
+    popular: true, // Pro mới là phổ biến
     features: [
       { text: 'Huy hiệu VIP cạnh tên', highlight: true },
       { text: 'Tạo nhóm tối đa 50 thành viên' },
-      { text: 'Tạo tối đa 5 sự kiện/công việc mỗi ngày ' },
-      { text: 'Chat với người lạ không giới hạn ' },
+      { text: 'Tạo tối đa 5 sự kiện/công việc mỗi ngày' },
+      { text: 'Chat với người lạ không giới hạn' },
       { text: 'Mở khoá tìm xung quanh', highlight: true },
-      { text: 'Tham gia tất cả phòng chat công cộng ' },
+      { text: 'Tham gia tất cả phòng chat công cộng' },
       { text: 'Ưu tiên hiển thị sự kiện/công việc' },
       { text: 'Ưu tiên trải nghiệm tính năng mới' }
     ]
@@ -53,7 +54,7 @@ const VIP_TIERS: VipTier[] = [
     priceText: '149.000',
     duration: 'đ/tháng',
     badge: '👑',
-    popular: true,
+    popular: false, // Bỏ popular ở Elite
     savePercent: 67,
     features: [
       { text: 'Huy hiệu VIP Elite + hiệu ứng động', highlight: true },
@@ -313,26 +314,32 @@ activeTab === tab
           ))}
         </div>
 
-        {/* Badge PHỔ BIẾN */}
-        {tier.popular && (
-          <div className="absolute -top-3 left-6 px-3 py-1 bg-zinc-900 dark:bg-white rounded-full">
-            <span className="text-xs font-bold text-white dark:text-zinc-900 flex items-center gap-1">
-              <FiStar size={12} /> PHỔ BIẾN
-            </span>
-          </div>
-        )}
+     {/* Badge PHỔ BIẾN / CAO CẤP */}
+{tier.id === 'pro' && (
+  <div className="absolute -top-3 left-6 px-3 py-1 bg-[#0a84ff] rounded-full">
+    <span className="text-xs font-bold text-white flex items-center gap-1">
+      <FiStar size={12} /> PHỔ BIẾN
+    </span>
+  </div>
+)}
 
-        <div className="mb-5">
-          <div className="flex items-start justify-between mb-3">
-            <div>
-            <div className="flex items-center mb-3">
-  <span className="text-3xl">{tier.badge}</span>
-</div>
-            </div>
-          </div>
+{tier.id === 'elite' && (
+  <div className="absolute -top-3 left-6 px-3 py-1 bg-[#0a84ff] rounded-full">
+    <span className="text-xs font-bold text-white flex items-center gap-1">
+      <FiZap size={12} /> CAO CẤP
+    </span>
+  </div>
+)}
 
-          <div className="flex flex-col gap-1">
-            {appliedPromo && (
+<div className="mb-5">
+  <div className="flex items-start justify-between mb-3">
+    <div>
+
+    </div>
+  </div>
+
+  <div className="flex flex-col gap-1">
+    {appliedPromo && (
               <div className="flex items-center gap-2">
                 <span className="text-xl line-through text-zinc-400 font-semibold">
                   {tier.price.toLocaleString('vi-VN')}
@@ -363,30 +370,36 @@ activeTab === tab
           )}
         </div>
 
-        <div className="space-y-3 mb-5 pb-5 border-b border-zinc-100 dark:border-zinc-800">
-          {tier.features.map((feat, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <div className={cn(
-                "w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5",
-                feat.highlight
-                  ? 'bg-zinc-900 dark:bg-white'
-                  : 'bg-zinc-100 dark:bg-zinc-800'
-              )}>
-                <FiCheck className={cn(
-                  feat.highlight
-                    ? 'text-white dark:text-zinc-900'
-                    : 'text-zinc-400'
-                )} size={13} strokeWidth={3} />
-              </div>
-              <span className={cn(
-                "text-sm leading-6",
-                feat.highlight ? 'font-semibold text-zinc-900 dark:text-zinc-100' : 'text-zinc-600 dark:text-zinc-400'
-              )}>
-                {feat.text}
-              </span>
-            </div>
-          ))}
-        </div>
+     <div className="space-y-3 mb-5 pb-5 border-b border-zinc-100 dark:border-zinc-800">
+  {tier.features.map((feat, i) => (
+    <div key={i} className="flex items-start gap-3">
+      <div className={cn(
+        "w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5",
+        feat.highlight
+          ? tier.id === 'pro' 
+            ? 'bg-[#0a84ff]' 
+            : 'bg-amber-500'
+          : 'bg-zinc-100 dark:bg-zinc-800'
+      )}>
+        <FiCheck className={cn(
+          feat.highlight
+            ? 'text-white'
+            : 'text-zinc-400'
+        )} size={13} strokeWidth={3} />
+      </div>
+      <span className={cn(
+        "text-sm leading-6",
+        feat.highlight 
+          ? tier.id === 'pro'
+            ? 'font-semibold text-[#0a84ff]'
+            : 'font-semibold text-amber-600 dark:text-amber-500'
+          : 'text-zinc-600 dark:text-zinc-400'
+      )}>
+        {feat.text}
+      </span>
+    </div>
+  ))}
+</div>
 
         <button
           onClick={() => handlePurchaseVip(tier.id)}
