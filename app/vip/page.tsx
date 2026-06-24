@@ -112,7 +112,7 @@ export default function VipPage() {
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<{code: string, discount: number} | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('plans');
-
+const [selectedTierId, setSelectedTierId] = useState<'pro' | 'elite'>('elite');
   useEffect(() => {
     if (!user?.uid) return;
     const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
@@ -300,124 +300,139 @@ activeTab === tab
                 </div>
               )}
 
-              {/* VIP Cards */}
-              <div className="space-y-4">
-                {VIP_TIERS.map((tier) => {
-                  const isActive = userVip?.tier === tier.id;
-                  const finalPrice = appliedPromo? Math.round(tier.price * (1 - appliedPromo.discount / 100)) : tier.price;
-                  return (
-                    <div
-                      key={tier.id}
-                      className={cn(
-                        "relative bg-white dark:bg-zinc-900 rounded-3xl p-6 border-2 transition-all",
-                        isActive
-                     ? 'border-emerald-500'
-                          : tier.popular
-                       ? 'border-zinc-900 dark:border-white'
-                          : 'border-zinc-200 dark:border-zinc-800'
-                      )}
-                    >
-                      {tier.popular && (
-                        <div className="absolute -top-3 left-6 px-3 py-1 bg-zinc-900 dark:bg-white rounded-full">
-                          <span className="text-xs font-bold text-white dark:text-zinc-900 flex items-center gap-1">
-                            <FiStar size={12} /> PHỔ BIẾN
-                          </span>
-                        </div>
-                      )}
+            {/* VIP Cards - Chung 1 khung */}
+<div className="relative bg-white dark:bg-zinc-900 rounded-3xl p-6 border-2 border-zinc-200 dark:border-zinc-800">
+  {(() => {
+    const tier = VIP_TIERS.find(t => t.id === selectedTierId)!;
+    const isActive = userVip?.tier === tier.id;
+    const finalPrice = appliedPromo ? Math.round(tier.price * (1 - appliedPromo.discount / 100)) : tier.price;
+    
+    return (
+      <>
+        {/* Toggle chọn gói */}
+        <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl mb-5">
+          {VIP_TIERS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setSelectedTierId(t.id)}
+              className={cn(
+                "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5",
+                selectedTierId === t.id
+                  ? "bg-[#0a84ff] text-white shadow-sm shadow-blue-500/30"
+                  : "text-zinc-500 dark:text-zinc-400"
+              )}
+            >
+              <span className="text-lg">{t.badge}</span>
+              {t.name}
+              {t.popular && selectedTierId !== t.id && (
+                <FiStar size={12} className="text-amber-500" />
+              )}
+            </button>
+          ))}
+        </div>
 
-                      <div className="mb-5">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-3xl">{tier.badge}</span>
-                              <h3 className="text-2xl font-black">{tier.name}</h3>
-                            </div>
-                          </div>
-                        </div>
+        {/* Badge PHỔ BIẾN */}
+        {tier.popular && (
+          <div className="absolute -top-3 left-6 px-3 py-1 bg-zinc-900 dark:bg-white rounded-full">
+            <span className="text-xs font-bold text-white dark:text-zinc-900 flex items-center gap-1">
+              <FiStar size={12} /> PHỔ BIẾN
+            </span>
+          </div>
+        )}
 
-                      <div className="flex flex-col gap-1">
-  {appliedPromo && (
-    <div className="flex items-center gap-2">
-      <span className="text-xl line-through text-zinc-400 font-semibold">
-        {tier.price.toLocaleString('vi-VN')}
-      </span>
-      <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-md">
-        -{appliedPromo.discount}%
-      </span>
-    </div>
-  )}
-  <div className="flex items-baseline gap-2">
-    <span className="text-4xl font-black text-[#0a84ff]">
-      {finalPrice.toLocaleString('vi-VN')}
-    </span>
-    <span className="text-base text-zinc-500 font-semibold">{tier.duration}</span>
-  </div>
-  {appliedPromo && (
-    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-      Tiết kiệm {(tier.price - finalPrice).toLocaleString('vi-VN')}đ
-    </span>
-  )}
-</div>
-
-                        {tier.savePercent && (
-                          <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                            <FiTrendingUp size={14} />
-                            <span className="text-xs font-bold">Tiết kiệm {tier.savePercent}%</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-3 mb-5 pb-5 border-b border-zinc-100 dark:border-zinc-800">
-                        {tier.features.map((feat, i) => (
-                          <div key={i} className="flex items-start gap-3">
-                            <div className={cn(
-                              "w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5",
-                              feat.highlight
-                           ? 'bg-zinc-900 dark:bg-white'
-                                : 'bg-zinc-100 dark:bg-zinc-800'
-                            )}>
-                              <FiCheck className={cn(
-                                feat.highlight
-                             ? 'text-white dark:text-zinc-900'
-                                  : 'text-zinc-400'
-                              )} size={13} strokeWidth={3} />
-                            </div>
-                            <span className={cn(
-                              "text-sm leading-6",
-                              feat.highlight? 'font-semibold text-zinc-900 dark:text-zinc-100' : 'text-zinc-600 dark:text-zinc-400'
-                            )}>
-                              {feat.text}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <button
-                        onClick={() => handlePurchaseVip(tier.id)}
-                        disabled={!!purchasingVip || isActive}
-                  className={cn(
-  "w-full h-14 rounded-2xl font-bold text-base transition-all disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98]",
-  isActive
-? 'bg-emerald-500 text-white'
-    : 'bg-[#0a84ff] text-white shadow-lg shadow-blue-500/30'
-)}
-                      >
-                        {purchasingVip === tier.id? (
-                          <FiLoader className="animate-spin" size={22} />
-                        ) : isActive? (
-                          <>
-                            <FiCheck size={20} strokeWidth={3} /> Đang sử dụng
-                          </>
-                        ) : (
-                          <>
-                            <FiCreditCard size={20} /> Nâng cấp ngay
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  );
-                })}
+        <div className="mb-5">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-3xl">{tier.badge}</span>
+                <h3 className="text-2xl font-black">{tier.name}</h3>
               </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            {appliedPromo && (
+              <div className="flex items-center gap-2">
+                <span className="text-xl line-through text-zinc-400 font-semibold">
+                  {tier.price.toLocaleString('vi-VN')}
+                </span>
+                <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-md">
+                  -{appliedPromo.discount}%
+                </span>
+              </div>
+            )}
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-black text-[#0a84ff]">
+                {finalPrice.toLocaleString('vi-VN')}
+              </span>
+              <span className="text-base text-zinc-500 font-semibold">{tier.duration}</span>
+            </div>
+            {appliedPromo && (
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                Tiết kiệm {(tier.price - finalPrice).toLocaleString('vi-VN')}đ
+              </span>
+            )}
+          </div>
+
+          {tier.savePercent && (
+            <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
+              <FiTrendingUp size={14} />
+              <span className="text-xs font-bold">Tiết kiệm {tier.savePercent}%</span>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-3 mb-5 pb-5 border-b border-zinc-100 dark:border-zinc-800">
+          {tier.features.map((feat, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <div className={cn(
+                "w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5",
+                feat.highlight
+                  ? 'bg-zinc-900 dark:bg-white'
+                  : 'bg-zinc-100 dark:bg-zinc-800'
+              )}>
+                <FiCheck className={cn(
+                  feat.highlight
+                    ? 'text-white dark:text-zinc-900'
+                    : 'text-zinc-400'
+                )} size={13} strokeWidth={3} />
+              </div>
+              <span className={cn(
+                "text-sm leading-6",
+                feat.highlight ? 'font-semibold text-zinc-900 dark:text-zinc-100' : 'text-zinc-600 dark:text-zinc-400'
+              )}>
+                {feat.text}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={() => handlePurchaseVip(tier.id)}
+          disabled={!!purchasingVip || isActive}
+          className={cn(
+            "w-full h-14 rounded-2xl font-bold text-base transition-all disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98]",
+            isActive
+              ? 'bg-emerald-500 text-white'
+              : 'bg-[#0a84ff] text-white shadow-lg shadow-blue-500/30'
+          )}
+        >
+          {purchasingVip === tier.id ? (
+            <FiLoader className="animate-spin" size={22} />
+          ) : isActive ? (
+            <>
+              <FiCheck size={20} strokeWidth={3} /> Đang sử dụng
+            </>
+          ) : (
+            <>
+              <FiCreditCard size={20} /> Nâng cấp ngay
+            </>
+          )}
+        </button>
+      </>
+    );
+  })()}
+</div>
 
               {/* Trust */}
               <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800">
