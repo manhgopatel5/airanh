@@ -3,7 +3,6 @@ import crypto from 'crypto';
 import { adminDb } from '@/lib/firebase-admin';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
-// QUAN TRỌNG: Tắt bodyParser của Next.js để lấy raw body
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -24,40 +23,43 @@ type OrderData = {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.text(); // Phải lấy raw text, không dùng req.json()
-    const sepaySignature = req.headers.get('x-sepay-signature');
+    const body = await req.text(); // raw body
+    const sepaySignature = req.headers.get('x-sepay-signature') || '';
+    const timestamp = req.headers.get('x-sepay-timestamp') || '';
 
+    console.log('[SePay] Timestamp:', timestamp);
     console.log('[SePay] Body length:', body.length);
-    console.log('[SePay] Raw signature:', sepaySignature);
 
     const secret = process.env.SEPAY_WEBHOOK_SECRET;
-    console.log('[SePay] Secret length:', secret?.length); // Phải ra 40
-
     if (!secret) {
-      console.error('[SePay] Missing SEPAY_WEBHOOK_SECRET');
       return NextResponse.json({ error: 'Server config error' }, { status: 500 });
     }
 
-    // Bỏ prefix "sha256="
-    const signature = sepaySignature?.startsWith('sha256=')
-    ? sepaySignature.slice(7)
-      : sepaySignature;
+    // SePay ký chuỗi: {timestamp}.{raw_body}
+    const payload = `${timestamp}.${body}`;
+    const expected = 'sha256=' + crypto.createHmac('sha256', secret)
+     .update(payload)
+     .digest('hex');
 
-    const hmac = crypto.createHmac('sha256', secret).update(body).digest('hex');
-
-    if (hmac!== signature) {
+    if (sepaySignature!== expected) {
       console.error('[SePay] Invalid signature:', {
-        expected: hmac,
-        received: signature,
-        bodyPreview: body.slice(0, 100)
+        expected,
+        received: sepaySignature,
+        payloadStart: payload.slice(0, 100)
       });
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
+
+    // Check timestamp chống replay attack - quá 5 phút thì từ chối
+    const now = Math.floor(Date.now() / 1000);
+    if (Math.abs(now - Number(timestamp)) > 300) {
+      return NextResponse.json({ error: 'Timestamp expired' }, { status: 400 });
     }
 
     const data = JSON.parse(body);
     console.log('[SePay] Transaction:', data.id);
 
-    // Regex: Lấy orderId từ description, bỏ space và ký tự thừa của ACB
+    // ACB thêm "BankAPINotify" và mã FT ở đầu, bỏ hết space
     const desc = data.description?.replace(/\s+/g, '');
     const match = desc?.match(/VIP(PRO|ELITE)([A-Za-z0-9]+)/i);
 
@@ -74,7 +76,6 @@ export async function POST(req: NextRequest) {
     const orderSnap = await orderRef.get();
 
     if (!orderSnap.exists) {
-      console.error('[SePay] Order not found:', orderId);
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
@@ -84,7 +85,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (Number(order.amount)!== Number(data.transferAmount)) {
-      console.error('[SePay] Amount mismatch:', { expected: order.amount, received: data.transferAmount });
       return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 });
     }
 
