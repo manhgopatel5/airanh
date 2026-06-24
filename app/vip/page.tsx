@@ -8,7 +8,7 @@ import { doc, onSnapshot, updateDoc, serverTimestamp, Timestamp, collection } fr
 import { toast } from "sonner";
 import { Crown } from "lucide-react";
 import {  differenceInDays } from "date-fns";
-import { FiLoader, FiCheck, FiShield, FiGift, FiCreditCard, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { FiLoader, FiZap, FiCheck, FiShield, FiGift, FiCreditCard, FiChevronDown, FiChevronUp } from "react-icons/fi";
 
 
 type VipTier = {
