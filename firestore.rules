@@ -20,11 +20,12 @@ match /users/{userId} {
   // Cho phép đọc public để query BXH chạy được
   allow read: if true;
   
-  // ĐÃ FIX: Thêm 'huhaScore' vào list cho phép update
+  // FIX: Bỏ 'vip' khỏi list, chặn client tự sửa vip
   allow update: if isOwner(userId) 
+    && !request.resource.data.diff(resource.data).changedKeys().hasAny(['vip'])
     && request.resource.data.diff(resource.data).changedKeys()
       .hasOnly(['name', 'avatar', 'bio', 'birthday', 'phone', 'title', 'location', 
-               'skills', 'portfolio', 'vip', 'online', 'lastSeen', 'nameLower', 'huhaScore']);
+               'skills', 'portfolio', 'online', 'lastSeen', 'nameLower', 'huhaScore']);
   
   allow create: if isOwner(userId);
   allow delete: if isAdmin();
@@ -302,12 +303,19 @@ match /notifications/{notifId} {
       allow delete: if false;
     }
 
-    // ========== STRANGER QUEUE ==========
-    match /stranger_queue/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
-    }
+// ========== STRANGER QUEUE ==========
+match /stranger_queue/{userId} {
+  allow read: if isOwner(userId);
+  allow create: if isOwner(userId);
+  allow update: if isOwner(userId);
+  allow delete: if isOwner(userId);
+} 
+
+// ========== ORDERS ==========
+match /orders/{orderId} {
+  allow read: if isSignedIn() && request.auth.uid == resource.data.userId;
+  allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+  allow update, delete: if false; 
+}
   }
 }
