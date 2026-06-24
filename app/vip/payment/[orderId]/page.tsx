@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { getFirebaseDB } from '@/lib/firebase';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'sonner';
 import { Copy, CheckCircle2, Clock, AlertCircle, Download, Share2, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -17,31 +18,54 @@ type Order = {
   qrUrl: string;
   createdAt: Timestamp;
   expireAt: Timestamp;
-  paidAt?: Timestamp;
-  sepayTransactionId?: number;
 };
 
 export default function PaymentPage() {
   const params = useParams();
   const router = useRouter();
   const db = getFirebaseDB();
+  const auth = getAuth();
   const orderId = params.orderId as string;
   
   const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
-    if (!orderId) return;
-    const unsub = onSnapshot(doc(db, 'orders', orderId), (snap) => {
-      if (snap.exists()) {
-        setOrder(snap.data() as Order);
-      } else {
-        toast.error('Không tìm thấy đơn hàng');
-        router.push('/vip');
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        toast.error('Vui lòng đăng nhập');
+        router.push('/auth');
+        return;
       }
+      
+      if (!orderId) return;
+      
+      const unsubOrder = onSnapshot(
+        doc(db, 'orders', orderId), 
+        (snap) => {
+          if (snap.exists()) {
+            const data = snap.data() as Order;
+            console.log('Order data:', data, 'Your UID:', user.uid); // Debug
+            setOrder(data);
+          } else {
+            toast.error('Không tìm thấy đơn hàng');
+            router.push('/vip');
+          }
+          setLoading(false);
+        }, 
+        (error) => {
+          console.error('Firestore error:', error.code, error.message);
+          toast.error(`Lỗi: ${error.code}`);
+          setLoading(false); // QUAN TRỌNG: Tắt loading khi lỗi
+        }
+      );
+      
+      return () => unsubOrder();
     });
-    return () => unsub();
-  }, [orderId, db, router]);
+    
+    return () => unsubAuth();
+  }, [orderId, db, router, auth]);
 
   useEffect(() => {
     if (!order?.expireAt) return;
@@ -85,8 +109,21 @@ export default function PaymentPage() {
     link.click();
   };
 
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center flex-col gap-2">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+        <p>Đang tải...</p>
+      </div>
+    );
+  }
+
   if (!order) {
-    return <div className="flex h-screen items-center justify-center">Đang tải...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Không tìm thấy đơn hàng</p>
+      </div>
+    );
   }
 
   const isExpired = countdown === 'Đã hết hạn' || order.status === 'expired';
