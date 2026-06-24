@@ -3,11 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, Timestamp } from 'firebase/firestore';
-import { getFirebaseDB } from '@/lib/firebase'; // Đổi từ db sang getFirebaseDB
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { getFirebaseDB } from '@/lib/firebase';
 import { toast } from 'sonner';
 import { Copy, CheckCircle2, Clock, AlertCircle, Download, Share2, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -28,14 +24,12 @@ type Order = {
 export default function PaymentPage() {
   const params = useParams();
   const router = useRouter();
-  const db = getFirebaseDB(); // Dùng getFirebaseDB()
+  const db = getFirebaseDB();
   const orderId = params.orderId as string;
   
   const [order, setOrder] = useState<Order | null>(null);
   const [countdown, setCountdown] = useState('');
-  const [copied, setCopied] = useState(false);
 
-  // 1. Realtime listen đơn hàng
   useEffect(() => {
     if (!orderId) return;
     const unsub = onSnapshot(doc(db, 'orders', orderId), (snap) => {
@@ -49,7 +43,6 @@ export default function PaymentPage() {
     return () => unsub();
   }, [orderId, db, router]);
 
-  // 2. Đếm ngược 15 phút
   useEffect(() => {
     if (!order?.expireAt) return;
     const interval = setInterval(() => {
@@ -68,7 +61,6 @@ export default function PaymentPage() {
     return () => clearInterval(interval);
   }, [order?.expireAt]);
 
-  // 3. Auto redirect khi thanh toán xong
   useEffect(() => {
     if (order?.status === 'paid') {
       toast.success('Thanh toán thành công!');
@@ -82,9 +74,7 @@ export default function PaymentPage() {
 
   const copyInfo = async (text: string, label: string) => {
     await navigator.clipboard.writeText(text);
-    setCopied(true);
     toast.success(`Đã copy ${label}`);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const downloadQR = () => {
@@ -105,32 +95,35 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
       <div className="mx-auto max-w-md pt-8">
-        <Button variant="ghost" size="sm" onClick={() => router.back()} className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại
-        </Button>
+        <button 
+          onClick={() => router.back()} 
+          className="mb-4 flex items-center gap-2 text-sm font-medium hover:opacity-70"
+        >
+          <ArrowLeft className="h-4 w-4" /> Quay lại
+        </button>
 
-        <Card className="overflow-hidden border-0 shadow-2xl">
-          <CardHeader className={cn(
-            "bg-gradient-to-r text-white",
+        <div className="overflow-hidden rounded-2xl border-0 shadow-2xl bg-white dark:bg-zinc-900">
+          <div className={cn(
+            "bg-gradient-to-r text-white p-6",
             order.planId === 'elite' 
              ? "from-amber-500 to-orange-600" 
               : "from-blue-500 to-indigo-600"
           )}>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl">Thanh toán {order.planName}</CardTitle>
-              <Badge variant="secondary" className="bg-white/20 text-white">
+              <h1 className="text-2xl font-bold">Thanh toán {order.planName}</h1>
+              <div className="rounded-full bg-white/20 px-3 py-1 text-sm font-semibold text-white">
                 {order.amount.toLocaleString('vi-VN')}đ
-              </Badge>
+              </div>
             </div>
-            <p className="text-sm text-white/80">Mã đơn: #{orderId}</p>
-          </CardHeader>
+            <p className="text-sm text-white/80 mt-1">Mã đơn: #{orderId}</p>
+          </div>
 
-          <CardContent className="p-6">
+          <div className="p-6">
             {isPaid? (
               <div className="py-12 text-center">
                 <CheckCircle2 className="mx-auto h-16 w-16 text-green-500" />
                 <h3 className="mt-4 text-xl font-bold">Thanh toán thành công!</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-2 text-sm text-zinc-500">
                   VIP đã được kích hoạt. Đang chuyển hướng...
                 </p>
               </div>
@@ -138,10 +131,13 @@ export default function PaymentPage() {
               <div className="py-12 text-center">
                 <AlertCircle className="mx-auto h-16 w-16 text-red-500" />
                 <h3 className="mt-4 text-xl font-bold">Đơn hàng đã hết hạn</h3>
-                <p className="mt-2 text-sm text-muted-foreground">Vui lòng tạo đơn mới</p>
-                <Button className="mt-4" onClick={() => router.push('/vip')}>
+                <p className="mt-2 text-sm text-zinc-500">Vui lòng tạo đơn mới</p>
+                <button 
+                  className="mt-4 h-10 px-6 bg-blue-500 text-white rounded-xl font-semibold"
+                  onClick={() => router.push('/vip')}
+                >
                   Tạo lại đơn
-                </Button>
+                </button>
               </div>
             ) : (
               <>
@@ -164,56 +160,58 @@ export default function PaymentPage() {
                 </div>
 
                 <div className="mb-6 flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={downloadQR}>
-                    <Download className="mr-2 h-4 w-4" /> Tải QR
-                  </Button>
-                  <Button variant="outline" className="flex-1" onClick={() => copyInfo(order.qrUrl, 'link QR')}>
-                    <Share2 className="mr-2 h-4 w-4" /> Chia sẻ
-                  </Button>
+                  <button 
+                    className="flex-1 h-10 rounded-xl border border-zinc-200 dark:border-zinc-800 font-semibold flex items-center justify-center gap-2"
+                    onClick={downloadQR}
+                  >
+                    <Download className="h-4 w-4" /> Tải QR
+                  </button>
+                  <button 
+                    className="flex-1 h-10 rounded-xl border border-zinc-200 dark:border-zinc-800 font-semibold flex items-center justify-center gap-2"
+                    onClick={() => copyInfo(order.qrUrl, 'link QR')}
+                  >
+                    <Share2 className="h-4 w-4" /> Chia sẻ
+                  </button>
                 </div>
 
-                <Separator className="my-6" />
+                <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-6" />
 
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold">Hoặc chuyển khoản thủ công:</h4>
                   
                   <div className="space-y-2 rounded-lg bg-slate-50 p-4 text-sm dark:bg-slate-900">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Ngân hàng:</span>
+                      <span className="text-zinc-500">Ngân hàng:</span>
                       <span className="font-medium">ACB</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Số TK:</span>
+                      <span className="text-zinc-500">Số TK:</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-medium">4187547</span>
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          className="h-6 w-6"
+                        <button 
+                          className="h-6 w-6 flex items-center justify-center"
                           onClick={() => copyInfo('4187547', 'số tài khoản')}
                         >
                           <Copy className="h-3 w-3" />
-                        </Button>
+                        </button>
                       </div>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Số tiền:</span>
+                      <span className="text-zinc-500">Số tiền:</span>
                       <span className="font-medium text-blue-600">{order.amount.toLocaleString('vi-VN')}đ</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Nội dung:</span>
+                      <span className="text-zinc-500">Nội dung:</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-medium">
                           {order.planId === 'pro'? 'VIPPRO' : 'VIPELITE'} {orderId}
                         </span>
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          className="h-6 w-6"
+                        <button 
+                          className="h-6 w-6 flex items-center justify-center"
                           onClick={() => copyInfo(`${order.planId === 'pro'? 'VIPPRO' : 'VIPELITE'} ${orderId}`, 'nội dung')}
                         >
                           <Copy className="h-3 w-3" />
-                        </Button>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -234,10 +232,10 @@ export default function PaymentPage() {
                 </div>
               </>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">
+        <p className="mt-4 text-center text-xs text-zinc-500">
           Cần hỗ trợ? Liên hệ <a href="mailto:support@huha.online" className="underline">support@huha.online</a>
         </p>
       </div>
