@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
-import { Timestamp } from 'firebase-admin/firestore';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
 const SEPAY_ACCOUNT = '4187547';
 const SEPAY_BANK = 'ACB';
@@ -22,9 +22,9 @@ type PlanId = keyof typeof VIP_PLANS;
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, planId, amount } = await req.json();
+    const { userId, planId, amount, promoCode } = await req.json();
 
-    if (!userId || !planId || !amount) {
+    if (!userId || !planId || amount == null) {
       return NextResponse.json(
         { message: 'Thiếu userId, planId hoặc amount' }, 
         { status: 400 }
@@ -49,7 +49,54 @@ export async function POST(req: NextRequest) {
     }
 
     const plan = VIP_PLANS[planId as PlanId];
-    if (amount !== plan.price) {
+    let finalAmount = plan.price;
+    let appliedDiscount = 0;
+
+    // Validate mã giảm giá nếu có
+    if (promoCode) {
+      const code = promoCode.toUpperCase().trim();
+      const promoRef = db.collection('promoCodes').doc(code);
+      const promoSnap = await promoRef.get();
+      
+      if (!promoSnap.exists) {
+        return NextResponse.json(
+          { message: 'Mã giảm giá không tồn tại' }, 
+          { status: 400 }
+        );
+      }
+      
+      const promo = promoSnap.data()!;
+      
+      if (!promo.active) {
+        return NextResponse.json(
+          { message: 'Mã đã bị tắt' }, 
+          { status: 400 }
+        );
+      }
+      
+      if (promo.expiresAt && promo.expiresAt.toDate() < new Date()) {
+        return NextResponse.json(
+          { message: 'Mã đã hết hạn' }, 
+          { status: 400 }
+        );
+      }
+      
+      if (promo.maxUse && promo.usedCount >= promo.maxUse) {
+        return NextResponse.json(
+          { message: 'Mã đã hết lượt sử dụng' }, 
+          { status: 400 }
+        );
+      }
+      
+      appliedDiscount = promo.discount;
+      finalAmount = Math.round(plan.price * (1 - appliedDiscount / 100));
+      
+      // Tăng usedCount luôn
+      await promoRef.update({ usedCount: FieldValue.increment(1) });
+    }
+
+    // Check amount client gửi lên có khớp không
+    if (amount !== finalAmount) {
       return NextResponse.json(
         { message: 'Số tiền không hợp lệ' }, 
         { status: 400 }
@@ -58,15 +105,17 @@ export async function POST(req: NextRequest) {
 
     const orderId = Date.now();
     
-    // FIX: Encode description để tránh lỗi dấu cách
     const description = encodeURIComponent(`${plan.code} ${orderId}`);
-    const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${SEPAY_BANK}&amount=${amount}&des=${description}&template=compact`;
+    const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${SEPAY_BANK}&amount=${finalAmount}&des=${description}&template=compact`;
     
     await db.collection('orders').doc(`${orderId}`).set({
       userId,
       planId,
       planName: plan.name,
-      amount,
+      amount: finalAmount,
+      originalAmount: plan.price,
+      promoCode: promoCode?.toUpperCase() || null,
+      discount: appliedDiscount,
       status: 'pending',
       qrUrl,
       createdAt: Timestamp.now(),
@@ -76,8 +125,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       qrUrl,
       orderId: `${orderId}`,
-      amount,
-      planName: plan.name
+      amount: finalAmount,
+      planName: plan.name,
+      discount: appliedDiscount
     });
 
   } catch (error: any) {
