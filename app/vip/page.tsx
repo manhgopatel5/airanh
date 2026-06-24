@@ -157,20 +157,29 @@ export default function VipPage() {
     }
   };
 
-  const applyPromoCode = () => {
-    const validCodes: Record<string, number> = {
-      'VIP10': 10, 'WELCOME20': 20, 'NEWUSER30': 30
-    };
-    const code = promoCode.toUpperCase();
-    const discount = validCodes[code];
-    if (discount) {
-      setAppliedPromo({ code, discount });
-      toast.success(`Giảm ${discount}%`);
-      setPromoCode("");
-    } else {
-      toast.error("Mã không hợp lệ");
+  const applyPromoCode = async () => {
+  if (!promoCode) return toast.error("Nhập mã giảm giá");
+  
+  try {
+    const res = await fetch('/api/promo/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: promoCode })
+    });
+    
+    const data = await res.json();
+    
+    if (!data.valid) {
+      return toast.error(data.message);
     }
-  };
+    
+    setAppliedPromo({ code: data.code, discount: data.discount });
+    toast.success(`Áp dụng mã ${data.code} - Giảm ${data.discount}%`);
+    setPromoCode("");
+  } catch (error: any) {
+    toast.error("Lỗi khi kiểm tra mã");
+  }
+};
 
   const daysLeft = userVip?.expiresAt
 ? Math.max(0, differenceInDays(userVip.expiresAt.toDate(), new Date()))
