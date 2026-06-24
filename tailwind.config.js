@@ -31,7 +31,7 @@ const config: Config = {
       variants: ["sm", "md", "lg", "xl", "2xl"],
     },
     {
-      pattern: /^shadow-(blue|violet|purple|indigo|emerald)-(400|500|600)\/(20|30)$/,
+      pattern: /^shadow-(blue|violet|purple|indigo|emerald|amber)-(400|500|600)\/(20|30)$/,
       variants: ["hover", "group-hover"],
     },
     // Thêm mấy màu gradient của public rooms
@@ -188,6 +188,10 @@ const config: Config = {
         spin: {
           to: { transform: "rotate(360deg)" },
         },
+        "pulse-slow": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.01)" },
+        },
       },
       animation: {
         "slide-up": "slide-up 0.3s ease-out",
@@ -196,6 +200,7 @@ const config: Config = {
         "scale-in": "scale-in 0.2s ease-out",
         shimmer: "shimmer 2s infinite",
         spin: "spin 1s linear infinite",
+        "pulse-slow": "pulse-slow 2s ease-in-out infinite",
       },
 
       borderRadius: {
