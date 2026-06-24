@@ -125,37 +125,38 @@ export default function VipPage() {
   }, [user?.uid, db]);
 
   const handlePurchaseVip = async (tierId: 'pro' | 'elite') => {
-    if (!user?.uid) return toast.error("Vui lòng đăng nhập");
-    const tier = VIP_TIERS.find(t => t.id === tierId);
-    if (!tier) return;
+  if (!user?.uid) return toast.error("Vui lòng đăng nhập");
+  const tier = VIP_TIERS.find(t => t.id === tierId);
+  if (!tier) return;
 
-    setPurchasingVip(tierId);
-    try {
-      const finalPrice = appliedPromo
-    ? Math.round(tier.price * (1 - appliedPromo.discount / 100))
-        : tier.price;
+  setPurchasingVip(tierId);
+  try {
+    const finalPrice = appliedPromo
+      ? Math.round(tier.price * (1 - appliedPromo.discount / 100))
+      : tier.price;
 
-      const res = await fetch('/api/payment/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          planId: tierId,
-          amount: finalPrice,
-        })
-      });
+    const res = await fetch('/api/payment/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.uid,
+        planId: tierId,
+        amount: finalPrice,
+        promoCode: appliedPromo?.code || null, // Thêm dòng này
+      })
+    });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Lỗi tạo đơn');
-      if (!data.orderId) throw new Error('Không nhận được mã đơn');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Lỗi tạo đơn');
+    if (!data.orderId) throw new Error('Không nhận được mã đơn');
 
-      router.push(`/vip/payment/${data.orderId}`);
-    } catch (error: any) {
-      toast.error("Lỗi: " + error.message);
-    } finally {
-      setPurchasingVip(null);
-    }
-  };
+    router.push(`/vip/payment/${data.orderId}`);
+  } catch (error: any) {
+    toast.error("Lỗi: " + error.message);
+  } finally {
+    setPurchasingVip(null);
+  }
+};
 
   const applyPromoCode = async () => {
   if (!promoCode) return toast.error("Nhập mã giảm giá");
