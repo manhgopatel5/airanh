@@ -16,7 +16,7 @@ const VIP_PLANS = {
     name: 'VIP Elite',
     code: 'VIPELITE'
   }
-} as const;
+};
 
 type PlanId = keyof typeof VIP_PLANS;
 
@@ -49,8 +49,9 @@ export async function POST(req: NextRequest) {
     }
 
     const plan = VIP_PLANS[planId as PlanId];
-    let finalAmount = plan.price;
+    let finalAmount: number = plan.price;
     let appliedDiscount = 0;
+    let appliedCode: string | null = null;
 
     // Validate mã giảm giá nếu có
     if (promoCode) {
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
       }
       
       appliedDiscount = promo.discount;
+      appliedCode = code;
       finalAmount = Math.round(plan.price * (1 - appliedDiscount / 100));
       
       // Tăng usedCount luôn
@@ -114,7 +116,7 @@ export async function POST(req: NextRequest) {
       planName: plan.name,
       amount: finalAmount,
       originalAmount: plan.price,
-      promoCode: promoCode?.toUpperCase() || null,
+      promoCode: appliedCode,
       discount: appliedDiscount,
       status: 'pending',
       qrUrl,
