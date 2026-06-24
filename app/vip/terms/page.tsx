@@ -8,18 +8,18 @@ export default function VipTermsPage() {
 
   return (
     <div className="min-h-dvh bg-white dark:bg-zinc-950">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
-        <div className="flex items-center h-14 px-4 gap-3">
-          <button
-            onClick={() => router.back()}
-            className="w-9 h-9 flex items-center justify-center -ml-2 active:scale-90 transition-transform"
-          >
-            <FiArrowLeft size={24} strokeWidth={2} />
-          </button>
-          <h1 className="text-base font-semibold">Điều khoản VIP</h1>
-        </div>
-      </div>
+    {/* Header */}
+<div className="bg-white dark:bg-zinc-950 border-b border-black/5 dark:border-white/5">
+  <div className="flex items-center h-14 px-4 gap-3">
+    <button
+      onClick={() => router.back()}
+      className="w-9 h-9 flex items-center justify-center -ml-2 active:scale-90 transition-transform"
+    >
+      <FiArrowLeft size={24} strokeWidth={2} />
+    </button>
+    <h1 className="text-base font-semibold">Điều khoản VIP</h1>
+  </div>
+</div>
 
       <div className="px-4 py-6 max-w-2xl mx-auto">
         <div className="prose prose-sm dark:prose-invert max-w-none">
