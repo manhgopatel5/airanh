@@ -3,6 +3,10 @@ import crypto from 'crypto';
 import { adminDb } from '@/lib/firebase-admin';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
+// QUAN TRỌNG: Tắt bodyParser của Next.js để lấy raw body
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 type OrderData = {
   userId: string;
   planId: 'pro' | 'elite';
@@ -20,20 +24,23 @@ type OrderData = {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.text();
+    const body = await req.text(); // Phải lấy raw text, không dùng req.json()
     const sepaySignature = req.headers.get('x-sepay-signature');
 
-    console.log('[SePay] Webhook received');
+    console.log('[SePay] Body length:', body.length);
+    console.log('[SePay] Raw signature:', sepaySignature);
 
     const secret = process.env.SEPAY_WEBHOOK_SECRET;
+    console.log('[SePay] Secret length:', secret?.length); // Phải ra 40
+
     if (!secret) {
       console.error('[SePay] Missing SEPAY_WEBHOOK_SECRET');
       return NextResponse.json({ error: 'Server config error' }, { status: 500 });
     }
 
-    // FIX: SePay gửi "sha256=xxx", phải bỏ prefix
+    // Bỏ prefix "sha256="
     const signature = sepaySignature?.startsWith('sha256=')
-     ? sepaySignature.slice(7)
+    ? sepaySignature.slice(7)
       : sepaySignature;
 
     const hmac = crypto.createHmac('sha256', secret).update(body).digest('hex');
@@ -41,19 +48,16 @@ export async function POST(req: NextRequest) {
     if (hmac!== signature) {
       console.error('[SePay] Invalid signature:', {
         expected: hmac,
-        received: signature
+        received: signature,
+        bodyPreview: body.slice(0, 100)
       });
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     const data = JSON.parse(body);
-    console.log('[SePay] Transaction:', {
-      id: data.id,
-      amount: data.transferAmount,
-      desc: data.description,
-    });
+    console.log('[SePay] Transaction:', data.id);
 
-    // Regex: VIPPRO + orderId, bỏ space và ký tự thừa từ ngân hàng
+    // Regex: Lấy orderId từ description, bỏ space và ký tự thừa của ACB
     const desc = data.description?.replace(/\s+/g, '');
     const match = desc?.match(/VIP(PRO|ELITE)([A-Za-z0-9]+)/i);
 
@@ -75,29 +79,23 @@ export async function POST(req: NextRequest) {
     }
 
     const order = orderSnap.data() as OrderData;
-
     if (order.status === 'paid') {
       return NextResponse.json({ success: true, message: 'Already paid' });
     }
 
-    const orderAmount = Number(order.amount);
-    const paidAmount = Number(data.transferAmount);
-
-    if (orderAmount!== paidAmount) {
-      console.error('[SePay] Amount mismatch:', { expected: orderAmount, received: paidAmount });
+    if (Number(order.amount)!== Number(data.transferAmount)) {
+      console.error('[SePay] Amount mismatch:', { expected: order.amount, received: data.transferAmount });
       return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 });
     }
 
     if (order.expireAt.toDate() < new Date()) {
       await orderRef.update({ status: 'expired' });
-      console.error('[SePay] Order expired:', orderId);
       return NextResponse.json({ error: 'Order expired' }, { status: 400 });
     }
 
     await db.runTransaction(async (tx) => {
       const freshOrderSnap = await tx.get(orderRef);
       const freshOrder = freshOrderSnap.data() as OrderData;
-
       if (freshOrder.status === 'paid') return;
 
       tx.update(orderRef, {
