@@ -313,7 +313,10 @@ match /stranger_queue/{userId} {
 
 // ========== ORDERS ==========
 match /orders/{orderId} {
-  allow read: if isSignedIn() && request.auth.uid == resource.data.userId;
+  allow read: if isSignedIn() && (
+    request.auth.uid == resource.data.userId || 
+    isAdmin()
+  );
   allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
   allow update, delete: if false; 
 }
