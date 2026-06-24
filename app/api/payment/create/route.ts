@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin'; // Dùng admin
+import { adminDb } from '@/lib/firebase-admin'; // BẮT BUỘC DÙNG ADMIN
 import { Timestamp } from 'firebase-admin/firestore';
 
 const VIP_PLANS = {
@@ -27,10 +27,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Dùng adminDb() thay vì db
-    const db = adminDb();
+    const db = adminDb(); // Gọi function ra instance
     
-    // Check user tồn tại - syntax admin
     const userSnap = await db.collection('users').doc(userId).get();
     if (!userSnap.exists) {
       return NextResponse.json(
@@ -39,10 +37,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check giá server-side
     const plan = VIP_PLANS[planId as PlanId];
     if (amount !== plan.price) {
-      console.error(`Price mismatch: client=${amount}, server=${plan.price}`);
       return NextResponse.json(
         { message: 'Số tiền không hợp lệ' }, 
         { status: 400 }
@@ -51,7 +47,6 @@ export async function POST(req: NextRequest) {
 
     const orderId = Date.now();
     
-    // setDoc syntax admin
     await db.collection('orders').doc(`${orderId}`).set({
       userId,
       planId,
@@ -63,8 +58,6 @@ export async function POST(req: NextRequest) {
     });
 
     const qrUrl = `https://qr.sepay.vn/img?acc=ACB&bank=ACB&amount=${amount}&des=VIPELITE ${orderId}&template=compact`;
-    
-    console.log(`Order created: ${orderId} | User: ${userId} | Plan: ${planId}`);
     
     return NextResponse.json({ 
       qrUrl,
