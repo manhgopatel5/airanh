@@ -22,17 +22,16 @@ type OrderData = {
 };
 
 function extractOrderId(content: string, description: string): string | null {
-  // Gộp cả content và description lại, bỏ space
   const text = `${content} ${description}`.replace(/\s+/g, '');
-  // Bắt VIPPRO hoặc VIPELITE + chuỗi ID
   const match = text.match(/VIP(PRO|ELITE)([A-Za-z0-9]+)/i);
-  if (!match) return null;
+
+  if (!match ||!match[2]) return null;
 
   // Auto fix lỗi nhìn nhầm: l->1, O->0, I->1
   return match[2]
-  .replace(/l/g, '1')
-  .replace(/O/g, '0')
-  .replace(/I/g, '1');
+ .replace(/l/g, '1')
+ .replace(/O/g, '0')
+ .replace(/I/g, '1');
 }
 
 export async function POST(req: NextRequest) {
