@@ -185,17 +185,23 @@ export default function PaymentPage() {
                   </span>
                 </div>
 
-                <div className="relative mx-auto mb-6 w-fit rounded-2xl border-4 border-slate-200 bg-white p-4 shadow-lg dark:border-slate-800">
-                  <img 
-                    src={order.qrUrl} 
-                    alt="QR Code" 
-                    className="h-64 w-64"
-                  />
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-xs font-medium shadow dark:bg-slate-800">
-                    VietQR
-                  </div>
-                </div>
-
+              <div className="relative mx-auto mb-6 w-fit rounded-2xl border-4 border-slate-200 bg-white p-4 shadow-lg dark:border-slate-800">
+  <img 
+    src={order.qrUrl} 
+    alt="QR Code" 
+    className="h-64 w-64"
+    referrerPolicy="no-referrer"
+    crossOrigin="anonymous"
+    onError={(e) => {
+      console.error('QR Load Error:', order.qrUrl);
+      toast.error('Không tải được QR');
+    }}
+    onLoad={() => console.log('QR Loaded:', order.qrUrl)}
+  />
+  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-xs font-medium shadow dark:bg-slate-800">
+    VietQR
+  </div>
+</div>
                 <div className="mb-6 flex gap-2">
                   <button 
                     className="flex-1 h-10 rounded-xl border border-zinc-200 dark:border-zinc-800 font-semibold flex items-center justify-center gap-2"
