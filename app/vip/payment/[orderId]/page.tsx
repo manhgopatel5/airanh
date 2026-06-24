@@ -6,7 +6,7 @@ import { doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { getFirebaseDB } from '@/lib/firebase';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'sonner';
-import { Copy, CheckCircle2, Clock, AlertCircle, Download, Share2, ShieldCheck, Sparkles, Zap } from 'lucide-react';
+import { Copy, CheckCircle2, Clock, AlertCircle, Download, Share2, ShieldCheck, Sparkles, Zap, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,6 +19,7 @@ type Order = {
   qrUrl: string;
   createdAt: Timestamp;
   expireAt: Timestamp;
+  paidAt?: Timestamp;
 };
 
 export default function PaymentPage() {
@@ -32,6 +33,7 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (user) => {
@@ -49,6 +51,7 @@ export default function PaymentPage() {
           if (snap.exists()) {
             const data = snap.data() as Order;
             setOrder(data);
+            console.log('Order updated:', data.status); // Debug
           } else {
             toast.error('Không tìm thấy đơn hàng');
             router.push('/vip');
@@ -67,6 +70,17 @@ export default function PaymentPage() {
     
     return () => unsubAuth();
   }, [orderId, db, router, auth]);
+
+  // Auto polling check mỗi 5s khi đang pending
+  useEffect(() => {
+    if (order?.status !== 'pending') return;
+    
+    const interval = setInterval(async () => {
+      await checkPaymentStatus(true); // silent mode
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [order?.status, orderId]);
 
   useEffect(() => {
     if (!order?.expireAt) return;
@@ -88,14 +102,39 @@ export default function PaymentPage() {
 
   useEffect(() => {
     if (order?.status === 'paid') {
-      toast.success('Thanh toán thành công!');
-      setTimeout(() => router.push('/vip/success'), 1500);
+      toast.success('Thanh toán thành công!', {
+        icon: <CheckCircle2 className="text-emerald-500" size={16} />,
+      });
+      setTimeout(() => router.push('/vip/success'), 2000);
     }
     if (order?.status === 'expired') {
       toast.error('Đơn hàng đã hết hạn');
       setTimeout(() => router.push('/vip'), 2000);
     }
   }, [order?.status, router]);
+
+  const checkPaymentStatus = async (silent = false) => {
+    if (!orderId || checking) return;
+    setChecking(true);
+    
+    try {
+      const res = await fetch(`/api/payment/check/${orderId}`, {
+        method: 'GET',
+      });
+      const data = await res.json();
+      
+      if (data.status === 'paid') {
+        toast.success('Đã xác nhận thanh toán!');
+        // onSnapshot sẽ tự update order
+      } else if (!silent) {
+        toast.info('Chưa nhận được thanh toán. Vui lòng đợi 1-3 phút sau khi chuyển khoản.');
+      }
+    } catch (error: any) {
+      if (!silent) toast.error('Lỗi kiểm tra: ' + error.message);
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const copyInfo = async (text: string, label: string, field: string) => {
     await navigator.clipboard.writeText(text);
@@ -206,7 +245,8 @@ export default function PaymentPage() {
                   </motion.div>
                   <h3 className="mt-4 text-2xl font-black">Thanh toán thành công!</h3>
                   <p className="mt-2 text-sm text-zinc-500">
-                    VIP đã được kích hoạt. Đang chuyển hướng...
+                    VIP đã được kích hoạt{order.paidAt && ` lúc ${order.paidAt.toDate().toLocaleTimeString('vi-VN')}`}. 
+                    <br />Đang chuyển hướng...
                   </p>
                 </motion.div>
               ) : isExpired ? (
@@ -280,11 +320,26 @@ export default function PaymentPage() {
                     </button>
                   </div>
 
+                  <button 
+                    onClick={() => checkPaymentStatus()}
+                    disabled={checking}
+                    className={cn(
+                      "mb-6 w-full h-12 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all",
+                      isElite 
+                        ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30" 
+                        : "bg-[#0a84ff] text-white shadow-lg shadow-blue-500/30",
+                      checking && "opacity-50"
+                    )}
+                  >
+                    <RefreshCw className={cn("h-5 w-5", checking && "animate-spin")} />
+                    {checking ? 'Đang kiểm tra...' : 'Tôi đã chuyển khoản'}
+                  </button>
+
                   <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-6" />
 
                   <div className="space-y-4">
                     <h4 className="text-base font-bold flex items-center gap-2">
-                      <span className="w-1 h-5 bg-[#0a84ff] rounded-full" />
+                      <span className={cn("w-1 h-5 rounded-full", isElite ? "bg-amber-500" : "bg-[#0a84ff]")} />
                       Hoặc chuyển khoản thủ công:
                     </h4>
                     
@@ -354,7 +409,7 @@ export default function PaymentPage() {
                           </li>
                           <li className="flex gap-2">
                             <span className="text-blue-500 mt-0.5">•</span>
-                            <span>Hệ thống tự động xử lý sau 1-3 phút</span>
+                            <span>Hệ thống tự động xử lý sau 1-3 phút. Nhấn "Tôi đã chuyển khoản" để check ngay</span>
                           </li>
                           <li className="flex gap-2">
                             <span className="text-blue-500 mt-0.5">•</span>
@@ -372,8 +427,8 @@ export default function PaymentPage() {
 
         <p className="mt-6 text-center text-xs text-zinc-500 leading-relaxed">
           Cần hỗ trợ? Liên hệ{' '}
-          <a href="mailto:admin@huha.online" className="font-semibold text-[#0a84ff] hover:underline">
-            admin@huha.online
+          <a href="mailto:support@huha.online" className="font-semibold text-[#0a84ff] hover:underline">
+            support@huha.online
           </a>
         </p>
       </div>
