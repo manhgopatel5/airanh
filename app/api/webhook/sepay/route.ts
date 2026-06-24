@@ -90,10 +90,13 @@ export async function POST(req: NextRequest) {
     }
 
     const order = orderSnap.data() as OrderData;
+    const isExpired = order.expireAt.toDate() < new Date();
+
     console.log('[SePay] Order found:', {
       status: order.status,
       amount: order.amount,
       expireAt: order.expireAt.toDate(),
+      isExpired,
       transferAmount: data.transferAmount
     });
 
@@ -112,16 +115,10 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-// Xóa hoặc comment đoạn này nếu muốn nhận tiền order hết hạn
-if (order.expireAt.toDate() < new Date()) {
-  await orderRef.update({ status: 'expired' });
-  console.error('[SePay] Order expired:', orderId, order.expireAt.toDate());
-  return NextResponse.json({
-    error: 'Order expired',
-    reason: 'order_expired',
-    expiredAt: order.expireAt.toDate()
-  }, { status: 400 });
-}
+    // BỎ CHECK EXPIRED - CHO PHÉP THANH TOÁN CẢ QR HẾT HẠN
+    if (isExpired) {
+      console.warn('[SePay] Order expired but still processing payment:', orderId, order.expireAt.toDate());
+    }
 
     await db.runTransaction(async (tx) => {
       const freshOrderSnap = await tx.get(orderRef);
@@ -156,8 +153,8 @@ if (order.expireAt.toDate() < new Date()) {
       });
     });
 
-    console.log('[SePay] Success:', orderId);
-    return NextResponse.json({ success: true });
+    console.log('[SePay] Success:', orderId, isExpired? '(expired order)' : '');
+    return NextResponse.json({ success: true, wasExpired: isExpired });
 
   } catch (error: any) {
     console.error('[SePay] Webhook error:', error);
