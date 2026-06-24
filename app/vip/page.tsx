@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FiLoader, FiCheck, FiShield, FiGift, FiCreditCard,
   FiChevronDown, FiLock, FiStar, FiZap, FiCheckCircle,
-  FiX, FiTrendingUp
+  FiX
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 
@@ -60,13 +60,13 @@ const VIP_TIERS: VipTier[] = [
       { text: 'Huy hiệu VIP Elite + hiệu ứng động', highlight: true },
       { text: 'Tạo nhóm không giới hạn thành viên', highlight: true },
       { text: 'Mời bạn không giới hạn' },
-      { text: 'Tất cả theme + avatar động' },
-      { text: 'Tải file 500MB', highlight: true },
-      { text: 'Xem ai đã đọc tin nhắn' },
-      { text: 'Thu hồi tin không giới hạn' },
+      { text: 'Thông báo khi vào phòng chat công cộng' },
+      { text: 'Ưu tiên hiển thị sự kiện/công việc  ', highlight: true },
+      { text: 'Màu vàng độc quyền' },
+      { text: 'Thu hồi tin nhắn không giới hạn' },
       { text: 'Hỗ trợ 24/7', highlight: true },
-      { text: 'Booster tốc độ chat' },
-      { text: 'Badge độc quyền' }
+      { text: 'Booster tốc độ truy cập' },
+      { text: 'Nhiều tính năng độc quyền' }
     ]
   }
 ];
@@ -316,7 +316,7 @@ activeTab === tab
   ))}
 </div>
 
-   {/* Badge PHỔ BIẾN / CAO CẤP */}
+{/* Badge PHỔ BIẾN / CAO CẤP */}
 {tier.id === 'pro' && (
   <div className="absolute -top-3 left-6 px-3 py-1 bg-[#0a84ff] rounded-full">
     <span className="text-xs font-bold text-white flex items-center gap-1">
@@ -366,18 +366,6 @@ activeTab === tab
       </span>
     )}
   </div>
-
-  {tier.savePercent && (
-    <div className={cn(
-      "inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-xl",
-      tier.id === 'elite' 
-        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-500' 
-        : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-    )}>
-      <FiTrendingUp size={14} />
-      <span className="text-xs font-bold">Tiết kiệm {tier.savePercent}%</span>
-    </div>
-  )}
 </div>
 
 <div className="space-y-3 mb-5 pb-5 border-b border-zinc-100 dark:border-zinc-800">
@@ -415,15 +403,13 @@ activeTab === tab
       : tier.id === 'elite'
         ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-[1.02]'
         : 'bg-[#0a84ff] text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02]',
-    !isActive && 'animate-pulse-slow' // Pulse nhẹ liên tục
+    !isActive && 'animate-pulse-slow'
   )}
 >
-  {/* Hiệu ứng shine chạy qua */}
   {!isActive && (
     <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
   )}
   
-  {/* Glow ring */}
   {!isActive && (
     <span className={cn(
       "absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl",
