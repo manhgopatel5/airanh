@@ -24,7 +24,7 @@ import {
   getDoc,
   arrayUnion,
   setDoc,
-  
+  updateDoc,
   
   
   arrayRemove,
