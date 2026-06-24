@@ -57,16 +57,18 @@ export async function POST(req: NextRequest) {
     }
 
     const orderId = Date.now();
-    const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${SEPAY_BANK}&amount=${amount}&des=${plan.code} ${orderId}&template=compact`;
     
-    // LƯU QRURL VÀO DB
+    // FIX: Encode description để tránh lỗi dấu cách
+    const description = encodeURIComponent(`${plan.code} ${orderId}`);
+    const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${SEPAY_BANK}&amount=${amount}&des=${description}&template=compact`;
+    
     await db.collection('orders').doc(`${orderId}`).set({
       userId,
       planId,
       planName: plan.name,
       amount,
       status: 'pending',
-      qrUrl, // THÊM DÒNG NÀY
+      qrUrl,
       createdAt: Timestamp.now(),
       expireAt: Timestamp.fromDate(new Date(Date.now() + 15 * 60 * 1000))
     });
