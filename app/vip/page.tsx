@@ -10,7 +10,7 @@ import { differenceInDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiLoader, FiCheck, FiShield, FiGift, FiCreditCard,
-  FiChevronDown, FiLock, FiStar, FiZap, FiUsers, FiCheckCircle,
+  FiChevronDown, FiLock, FiStar, FiZap, FiCheckCircle,
   FiX, FiTrendingUp
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
