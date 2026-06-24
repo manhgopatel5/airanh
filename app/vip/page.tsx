@@ -314,7 +314,7 @@ activeTab === tab
           ))}
         </div>
 
-     {/* Badge PHỔ BIẾN / CAO CẤP */}
+   {/* Badge PHỔ BIẾN / CAO CẤP */}
 {tier.id === 'pro' && (
   <div className="absolute -top-3 left-6 px-3 py-1 bg-[#0a84ff] rounded-full">
     <span className="text-xs font-bold text-white flex items-center gap-1">
@@ -324,7 +324,7 @@ activeTab === tab
 )}
 
 {tier.id === 'elite' && (
-  <div className="absolute -top-3 left-6 px-3 py-1 bg-[#0a84ff] rounded-full">
+  <div className="absolute -top-3 left-6 px-3 py-1 bg-amber-500 rounded-full">
     <span className="text-xs font-bold text-white flex items-center gap-1">
       <FiZap size={12} /> CAO CẤP
     </span>
@@ -340,60 +340,62 @@ activeTab === tab
 
   <div className="flex flex-col gap-1">
     {appliedPromo && (
-              <div className="flex items-center gap-2">
-                <span className="text-xl line-through text-zinc-400 font-semibold">
-                  {tier.price.toLocaleString('vi-VN')}
-                </span>
-                <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-md">
-                  -{appliedPromo.discount}%
-                </span>
-              </div>
-            )}
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-[#0a84ff]">
-                {finalPrice.toLocaleString('vi-VN')}
-              </span>
-              <span className="text-base text-zinc-500 font-semibold">{tier.duration}</span>
-            </div>
-            {appliedPromo && (
-              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                Tiết kiệm {(tier.price - finalPrice).toLocaleString('vi-VN')}đ
-              </span>
-            )}
-          </div>
+      <div className="flex items-center gap-2">
+        <span className="text-xl line-through text-zinc-400 font-semibold">
+          {tier.price.toLocaleString('vi-VN')}
+        </span>
+        <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-md">
+          -{appliedPromo.discount}%
+        </span>
+      </div>
+    )}
+    <div className="flex items-baseline gap-2">
+      <span className={cn(
+        "text-4xl font-black",
+        tier.id === 'elite' ? 'text-amber-500' : 'text-[#0a84ff]'
+      )}>
+        {finalPrice.toLocaleString('vi-VN')}
+      </span>
+      <span className="text-base text-zinc-500 font-semibold">{tier.duration}</span>
+    </div>
+    {appliedPromo && (
+      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+        Tiết kiệm {(tier.price - finalPrice).toLocaleString('vi-VN')}đ
+      </span>
+    )}
+  </div>
 
-          {tier.savePercent && (
-            <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-              <FiTrendingUp size={14} />
-              <span className="text-xs font-bold">Tiết kiệm {tier.savePercent}%</span>
-            </div>
-          )}
-        </div>
+  {tier.savePercent && (
+    <div className={cn(
+      "inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-xl",
+      tier.id === 'elite' 
+        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-500' 
+        : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+    )}>
+      <FiTrendingUp size={14} />
+      <span className="text-xs font-bold">Tiết kiệm {tier.savePercent}%</span>
+    </div>
+  )}
+</div>
 
-     <div className="space-y-3 mb-5 pb-5 border-b border-zinc-100 dark:border-zinc-800">
+<div className="space-y-3 mb-5 pb-5 border-b border-zinc-100 dark:border-zinc-800">
   {tier.features.map((feat, i) => (
     <div key={i} className="flex items-start gap-3">
       <div className={cn(
         "w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5",
-        feat.highlight
-          ? tier.id === 'pro' 
-            ? 'bg-[#0a84ff]' 
-            : 'bg-amber-500'
-          : 'bg-zinc-100 dark:bg-zinc-800'
+        tier.id === 'elite' ? 'bg-amber-500' : 'bg-[#0a84ff]'
       )}>
-        <FiCheck className={cn(
-          feat.highlight
-            ? 'text-white'
-            : 'text-zinc-400'
-        )} size={13} strokeWidth={3} />
+        <FiCheck 
+          className="text-white" 
+          size={13} 
+          strokeWidth={3} 
+        />
       </div>
       <span className={cn(
-        "text-sm leading-6",
-        feat.highlight 
-          ? tier.id === 'pro'
-            ? 'font-semibold text-[#0a84ff]'
-            : 'font-semibold text-amber-600 dark:text-amber-500'
-          : 'text-zinc-600 dark:text-zinc-400'
+        "text-sm leading-6 font-semibold",
+        tier.id === 'elite'
+          ? 'text-amber-600 dark:text-amber-500'
+          : 'text-[#0a84ff]'
       )}>
         {feat.text}
       </span>
