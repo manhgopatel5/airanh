@@ -13,7 +13,7 @@ import {
   FiChevronDown, FiLock, FiStar, FiZap, FiCheckCircle,
   FiX, FiUsers, FiCalendar, FiMessageCircle, FiMapPin,
   FiGlobe, FiTrendingUp, FiRefreshCw, FiHeadphones,
-  FiCpu, FiAward, FiUserPlus, FiBell, FiMail
+  FiCpu, FiAward, FiUserPlus, FiBell
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 
