@@ -139,16 +139,18 @@ const [purchasingVip, setPurchasingVip] = useState<'pro' | 'elite' | null>(null)
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId: user.uid,
-        planId: tierId, // Đổi từ tier -> planId cho khớp API
+        planId: tierId,
         amount: finalPrice,
       })
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Lỗi tạo đơn thanh toán');
+    console.log('SePay response:', data); // Thêm log để debug
 
-    // Redirect sang SePay QR
-    window.location.href = data.qrUrl; // Đổi từ paymentUrl -> qrUrl
+    if (!res.ok) throw new Error(data.message || 'Lỗi tạo đơn');
+    if (!data.qrUrl) throw new Error('Không nhận được link QR');
+
+    window.location.href = data.qrUrl;
 
   } catch (error: any) {
     toast.error("Lỗi: " + error.message);
