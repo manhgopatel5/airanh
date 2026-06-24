@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { orderId: string } }
+  _req: NextRequest, // Đổi req thành _req để tránh lỗi unused
+  { params }: { params: Promise<{ orderId: string }> } // Next.js 15 phải await params
 ) {
-  const { orderId } = params;
+  const { orderId } = await params; // Thêm await
 
   if (!orderId) {
     return NextResponse.json({ error: 'Thiếu orderId' }, { status: 400 });
@@ -32,12 +33,11 @@ export async function GET(
       return NextResponse.json({ status: 'expired' });
     }
 
-    // Check SePay nếu cần
     const sepayToken = process.env.SEPAY_API_TOKEN;
     const sepayAccountId = process.env.SEPAY_ACCOUNT_ID;
 
     if (!sepayToken ||!sepayAccountId) {
-      return NextResponse.json({ status: 'pending' }); // Không check được thì thôi
+      return NextResponse.json({ status: 'pending' });
     }
 
     const expectedContent = `${order.planId === 'pro'? 'VIPPRO' : 'VIPELITE'} ${orderId}`;
