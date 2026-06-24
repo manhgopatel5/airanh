@@ -189,7 +189,7 @@ const [selectedTierId, setSelectedTierId] = useState<'pro' | 'elite'>('elite');
   return (
     <div className="min-h-dvh bg-zinc-50 dark:bg-zinc-950">
       {/* Header cố định */}
-<div className="sticky top-0 z-50 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
+<div className="bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
         <div className="max-w-2xl mx-auto px-4 py-3">
  <div className="flex items-center justify-between mb-3">
   {userVip && userVip.tier!== 'free' && (
@@ -434,26 +434,7 @@ activeTab === tab
   })()}
 </div>
 
-              {/* Trust */}
-              <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800">
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <FiLock className="mx-auto mb-2 text-zinc-900 dark:text-white" size={24} />
-                    <p className="text-xs font-semibold">Bảo mật</p>
-                    <p className="text-[10px] text-zinc-500">PCI DSS</p>
-                  </div>
-                  <div>
-                    <FiShield className="mx-auto mb-2 text-zinc-900 dark:text-white" size={24} />
-                    <p className="text-xs font-semibold">An toàn</p>
-                    <p className="text-[10px] text-zinc-500">SSL 256-bit</p>
-                  </div>
-                  <div>
-                    <FiZap className="mx-auto mb-2 text-zinc-900 dark:text-white" size={24} />
-                    <p className="text-xs font-semibold">Tức thì</p>
-                    <p className="text-[10px] text-zinc-500">Kích hoạt</p>
-                  </div>
-                </div>
-              </div>
+            
             </motion.div>
           )}
 
@@ -507,48 +488,132 @@ activeTab === tab
                   </tbody>
                 </table>
               </div>
+{/* Trust */}
+<div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800 mt-5">
+  <div className="grid grid-cols-3 gap-4 text-center">
+    <div>
+      <FiLock className="mx-auto mb-2 text-zinc-900 dark:text-white" size={24} />
+      <p className="text-xs font-semibold">Bảo mật</p>
+      <p className="text-[10px] text-zinc-500">PCI DSS</p>
+    </div>
+    <div>
+      <FiShield className="mx-auto mb-2 text-zinc-900 dark:text-white" size={24} />
+      <p className="text-xs font-semibold">An toàn</p>
+      <p className="text-[10px] text-zinc-500">SSL 256-bit</p>
+    </div>
+    <div>
+      <FiZap className="mx-auto mb-2 text-zinc-900 dark:text-white" size={24} />
+      <p className="text-xs font-semibold">Tức thì</p>
+      <p className="text-[10px] text-zinc-500">Kích hoạt</p>
+    </div>
+  </div>
+</div>
             </motion.div>
           )}
 
-          {/* TAB: FAQ */}
-          {activeTab === 'faq' && (
-            <motion.div
-              key="faq"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800"
+       {/* TAB: FAQ */}
+{activeTab === 'faq' && (
+  <motion.div
+    key="faq"
+    initial={{ opacity: 0, x: 20 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: -20 }}
+    className="space-y-5"
+  >
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800">
+      <h3 className="text-xl font-black mb-4">Câu hỏi thường gặp</h3>
+      <div className="space-y-2">
+        {[
+          {
+            q: "VIP có tự động gia hạn không?",
+            a: "Có. Tự động gia hạn mỗi 30 ngày qua VNPay/Momo. Hủy bất cứ lúc nào trong Cài đặt > VIP. Hủy xong vẫn dùng đến hết chu kỳ đã trả, không mất ngày."
+          },
+          {
+            q: "Nâng cấp từ Pro lên Elite được không?",
+            a: "Được. Hệ thống tự tính tiền chênh lệch dựa trên số ngày Pro còn lại và trừ vào gói Elite. Ví dụ: Còn 15 ngày Pro = 24.500đ sẽ được trừ khi nâng cấp Elite."
+          },
+          {
+            q: "Hủy VIP thì mất gì?",
+            a: "Giữ toàn bộ quyền đến ngày hết hạn. Sau đó về Free: mất huy hiệu VIP, nhóm >10 thành viên không thêm người mới, ghim >3 tự bỏ bớt, file >10MB không tải mới. Tin nhắn và nhóm cũ không xóa."
+          },
+          {
+            q: "Thanh toán có an toàn không?",
+            a: "Có. Hỗ trợ Momo, ZaloPay, VNPay QR, thẻ ATM/Visa. Cổng thanh toán VNPay/PayOS chuẩn PCI DSS Level 1, mã hóa SSL 256-bit. Không lưu thông tin thẻ. Hóa đơn gửi email tự động."
+          },
+          {
+            q: "Mua nhầm gói có hoàn tiền không?",
+            a: "Có hoàn tiền trong 7 ngày nếu chưa sử dụng tính năng VIP như tải file >10MB, tạo nhóm >10 người. Liên hệ support@airanh.com với mã đơn để được xử lý trong 24h."
+          },
+          {
+            q: "VIP Pro và Elite khác nhau gì?",
+            a: "Elite hơn Pro: nhóm 500 vs 200 thành viên, ghim không giới hạn vs 10, file 500MB vs 100MB, xem ai đã đọc tin nhắn, thu hồi tin không giới hạn, hỗ trợ 24/7, huy hiệu động."
+          },
+          {
+            q: "Mã giảm giá dùng được mấy lần?",
+            a: "Tùy mã. Có mã dùng 1 lần/user, có mã giới hạn tổng lượt dùng. Hết lượt hoặc hết hạn sẽ báo lỗi. Mỗi đơn chỉ áp dụng 1 mã."
+          },
+          {
+            q: "Đổi điện thoại có mất VIP không?",
+            a: "Không. VIP gắn với tài khoản, không gắn với thiết bị. Đăng nhập tài khoản trên máy mới là tự có VIP. Đồng bộ trên iOS/Android/Web."
+          },
+          {
+            q: "Quên gia hạn VIP có sao không?",
+            a: "Hết hạn sẽ tự về Free sau 3 ngày grace period. Trong 3 ngày đó vẫn dùng VIP bình thường. Gia hạn trong 3 ngày này không mất dữ liệu nhóm/ghimb."
+          },
+          {
+            q: "Doanh nghiệp mua VIP cho nhân viên được không?",
+            a: "Được. Gói Enterprise: mua từ 10 user trở lên giảm 20%, xuất hóa đơn VAT, quản lý tập trung, hỗ trợ riêng. Liên hệ business@airanh.com."
+          }
+        ].map((item, i) => (
+          <div key={i} className="border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+            <button
+              onClick={() => setShowFAQ(showFAQ === i? null : i)}
+              className="w-full py-4 flex items-center justify-between text-left"
             >
-              <h3 className="text-xl font-black mb-4">Câu hỏi thường gặp</h3>
-              <div className="space-y-2">
-                {FAQ_ITEMS.map((item, i) => (
-                  <div key={i} className="border-b border-zinc-100 dark:border-zinc-800 last:border-0">
-                    <button
-                      onClick={() => setShowFAQ(showFAQ === i? null : i)}
-                      className="w-full py-4 flex items-center justify-between text-left"
-                    >
-                      <span className="text-sm font-semibold pr-3">{item.q}</span>
-                      <motion.div animate={{ rotate: showFAQ === i? 180 : 0 }}>
-                        <FiChevronDown size={20} className="text-zinc-400 flex-shrink-0" />
-                      </motion.div>
-                    </button>
-                    <AnimatePresence>
-                      {showFAQ === i && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden"
-                        >
-                          <p className="text-sm text-zinc-600 dark:text-zinc-400 pb-4 leading-relaxed">{item.a}</p>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+              <span className="text-sm font-semibold pr-3">{item.q}</span>
+              <motion.div animate={{ rotate: showFAQ === i? 180 : 0 }}>
+                <FiChevronDown size={20} className="text-zinc-400 flex-shrink-0" />
+              </motion.div>
+            </button>
+            <AnimatePresence>
+              {showFAQ === i && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 pb-4 leading-relaxed">{item.a}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Trust */}
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800">
+      <div className="grid grid-cols-3 gap-4 text-center">
+        <div>
+          <FiLock className="mx-auto mb-2 text-zinc-900 dark:text-white" size={24} />
+          <p className="text-xs font-semibold">Bảo mật</p>
+          <p className="text- text-zinc-500">PCI DSS</p>
+        </div>
+        <div>
+          <FiShield className="mx-auto mb-2 text-zinc-900 dark:text-white" size={24} />
+          <p className="text-xs font-semibold">An toàn</p>
+          <p className="text- text-zinc-500">SSL 256-bit</p>
+        </div>
+        <div>
+          <FiZap className="mx-auto mb-2 text-zinc-900 dark:text-white" size={24} />
+          <p className="text-xs font-semibold">Tức thì</p>
+          <p className="text- text-zinc-500">Kích hoạt</p>
+        </div>
+      </div>
+    </div>
+  </motion.div>
+)}
         </AnimatePresence>
 
         {/* Footer */}
