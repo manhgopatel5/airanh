@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, getDoc, Timestamp } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin'; // DÙNG ADMIN
+import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,40 +24,52 @@ export async function POST(req: NextRequest) {
     const data = JSON.parse(body);
     console.log('SePay webhook:', data);
     
-    // 2. Lấy orderId từ description "VIPELITE 17297..."
-    const orderId = data.description?.match(/VIPELITE (\d+)/)?.[1];
-    if (!orderId) {
+    // 2. Lấy orderId - BẮT CẢ VIPPRO VÀ VIPELITE
+    const match = data.description?.match(/VIP(PRO|ELITE) (\d+)/);
+    if (!match) {
       console.error('No orderId in description:', data.description);
       return NextResponse.json({ error: 'No orderId' }, { status: 400 });
     }
+    
+    const planType = match[1].toLowerCase(); // "pro" hoặc "elite"
+    const orderId = match[2];
 
-    // 3. Check đơn hàng
-    const orderRef = doc(db, 'orders', orderId);
-    const orderSnap = await getDoc(orderRef);
-    if (!orderSnap.exists()) {
+    // 3. Check đơn hàng - DÙNG ADMIN SDK
+    const db = adminDb();
+    const orderRef = db.collection('orders').doc(orderId);
+    const orderSnap = await orderRef.get();
+    
+    if (!orderSnap.exists) {
       console.error('Order not found:', orderId);
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     const order = orderSnap.data();
-    if (order.status === 'paid') {
+    if (order?.status === 'paid') {
       return NextResponse.json({ success: true, message: 'Already paid' });
     }
 
-    // 4. Update đơn thành paid
-    await updateDoc(orderRef, { 
+    // 4. Check số tiền
+    if (order?.amount!== data.transferAmount) {
+      console.error('Amount mismatch:', { order: order?.amount, paid: data.transferAmount });
+      return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 });
+    }
+
+    // 5. Update đơn thành paid
+    await orderRef.update({ 
       status: 'paid',
       paidAt: Timestamp.now(),
-      sepayTransactionId: data.id 
+      sepayTransactionId: data.id,
+      planType // lưu thêm "pro" hoặc "elite"
     });
     
-    // 5. Cấp VIP cho user - SỬA CHỖ NÀY
+    // 6. Cấp VIP cho user
     const { userId, planId } = order;
-    const vipDays = planId === 'pro'? 30 : planId === 'elite'? 30 : 30; // Cả 2 gói đều 30 ngày
+    const vipDays = 30; // Cả 2 gói đều 30 ngày
     
     // Nếu user đang có VIP thì cộng dồn
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
+    const userRef = db.collection('users').doc(userId);
+    const userSnap = await userRef.get();
     const currentVip = userSnap.data()?.vip;
     
     let expireDate = new Date();
@@ -70,7 +82,7 @@ export async function POST(req: NextRequest) {
     }
     expireDate.setDate(expireDate.getDate() + vipDays);
     
-    await updateDoc(userRef, {
+    await userRef.update({
       vip: {
         tier: planId, // 'pro' hoặc 'elite'
         expiresAt: Timestamp.fromDate(expireDate)
