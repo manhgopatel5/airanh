@@ -37,13 +37,13 @@ const VIP_TIERS: VipTier[] = [
     badge: '⚡',
     features: [
       { text: 'Huy hiệu VIP cạnh tên', highlight: true },
-      { text: 'Tạo nhóm 200 thành viên' },
-      { text: 'Ghim 10 cuộc trò chuyện' },
-      { text: 'Theme độc quyền' },
-      { text: 'Tải file 100MB', highlight: true },
-      { text: 'Không quảng cáo' },
-      { text: 'Xem trước tin nhắn' },
-      { text: 'Thống kê chi tiết' }
+      { text: 'Tạo nhóm tối đa 50 thành viên' },
+      { text: 'Tạo tối đa 5 sự kiện/công việc mỗi ngày ' },
+      { text: 'Chat với người lạ không giới hạn ' },
+      { text: 'Mở khoá tìm xung quanh', highlight: true },
+      { text: 'Tham gia tất cả phòng chat công cộng ' },
+      { text: 'Ưu tiên hiển thị sự kiện/công việc' },
+      { text: 'Ưu tiên trải nghiệm tính năng mới' }
     ]
   },
   {
@@ -56,9 +56,9 @@ const VIP_TIERS: VipTier[] = [
     popular: true,
     savePercent: 67,
     features: [
-      { text: 'Huy hiệu VIP + hiệu ứng động', highlight: true },
-      { text: 'Tạo nhóm 500 thành viên', highlight: true },
-      { text: 'Ghim không giới hạn' },
+      { text: 'Huy hiệu VIP Elite + hiệu ứng động', highlight: true },
+      { text: 'Tạo nhóm không giới hạn thành viên', highlight: true },
+      { text: 'Mời bạn không giới hạn' },
       { text: 'Tất cả theme + avatar động' },
       { text: 'Tải file 500MB', highlight: true },
       { text: 'Xem ai đã đọc tin nhắn' },
@@ -325,10 +325,9 @@ activeTab === tab
         <div className="mb-5">
           <div className="flex items-start justify-between mb-3">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-3xl">{tier.badge}</span>
-                <h3 className="text-2xl font-black">{tier.name}</h3>
-              </div>
+            <div className="flex items-center mb-3">
+  <span className="text-3xl">{tier.badge}</span>
+</div>
             </div>
           </div>
 
@@ -524,7 +523,7 @@ activeTab === tab
           },
           {
             q: "Mua nhầm gói có hoàn tiền không?",
-            a: "Có hoàn tiền trong 7 ngày nếu chưa sử dụng tính năng VIP như tải file >10MB, tạo nhóm >10 người. Liên hệ support@airanh.com với mã đơn để được xử lý trong 24h."
+            a: "Có hoàn tiền trong 7 ngày nếu chưa sử dụng tính năng VIP như tải file >10MB, tạo nhóm >10 người. Liên hệ admin@huha.online với mã đơn để được xử lý trong 24h."
           },
           {
             q: "VIP Pro và Elite khác nhau gì?",
@@ -544,7 +543,7 @@ activeTab === tab
           },
           {
             q: "Doanh nghiệp mua VIP cho nhân viên được không?",
-            a: "Được. Gói Enterprise: mua từ 10 user trở lên giảm 20%, xuất hóa đơn VAT, quản lý tập trung, hỗ trợ riêng. Liên hệ business@airanh.com."
+            a: "Được. Gói Enterprise: mua từ 10 user trở lên giảm 20%, xuất hóa đơn VAT, quản lý tập trung, hỗ trợ riêng. Liên hệ admin@huha.online."
           }
         ].map((item, i) => (
           <div key={i} className="border-b border-zinc-100 dark:border-zinc-800 last:border-0">
