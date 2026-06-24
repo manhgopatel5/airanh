@@ -52,17 +52,20 @@ export async function POST(req: NextRequest) {
 
     const now = Math.floor(Date.now() / 1000);
     if (Math.abs(now - Number(timestamp)) > 300) {
-      return NextResponse.json({ error: 'Timestamp expired' }, { status: 400 });
+      console.error('[SePay] Timestamp expired:', { timestamp, now, diff: now - Number(timestamp) });
+      return NextResponse.json({ error: 'Timestamp expired', reason: 'replay_timeout' }, { status: 400 });
     }
 
     const data = JSON.parse(body);
     console.log('[SePay] Transaction:', data.id, data.transferAmount);
+    console.log('[SePay] Content:', data.content);
+    console.log('[SePay] Description:', data.description);
 
     const orderId = extractOrderId(data.content || '', data.description || '');
 
     if (!orderId) {
       console.error('[SePay] Cannot parse orderId from:', data.content, data.description);
-      return NextResponse.json({ error: 'No orderId found' }, { status: 400 });
+      return NextResponse.json({ error: 'No orderId found', reason: 'parse_failed' }, { status: 400 });
     }
 
     console.log('[SePay] Extracted orderId:', orderId);
@@ -73,9 +76,9 @@ export async function POST(req: NextRequest) {
 
     if (!orderSnap.exists) {
       const recent = await db.collection('orders')
-  .where('amount', '==', Number(data.transferAmount))
-  .limit(3)
-  .get();
+.where('amount', '==', Number(data.transferAmount))
+.limit(3)
+.get();
 
       console.error('[SePay] Order not found:', orderId);
       console.error('[SePay] Recent orders with same amount:');
@@ -83,22 +86,40 @@ export async function POST(req: NextRequest) {
         console.error(`- ${doc.id} | ${doc.data().status}`);
       });
 
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Order not found', reason: 'not_found' }, { status: 404 });
     }
 
     const order = orderSnap.data() as OrderData;
+    console.log('[SePay] Order found:', {
+      status: order.status,
+      amount: order.amount,
+      expireAt: order.expireAt.toDate(),
+      transferAmount: data.transferAmount
+    });
 
     if (order.status === 'paid') {
+      console.log('[SePay] Order already paid:', orderId);
       return NextResponse.json({ success: true, message: 'Already paid' });
     }
 
     if (Number(order.amount)!== Number(data.transferAmount)) {
-      return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 });
+      console.error('[SePay] Amount mismatch:', order.amount, 'vs', data.transferAmount);
+      return NextResponse.json({
+        error: 'Amount mismatch',
+        reason: 'amount_mismatch',
+        expected: order.amount,
+        received: data.transferAmount
+      }, { status: 400 });
     }
 
     if (order.expireAt.toDate() < new Date()) {
       await orderRef.update({ status: 'expired' });
-      return NextResponse.json({ error: 'Order expired' }, { status: 400 });
+      console.error('[SePay] Order expired:', orderId, order.expireAt.toDate());
+      return NextResponse.json({
+        error: 'Order expired',
+        reason: 'order_expired',
+        expiredAt: order.expireAt.toDate()
+      }, { status: 400 });
     }
 
     await db.runTransaction(async (tx) => {
@@ -139,6 +160,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[SePay] Webhook error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message, reason: 'server_error' }, { status: 500 });
   }
 }
