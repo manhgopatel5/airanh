@@ -45,10 +45,10 @@ export async function POST(req: NextRequest) {
       desc: data.description,
     });
 
-    // 2. Extract orderId - chấp nhận chữ + số, có/không có dấu cách
-    // VD: VIPPROGgspPH3AcvZDOga5wXoT hoặc VIPPRO GgspPH3AcvZDOga5wXoT
-    const normalized = data.description?.toUpperCase().replace(/\s+/g, '');
-    const match = normalized?.match(/VIP(PRO|ELITE)([A-Z0-9]+)/);
+    // 2. FIX: Giữ nguyên case của orderId, chỉ check VIPPRO/VIPELITE không phân biệt hoa thường
+    // Match: VIPPRO y801zsVF3s10j3qKI hoặc VIPPROy801zsVF3s10j3qKI
+    const desc = data.description?.replace(/\s+/g, ''); // Chỉ bỏ space
+    const match = desc?.match(/VIP(PRO|ELITE)([A-Za-z0-9]+)/i);
 
     if (!match) {
       console.error('[SePay] Cannot parse orderId from:', data.description);
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     const planType = match[1].toLowerCase() as 'pro' | 'elite';
-    const orderId = match[2];
+    const orderId = match[2]; // Giữ nguyên: y801zsVF3s10j3qKI
     console.log('[SePay] Parsed orderId:', orderId, 'planType:', planType);
 
     // 3. Get order
@@ -77,11 +77,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Already paid' });
     }
 
-    // 5. Validate amount
-    if (order.amount!== data.transferAmount) {
+    // 5. Validate amount - ép về number để tránh mismatch type
+    const orderAmount = Number(order.amount);
+    const paidAmount = Number(data.transferAmount);
+
+    if (orderAmount!== paidAmount) {
       console.error('[SePay] Amount mismatch:', {
-        expected: order.amount,
-        received: data.transferAmount,
+        expected: orderAmount,
+        received: paidAmount,
         orderId,
       });
       return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 });
