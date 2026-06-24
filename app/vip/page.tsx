@@ -249,7 +249,7 @@ export default function VipPage() {
                     />
                   </div>
                 </div>
-              )}
+              }
 
               {/* Promo */}
               {!appliedPromo? (
@@ -416,7 +416,7 @@ export default function VipPage() {
                 </div>
               </div>
             </motion.div>
-          )}
+          }
 
           {/* TAB: COMPARE */}
           {activeTab === 'compare' && (
