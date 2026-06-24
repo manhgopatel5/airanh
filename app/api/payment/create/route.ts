@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin'; // BẮT BUỘC DÙNG ADMIN
+import { adminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 
+// ĐỔI THÀNH STK ACB THẬT CỦA BẠN
+const SEPAY_ACCOUNT = '4187547'; // Số TK ACB đã kết nối SePay
+const SEPAY_BANK = 'ACB';
+
 const VIP_PLANS = {
-  pro: { price: 49000, name: 'VIP Pro' },
-  elite: { price: 149000, name: 'VIP Elite' }
+  pro: { 
+    price: 49000, 
+    name: 'VIP Pro',
+    code: 'VIPPRO' // Mã riêng cho gói Pro
+  },
+  elite: { 
+    price: 149000, 
+    name: 'VIP Elite',
+    code: 'VIPELITE' // Mã riêng cho gói Elite
+  }
 } as const;
 
 type PlanId = keyof typeof VIP_PLANS;
@@ -13,7 +25,7 @@ export async function POST(req: NextRequest) {
   try {
     const { userId, planId, amount } = await req.json();
 
-    if (!userId || !planId || !amount) {
+    if (!userId ||!planId ||!amount) {
       return NextResponse.json(
         { message: 'Thiếu userId, planId hoặc amount' }, 
         { status: 400 }
@@ -27,7 +39,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const db = adminDb(); // Gọi function ra instance
+    const db = adminDb();
     
     const userSnap = await db.collection('users').doc(userId).get();
     if (!userSnap.exists) {
@@ -38,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     const plan = VIP_PLANS[planId as PlanId];
-    if (amount !== plan.price) {
+    if (amount!== plan.price) {
       return NextResponse.json(
         { message: 'Số tiền không hợp lệ' }, 
         { status: 400 }
@@ -57,7 +69,8 @@ export async function POST(req: NextRequest) {
       expireAt: Timestamp.fromDate(new Date(Date.now() + 15 * 60 * 1000))
     });
 
-    const qrUrl = `https://qr.sepay.vn/img?acc=ACB&bank=ACB&amount=${amount}&des=VIPELITE ${orderId}&template=compact`;
+    // Dùng code riêng cho từng gói
+    const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${SEPAY_BANK}&amount=${amount}&des=${plan.code} ${orderId}&template=compact`;
     
     return NextResponse.json({ 
       qrUrl,
