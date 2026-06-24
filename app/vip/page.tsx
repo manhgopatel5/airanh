@@ -179,11 +179,10 @@ export default function VipPage() {
   return (
     <div className="min-h-dvh bg-zinc-50 dark:bg-zinc-950">
       {/* Header cố định */}
-      <div className="sticky top-0 z-50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800">
+<div className="sticky top-0 z-50 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
         <div className="max-w-2xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-bold">AirAnh VIP</h1>
-            {userVip && userVip.tier!== 'free' && (
+ <div className="flex items-center justify-between mb-3">
+  {userVip && userVip.tier!== 'free' && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full">
                 <FiCheckCircle className="text-emerald-500" size={16} />
                 <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
@@ -201,9 +200,9 @@ export default function VipPage() {
                 onClick={() => setActiveTab(tab)}
                 className={cn(
                   "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all",
-                  activeTab === tab
-                ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                    : "text-zinc-500 dark:text-zinc-400"
+activeTab === tab
+? "bg-[#0a84ff] text-white shadow-sm shadow-blue-500/30"
+: "text-zinc-500 dark:text-zinc-400"
                 )}
               >
                 {tab === 'plans' && 'Gói VIP'}
@@ -260,18 +259,18 @@ export default function VipPage() {
                     <p className="text-base font-bold">Mã giảm giá</p>
                   </div>
                   <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value)}
-                      placeholder="VIP10, WELCOME20..."
-                      className="flex-1 h-12 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white/20"
-                    />
-                    <button
-                      onClick={applyPromoCode}
-                      disabled={!promoCode}
-                      className="px-6 h-12 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl text-sm font-bold disabled:opacity-40 active:scale-95 transition-all"
-                    >
+              <input
+  type="text"
+  value={promoCode}
+  onChange={(e) => setPromoCode(e.target.value)}
+  placeholder="Nhập mã giảm giá"
+  className="flex-1 h-12 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#0a84ff]/30"
+/>
+           <button
+  onClick={applyPromoCode}
+  disabled={!promoCode}
+  className="px-6 h-12 bg-[#0a84ff] text-white rounded-2xl text-sm font-bold disabled:opacity-40 active:scale-95 transition-all shadow-lg shadow-blue-500/20"
+>
                       Áp dụng
                     </button>
                   </div>
@@ -326,15 +325,29 @@ export default function VipPage() {
                           </div>
                         </div>
 
-                        <div className="flex items-baseline gap-2">
-                          {appliedPromo && (
-                            <span className="text-lg line-through text-zinc-400">{tier.priceText}</span>
-                          )}
-                          <span className="text-4xl font-black text-zinc-900 dark:text-white">
-                            {finalPrice.toLocaleString('vi-VN')}
-                          </span>
-                          <span className="text-base text-zinc-500 font-semibold">{tier.duration}</span>
-                        </div>
+                      <div className="flex flex-col gap-1">
+  {appliedPromo && (
+    <div className="flex items-center gap-2">
+      <span className="text-xl line-through text-zinc-400 font-semibold">
+        {tier.price.toLocaleString('vi-VN')}
+      </span>
+      <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-md">
+        -{appliedPromo.discount}%
+      </span>
+    </div>
+  )}
+  <div className="flex items-baseline gap-2">
+    <span className="text-4xl font-black text-[#0a84ff]">
+      {finalPrice.toLocaleString('vi-VN')}
+    </span>
+    <span className="text-base text-zinc-500 font-semibold">{tier.duration}</span>
+  </div>
+  {appliedPromo && (
+    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+      Tiết kiệm {(tier.price - finalPrice).toLocaleString('vi-VN')}đ
+    </span>
+  )}
+</div>
 
                         {tier.savePercent && (
                           <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
@@ -372,12 +385,12 @@ export default function VipPage() {
                       <button
                         onClick={() => handlePurchaseVip(tier.id)}
                         disabled={!!purchasingVip || isActive}
-                        className={cn(
-                          "w-full h-14 rounded-2xl font-bold text-base transition-all disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98]",
-                          isActive
-                      ? 'bg-emerald-500 text-white'
-                            : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-                        )}
+                  className={cn(
+  "w-full h-14 rounded-2xl font-bold text-base transition-all disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98]",
+  isActive
+? 'bg-emerald-500 text-white'
+    : 'bg-[#0a84ff] text-white shadow-lg shadow-blue-500/30'
+)}
                       >
                         {purchasingVip === tier.id? (
                           <FiLoader className="animate-spin" size={22} />
