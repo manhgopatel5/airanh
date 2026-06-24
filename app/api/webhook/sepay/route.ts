@@ -23,17 +23,9 @@ type OrderData = {
 
 function extractOrderId(content: string, description: string): string | null {
   const text = `${content} ${description}`.replace(/\s+/g, '');
-
-  // Chỉ lấy đúng 20 ký tự sau VIPPRO/VIPELITE, vì Firebase ID luôn 20 chars
   const match = text.match(/VIP(?:PRO|ELITE)([A-Za-z0-9]{20})/i);
-
   if (!match ||!match[1]) return null;
-
-  // Auto fix lỗi nhìn nhầm: l->1, O->0, I->1
-  return match[1]
-.replace(/l/g, '1')
-.replace(/O/g, '0')
-.replace(/I/g, '1');
+  return match[1];
 }
 
 export async function POST(req: NextRequest) {
@@ -50,8 +42,8 @@ export async function POST(req: NextRequest) {
 
     const payload = `${timestamp}.${body}`;
     const expected = 'sha256=' + crypto.createHmac('sha256', secret)
-  .update(payload)
-  .digest('hex');
+.update(payload)
+.digest('hex');
 
     if (sepaySignature!== expected) {
       console.error('[SePay] Invalid signature');
@@ -81,9 +73,9 @@ export async function POST(req: NextRequest) {
 
     if (!orderSnap.exists) {
       const recent = await db.collection('orders')
-    .where('amount', '==', Number(data.transferAmount))
-    .limit(3)
-    .get();
+  .where('amount', '==', Number(data.transferAmount))
+  .limit(3)
+  .get();
 
       console.error('[SePay] Order not found:', orderId);
       console.error('[SePay] Recent orders with same amount:');
