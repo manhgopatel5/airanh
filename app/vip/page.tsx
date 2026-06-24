@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FiLoader, FiCheck, FiShield, FiGift, FiCreditCard,
   FiChevronDown, FiLock, FiStar, FiZap, FiUsers, FiCheckCircle,
-  FiX, FiArrowRight, FiShield as FiShieldOff
+  FiX, FiTrendingUp
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 
@@ -132,7 +132,7 @@ export default function VipPage() {
     setPurchasingVip(tierId);
     try {
       const finalPrice = appliedPromo
-     ? Math.round(tier.price * (1 - appliedPromo.discount / 100))
+    ? Math.round(tier.price * (1 - appliedPromo.discount / 100))
         : tier.price;
 
       const res = await fetch('/api/payment/create', {
@@ -173,7 +173,7 @@ export default function VipPage() {
   };
 
   const daysLeft = userVip?.expiresAt
- ? Math.max(0, differenceInDays(userVip.expiresAt.toDate(), new Date()))
+? Math.max(0, differenceInDays(userVip.expiresAt.toDate(), new Date()))
     : 0;
 
   return (
@@ -202,7 +202,7 @@ export default function VipPage() {
                 className={cn(
                   "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all",
                   activeTab === tab
-                 ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
                     : "text-zinc-500 dark:text-zinc-400"
                 )}
               >
@@ -241,6 +241,7 @@ export default function VipPage() {
                       <p className="text-3xl font-black">{daysLeft}</p>
                       <p className="text-xs opacity-70">ngày còn lại</p>
                     </div>
+                  </div>
                   <div className="h-2 bg-white/20 dark:bg-zinc-900/20 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
@@ -249,7 +250,7 @@ export default function VipPage() {
                     />
                   </div>
                 </div>
-              }
+              )}
 
               {/* Promo */}
               {!appliedPromo? (
@@ -301,9 +302,9 @@ export default function VipPage() {
                       className={cn(
                         "relative bg-white dark:bg-zinc-900 rounded-3xl p-6 border-2 transition-all",
                         isActive
-                      ? 'border-emerald-500'
+                     ? 'border-emerald-500'
                           : tier.popular
-                        ? 'border-zinc-900 dark:border-white'
+                       ? 'border-zinc-900 dark:border-white'
                           : 'border-zinc-200 dark:border-zinc-800'
                       )}
                     >
@@ -349,12 +350,12 @@ export default function VipPage() {
                             <div className={cn(
                               "w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5",
                               feat.highlight
-                            ? 'bg-zinc-900 dark:bg-white'
+                           ? 'bg-zinc-900 dark:bg-white'
                                 : 'bg-zinc-100 dark:bg-zinc-800'
                             )}>
                               <FiCheck className={cn(
                                 feat.highlight
-                              ? 'text-white dark:text-zinc-900'
+                             ? 'text-white dark:text-zinc-900'
                                   : 'text-zinc-400'
                               )} size={13} strokeWidth={3} />
                             </div>
@@ -374,7 +375,7 @@ export default function VipPage() {
                         className={cn(
                           "w-full h-14 rounded-2xl font-bold text-base transition-all disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98]",
                           isActive
-                       ? 'bg-emerald-500 text-white'
+                      ? 'bg-emerald-500 text-white'
                             : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
                         )}
                       >
@@ -416,7 +417,7 @@ export default function VipPage() {
                 </div>
               </div>
             </motion.div>
-          }
+          )}
 
           {/* TAB: COMPARE */}
           {activeTab === 'compare' && (
