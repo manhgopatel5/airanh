@@ -145,15 +145,16 @@ const [purchasingVip, setPurchasingVip] = useState<'pro' | 'elite' | null>(null)
     });
 
     const data = await res.json();
-    console.log('SePay response:', data); // Thêm log để debug
+    console.log('SePay response:', data);
 
     if (!res.ok) throw new Error(data.message || 'Lỗi tạo đơn');
-    if (!data.qrUrl) throw new Error('Không nhận được link QR');
+    if (!data.orderId) throw new Error('Không nhận được mã đơn');
 
-router.push(`/vip/payment/${data.orderId}`);
+    router.push(`/vip/payment/${data.orderId}`);
 
   } catch (error: any) {
     toast.error("Lỗi: " + error.message);
+  } finally {
     setPurchasingVip(null);
   }
 };
