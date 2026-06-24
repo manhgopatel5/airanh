@@ -112,15 +112,16 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    if (order.expireAt.toDate() < new Date()) {
-      await orderRef.update({ status: 'expired' });
-      console.error('[SePay] Order expired:', orderId, order.expireAt.toDate());
-      return NextResponse.json({
-        error: 'Order expired',
-        reason: 'order_expired',
-        expiredAt: order.expireAt.toDate()
-      }, { status: 400 });
-    }
+// Xóa hoặc comment đoạn này nếu muốn nhận tiền order hết hạn
+if (order.expireAt.toDate() < new Date()) {
+  await orderRef.update({ status: 'expired' });
+  console.error('[SePay] Order expired:', orderId, order.expireAt.toDate());
+  return NextResponse.json({
+    error: 'Order expired',
+    reason: 'order_expired',
+    expiredAt: order.expireAt.toDate()
+  }, { status: 400 });
+}
 
     await db.runTransaction(async (tx) => {
       const freshOrderSnap = await tx.get(orderRef);
