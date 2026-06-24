@@ -14,6 +14,10 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'qr.sepay.vn', // Thêm dòng này
+      },
+      {
+        protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
         pathname: '/v0/b/**',
       },
@@ -63,6 +67,7 @@ const nextConfig = {
         "'self'",
         'data:',
         'blob:',
+        'https://qr.sepay.vn', // Thêm dòng này
         'https://firebasestorage.googleapis.com',
         'https://storage.googleapis.com',
         'https://lh3.googleusercontent.com',
