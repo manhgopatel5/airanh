@@ -150,7 +150,7 @@ const [purchasingVip, setPurchasingVip] = useState<'pro' | 'elite' | null>(null)
     if (!res.ok) throw new Error(data.message || 'Lỗi tạo đơn');
     if (!data.qrUrl) throw new Error('Không nhận được link QR');
 
-    window.location.href = data.qrUrl;
+router.push(`/vip/payment/${data.orderId}`);
 
   } catch (error: any) {
     toast.error("Lỗi: " + error.message);
