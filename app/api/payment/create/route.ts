@@ -8,6 +8,7 @@ const VIP_PLANS = {
   elite: { price: 149000, name: 'VIP Elite' }
 } as const;
 
+
 type PlanId = keyof typeof VIP_PLANS;
 
 export async function POST(req: NextRequest) {
