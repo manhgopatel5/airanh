@@ -23,11 +23,14 @@ type OrderData = {
 
 function extractOrderId(content: string, description: string): string | null {
   const text = `${content} ${description}`.replace(/\s+/g, '');
-  const match = text.match(/VIP(PRO|ELITE)([A-Za-z0-9]+)/i);
 
-  if (!match ||!match[2]) return null;
+  // Chỉ lấy đúng 20 ký tự sau VIPPRO/VIPELITE, vì Firebase ID luôn 20 chars
+  const match = text.match(/VIP(?:PRO|ELITE)([A-Za-z0-9]{20})/i);
 
-  return match[2]
+  if (!match ||!match[1]) return null;
+
+  // Auto fix lỗi nhìn nhầm: l->1, O->0, I->1
+  return match[1]
 .replace(/l/g, '1')
 .replace(/O/g, '0')
 .replace(/I/g, '1');
