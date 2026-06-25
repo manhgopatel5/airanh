@@ -7,14 +7,14 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
 import { doc, onSnapshot, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { FiUserX, FiStar, FiLoader, FiUsers, FiSettings, FiInfo, FiX, FiCheck, FiChevronRight } from "react-icons/fi";
+import { FiUserX, FiStar, FiLoader, FiUsers, FiSettings, FiInfo, FiX, FiCheck, FiChevronRight, FiShield, FiTrendingUp, FiAlertTriangle } from "react-icons/fi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CATEGORIES = [
   { id: "tat-ca", label: "Tất cả", icon: "🌟", count: 0 },
-  { id: "hay-xac-minh-anh", label: "Hãy Xác Minh Ảnh", icon: "✅", count: 93 },
+  { id: "thich-di-phuot", label: "Thích đi phượt", icon: "🏍️", count: 93 },
   { id: "nguoi-yeu", label: "Người yêu", icon: "🌹", count: 117 },
   { id: "moi-quan-he-nghiem-tuc", label: "Mối quan hệ nghiêm túc", icon: "💍", count: 72 },
   { id: "ranh-toi-nay", label: "Rảnh tối nay", icon: "🌙", count: 38 },
@@ -59,31 +59,29 @@ export default function StrangerPage() {
   const db = getFirebaseDB();
 
   const [userKarma, setUserKarma] = useState(100);
+  const [userTier, setUserTier] = useState<"user" | "vip" | "elite">("user");
+  const [accountStatus, setAccountStatus] = useState<"tich-cuc" | "canh-bao" | "cam">("tich-cuc");
   const [userName, setUserName] = useState("");
   const [userAvatar, setUserAvatar] = useState("");
   const [findingStranger, setFindingStranger] = useState(false);
   const [inQueue, setInQueue] = useState(false);
 
-  // Multi select categories
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [selectAllMode, setSelectAllMode] = useState(false);
 
-  // Step flow: 1=chọn category, 2=chọn filter, 3=confirm
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
-  // Filter modal
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
-  // Filter state
   const [ageFrom, setAgeFrom] = useState<number>(18);
   const [ageTo, setAgeTo] = useState<number>(30);
   const [selectedGender, setSelectedGender] = useState<"all" | "male" | "female">("all");
   const [selectedProvince, setSelectedProvince] = useState("Toàn quốc");
 
-  // Temp filter state
-  const [tempAgeFrom, setTempAgeFrom] = useState(18);
-  const [tempAgeTo, setTempAgeTo] = useState(30);
+  const [tempAgeFrom, setTempAgeFrom] = useState<number | string>(18);
+  const [tempAgeTo, setTempAgeTo] = useState<number | string>(30);
   const [tempGender, setTempGender] = useState<"all" | "male" | "female">("all");
   const [tempProvince, setTempProvince] = useState("Toàn quốc");
 
@@ -95,6 +93,8 @@ export default function StrangerPage() {
       setUserKarma(data?.karma || 100);
       setUserName(data?.displayName || "Bạn");
       setUserAvatar(data?.photoURL || "");
+      setUserTier(data?.tier || "user");
+      setAccountStatus(data?.status || "tich-cuc");
     });
 
     const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
@@ -104,6 +104,7 @@ export default function StrangerPage() {
         setInQueue(false);
         setFindingStranger(false);
         setSelectedCats([]);
+        setSelectAllMode(false);
         setCurrentStep(1);
       } else if (data &&!data?.matchedChatId) {
         setInQueue(true);
@@ -120,7 +121,11 @@ export default function StrangerPage() {
     };
   }, [user?.uid, db, router]);
 
+  const isDisabled = accountStatus === "cam";
+
   const toggleCategory = (catId: string) => {
+    if (isDisabled) return;
+
     if (catId === "tat-ca") {
       if (selectAllMode) {
         setSelectAllMode(false);
@@ -132,7 +137,7 @@ export default function StrangerPage() {
       return;
     }
 
-    if (selectAllMode) return; // Đang chọn tất cả thì disable các card khác
+    if (selectAllMode) return;
 
     setSelectedCats(prev => {
       if (prev.includes(catId)) return prev.filter(c => c!== catId);
@@ -145,6 +150,7 @@ export default function StrangerPage() {
   };
 
   const openFilterModal = () => {
+    if (isDisabled) return;
     setTempAgeFrom(ageFrom);
     setTempAgeTo(ageTo);
     setTempGender(selectedGender);
@@ -153,39 +159,51 @@ export default function StrangerPage() {
   };
 
   const saveFilters = () => {
-    if (tempAgeFrom > tempAgeTo) {
+    const from = Number(tempAgeFrom);
+    const to = Number(tempAgeTo);
+
+    if (from > to) {
       return toast.error("Độ tuổi không hợp lệ");
     }
-    if (tempAgeFrom < 18) {
+    if (from < 18) {
       return toast.error("Độ tuổi tối thiểu là 18");
     }
-    if (tempAgeTo > 100) {
+    if (to > 100) {
       return toast.error("Độ tuổi tối đa là 100");
     }
 
-    setAgeFrom(tempAgeFrom);
-    setAgeTo(tempAgeTo);
+    setAgeFrom(from);
+    setAgeTo(to);
     setSelectedGender(tempGender);
     setSelectedProvince(tempProvince);
     setShowFilterModal(false);
     toast.success("Đã lưu bộ lọc");
+
+    if (currentStep === 2) setCurrentStep(3);
   };
 
-  const handleNextStep = () => {
-    if (currentStep === 1) {
-      if (selectedCats.length === 0) return toast.error("Chọn ít nhất 1 mục");
-      setCurrentStep(2);
-      openFilterModal();
-    } else if (currentStep === 2) {
+  const handleStepClick = (step: 1 | 2 | 3) => {
+    if (isDisabled) return;
+    if (step === 1) setCurrentStep(1);
+    if (step === 2 && selectedCats.length > 0) setCurrentStep(2);
+    if (step === 3 && selectedCats.length > 0) {
+      if (ageFrom < 18) {
+        toast.error("Vui lòng chỉnh độ tuổi tối thiểu từ 18");
+        setCurrentStep(2);
+        openFilterModal();
+        return;
+      }
       setCurrentStep(3);
-    } else if (currentStep === 3) {
       handleFindStranger();
     }
   };
 
   const handleFindStranger = async () => {
     if (!user?.uid) return;
-    if (userKarma < 50) return toast.error("Huha dưới 50, không thể chat người lạ");
+    if (isDisabled) return toast.error("Tài khoản bị cấm");
+
+    const maxKarma = userTier === "elite"? 400 : userTier === "vip"? 200 : 100;
+    if (userKarma < 10) return toast.error("Cần ít nhất 10 điểm để tìm kiếm");
     if (selectedCats.length === 0) return toast.error("Chọn ít nhất 1 mục");
     if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
 
@@ -214,6 +232,7 @@ export default function StrangerPage() {
       toast.error(e.message || "Lỗi tìm kiếm");
       setInQueue(false);
       setSelectedCats([]);
+      setSelectAllMode(false);
       setCurrentStep(1);
     } finally {
       setFindingStranger(false);
@@ -235,12 +254,6 @@ export default function StrangerPage() {
     }
   };
 
-  const canGoNext = () => {
-    if (currentStep === 1) return selectedCats.length > 0;
-    if (currentStep === 2) return ageFrom >= 18 && ageFrom <= ageTo;
-    return true;
-  };
-
   return (
     <div className="min-h-dvh bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-white">
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-4 pb-24">
@@ -254,34 +267,49 @@ export default function StrangerPage() {
               className="w-14 h-14 rounded-2xl object-cover shadow-lg shadow-zinc-900/10"
             />
             <div className="flex-1">
-              <div className="flex items-center gap-1.5">
-                <p className="text-base font-[800]">{userName}</p>
+              <p className="text-base font-[800]">{userName}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <FiStar className="text-amber-500" size={16} fill="currentColor" />
+                <span className="text-xl font-[800] leading-none">{userKarma}</span>
+                <button
+                  onClick={() => setShowInfoModal(true)}
+                  className="flex items-center justify-center active:scale-90"
+                >
+                  <FiInfo size={14} className="text-blue-500" />
+                </button>
               </div>
-              <div className="flex items-end gap-2 mt-0.5">
-                <div className="flex items-center gap-2">
-                  <FiStar className="text-amber-500" size={16} fill="currentColor" />
-                  <span className="text-xl font-[800] leading-none">{userKarma}</span>
-                  <button
-                    onClick={() => setShowInfoModal(true)}
-                    className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center active:scale-90 -mt-2"
-                  >
-                    <FiInfo size={10} className="text-white" />
-                  </button>
-                </div>
+              <div className="flex items-center gap-2 mt-1.5">
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  accountStatus === "tich-cuc" && "bg-green-500",
+                  accountStatus === "canh-bao" && "bg-yellow-500",
+                  accountStatus === "cam" && "bg-red-500"
+                )} />
+                <span className="text-xs font-[600] text-zinc-600 dark:text-zinc-400">
+                  {accountStatus === "tich-cuc" && "Tích cực"}
+                  {accountStatus === "canh-bao" && "Bị cảnh báo"}
+                  {accountStatus === "cam" && "Bị cấm"}
+                </span>
+                <button
+                  onClick={() => setShowStatusModal(true)}
+                  className="flex items-center justify-center active:scale-90"
+                >
+                  <FiInfo size={12} className="text-blue-500" />
+                </button>
               </div>
-              <span className="text-xs text-zinc-500">Huha</span>
             </div>
             <button
               onClick={openFilterModal}
-              className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90 shadow-lg shadow-zinc-900/5"
+              disabled={isDisabled}
+              className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90 shadow-lg shadow-zinc-900/5 disabled:opacity-40"
             >
               <FiSettings size={20} className="text-zinc-700 dark:text-zinc-300" />
             </button>
           </div>
-          {userKarma < 50 && (
+          {accountStatus === "cam" && (
             <div className="mt-3 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-sm text-red-700 dark:text-red-400 font-[600] flex items-center gap-2">
               <FiUserX size={16} />
-              Bạn đã bị cấm chat người lạ
+              Tài khoản bị cấm chat người lạ
             </div>
           )}
         </div>
@@ -295,7 +323,7 @@ export default function StrangerPage() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
             >
-              <div className="w-20 h-20 mx-auto mb-4 bg-pink-500 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-pink-500/30">
+              <div className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-blue-600/30">
                 <FiLoader className="text-white animate-spin" size={36} />
               </div>
               <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
@@ -320,11 +348,12 @@ export default function StrangerPage() {
               {/* Step buttons */}
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setCurrentStep(1)}
+                  onClick={() => handleStepClick(1)}
+                  disabled={isDisabled}
                   className={cn(
-                    "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2",
+                    "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
                     currentStep === 1
-                     ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white animate-pulse"
+                    ? "bg-blue-600 text-white border-blue-600 animate-pulse"
                       : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   )}
                 >
@@ -332,12 +361,12 @@ export default function StrangerPage() {
                   {currentStep === 1 && selectedCats.length > 0 && <FiChevronRight size={16} className="animate-pulse" />}
                 </button>
                 <button
-                  onClick={() => selectedCats.length > 0 && setCurrentStep(2)}
-                  disabled={selectedCats.length === 0}
+                  onClick={() => handleStepClick(2)}
+                  disabled={selectedCats.length === 0 || isDisabled}
                   className={cn(
                     "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
                     currentStep === 2
-                     ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white animate-pulse"
+                    ? "bg-blue-600 text-white border-blue-600 animate-pulse"
                       : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   )}
                 >
@@ -345,91 +374,105 @@ export default function StrangerPage() {
                   {currentStep === 2 && <FiChevronRight size={16} className="animate-pulse" />}
                 </button>
                 <button
-                  onClick={() => selectedCats.length > 0 && setCurrentStep(3)}
-                  disabled={selectedCats.length === 0}
+                  onClick={() => handleStepClick(3)}
+                  disabled={selectedCats.length === 0 || isDisabled || findingStranger}
                   className={cn(
                     "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
                     currentStep === 3
-                     ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white animate-pulse"
+                    ? "bg-blue-600 text-white border-blue-600"
                       : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   )}
                 >
-                  Bước 3
+                  {findingStranger? <FiLoader className="animate-spin" size={16} /> : "Bước 3"}
                 </button>
               </div>
 
-              {/* Grid categories */}
-              <div className="grid grid-cols-2 gap-3">
-                {CATEGORIES.map(cat => {
-                  const isSelected = selectedCats.includes(cat.id) || (selectAllMode && cat.id === "tat-ca");
-                  const isDisabled = selectAllMode && cat.id!== "tat-ca";
+              {/* Grid categories - chỉ hiện ở step 1 */}
+              {currentStep === 1 && (
+                <div className="grid grid-cols-2 gap-3">
+                  {CATEGORIES.map(cat => {
+                    const isSelected = selectedCats.includes(cat.id) || (selectAllMode && cat.id === "tat-ca");
+                    const isDisabledCard = selectAllMode && cat.id!== "tat-ca";
 
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => toggleCategory(cat.id)}
-                      disabled={userKarma < 50 || findingStranger || isDisabled}
-                      className={cn(
-                        "rounded-3xl p-4 border-2 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 active:scale-95 transition-all disabled:opacity-40 h-44 flex flex-col items-center justify-center gap-3",
-                        isSelected
-                         ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white"
-                          : isDisabled
-                         ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 text-zinc-400"
-                          : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-                      )}
-                    >
-                      <div className="text-5xl">{cat.icon}</div>
-                      <div className="text-center">
-                        <p className="text-sm font-[700] leading-tight">{cat.label}</p>
-                        {cat.count > 0 && (
-                          <div className="flex items-center justify-center gap-1 text-xs mt-1 opacity-60">
-                            <FiUsers size={12} />
-                            <span>{cat.count}</span>
-                          </div>
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => toggleCategory(cat.id)}
+                        disabled={isDisabled || findingStranger || isDisabledCard}
+                        className={cn(
+                          "rounded-3xl p-4 border-2 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 active:scale-95 transition-all disabled:opacity-40 h-44 flex flex-col items-center justify-center gap-3",
+                          isSelected
+                          ? "bg-blue-600 text-white border-blue-600"
+                            : isDisabledCard
+                          ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 text-zinc-400"
+                            : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                         )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                      >
+                        <div className="text-5xl">{cat.icon}</div>
+                        <div className="text-center">
+                          <p className="text-sm font-[700] leading-tight">{cat.label}</p>
+                          {cat.count > 0 && (
+                            <div className="flex items-center justify-center gap-1 text-xs mt-1 opacity-60">
+                              <FiUsers size={12} />
+                              <span>{cat.count}</span>
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
-              {/* Nút Next Step */}
-              {canGoNext() && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="sticky bottom-4 pt-4"
-                >
+              {/* Step 2: Filter preview */}
+              {currentStep === 2 && (
+                <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 space-y-4">
+                  <h3 className="text-lg font-[800]">Bộ lọc hiện tại</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Độ tuổi:</span>
+                      <span className="font-[700]">{ageFrom} - {ageTo}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Giới tính:</span>
+                      <span className="font-[700]">{GENDERS.find(g => g.value === selectedGender)?.label}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Tỉnh/TP:</span>
+                      <span className="font-[700]">{selectedProvince}</span>
+                    </div>
                   <button
-                    onClick={handleNextStep}
-                    disabled={findingStranger || userKarma < 50}
-                    className="w-full h-14 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl text-base font-[800] disabled:opacity-40 shadow-xl shadow-zinc-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    onClick={openFilterModal}
+                    className="w-full h-12 bg-blue-600 text-white rounded-xl font-[700] active:scale-95"
                   >
-                    {findingStranger? (
-                      <>
-                        <FiLoader className="animate-spin" size={20} />
-                        Đang tìm...
-                      </>
-                    ) : currentStep === 3? (
-                      <>
-                        <FiCheck size={20} />
-                        Bắt đầu tìm
-                      </>
-                    ) : (
-                      <>
-                        Tiếp tục bước {currentStep + 1}
-                        <FiChevronRight size={20} />
-                      </>
-                    )}
+                    Chỉnh sửa bộ lọc
                   </button>
-                </motion.div>
+                </div>
+              )}
+
+              {/* Step 3: Confirm */}
+              {currentStep === 3 && (
+                <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 space-y-4">
+                  <h3 className="text-lg font-[800]">Xác nhận tìm kiếm</h3>
+                  <div className="space-y-2 text-sm">
+                    <p className="text-zinc-500">Danh mục: <span className="font-[700] text-zinc-900 dark:text-white">
+                      {selectAllMode? "Tất cả" : selectedCats.map(id => CATEGORIES.find(c => c.id === id)?.label).join(", ")}
+                    </span></p>
+                    <p className="text-zinc-500">Độ tuổi: <span className="font-[700] text-zinc-900 dark:text-white">{ageFrom}-{ageTo}</span></p>
+                    <p className="text-zinc-500">Giới tính: <span className="font-[700] text-zinc-900 dark:text-white">{GENDERS.find(g => g.value === selectedGender)?.label}</span></p>
+                    <p className="text-zinc-500">Khu vực: <span className="font-[700] text-zinc-900 dark:text-white">{selectedProvince}</span></p>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 text-xs text-blue-700 dark:text-blue-400">
+                    <FiInfo className="inline mr-1" /> Mỗi lần tìm kiếm sẽ trừ 10 điểm
+                  </div>
+                </div>
               )}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Modal Info Huha */}
+      {/* Modal Info Huha - Nâng cấp */}
       <AnimatePresence>
         {showInfoModal && (
           <motion.div
@@ -444,24 +487,101 @@ export default function StrangerPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 shadow-2xl"
+              className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 shadow-2xl max-h-[80vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-[800]">Điểm Huha là gì?</h3>
+                <h3 className="text-lg font-[800] flex items-center gap-2">
+                  <FiShield className="text-blue-600" />
+                  Điểm Huha
+                </h3>
                 <button onClick={() => setShowInfoModal(false)} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
                   <FiX size={18} />
                 </button>
               </div>
-              <div className="space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
-                <p><b className="text-zinc-900 dark:text-white">Huha</b> là điểm uy tín của bạn khi chat với người lạ.</p>
-                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-3 space-y-2">
-                  <p className="font-[700] text-zinc-900 dark:text-white">Cách tính điểm:</p>
-                  <p>• Bắt đầu: 100 điểm</p>
-                  <p>• Bị report: -10 điểm</p>
-                  <p>• Chat lịch sự 7 ngày: +5 điểm</p>
-                  <p>• Dưới 50 điểm: Bị cấm chat</p>
+              <div className="space-y-4 text-sm text-zinc-600 dark:text-zinc-400">
+                <p><b className="text-zinc-900 dark:text-white">Huha</b> là điểm dùng để tìm kiếm bạn chat. Mỗi lần tìm -10 điểm.</p>
+
+                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 space-y-2">
+                  <p className="font-[700] text-zinc-900 dark:text-white flex items-center gap-2">
+                    <FiTrendingUp className="text-green-500" /> Cách kiếm điểm:
+                  </p>
+                  <p>• Mỗi ngày đăng nhập: +10 điểm</p>
+                  <p>• Chat lịch sự 7 ngày liên tiếp: +5 điểm</p>
+                  <p>• Được người khác đánh giá tốt: +2 điểm/lượt</p>
                 </div>
-                <p className="text-xs">Hãy trò chuyện văn minh, tôn trọng người khác để giữ điểm Huha cao!</p>
+
+                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 space-y-2">
+                  <p className="font-[700] text-zinc-900 dark:text-white flex items-center gap-2">
+                    <FiAlertTriangle className="text-red-500" /> Trừ điểm:
+                  </p>
+                  <p>• Mỗi lần tìm kiếm: -10 điểm</p>
+                  <p>• Bị report: -10 điểm</p>
+                  <p>• Vi phạm quy tắc: -20 điểm</p>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-2">
+                  <p className="font-[700] text-blue-700 dark:text-blue-400">Hạng tài khoản:</p>
+                  <p className="text-blue-600 dark:text-blue-300">• User: Tối đa 100 điểm</p>
+                  <p className="text-blue-600 dark:text-blue-300">• VIP: Tối đa 200 điểm</p>
+                  <p className="text-blue-600 dark:text-blue-300">• Elite: Tối đa 400 điểm</p>
+                </div>
+
+                <p className="text-xs text-center">Điểm của bạn: <b className="text-zinc-900 dark:text-white">{userKarma}/{userTier === "elite"? 400 : userTier === "vip"? 200 : 100}</b></p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Status Account */}
+      <AnimatePresence>
+        {showStatusModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            onClick={() => setShowStatusModal(false)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-[800]">Trạng thái tài khoản</h3>
+                <button onClick={() => setShowStatusModal(false)} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                  <FiX size={18} />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div className={cn(
+                  "p-4 rounded-xl border-2",
+                  accountStatus === "tich-cuc" && "bg-green-50 dark:bg-green-900/20 border-green-500",
+                  accountStatus === "canh-bao" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500",
+                  accountStatus === "cam" && "bg-red-50 dark:bg-red-900/20 border-red-500"
+                )}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={cn(
+                      "w-3 h-3 rounded-full",
+                      accountStatus === "tich-cuc" && "bg-green-500",
+                      accountStatus === "canh-bao" && "bg-yellow-500",
+                      accountStatus === "cam" && "bg-red-500"
+                    )} />
+                    <p className="font-[800] text-zinc-900 dark:text-white">
+                      {accountStatus === "tich-cuc" && "Tích cực"}
+                      {accountStatus === "canh-bao" && "Bị cảnh báo"}
+                      {accountStatus === "cam" && "Bị cấm"}
+                    </p>
+                  </div>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    {accountStatus === "tich-cuc" && "Tài khoản hoạt động bình thường. Hãy tiếp tục trò chuyện văn minh!"}
+                    {accountStatus === "canh-bao" && "Bạn đã vi phạm quy tắc cộng đồng. Hãy cẩn thận hơn để tránh bị cấm."}
+                    {accountStatus === "cam" && "Tài khoản bị khóa do vi phạm nghiêm trọng. Liên hệ hỗ trợ để kháng cáo."}
+                  </p>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -493,7 +613,6 @@ export default function StrangerPage() {
               </div>
 
               <div className="space-y-5">
-                {/* Độ tuổi */}
                 <div>
                   <label className="text-sm font-[700] mb-2 block">Độ tuổi</label>
                   <div className="flex items-center gap-2">
@@ -502,10 +621,15 @@ export default function StrangerPage() {
                       <input
                         type="number"
                         value={tempAgeFrom}
-                        onChange={(e) => setTempAgeFrom(Math.max(0, Math.min(100, Number(e.target.value))))}
-                        className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 text-base font-[600] text-center focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "") setTempAgeFrom("");
+                          else setTempAgeFrom(Math.max(0, Math.min(100, Number(val))));
+                        }}
+                        className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 text-base font-[600] text-center focus:outline-none focus:ring-2 focus:ring-blue-600"
                         min={0}
                         max={100}
+                        placeholder="0"
                       />
                     </div>
                     <div className="pt-5 text-zinc-400">—</div>
@@ -514,19 +638,23 @@ export default function StrangerPage() {
                       <input
                         type="number"
                         value={tempAgeTo}
-                        onChange={(e) => setTempAgeTo(Math.max(0, Math.min(100, Number(e.target.value))))}
-                        className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 text-base font-[600] text-center focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "") setTempAgeTo("");
+                          else setTempAgeTo(Math.max(0, Math.min(100, Number(val))));
+                        }}
+                        className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 text-base font-[600] text-center focus:outline-none focus:ring-2 focus:ring-blue-600"
                         min={0}
                         max={100}
+                        placeholder="0"
                       />
                     </div>
                   </div>
-                  {tempAgeFrom < 18 && (
+                  {Number(tempAgeFrom) < 18 && tempAgeFrom!== "" && (
                     <p className="text-xs text-red-500 mt-2 font-[600]">Độ tuổi tối thiểu là 18</p>
                   )}
                 </div>
 
-                {/* Giới tính */}
                 <div>
                   <label className="text-sm font-[700] mb-2 block">Giới tính</label>
                   <div className="grid grid-cols-3 gap-2">
@@ -537,7 +665,7 @@ export default function StrangerPage() {
                         className={cn(
                           "h-12 rounded-xl text-sm font-[600] transition-all active:scale-95 border",
                           tempGender === g.value
-                           ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white"
+                          ? "bg-blue-600 text-white border-blue-600"
                             : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                         )}
                       >
@@ -547,13 +675,12 @@ export default function StrangerPage() {
                   </div>
                 </div>
 
-                {/* Tỉnh/TP */}
                 <div>
                   <label className="text-sm font-[700] mb-2 block">Tỉnh/Thành phố</label>
                   <select
                     value={tempProvince}
                     onChange={(e) => setTempProvince(e.target.value)}
-                    className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 text-base font-[600] focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white border border-zinc-200 dark:border-zinc-700"
+                    className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 text-base font-[600] focus:outline-none focus:ring-2 focus:ring-blue-600 border border-zinc-200 dark:border-zinc-700"
                   >
                     {PROVINCES.map(p => (
                       <option key={p} value={p}>{p}</option>
@@ -562,11 +689,8 @@ export default function StrangerPage() {
                 </div>
 
                 <button
-                  onClick={() => {
-                    saveFilters();
-                    if (currentStep === 2) setCurrentStep(3);
-                  }}
-                  className="w-full h-12 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl text-base font-[800] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  onClick={saveFilters}
+                  className="w-full h-12 bg-blue-600 text-white rounded-xl text-base font-[800] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
                   <FiCheck size={20} />
                   Lưu bộ lọc
