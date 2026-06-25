@@ -206,7 +206,7 @@ export default function StrangerPage() {
           )}
         </div>
 
-        <AnimatePresence mode="wait">
+        <        <AnimatePresence mode="wait">
           {!isSetup? (
             <motion.div
               key="setup"
@@ -233,7 +233,7 @@ export default function StrangerPage() {
                       className={cn(
                         "h-11 rounded-xl text-sm font-[600] transition-all active:scale-95",
                         tempInterests.includes(tag)
-                      ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-500/30'
+                     ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-500/30'
                           : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                       )}
                     >
@@ -255,7 +255,7 @@ export default function StrangerPage() {
                       className={cn(
                         "h-11 rounded-xl text-sm font-[600] transition-all active:scale-95",
                         tempAge === age
-                      ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-500/30'
+                     ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-500/30'
                           : 'bg-zinc-100 dark:bg-zinc-800'
                       )}
                     >
@@ -280,7 +280,7 @@ export default function StrangerPage() {
                       className={cn(
                         "h-11 rounded-xl text-sm font-[600] transition-all active:scale-95",
                         tempGender === opt.value
-                      ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-500/30'
+                     ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-500/30'
                           : 'bg-zinc-100 dark:bg-zinc-800'
                       )}
                     >
@@ -328,7 +328,7 @@ export default function StrangerPage() {
                 Hủy tìm kiếm
               </button>
             </motion.div>
-          ) : (
+          ) : prefs? (
             <motion.div
               key="ready"
               initial={{ opacity: 0 }}
@@ -380,7 +380,7 @@ export default function StrangerPage() {
                 <span className="font-[600] text-zinc-900 dark:text-white">Chat văn minh • Không spam • Không 18+</span>
               </p>
             </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
       </div>
     </div>
