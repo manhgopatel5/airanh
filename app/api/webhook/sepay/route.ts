@@ -24,9 +24,14 @@ type OrderData = {
 // SỬA: Regex P hoặc E + 20 ký tự thay vì VIPPRO/VIPELITE
 function extractOrderId(content: string, description: string): string | null {
   const text = `${content} ${description}`.replace(/\s+/g, '');
+  console.log('[SePay] Text to parse:', text); // THÊM DÒNG NÀY
+
   const match = text.match(/[PE]([A-Za-z0-9]{20})$/i);
-  if (!match || !match[1]) return null;
-  return match[1]; // Trả về 20 ký tự orderId
+  if (!match ||!match[1]) {
+    console.error('[SePay] Regex no match for:', text);
+    return null;
+  }
+  return match[1];
 }
 
 export async function POST(req: NextRequest) {
