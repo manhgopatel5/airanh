@@ -60,7 +60,7 @@ export default function StrangerPage() {
 
   const [userKarma, setUserKarma] = useState(100);
   const [userTier, setUserTier] = useState<"user" | "vip" | "elite">("user");
-  const [accountStatus, setAccountStatus] = useState<"tich-cuc" | "canh-bao" | "cam">("tich-cuc");
+const [accountStatus, setAccountStatus] = useState<"active" | "warning" | "banned">("active");
   const [userName, setUserName] = useState("");
   const [userAvatar, setUserAvatar] = useState("");
   const [findingStranger, setFindingStranger] = useState(false);
@@ -89,39 +89,39 @@ export default function StrangerPage() {
     if (!user?.uid) return;
 
     const unsubUser = onSnapshot(doc(db, "users", user.uid), (snap) => {
-      const data = snap.data();
-      setUserKarma(data?.karma || 100);
-      setUserName(data?.displayName || "Bạn");
-      setUserAvatar(data?.photoURL || "");
-      setUserTier(data?.tier || "user");
-      setAccountStatus(data?.status || "tich-cuc");
-    });
+  const data = snap.data();
+  setUserKarma(data?.karma || 100);
+  setUserName(data?.displayName || "Bạn");
+  setUserAvatar(data?.photoURL || "");
+  setUserTier(data?.tier || "user");
+  setAccountStatus(data?.status || "active"); // Dùng thẳng active | warning | banned
+});
 
-    const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
-      const data = snap.data();
-      if (data?.matchedChatId) {
-        router.push(`/stranger/${data.matchedChatId}`);
-        setInQueue(false);
-        setFindingStranger(false);
-        setSelectedCats([]);
-        setSelectAllMode(false);
-        setCurrentStep(1);
-      } else if (data &&!data?.matchedChatId) {
-        setInQueue(true);
-        setFindingStranger(true);
-      } else {
-        setInQueue(false);
-        setFindingStranger(false);
-      }
-    });
+const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
+  const data = snap.data();
+  if (data?.matchedChatId) {
+    router.push(`/stranger/${data.matchedChatId}`);
+    setInQueue(false);
+    setFindingStranger(false);
+    setSelectedCats([]);
+    setSelectAllMode(false);
+    setCurrentStep(1);
+  } else if (data && !data?.matchedChatId) {
+    setInQueue(true);
+    setFindingStranger(true);
+  } else {
+    setInQueue(false);
+    setFindingStranger(false);
+  }
+});
 
-    return () => {
-      unsubUser();
-      unsubQueue();
-    };
-  }, [user?.uid, db, router]);
+return () => {
+  unsubUser();
+  unsubQueue();
+};
+}, [user?.uid, db, router]);
 
-  const isDisabled = accountStatus === "cam";
+const isDisabled = accountStatus === "banned";
 
   const toggleCategory = (catId: string) => {
     if (isDisabled) return;
@@ -289,25 +289,25 @@ export default function StrangerPage() {
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowStatusModal(true)}
-                className={cn(
-                  "h-11 px-3 rounded-2xl flex items-center gap-2 active:scale-90 transition-all border-2",
-                  (accountStatus || "tich-cuc") === "tich-cuc" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
-                  accountStatus === "canh-bao" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
-                  accountStatus === "cam" && "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-700 dark:text-red-400"
-                )}
-              >
-                <div className={cn(
-                  "w-2 h-2 rounded-full",
-                  (accountStatus || "tich-cuc") === "tich-cuc" && "bg-green-500",
-                  accountStatus === "canh-bao" && "bg-yellow-500",
-                  accountStatus === "cam" && "bg-red-500"
-                )} />
-                <span className="text-xs font-[700]">
-                  {(accountStatus || "tich-cuc") === "tich-cuc"? "Tích cực" : accountStatus === "canh-bao"? "Cảnh báo" : "Bị cấm"}
-                </span>
-              </button>
+          <button
+  onClick={() => setShowStatusModal(true)}
+  className={cn(
+    "h-11 px-3 rounded-2xl flex items-center gap-2 active:scale-90 transition-all border-2",
+    accountStatus === "active" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
+    accountStatus === "warning" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
+    accountStatus === "banned" && "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-700 dark:text-red-400"
+  )}
+>
+  <div className={cn(
+    "w-2 h-2 rounded-full",
+    accountStatus === "active" && "bg-green-500",
+    accountStatus === "warning" && "bg-yellow-500",
+    accountStatus === "banned" && "bg-red-500"
+  )} />
+  <span className="text-xs font-[700]">
+    {accountStatus === "active"? "Tích cực" : accountStatus === "warning"? "Cảnh báo" : "Bị cấm"}
+  </span>
+</button>
               <button
                 onClick={openFilterModal}
                 disabled={isDisabled}
@@ -317,12 +317,12 @@ export default function StrangerPage() {
               </button>
             </div>
           </div>
-          {accountStatus === "cam" && (
-            <div className="mt-3 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-sm text-red-700 dark:text-red-400 font-[600] flex items-center gap-2">
-              <FiUserX size={16} />
-              Tài khoản bị cấm chat người lạ
-            </div>
-          )}
+       {accountStatus === "banned" && (
+  <div className="mt-3 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-sm text-red-700 dark:text-red-400 font-[600] flex items-center gap-2">
+    <FiUserX size={16} />
+    Tài khoản bị cấm chat người lạ
+  </div>
+)}
         </div>
 
         <AnimatePresence mode="wait">
@@ -744,31 +744,31 @@ export default function StrangerPage() {
                 </button>
               </div>
               <div className="space-y-4">
-                <div className={cn(
-                  "p-4 rounded-xl border-2",
-                  accountStatus === "tich-cuc" && "bg-green-50 dark:bg-green-900/20 border-green-500",
-                  accountStatus === "canh-bao" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500",
-                  accountStatus === "cam" && "bg-red-50 dark:bg-red-900/20 border-red-500"
-                )}>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={cn(
-                      "w-3 h-3 rounded-full",
-                      accountStatus === "tich-cuc" && "bg-green-500",
-                      accountStatus === "canh-bao" && "bg-yellow-500",
-                      accountStatus === "cam" && "bg-red-500"
-                    )} />
-                    <p className="font-[800] text-zinc-900 dark:text-white">
-                      {accountStatus === "tich-cuc" && "Tích cực"}
-                      {accountStatus === "canh-bao" && "Bị cảnh báo"}
-                      {accountStatus === "cam" && "Bị cấm"}
-                    </p>
-                  </div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    {accountStatus === "tich-cuc" && "Tài khoản hoạt động bình thường. Hãy tiếp tục trò chuyện văn minh để giữ trạng thái này!"}
-                    {accountStatus === "canh-bao" && "Bạn đã vi phạm quy tắc cộng đồng. Nếu tiếp tục vi phạm, tài khoản sẽ bị cấm. Hãy cẩn thận hơn!"}
-                    {accountStatus === "cam" && "Tài khoản bị khóa do vi phạm nghiêm trọng. Bạn không thể sử dụng tính năng chat người lạ. Liên hệ hỗ trợ để kháng cáo."}
-                  </p>
-                </div>
+             <div className={cn(
+  "p-4 rounded-xl border-2",
+  accountStatus === "active" && "bg-green-50 dark:bg-green-900/20 border-green-500",
+  accountStatus === "warning" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500",
+  accountStatus === "banned" && "bg-red-50 dark:bg-red-900/20 border-red-500"
+)}>
+  <div className="flex items-center gap-3 mb-2">
+    <div className={cn(
+      "w-3 h-3 rounded-full",
+      accountStatus === "active" && "bg-green-500",
+      accountStatus === "warning" && "bg-yellow-500",
+      accountStatus === "banned" && "bg-red-500"
+    )} />
+    <p className="font-[800] text-zinc-900 dark:text-white">
+      {accountStatus === "active" && "Tích cực"}
+      {accountStatus === "warning" && "Bị cảnh báo"}
+      {accountStatus === "banned" && "Bị cấm"}
+    </p>
+  </div>
+  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+    {accountStatus === "active" && "Tài khoản hoạt động bình thường. Hãy tiếp tục trò chuyện văn minh để giữ trạng thái này!"}
+    {accountStatus === "warning" && "Bạn đã vi phạm quy tắc cộng đồng. Nếu tiếp tục vi phạm, tài khoản sẽ bị cấm. Hãy cẩn thận hơn!"}
+    {accountStatus === "banned" && "Tài khoản bị khóa do vi phạm nghiêm trọng. Bạn không thể sử dụng tính năng chat người lạ. Liên hệ hỗ trợ để kháng cáo."}
+  </p>
+</div>
               </div>
             </motion.div>
           </motion.div>
