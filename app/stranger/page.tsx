@@ -205,8 +205,12 @@ export default function StrangerPage() {
     if (!user?.uid) return;
     if (isDisabled) return toast.error("Tài khoản bị cấm");
 
-    const maxKarma = userTier === "elite"? 400 : userTier === "vip"? 200 : 100;
+    const maxKarma = userTier === "elite" ? 400 : userTier === "vip" ? 200 : 100;
+    
     if (userKarma < 10) return toast.error("Cần ít nhất 10 điểm để tìm kiếm");
+    if (userKarma > maxKarma) {
+      return toast.error(`Điểm vượt giới hạn ${maxKarma}. Vui lòng liên hệ admin`);
+    }
     if (selectedCats.length === 0) return toast.error("Chọn ít nhất 1 mục");
     if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
 
@@ -218,7 +222,7 @@ export default function StrangerPage() {
       const findFn = httpsCallable(functions, 'findStranger');
 
       const result = await findFn({
-        categories: selectAllMode? CATEGORIES.filter(c => c.id!== "tat-ca").map(c => c.id) : selectedCats,
+        categories: selectAllMode ? CATEGORIES.filter(c => c.id !== "tat-ca").map(c => c.id) : selectedCats,
         ageRange: `${ageFrom}-${ageTo}`,
         wantGender: selectedGender,
         province: selectedProvince,
