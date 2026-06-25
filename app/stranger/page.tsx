@@ -325,10 +325,10 @@ export default function StrangerPage() {
                 onClick={handleCancelQueue}
                 className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-[700] active:scale-95 transition-all"
               >
-                Hủy tìm kiếm
+                                Hủy tìm kiếm
               </button>
             </motion.div>
-          ) : (
+          ) : prefs? (
             <motion.div
               key="ready"
               initial={{ opacity: 0 }}
