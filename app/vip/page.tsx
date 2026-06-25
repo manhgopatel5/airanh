@@ -209,30 +209,33 @@ export default function VipPage() {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-5"
             >
-              {userVip && userVip.tier!== 'free' && (
-                <div className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-3xl p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-xs opacity-70 mb-1">Gói hiện tại</p>
-                      <p className="text-2xl font-black flex items-center gap-2">
-                        {VIP_TIERS.find(t => t.id === userVip?.tier)?.badge}
-                        {VIP_TIERS.find(t => t.id === userVip?.tier)?.name}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-3xl font-black">{daysLeft}</p>
-                      <p className="text-xs opacity-70">ngày còn lại</p>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-white/20 dark:bg-zinc-900/20 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min((daysLeft / 30) * 100, 100)}%` }}
-                      className="h-full bg-white dark:bg-zinc-900"
-                    />
-                  </div>
-                </div>
-              )}
+          {userVip && userVip.tier !== 'free' && (
+  <div className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800">
+    <div className="flex items-center justify-between mb-3">
+      <div>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Gói hiện tại</p>
+        <p className="text-2xl font-black flex items-center gap-2">
+          {VIP_TIERS.find(t => t.id === userVip?.tier)?.badge}
+          {VIP_TIERS.find(t => t.id === userVip?.tier)?.name}
+        </p>
+      </div>
+      <div className="text-right">
+        <p className="text-3xl font-black">{daysLeft}</p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">ngày còn lại</p>
+      </div>
+    </div>
+    <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${Math.min((daysLeft / 30) * 100, 100)}%` }}
+        className={cn(
+          "h-full",
+          userVip?.tier === 'elite' ? 'bg-amber-500' : 'bg-[#0a84ff]'
+        )}
+      />
+    </div>
+  </div>
+)}
 {userVip?.tier === 'pro' && selectedTierId === 'elite' && (
   <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-4">
     <div className="flex items-center gap-3 mb-2">
@@ -402,44 +405,48 @@ export default function VipPage() {
                         })}
                       </div>
 
-                      <button
-                        onClick={() => handlePurchaseVip(tier.id)}
-                        disabled={!!purchasingVip || isActive}
-                        className={cn(
-                          "group relative w-full h-14 rounded-2xl font-bold text-base transition-all disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98] overflow-hidden",
-                          isActive
-                           ? 'bg-emerald-500 text-white'
-                            : tier.id === 'elite'
-                             ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-[1.02]'
-                              : 'bg-[#0a84ff] text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02]'
-                        )}
-                      >
-                        {!isActive && (
-                          <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                        )}
-
-              <span className="relative z-10 flex items-center gap-2">
-  {purchasingVip === tier.id? (
-    <FiLoader className="animate-spin" size={22} />
-  ) : isActive ? (
-    <>
-      <FiCheck size={20} strokeWidth={3} /> Đang sử dụng
-    </>
-  ) : userVip?.tier === 'pro' && tier.id === 'elite' ? (
-    <>
-      <FiTrendingUp size={20} className="group-hover:scale-110 transition-transform" />
-      Nâng cấp lên Elite
-      <FiZap size={18} className="group-hover:rotate-12 transition-transform" />
-    </>
-  ) : (
-    <>
-      <FiCreditCard size={20} className="group-hover:scale-110 transition-transform" />
-      Nâng cấp ngay
-      <FiZap size={18} className="group-hover:rotate-12 transition-transform" />
-    </>
+                  <button
+  onClick={() => handlePurchaseVip(tier.id)}
+  disabled={!!purchasingVip || isActive || userVip?.tier === 'elite'}
+  className={cn(
+    "group relative w-full h-14 rounded-2xl font-bold text-base transition-all disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98] overflow-hidden",
+    isActive || userVip?.tier === 'elite'
+     ? 'bg-emerald-500 text-white cursor-not-allowed'
+      : tier.id === 'elite'
+       ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-[1.02]'
+        : 'bg-[#0a84ff] text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02]'
   )}
-</span>
-                      </button>
+>
+  {!isActive && userVip?.tier !== 'elite' && (
+    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+  )}
+
+  <span className="relative z-10 flex items-center gap-2">
+    {purchasingVip === tier.id ? (
+      <FiLoader className="animate-spin" size={22} />
+    ) : isActive ? (
+      <>
+        <FiCheck size={20} strokeWidth={3} /> Đang sử dụng
+      </>
+    ) : userVip?.tier === 'elite' ? (
+      <>
+        <FiLock size={20} strokeWidth={3} /> Bạn đang dùng gói cao nhất
+      </>
+    ) : userVip?.tier === 'pro' && tier.id === 'elite' ? (
+      <>
+        <FiTrendingUp size={20} className="group-hover:scale-110 transition-transform" />
+        Nâng cấp lên Elite
+        <FiZap size={18} className="group-hover:rotate-12 transition-transform" />
+      </>
+    ) : (
+      <>
+        <FiCreditCard size={20} className="group-hover:scale-110 transition-transform" />
+        Nâng cấp ngay
+        <FiZap size={18} className="group-hover:rotate-12 transition-transform" />
+      </>
+    )}
+  </span>
+</button>
                     </>
                   );
                 })()}
