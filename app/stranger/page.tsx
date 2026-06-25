@@ -206,7 +206,7 @@ export default function StrangerPage() {
           )}
         </div>
 
-        <        <AnimatePresence mode="wait">
+              <AnimatePresence mode="wait">
           {!isSetup? (
             <motion.div
               key="setup"
