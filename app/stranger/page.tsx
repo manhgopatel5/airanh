@@ -47,7 +47,7 @@ export default function StrangerPage() {
       
       // Check đã setup chưa
       const strangerPrefs = data?.strangerPrefs as StrangerPref | undefined;
-      if (strangerPrefs?.interests?.length >= 3) {
+if ((strangerPrefs?.interests?.length || 0) >= 3) {
         setPrefs(strangerPrefs);
         setIsSetup(true);
       } else {
