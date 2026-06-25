@@ -21,11 +21,12 @@ type OrderData = {
   sepayTransactionId?: number;
 };
 
+// SỬA: Regex P hoặc E + 20 ký tự thay vì VIPPRO/VIPELITE
 function extractOrderId(content: string, description: string): string | null {
   const text = `${content} ${description}`.replace(/\s+/g, '');
-  const match = text.match(/VIP(?:PRO|ELITE)([A-Za-z0-9]{20})/i);
-  if (!match ||!match[1]) return null;
-  return match[1];
+  const match = text.match(/[PE]([A-Za-z0-9]{20})$/i);
+  if (!match || !match[1]) return null;
+  return match[1]; // Trả về 20 ký tự orderId
 }
 
 export async function POST(req: NextRequest) {
@@ -101,7 +102,6 @@ export async function POST(req: NextRequest) {
       sepayTransactionId: order.sepayTransactionId
     });
 
-    // SỬA 1: CHẶN CỨNG - CHỈ CHO PHÉP THANH TOÁN ORDER PENDING
     if (order.status!== 'pending') {
       console.error('[SePay] Order not pending:', orderId, 'status:', order.status);
       return NextResponse.json({
@@ -111,7 +111,6 @@ export async function POST(req: NextRequest) {
       }, { status: 409 });
     }
 
-    // SỬA 2: CHỐNG REPLAY - NẾU ĐÃ CÓ sepayTransactionId THÌ REJECT
     if (order.sepayTransactionId) {
       console.error('[SePay] Order already has transactionId:', order.sepayTransactionId);
       return NextResponse.json({
@@ -136,11 +135,9 @@ export async function POST(req: NextRequest) {
     }
 
     await db.runTransaction(async (tx) => {
-      // 1. ĐỌC HẾT TRƯỚC
       const freshOrderSnap = await tx.get(orderRef);
       const freshOrder = freshOrderSnap.data() as OrderData;
 
-      // SỬA 3: DOUBLE CHECK TRONG TRANSACTION ĐỂ CHỐNG RACE CONDITION
       if (freshOrder.status!== 'pending') {
         throw new Error('Order status changed during transaction');
       }
@@ -156,11 +153,10 @@ export async function POST(req: NextRequest) {
         promoRef = db.collection('promoCodes').doc(freshOrder.promoCode);
       }
 
-      // 2. SAU ĐÓ MỚI GHI
       tx.update(orderRef, {
         status: 'paid',
         paidAt: Timestamp.now(),
-        sepayTransactionId: data.id, // Lock bằng transactionId của SePay
+        sepayTransactionId: data.id,
       });
 
       if (promoRef) {
@@ -186,7 +182,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[SePay] Webhook error:', error.message);
-    // Nếu lỗi do race condition thì trả 409
     if (error.message.includes('Order status changed') || error.message.includes('already has transactionId')) {
       return NextResponse.json({ error: error.message, reason: 'conflict' }, { status: 409 });
     }
