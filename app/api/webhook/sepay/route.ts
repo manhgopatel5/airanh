@@ -115,31 +115,36 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // BỎ CHECK EXPIRED - CHO PHÉP THANH TOÁN CẢ QR HẾT HẠN
     if (isExpired) {
       console.warn('[SePay] Order expired but still processing payment:', orderId, order.expireAt.toDate());
     }
 
     await db.runTransaction(async (tx) => {
+      // 1. ĐỌC HẾT TRƯỚC
       const freshOrderSnap = await tx.get(orderRef);
       const freshOrder = freshOrderSnap.data() as OrderData;
       if (freshOrder.status === 'paid') return;
 
+      const userRef = db.collection('users').doc(freshOrder.userId);
+      const userSnap = await tx.get(userRef);
+
+      let promoRef: FirebaseFirestore.DocumentReference | null = null;
+      if (freshOrder.promoCode) {
+        promoRef = db.collection('promoCodes').doc(freshOrder.promoCode);
+      }
+
+      // 2. SAU ĐÓ MỚI GHI
       tx.update(orderRef, {
         status: 'paid',
         paidAt: Timestamp.now(),
         sepayTransactionId: data.id,
       });
 
-      if (freshOrder.promoCode) {
-        const promoRef = db.collection('promoCodes').doc(freshOrder.promoCode);
+      if (promoRef) {
         tx.update(promoRef, { usedCount: FieldValue.increment(1) });
       }
 
-      const userRef = db.collection('users').doc(freshOrder.userId);
-      const userSnap = await tx.get(userRef);
       const currentVip = userSnap.data()?.vip;
-
       let expireDate = new Date();
       if (currentVip?.tier!== 'free' && currentVip?.expiresAt) {
         const currentExpire = currentVip.expiresAt.toDate();
