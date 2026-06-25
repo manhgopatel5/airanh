@@ -7,18 +7,18 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
 import { doc, onSnapshot, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { FiUserX, FiStar, FiLoader, FiUsers, FiSettings, FiInfo, FiX, FiCheck } from "react-icons/fi";
+import { FiUserX, FiStar, FiLoader, FiUsers, FiSettings, FiInfo, FiX, FiCheck, FiChevronRight } from "react-icons/fi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CATEGORIES = [
-  { id: "moi-quan-he-khong-rang-buoc", label: "Mối quan hệ không ràng buộc", icon: "💖", count: 43 },
+  { id: "tat-ca", label: "Tất cả", icon: "🌟", count: 0 },
+  { id: "hay-xac-minh-anh", label: "Hãy Xác Minh Ảnh", icon: "✅", count: 93 },
   { id: "nguoi-yeu", label: "Người yêu", icon: "🌹", count: 117 },
   { id: "moi-quan-he-nghiem-tuc", label: "Mối quan hệ nghiêm túc", icon: "💍", count: 72 },
   { id: "ranh-toi-nay", label: "Rảnh tối nay", icon: "🌙", count: 38 },
   { id: "nhung-nguoi-ban-moi", label: "Những người bạn mới", icon: "👋", count: 34 },
-  { id: "hay-xac-minh-anh", label: "Hãy Xác Minh Ảnh", icon: "✅", count: 93 },
   { id: "muon-co-con", label: "Muốn có con", icon: "👶", count: 13 },
   { id: "du-lich", label: "Du lịch", icon: "✈️", count: 96 },
   { id: "hoi-me-phim", label: "Hội mê Phim", icon: "📺", count: 31 },
@@ -39,7 +39,6 @@ const GENDERS = [
   { value: "female", label: "Nữ" },
 ] as const;
 
-// List 63 tỉnh thành VN 2026
 const PROVINCES = [
   "Toàn quốc", "Hà Nội", "TP. Hồ Chí Minh", "Hải Phòng", "Đà Nẵng", "Cần Thơ",
   "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh",
@@ -67,7 +66,10 @@ export default function StrangerPage() {
 
   // Multi select categories
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
-  const [selectAll, setSelectAll] = useState(false);
+  const [selectAllMode, setSelectAllMode] = useState(false);
+
+  // Step flow: 1=chọn category, 2=chọn filter, 3=confirm
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
   // Filter modal
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -79,7 +81,7 @@ export default function StrangerPage() {
   const [selectedGender, setSelectedGender] = useState<"all" | "male" | "female">("all");
   const [selectedProvince, setSelectedProvince] = useState("Toàn quốc");
 
-  // Temp filter state khi mở modal
+  // Temp filter state
   const [tempAgeFrom, setTempAgeFrom] = useState(18);
   const [tempAgeTo, setTempAgeTo] = useState(30);
   const [tempGender, setTempGender] = useState<"all" | "male" | "female">("all");
@@ -102,6 +104,7 @@ export default function StrangerPage() {
         setInQueue(false);
         setFindingStranger(false);
         setSelectedCats([]);
+        setCurrentStep(1);
       } else if (data &&!data?.matchedChatId) {
         setInQueue(true);
         setFindingStranger(true);
@@ -118,11 +121,19 @@ export default function StrangerPage() {
   }, [user?.uid, db, router]);
 
   const toggleCategory = (catId: string) => {
-    if (selectAll) {
-      setSelectAll(false);
-      setSelectedCats([catId]);
+    if (catId === "tat-ca") {
+      if (selectAllMode) {
+        setSelectAllMode(false);
+        setSelectedCats([]);
+      } else {
+        setSelectAllMode(true);
+        setSelectedCats(["tat-ca"]);
+      }
       return;
     }
+
+    if (selectAllMode) return; // Đang chọn tất cả thì disable các card khác
+
     setSelectedCats(prev => {
       if (prev.includes(catId)) return prev.filter(c => c!== catId);
       if (prev.length >= 3) {
@@ -131,16 +142,6 @@ export default function StrangerPage() {
       }
       return [...prev, catId];
     });
-  };
-
-  const handleSelectAll = () => {
-    if (selectAll) {
-      setSelectedCats([]);
-      setSelectAll(false);
-    } else {
-      setSelectedCats(CATEGORIES.map(c => c.id));
-      setSelectAll(true);
-    }
   };
 
   const openFilterModal = () => {
@@ -152,9 +153,16 @@ export default function StrangerPage() {
   };
 
   const saveFilters = () => {
-    if (tempAgeFrom < 18 || tempAgeTo > 99 || tempAgeFrom > tempAgeTo) {
+    if (tempAgeFrom > tempAgeTo) {
       return toast.error("Độ tuổi không hợp lệ");
     }
+    if (tempAgeFrom < 18) {
+      return toast.error("Độ tuổi tối thiểu là 18");
+    }
+    if (tempAgeTo > 100) {
+      return toast.error("Độ tuổi tối đa là 100");
+    }
+
     setAgeFrom(tempAgeFrom);
     setAgeTo(tempAgeTo);
     setSelectedGender(tempGender);
@@ -163,10 +171,23 @@ export default function StrangerPage() {
     toast.success("Đã lưu bộ lọc");
   };
 
+  const handleNextStep = () => {
+    if (currentStep === 1) {
+      if (selectedCats.length === 0) return toast.error("Chọn ít nhất 1 mục");
+      setCurrentStep(2);
+      openFilterModal();
+    } else if (currentStep === 2) {
+      setCurrentStep(3);
+    } else if (currentStep === 3) {
+      handleFindStranger();
+    }
+  };
+
   const handleFindStranger = async () => {
     if (!user?.uid) return;
     if (userKarma < 50) return toast.error("Huha dưới 50, không thể chat người lạ");
     if (selectedCats.length === 0) return toast.error("Chọn ít nhất 1 mục");
+    if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
 
     setFindingStranger(true);
     setInQueue(true);
@@ -176,7 +197,7 @@ export default function StrangerPage() {
       const findFn = httpsCallable(functions, 'findStranger');
 
       const result = await findFn({
-        categories: selectedCats,
+        categories: selectAllMode? CATEGORIES.filter(c => c.id!== "tat-ca").map(c => c.id) : selectedCats,
         ageRange: `${ageFrom}-${ageTo}`,
         wantGender: selectedGender,
         province: selectedProvince,
@@ -193,6 +214,7 @@ export default function StrangerPage() {
       toast.error(e.message || "Lỗi tìm kiếm");
       setInQueue(false);
       setSelectedCats([]);
+      setCurrentStep(1);
     } finally {
       setFindingStranger(false);
     }
@@ -205,10 +227,18 @@ export default function StrangerPage() {
       setInQueue(false);
       setFindingStranger(false);
       setSelectedCats([]);
+      setSelectAllMode(false);
+      setCurrentStep(1);
       toast.info("Đã hủy tìm kiếm");
     } catch {
       toast.error("Lỗi hủy hàng đợi");
     }
+  };
+
+  const canGoNext = () => {
+    if (currentStep === 1) return selectedCats.length > 0;
+    if (currentStep === 2) return ageFrom >= 18 && ageFrom <= ageTo;
+    return true;
   };
 
   return (
@@ -224,20 +254,22 @@ export default function StrangerPage() {
               className="w-14 h-14 rounded-2xl object-cover shadow-lg shadow-zinc-900/10"
             />
             <div className="flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <p className="text-base font-[800]">{userName}</p>
-                <button
-                  onClick={() => setShowInfoModal(true)}
-                  className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90"
-                >
-                  <FiInfo size={12} className="text-zinc-500" />
-                </button>
               </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <FiStar className="text-amber-500" size={16} fill="currentColor" />
-                <span className="text-xl font-[800]">{userKarma}</span>
-                <span className="text-xs text-zinc-500">/ 100 Huha</span>
+              <div className="flex items-end gap-2 mt-0.5">
+                <div className="flex items-center gap-2">
+                  <FiStar className="text-amber-500" size={16} fill="currentColor" />
+                  <span className="text-xl font-[800] leading-none">{userKarma}</span>
+                  <button
+                    onClick={() => setShowInfoModal(true)}
+                    className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center active:scale-90 -mt-2"
+                  >
+                    <FiInfo size={10} className="text-white" />
+                  </button>
+                </div>
               </div>
+              <span className="text-xs text-zinc-500">Huha</span>
             </div>
             <button
               onClick={openFilterModal}
@@ -268,7 +300,7 @@ export default function StrangerPage() {
               </div>
               <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
               <p className="text-sm text-zinc-500 mb-6">
-                {selectedCats.length} mục đã chọn
+                {selectAllMode? "Tất cả mục" : `${selectedCats.length} mục đã chọn`}
               </p>
               <button
                 onClick={handleCancelQueue}
@@ -285,57 +317,91 @@ export default function StrangerPage() {
               exit={{ opacity: 0 }}
               className="space-y-4"
             >
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-[800]">Chọn 1 - 3</h2>
+              {/* Step buttons */}
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={handleSelectAll}
+                  onClick={() => setCurrentStep(1)}
                   className={cn(
-                    "px-4 h-9 rounded-xl text-sm font-[700] transition-all active:scale-95 border",
-                    selectAll
-                     ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white'
-                      : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                    "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2",
+                    currentStep === 1
+                     ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white animate-pulse"
+                      : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   )}
                 >
-                  Tất cả
+                  Bước 1
+                  {currentStep === 1 && selectedCats.length > 0 && <FiChevronRight size={16} className="animate-pulse" />}
+                </button>
+                <button
+                  onClick={() => selectedCats.length > 0 && setCurrentStep(2)}
+                  disabled={selectedCats.length === 0}
+                  className={cn(
+                    "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
+                    currentStep === 2
+                     ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white animate-pulse"
+                      : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                  )}
+                >
+                  Bước 2
+                  {currentStep === 2 && <FiChevronRight size={16} className="animate-pulse" />}
+                </button>
+                <button
+                  onClick={() => selectedCats.length > 0 && setCurrentStep(3)}
+                  disabled={selectedCats.length === 0}
+                  className={cn(
+                    "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
+                    currentStep === 3
+                     ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white animate-pulse"
+                      : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                  )}
+                >
+                  Bước 3
                 </button>
               </div>
 
+              {/* Grid categories */}
               <div className="grid grid-cols-2 gap-3">
                 {CATEGORIES.map(cat => {
-                  const isSelected = selectedCats.includes(cat.id) || selectAll;
+                  const isSelected = selectedCats.includes(cat.id) || (selectAllMode && cat.id === "tat-ca");
+                  const isDisabled = selectAllMode && cat.id!== "tat-ca";
+
                   return (
                     <button
                       key={cat.id}
                       onClick={() => toggleCategory(cat.id)}
-                      disabled={userKarma < 50 || findingStranger}
+                      disabled={userKarma < 50 || findingStranger || isDisabled}
                       className={cn(
-                        "bg-white dark:bg-zinc-900 rounded-3xl p-4 border-2 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 active:scale-95 transition-all disabled:opacity-40 h-44 flex flex-col items-center justify-center gap-3",
+                        "rounded-3xl p-4 border-2 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 active:scale-95 transition-all disabled:opacity-40 h-44 flex flex-col items-center justify-center gap-3",
                         isSelected
-                         ? 'border-zinc-900 dark:border-white'
-                          : 'border-zinc-200 dark:border-zinc-800'
+                         ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white"
+                          : isDisabled
+                         ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 text-zinc-400"
+                          : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                       )}
                     >
                       <div className="text-5xl">{cat.icon}</div>
                       <div className="text-center">
                         <p className="text-sm font-[700] leading-tight">{cat.label}</p>
-                        <div className="flex items-center justify-center gap-1 text-xs text-zinc-500 mt-1">
-                          <FiUsers size={12} />
-                          <span>{cat.count}</span>
-                        </div>
+                        {cat.count > 0 && (
+                          <div className="flex items-center justify-center gap-1 text-xs mt-1 opacity-60">
+                            <FiUsers size={12} />
+                            <span>{cat.count}</span>
+                          </div>
+                        )}
                       </div>
                     </button>
                   );
                 })}
               </div>
 
-              {selectedCats.length > 0 && (
+              {/* Nút Next Step */}
+              {canGoNext() && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="sticky bottom-4 pt-4"
                 >
                   <button
-                    onClick={handleFindStranger}
+                    onClick={handleNextStep}
                     disabled={findingStranger || userKarma < 50}
                     className="w-full h-14 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl text-base font-[800] disabled:opacity-40 shadow-xl shadow-zinc-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                   >
@@ -344,10 +410,15 @@ export default function StrangerPage() {
                         <FiLoader className="animate-spin" size={20} />
                         Đang tìm...
                       </>
-                    ) : (
+                    ) : currentStep === 3? (
                       <>
                         <FiCheck size={20} />
-                        Tiếp tục ({selectedCats.length})
+                        Bắt đầu tìm
+                      </>
+                    ) : (
+                      <>
+                        Tiếp tục bước {currentStep + 1}
+                        <FiChevronRight size={20} />
                       </>
                     )}
                   </button>
@@ -431,10 +502,10 @@ export default function StrangerPage() {
                       <input
                         type="number"
                         value={tempAgeFrom}
-                        onChange={(e) => setTempAgeFrom(Math.max(18, Math.min(99, Number(e.target.value))))}
+                        onChange={(e) => setTempAgeFrom(Math.max(0, Math.min(100, Number(e.target.value))))}
                         className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 text-base font-[600] text-center focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
-                        min={18}
-                        max={99}
+                        min={0}
+                        max={100}
                       />
                     </div>
                     <div className="pt-5 text-zinc-400">—</div>
@@ -443,13 +514,16 @@ export default function StrangerPage() {
                       <input
                         type="number"
                         value={tempAgeTo}
-                        onChange={(e) => setTempAgeTo(Math.max(18, Math.min(99, Number(e.target.value))))}
+                        onChange={(e) => setTempAgeTo(Math.max(0, Math.min(100, Number(e.target.value))))}
                         className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 text-base font-[600] text-center focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
-                        min={18}
-                        max={99}
+                        min={0}
+                        max={100}
                       />
                     </div>
                   </div>
+                  {tempAgeFrom < 18 && (
+                    <p className="text-xs text-red-500 mt-2 font-[600]">Độ tuổi tối thiểu là 18</p>
+                  )}
                 </div>
 
                 {/* Giới tính */}
@@ -463,8 +537,8 @@ export default function StrangerPage() {
                         className={cn(
                           "h-12 rounded-xl text-sm font-[600] transition-all active:scale-95 border",
                           tempGender === g.value
-                           ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white'
-                            : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'
+                           ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white"
+                            : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                         )}
                       >
                         {g.label}
@@ -488,7 +562,10 @@ export default function StrangerPage() {
                 </div>
 
                 <button
-                  onClick={saveFilters}
+                  onClick={() => {
+                    saveFilters();
+                    if (currentStep === 2) setCurrentStep(3);
+                  }}
                   className="w-full h-12 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl text-base font-[800] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
                   <FiCheck size={20} />
