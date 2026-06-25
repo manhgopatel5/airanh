@@ -57,18 +57,23 @@ export async function POST(req: NextRequest) {
     // === LOGIC PRORATED UPGRADE ===
     if (planId === 'elite') {
       const subSnap = await db
-      .collection('subscriptions')
-      .where('userId', '==', userId)
-      .where('status', '==', 'active')
-      .limit(1)
-      .get();
+       .collection('subscriptions')
+       .where('userId', '==', userId)
+       .where('status', '==', 'active')
+       .limit(1)
+       .get();
 
       if (!subSnap.empty) {
-const currentSub = subSnap.docs[0]?.data();
-if (!currentSub) return NextResponse.json({ message: 'Không tìm thấy subscription' }, { status: 404 });
+        const currentSub = subSnap.docs[0]?.data();
+        if (!currentSub) {
+          return NextResponse.json(
+            { message: 'Không tìm thấy subscription' },
+            { status: 404 }
+          );
+        }
 
         // Chỉ tính prorated khi đang Pro và còn hạn
-        if (currentSub.planId === 'pro' && currentSub.expireAt.toDate() > new Date()) {
+        if (currentSub.planId === 'pro' && currentSub.expireAt?.toDate() > new Date()) {
           const now = new Date();
           const expireAt = currentSub.expireAt.toDate();
           const msPerDay = 1000 * 60 * 60 * 24;
@@ -133,8 +138,6 @@ if (!currentSub) return NextResponse.json({ message: 'Không tìm thấy subscri
 
       // Áp promo lên giá đã prorated nếu có
       finalAmount = Math.round(finalAmount * (1 - appliedDiscount / 100));
-
-      // KHÔNG TĂNG usedCount ở đây nữa. Chuyển xuống webhook
     }
 
     // Chỉ check amount nếu client có gửi lên
@@ -145,7 +148,6 @@ if (!currentSub) return NextResponse.json({ message: 'Không tìm thấy subscri
       );
     }
 
-    // Dùng Firestore auto ID thay vì Date.now() để tránh trùng
     const orderRef = db.collection('orders').doc();
     const orderId = orderRef.id;
 
@@ -160,7 +162,7 @@ if (!currentSub) return NextResponse.json({ message: 'Không tìm thấy subscri
       originalAmount: plan.price,
       promoCode: appliedCode,
       discount: appliedDiscount,
-      upgradeInfo, // Thêm info upgrade
+      upgradeInfo,
       status: 'pending',
       qrUrl,
       createdAt: Timestamp.now(),
@@ -173,7 +175,7 @@ if (!currentSub) return NextResponse.json({ message: 'Không tìm thấy subscri
       amount: finalAmount,
       planName: plan.name,
       discount: appliedDiscount,
-      upgradeInfo // Trả về cho FE hiển thị
+      upgradeInfo
     });
 
   } catch (error: any) {
