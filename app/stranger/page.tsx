@@ -496,72 +496,21 @@ export default function StrangerPage() {
                 </div>
               )}
 
-                          {/* Step 3: Confirm search - Premium UI */}
+              {/* Step 3: Confirm */}
               {currentStep === 3 && (
-                <div className="space-y-4">
-                  <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20">
-                    <div className="flex items-center justify-between mb-5">
-                      <div>
-                        <h3 className="text-lg font-[800]">Xác nhận tìm kiếm</h3>
-                        <p className="text-xs text-zinc-500 mt-0.5">Kiểm tra lại thông tin</p>
-                      </div>
-                      <div className="w-10 h-10 rounded-2xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center">
-                        <FiCheckCircle size={18} className="text-green-600 dark:text-green-400" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <FiGrid size={16} className="text-purple-500" />
-                          <span className="text-xs font-[600] text-zinc-500">Danh mục</span>
-                        </div>
-                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">
-                          {selectAllMode? "Tất cả" : selectedCats.map(id => CATEGORIES.find(c => c.id === id)?.label).join(", ")}
-                        </p>
-                      </div>
-
-                      <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <FiCalendar size={16} className="text-orange-500" />
-                          <span className="text-xs font-[600] text-zinc-500">Độ tuổi</span>
-                        </div>
-                        <p className="text-sm font-[700] text-zinc-900 dark:text-white">{ageFrom} - {ageTo} tuổi</p>
-                      </div>
-
-                      <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <FiUsers size={16} className="text-pink-500" />
-                          <span className="text-xs font-[600] text-zinc-500">Giới tính</span>
-                        </div>
-                        <p className="text-sm font-[700] text-zinc-900 dark:text-white">{GENDERS.find(g => g.value === selectedGender)?.label}</p>
-                      </div>
-
-                      <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <FiMapPin size={16} className="text-emerald-500" />
-                          <span className="text-xs font-[600] text-zinc-500">Khu vực</span>
-                        </div>
-                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">{selectedProvince}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl p-3 flex items-center gap-2">
-                      <FiInfo size={16} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                      <p className="text-sm font-[600] text-blue-700 dark:text-blue-300">
-                        Mỗi lần tìm kiếm sẽ trừ 10 điểm
-                      </p>
-                    </div>
+                <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 space-y-4">
+                  <h3 className="text-lg font-[800]">Xác nhận tìm kiếm</h3>
+                  <div className="space-y-2 text-sm">
+                    <p className="text-zinc-500">Danh mục: <span className="font-[700] text-zinc-900 dark:text-white">
+                      {selectAllMode? "Tất cả" : selectedCats.map(id => CATEGORIES.find(c => c.id === id)?.label).join(", ")}
+                    </span></p>
+                    <p className="text-zinc-500">Độ tuổi: <span className="font-[700] text-zinc-900 dark:text-white">{ageFrom}-{ageTo}</span></p>
+                    <p className="text-zinc-500">Giới tính: <span className="font-[700] text-zinc-900 dark:text-white">{GENDERS.find(g => g.value === selectedGender)?.label}</span></p>
+                    <p className="text-zinc-500">Khu vực: <span className="font-[700] text-zinc-900 dark:text-white">{selectedProvince}</span></p>
                   </div>
-
-                  <button
-                    onClick={handleFindStranger}
-                    disabled={isDisabled}
-                    className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-[800] active:scale-95 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 disabled:opacity-40"
-                  >
-                    <FiSearch size={18} />
-                    Bắt đầu tìm kiếm
-                  </button>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 text-xs text-blue-700 dark:text-blue-400">
+                    <FiInfo className="inline mr-1" /> Mỗi lần tìm kiếm sẽ trừ 10 điểm
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -569,7 +518,7 @@ export default function StrangerPage() {
         </AnimatePresence>
       </div>
 
-      {/* Modal Info Huha - Nâng cấp */
+         {/* Modal Info Huha - Premium UI */}
       <AnimatePresence>
         {showInfoModal && (
           <motion.div
@@ -584,53 +533,143 @@ export default function StrangerPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 shadow-2xl max-h-[80vh] overflow-y-auto"
+              className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-[800] flex items-center gap-2">
-                  <FiShield className="text-blue-600" />
-                  Điểm Huha
-                </h3>
-                <button onClick={() => setShowInfoModal(false)} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                  <FiX size={18} />
-                </button>
+              {/* Header */}
+              <div className="p-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                      <FiStar className="text-blue-600 dark:text-blue-400" size={22} fill="currentColor" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-[800]">Điểm Huha</h3>
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        {userKarma}/{userTier === "elite"? 400 : userTier === "vip"? 200 : 100} điểm
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setShowInfoModal(false)} 
+                    className="w-9 h-9 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90"
+                  >
+                    <FiX size={18} />
+                  </button>
+                </div>
               </div>
-              <div className="space-y-4 text-sm text-zinc-600 dark:text-zinc-400">
-                <p><b className="text-zinc-900 dark:text-white">Huha</b> là điểm dùng để tìm kiếm bạn chat. Mỗi lần tìm -10 điểm.</p>
 
-                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 space-y-2">
-                  <p className="font-[700] text-zinc-900 dark:text-white flex items-center gap-2">
-                    <FiTrendingUp className="text-green-500" /> Cách kiếm điểm:
+              {/* Content */}
+              <div className="p-6 overflow-y-auto space-y-3">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-2xl p-4">
+                  <p className="text-sm text-blue-700 dark:text-blue-300 font-[600]">
+                    <b>Huha</b> là điểm dùng để tìm kiếm bạn chat. Mỗi lần tìm -10 điểm.
                   </p>
-                  <p>• Mỗi ngày đăng nhập: +10 điểm</p>
-                  <p>• Chat lịch sự 7 ngày liên tiếp: +5 điểm</p>
-                  <p>• Được người khác đánh giá tốt: +2 điểm/lượt</p>
                 </div>
 
-                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 space-y-2">
-                  <p className="font-[700] text-zinc-900 dark:text-white flex items-center gap-2">
-                    <FiAlertTriangle className="text-red-500" /> Trừ điểm:
-                  </p>
-                  <p>• Mỗi lần tìm kiếm: -10 điểm</p>
-                  <p>• Bị report: -10 điểm</p>
-                  <p>• Vi phạm quy tắc: -20 điểm</p>
-                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {/* Cách kiếm điểm */}
+                  <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center">
+                        <FiTrendingUp className="text-green-600 dark:text-green-400" size={16} />
+                      </div>
+                      <span className="text-sm font-[800] text-zinc-900 dark:text-white">Cách kiếm điểm</span>
+                    </div>
+                    <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+                      <div className="flex items-center justify-between">
+                        <span>Đăng nhập mỗi ngày</span>
+                        <span className="font-[700] text-green-600 dark:text-green-400">+10</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Chat lịch sự 7 ngày</span>
+                        <span className="font-[700] text-green-600 dark:text-green-400">+5</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Được đánh giá tốt</span>
+                        <span className="font-[700] text-green-600 dark:text-green-400">+2/lượt</span>
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-2">
-                  <p className="font-[700] text-blue-700 dark:text-blue-400">Hạng tài khoản:</p>
-                  <p className="text-blue-600 dark:text-blue-300">• User: Tối đa 100 điểm</p>
-                  <p className="text-blue-600 dark:text-blue-300">• VIP: Tối đa 200 điểm</p>
-                  <p className="text-blue-600 dark:text-blue-300">• Elite: Tối đa 400 điểm</p>
-                </div>
+                  {/* Trừ điểm */}
+                  <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
+                        <FiAlertTriangle className="text-red-600 dark:text-red-400" size={16} />
+                      </div>
+                      <span className="text-sm font-[800] text-zinc-900 dark:text-white">Trừ điểm</span>
+                    </div>
+                    <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+                      <div className="flex items-center justify-between">
+                        <span>Mỗi lần tìm kiếm</span>
+                        <span className="font-[700] text-red-600 dark:text-red-400">-10</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Bị report</span>
+                        <span className="font-[700] text-red-600 dark:text-red-400">-10</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Vi phạm quy tắc</span>
+                        <span className="font-[700] text-red-600 dark:text-red-400">-20</span>
+                      </div>
+                    </div>
+                  </div>
 
-                <p className="text-xs text-center">Điểm của bạn: <b className="text-zinc-900 dark:text-white">{userKarma}/{userTier === "elite"? 400 : userTier === "vip"? 200 : 100}</b></p>
+                  {/* Hạng tài khoản */}
+                  <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
+                        <FiAward className="text-purple-600 dark:text-purple-400" size={16} />
+                      </div>
+                      <span className="text-sm font-[800] text-zinc-900 dark:text-white">Hạng tài khoản</span>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className={cn(
+                        "flex items-center justify-between p-2 rounded-xl",
+                        userTier === "user" && "bg-blue-50 dark:bg-blue-900/20"
+                      )}>
+                        <span className={cn(
+                          "font-[600]",
+                          userTier === "user"? "text-blue-700 dark:text-blue-300" : "text-zinc-500"
+                        )}>
+                          User {userTier === "user" && "• Hiện tại"}
+                        </span>
+                        <span className="font-[700] text-zinc-900 dark:text-white">100</span>
+                      </div>
+                      <div className={cn(
+                        "flex items-center justify-between p-2 rounded-xl",
+                        userTier === "vip" && "bg-purple-50 dark:bg-purple-900/20"
+                      )}>
+                        <span className={cn(
+                          "font-[600]",
+                          userTier === "vip"? "text-purple-700 dark:text-purple-300" : "text-zinc-500"
+                        )}>
+                          VIP {userTier === "vip" && "• Hiện tại"}
+                        </span>
+                        <span className="font-[700] text-zinc-900 dark:text-white">200</span>
+                      </div>
+                      <div className={cn(
+                        "flex items-center justify-between p-2 rounded-xl",
+                        userTier === "elite" && "bg-amber-50 dark:bg-amber-900/20"
+                      )}>
+                        <span className={cn(
+                          "font-[600]",
+                          userTier === "elite"? "text-amber-700 dark:text-amber-300" : "text-zinc-500"
+                        )}>
+                          Elite {userTier === "elite" && "• Hiện tại"}
+                        </span>
+                        <span className="font-[700] text-zinc-900 dark:text-white">400</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-
+      {/* Modal Status Account */}
       <AnimatePresence>
         {showStatusModal && (
           <motion.div
