@@ -5,15 +5,15 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import CreateGroupModal from "@/components/CreateGroupModal";
 import { useAuth } from "@/lib/AuthContext";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
 import { getFirebaseDB } from "@/lib/firebase";
 
-import { getApp } from "firebase/app";
+
 
 import LeaderboardModal from "@/components/LeaderboardModal";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
-import { getFunctions, httpsCallable } from "firebase/functions";
+
 import { useAppStore } from "@/store/app";
 import {
   collection,
