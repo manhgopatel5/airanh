@@ -43,8 +43,7 @@ import {
   FiUsers,
   FiTrendingUp,
   FiCheck,
-  FiX,
-  FiMic,
+
   
   FiHome,
   FiAward,
@@ -213,91 +212,7 @@ const [activeTab, setActiveTab] = useState<"all" | "unread">("all"); // Bỏ "no
 
 
 
-// State
-const [showStranger, setShowStranger] = useState(false);
-const [strangerInterests, setStrangerInterests] = useState<string[]>([]);
-const [strangerAgeRange, setStrangerAgeRange] = useState<"18-22" | "23-27" | "28+">("18-22");
-const [strangerGender, setStrangerGender] = useState<"all" | "male" | "female">("all");
-const [voiceIntroBlob, setVoiceIntroBlob] = useState<Blob | null>(null);
-const [isRecording, setIsRecording] = useState(false);
-const [userKarma, setUserKarma] = useState(100);
-const [findingStranger, setFindingStranger] = useState(false);
 
-const INTEREST_TAGS = ["🎮 Game", "🎵 Nhạc", "📚 Học", "💼 Việc làm", "🎬 Phim", "✈️ Du lịch", "💪 Gym", "🍜 Ăn uống", "💕 Hẹn hò", "😂 Hài", "🎨 Vẽ", "📱 Tech"];
-
-// Check karma
-useEffect(() => {
-  if (!user?.uid) return;
-  onSnapshot(doc(db, "users", user.uid), (snap) => {
-    setUserKarma(snap.data()?.karma || 100);
-  });
-}, [user?.uid]);
-
-// Ghi âm
-const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-const startRecording = async () => {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const recorder = new MediaRecorder(stream);
-  const chunks: Blob[] = [];
-  recorder.ondataavailable = e => chunks.push(e.data);
-  recorder.onstop = () => {
-    setVoiceIntroBlob(new Blob(chunks, { type: 'audio/webm' }));
-    setIsRecording(false);
-    stream.getTracks().forEach(t => t.stop());
-  };
-  recorder.start();
-  mediaRecorderRef.current = recorder;
-  setIsRecording(true);
-  setTimeout(() => recorder.state!== 'inactive' && recorder.stop(), 10000);
-};
-
-// Tìm người lạ
-const handleFindStranger = async () => {
-  if (!user?.uid || userKarma < 50) {
-    toast.error("Karma dưới 50, không thể chat người lạ");
-    return;
-  }
-  if (!voiceIntroBlob) return toast.error("Cần ghi âm lời chào 10s");
-  if (strangerInterests.length < 3) return toast.error("Chọn ít nhất 3 sở thích");
-
-  setFindingStranger(true);
-  try {
-    const storage = getStorage();
-    const voiceRef = ref(storage, `voice_intro/${user.uid}_${Date.now()}.webm`);
-    await uploadBytes(voiceRef, voiceIntroBlob);
-    const voiceUrl = await getDownloadURL(voiceRef);
-
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const findFn = httpsCallable(functions, 'findStranger');
-
-    const result = await findFn({
-      interests: strangerInterests,
-      ageRange: strangerAgeRange,
-      wantGender: strangerGender,
-      voiceUrl
-    });
-
-    const data = result.data as { chatId: string, matched: boolean };
-    setShowStranger(false);
-
-    if (data.matched) {
-      router.push(`/stranger/${data.chatId}`);
-    } else {
-      toast.info("Đang tìm... Sẽ tự vào khi match");
-  const unsub = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
-  const data = snap.data();
-  if (data?.matchedChatId) {
-    router.push(`/stranger/${data.matchedChatId}`);
-    unsub();
-  }
-});
-    }
-  } catch (e: any) {
-    toast.error(e.message);
-  } finally {
-    setFindingStranger(false);
-  }
-};
 
 
 
@@ -757,7 +672,7 @@ return (
   <div className="grid grid-cols-3 gap-3">
     {[
 { label: "VIP", icon: Crown, color: "bg-gradient-to-br from-amber-400 to-orange-500", onClick: () => router.push('/vip') },
-      { label: "Người lạ", icon: FiZap, color: "bg-gradient-to-br from-pink-500 to-rose-500", onClick: () => setShowStranger(true) },
+{ label: "Người lạ", icon: FiZap, color: "bg-gradient-to-br from-pink-500 to-rose-500", onClick: () => router.push('/stranger') },
       { label: "Thành Tích", icon: FiAward, color: "bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500", onClick: () => setShowLeaderboard(true) },
     ].map((item) => (
       <button
@@ -1032,112 +947,9 @@ return (
 
 
 
-  {showStranger && (
-  <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4">
-    <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl" onClick={() => setShowStranger(false)} />
-    <div className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl max-h-[85vh] flex flex-col">
-      <div className="p-5 space-y-5 overflow-auto">
-        <div className="text-center">
-          <div className="w-20 h-20 mx-auto mb-3 bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 rounded-3xl flex items-center justify-center shadow-2xl shadow-pink-500/50">
-            <FiZap className="text-white" size={36} />
-          </div>
-          <h2 className="text-sm font-bold">Chat 1-1 Người Lạ</h2>
-          <div className="flex items-center justify-center gap-2 mt-2">
-            <FiStar className="text-amber-500" size={16} />
-            <span className="text-sm font-[600]">{userKarma} Karma</span>
-          </div>
-        </div>
-
-        {userKarma < 70 && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-sm text-amber-700 dark:text-amber-400">
-            Karma thấp! Chat tử tế để không bị cấm
-          </div>
-        )}
-
-        <div>
-          <label className="text-sm font-[600] mb-2 block">Sở thích *</label>
-          <div className="grid grid-cols-3 gap-2">
-            {INTEREST_TAGS.map(tag => (
-              <button
-                key={tag}
-                onClick={() => setStrangerInterests(prev =>
-                  prev.includes(tag)? prev.filter(t => t!== tag) : [...prev, tag].slice(0,5)
-                )}
-                className={`h-10 rounded-xl text-sm font-[550] ${
-                  strangerInterests.includes(tag)
-                 ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white shadow-lg'
-                    : 'bg-zinc-100 dark:bg-zinc-800'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-sm font-[600] mb-2 block">Độ tuổi</label>
-          <div className="grid grid-cols-3 gap-2">
-            {["18-22", "23-27", "28+"].map(age => (
-              <button key={age} onClick={() => setStrangerAgeRange(age as any)}
-                className={`h-11 rounded-xl text-sm font-[550] ${strangerAgeRange === age? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800'}`}>
-                {age}
-              </button>
-            ))}
-          </div>
-        </div>
-<div>
-  <label className="text-sm font-[600] mb-2 block">Giới tính muốn chat</label>
-  <div className="grid grid-cols-3 gap-2">
-    {[
-      { value: "all", label: "Tất cả" },
-      { value: "male", label: "Nam" },
-      { value: "female", label: "Nữ" }
-    ].map(opt => (
-      <button
-        key={opt.value}
-        onClick={() => setStrangerGender(opt.value as any)}
-        className={`h-11 rounded-xl text-sm font-[550] ${
-          strangerGender === opt.value
-           ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white'
-            : 'bg-zinc-100 dark:bg-zinc-800'
-        }`}
-      >
-        {opt.label}
-      </button>
-    ))}
-  </div>
 </div>
-        <div>
-          <label className="text-sm font-[600] mb-2 block">Lời chào 10s *</label>
-          {!voiceIntroBlob? (
-            <button onTouchStart={startRecording} onTouchEnd={() => mediaRecorderRef.current?.stop()}
-              onMouseDown={startRecording} onMouseUp={() => mediaRecorderRef.current?.stop()}
-              className={`w-full h-14 rounded-xl border-2 border-dashed ${isRecording? 'border-red-500 bg-red-500/10' : 'border-zinc-300 dark:border-zinc-700'} flex items-center justify-center gap-2`}>
-              {isRecording? <><div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" /><span className="text-sm font-[600] text-red-500">Đang ghi...</span></> : <><FiMic size={20} /><span className="text-sm font-[600]">Nhấn giữ để ghi âm</span></>}
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <audio src={URL.createObjectURL(voiceIntroBlob)} controls className="flex-1 h-10" />
-              <button onClick={() => setVoiceIntroBlob(null)} className="w-10 h-10 bg-red-500/10 text-red-500 rounded-xl"><FiX size={18} className="mx-auto" /></button>
-            </div>
-          )}
-        </div>
-
-        <button onClick={handleFindStranger} disabled={findingStranger || strangerInterests.length < 3 ||!voiceIntroBlob || userKarma < 50}
-          className="w-full h-14 bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 text-white rounded-xl text-sm font-[700] disabled:opacity-40 shadow-xl shadow-pink-500/30 flex items-center justify-center gap-2">
-          {findingStranger && <FiLoader className="animate-spin" size={18} />}
-          {findingStranger? "Đang tìm..." : "Tìm bạn ngay"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-  </div>
 </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
-
 {showPublicRooms && (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/40" onClick={() => setShowPublicRooms(false)} />
