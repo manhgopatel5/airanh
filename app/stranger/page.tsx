@@ -7,7 +7,7 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
 import { doc, onSnapshot, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { FiUserX, FiStar, FiEdit2, FiGrid, FiCalendar, FiUsers, FiMapPin, FiLoader, FiEdit, FiUsers, FiSettings, FiInfo, FiX, FiCheck, FiChevronRight, FiShield, FiTrendingUp, FiAlertTriangle } from "react-icons/fi";
+import { FiUserX, FiStar, FiEdit2, FiGrid, FiCalendar, FiMapPin, FiLoader, FiEdit, FiUsers, FiSettings, FiInfo, FiX, FiCheck, FiChevronRight, FiShield, FiTrendingUp, FiAlertTriangle } from "react-icons/fi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
