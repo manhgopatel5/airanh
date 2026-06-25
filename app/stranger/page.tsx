@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
-import { doc, onSnapshot, deleteDoc, updateDoc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, onSnapshot, deleteDoc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { FiZap, FiStar, FiLoader, FiChevronLeft, FiAlertTriangle, FiSettings, FiCheck } from "react-icons/fi";
 import { toast } from "sonner";
