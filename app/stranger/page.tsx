@@ -183,23 +183,28 @@ export default function StrangerPage() {
   };
 
   const handleStepClick = (step: 1 | 2 | 3) => {
-    if (isDisabled) return;
-    if (step === 1) setCurrentStep(1);
-    if (step === 2 && selectedCats.length > 0) {
+  if (isDisabled) return;
+  
+  if (step === 1) {
+    setCurrentStep(1);
+  }
+  
+  if (step === 2 && selectedCats.length > 0) {
+    setCurrentStep(2);
+    // Đã bỏ openFilterModal() - chỉ chuyển tab thôi
+  }
+  
+  if (step === 3 && selectedCats.length > 0) {
+    if (ageFrom < 18) {
+      toast.error("Vui lòng chỉnh độ tuổi tối thiểu từ 18");
       setCurrentStep(2);
-      openFilterModal();
+      openFilterModal(); // Vẫn giữ ở đây để ép user sửa tuổi
+      return;
     }
-    if (step === 3 && selectedCats.length > 0) {
-      if (ageFrom < 18) {
-        toast.error("Vui lòng chỉnh độ tuổi tối thiểu từ 18");
-        setCurrentStep(2);
-        openFilterModal();
-        return;
-      }
-      setCurrentStep(3);
-      handleFindStranger();
-    }
-  };
+    setCurrentStep(3);
+    handleFindStranger();
+  }
+};
 
   const handleFindStranger = async () => {
     if (!user?.uid) return;
@@ -265,7 +270,7 @@ export default function StrangerPage() {
     <div className="min-h-dvh bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-white">
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-4 pb-24">
 
-            {/* Card User Info */}
+                 {/* Card User Info */}
         <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20">
           <div className="flex items-center gap-3">
             <img
@@ -288,19 +293,19 @@ export default function StrangerPage() {
                 onClick={() => setShowStatusModal(true)}
                 className={cn(
                   "h-11 px-3 rounded-2xl flex items-center gap-2 active:scale-90 transition-all border-2",
-                  accountStatus === "tich-cuc" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
+                  (accountStatus?? "tich-cuc") === "tich-cuc" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
                   accountStatus === "canh-bao" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
                   accountStatus === "cam" && "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-700 dark:text-red-400"
                 )}
               >
                 <div className={cn(
                   "w-2 h-2 rounded-full",
-                  accountStatus === "tich-cuc" && "bg-green-500",
+                  (accountStatus?? "tich-cuc") === "tich-cuc" && "bg-green-500",
                   accountStatus === "canh-bao" && "bg-yellow-500",
                   accountStatus === "cam" && "bg-red-500"
                 )} />
                 <span className="text-xs font-[700]">
-                  {accountStatus === "tich-cuc" && "Tích cực"}
+                  {(accountStatus?? "tich-cuc") === "tich-cuc" && "Tích cực"}
                   {accountStatus === "canh-bao" && "Cảnh báo"}
                   {accountStatus === "cam" && "Bị cấm"}
                 </span>
@@ -432,28 +437,39 @@ export default function StrangerPage() {
                 </div>
               )}
 
-              {/* Step 2: Filter preview */}
+                         {/* Step 2: Filter preview */}
               {currentStep === 2 && (
                 <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 space-y-4">
                   <h3 className="text-lg font-[800]">Bộ lọc hiện tại</h3>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Độ tuổi:</span>
-                      <span className="font-[700]">{ageFrom} - {ageTo}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Giới tính:</span>
-                      <span className="font-[700]">{GENDERS.find(g => g.value === selectedGender)?.label}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Tỉnh/TP:</span>
-                      <span className="font-[700]">{selectedProvince}</span>
-                    </div>
+                  <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+                    <table className="w-full text-sm">
+                      <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                        <tr className="bg-zinc-50/50 dark:bg-zinc-800/50">
+                          <td className="px-4 py-3 text-zinc-500 font-[600] w-1/3">Danh mục</td>
+                          <td className="px-4 py-3 font-[700] text-zinc-900 dark:text-white">
+                            {selectAllMode? "Tất cả" : selectedCats.map(id => CATEGORIES.find(c => c.id === id)?.label).join(", ")}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 text-zinc-500 font-[600]">Độ tuổi</td>
+                          <td className="px-4 py-3 font-[700] text-zinc-900 dark:text-white">{ageFrom} - {ageTo}</td>
+                        </tr>
+                        <tr className="bg-zinc-50/50 dark:bg-zinc-800/50">
+                          <td className="px-4 py-3 text-zinc-500 font-[600]">Giới tính</td>
+                          <td className="px-4 py-3 font-[700] text-zinc-900 dark:text-white">{GENDERS.find(g => g.value === selectedGender)?.label}</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 text-zinc-500 font-[600]">Khu vực</td>
+                          <td className="px-4 py-3 font-[700] text-zinc-900 dark:text-white">{selectedProvince}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                   <button
                     onClick={openFilterModal}
-                    className="w-full h-12 bg-blue-600 text-white rounded-xl font-[700] active:scale-95"
+                    className="w-full h-12 bg-blue-600 text-white rounded-xl font-[700] active:scale-95 flex items-center justify-center gap-2"
                   >
+                    <FiEdit size={18} />
                     Chỉnh sửa bộ lọc
                   </button>
                 </div>
