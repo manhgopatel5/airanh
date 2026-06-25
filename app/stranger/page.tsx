@@ -185,7 +185,10 @@ export default function StrangerPage() {
   const handleStepClick = (step: 1 | 2 | 3) => {
     if (isDisabled) return;
     if (step === 1) setCurrentStep(1);
-    if (step === 2 && selectedCats.length > 0) setCurrentStep(2);
+    if (step === 2 && selectedCats.length > 0) {
+      setCurrentStep(2);
+      openFilterModal();
+    }
     if (step === 3 && selectedCats.length > 0) {
       if (ageFrom < 18) {
         toast.error("Vui lòng chỉnh độ tuổi tối thiểu từ 18");
@@ -297,7 +300,6 @@ export default function StrangerPage() {
                   <FiInfo size={12} className="text-blue-500" />
                 </button>
               </div>
-            </div>
             <button
               onClick={openFilterModal}
               disabled={isDisabled}
@@ -353,7 +355,7 @@ export default function StrangerPage() {
                   className={cn(
                     "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
                     currentStep === 1
-                    ? "bg-blue-600 text-white border-blue-600 animate-pulse"
+                     ? "bg-blue-600 text-white border-blue-600 animate-pulse"
                       : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   )}
                 >
@@ -366,7 +368,7 @@ export default function StrangerPage() {
                   className={cn(
                     "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
                     currentStep === 2
-                    ? "bg-blue-600 text-white border-blue-600 animate-pulse"
+                     ? "bg-blue-600 text-white border-blue-600 animate-pulse"
                       : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   )}
                 >
@@ -379,7 +381,7 @@ export default function StrangerPage() {
                   className={cn(
                     "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
                     currentStep === 3
-                    ? "bg-blue-600 text-white border-blue-600"
+                     ? "bg-blue-600 text-white border-blue-600"
                       : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   )}
                 >
@@ -402,10 +404,10 @@ export default function StrangerPage() {
                         className={cn(
                           "rounded-3xl p-4 border-2 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 active:scale-95 transition-all disabled:opacity-40 h-44 flex flex-col items-center justify-center gap-3",
                           isSelected
-                          ? "bg-blue-600 text-white border-blue-600"
+                           ? "bg-blue-600 text-white border-blue-600"
                             : isDisabledCard
-                          ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 text-zinc-400"
-                            : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                             ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 text-zinc-400"
+                              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                         )}
                       >
                         <div className="text-5xl">{cat.icon}</div>
@@ -441,6 +443,7 @@ export default function StrangerPage() {
                       <span className="text-zinc-500">Tỉnh/TP:</span>
                       <span className="font-[700]">{selectedProvince}</span>
                     </div>
+                  </div>
                   <button
                     onClick={openFilterModal}
                     className="w-full h-12 bg-blue-600 text-white rounded-xl font-[700] active:scale-95"
@@ -577,9 +580,9 @@ export default function StrangerPage() {
                     </p>
                   </div>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    {accountStatus === "tich-cuc" && "Tài khoản hoạt động bình thường. Hãy tiếp tục trò chuyện văn minh!"}
-                    {accountStatus === "canh-bao" && "Bạn đã vi phạm quy tắc cộng đồng. Hãy cẩn thận hơn để tránh bị cấm."}
-                    {accountStatus === "cam" && "Tài khoản bị khóa do vi phạm nghiêm trọng. Liên hệ hỗ trợ để kháng cáo."}
+                    {accountStatus === "tich-cuc" && "Tài khoản hoạt động bình thường. Hãy tiếp tục trò chuyện văn minh để giữ trạng thái này!"}
+                    {accountStatus === "canh-bao" && "Bạn đã vi phạm quy tắc cộng đồng. Nếu tiếp tục vi phạm, tài khoản sẽ bị cấm. Hãy cẩn thận hơn!"}
+                    {accountStatus === "cam" && "Tài khoản bị khóa do vi phạm nghiêm trọng. Bạn không thể sử dụng tính năng chat người lạ. Liên hệ hỗ trợ để kháng cáo."}
                   </p>
                 </div>
               </div>
@@ -665,7 +668,7 @@ export default function StrangerPage() {
                         className={cn(
                           "h-12 rounded-xl text-sm font-[600] transition-all active:scale-95 border",
                           tempGender === g.value
-                          ? "bg-blue-600 text-white border-blue-600"
+                           ? "bg-blue-600 text-white border-blue-600"
                             : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                         )}
                       >
@@ -692,7 +695,7 @@ export default function StrangerPage() {
                   onClick={saveFilters}
                   className="w-full h-12 bg-blue-600 text-white rounded-xl text-base font-[800] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
-                  <FiCheck size={20} />
+                <FiCheck size={20} />
                   Lưu bộ lọc
                 </button>
               </div>
