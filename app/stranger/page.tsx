@@ -426,7 +426,7 @@ export default function StrangerPage() {
                 </div>
               )}
 
-              {/* Step 2: Filter preview */}
+                       {/* Step 2: Filter preview */}
               {currentStep === 2 && (
                 <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 space-y-4">
                   <h3 className="text-lg font-[800]">Bộ lọc hiện tại</h3>
@@ -443,7 +443,6 @@ export default function StrangerPage() {
                       <span className="text-zinc-500">Tỉnh/TP:</span>
                       <span className="font-[700]">{selectedProvince}</span>
                     </div>
-                  </div>
                   <button
                     onClick={openFilterModal}
                     className="w-full h-12 bg-blue-600 text-white rounded-xl font-[700] active:scale-95"
