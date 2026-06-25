@@ -3,10 +3,10 @@ import { adminDb } from '@/lib/firebase-admin';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
 export async function GET(
-  _req: NextRequest, // Đổi req thành _req để tránh lỗi unused
-  { params }: { params: Promise<{ orderId: string }> } // Next.js 15 phải await params
+  _req: NextRequest,
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
-  const { orderId } = await params; // Thêm await
+  const { orderId } = await params;
 
   if (!orderId) {
     return NextResponse.json({ error: 'Thiếu orderId' }, { status: 400 });
@@ -40,7 +40,8 @@ export async function GET(
       return NextResponse.json({ status: 'pending' });
     }
 
-    const expectedContent = `${order.planId === 'pro'? 'VIPPRO' : 'VIPELITE'} ${orderId}`;
+    // SỬA: Dùng code rút gọn P/E thay vì VIPPRO/VIPELITE
+    const expectedContent = `${order.planId === 'pro'? 'P' : 'E'}${orderId}`;
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
     const fromDate = thirtyMinutesAgo.toISOString().split('T')[0];
     const toDate = new Date().toISOString().split('T')[0];
@@ -65,7 +66,7 @@ export async function GET(
 
     const matchedTx = transactions.find((tx: any) => {
       const amountIn = parseFloat(tx.amount_in);
-      const content = tx.transaction_content?.toUpperCase().replace(/\s+/g, ' ').trim();
+      const content = tx.transaction_content?.toUpperCase().replace(/\s+/g, '').trim();
       const expected = expectedContent.toUpperCase();
 
       return (
