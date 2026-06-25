@@ -320,20 +320,20 @@ export default function PaymentPage() {
                     </button>
                   </div>
 
-                  <button 
-                    onClick={() => checkPaymentStatus()}
-                    disabled={checking}
-                    className={cn(
-                      "mb-6 w-full h-12 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all",
-                      isElite 
-                        ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30" 
-                        : "bg-[#0a84ff] text-white shadow-lg shadow-blue-500/30",
-                      checking && "opacity-50"
-                    )}
-                  >
-                    <RefreshCw className={cn("h-5 w-5", checking && "animate-spin")} />
-                    {checking ? 'Đang kiểm tra...' : 'Tôi đã chuyển khoản'}
-                  </button>
+             <button 
+  onClick={() => checkPaymentStatus()}
+  // Bỏ disabled={checking}
+  className={cn(
+    "mb-6 w-full h-12 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer",
+    isElite 
+      ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:bg-amber-600" 
+      : "bg-[#0a84ff] text-white shadow-lg shadow-blue-500/30 hover:bg-[#0095ff]",
+    checking && "opacity-80 cursor-wait" // Chỉ giảm opacity nhẹ, không blur
+  )}
+>
+  <RefreshCw className={cn("h-5 w-5", checking && "animate-spin")} />
+  {checking ? 'Đang kiểm tra...' : 'Tôi đã chuyển khoản'}
+</button>
 
                   <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-6" />
 
