@@ -7,7 +7,7 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
 import { doc, onSnapshot, deleteDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { FiZap, FiStar, FiLoader, FiChevronLeft, FiSettings, FiCheck } from "react-icons/fi";
+import { FiZap, FiUserX, FiStar, FiLoader, FiChevronLeft, FiSettings, FiCheck } from "react-icons/fi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
