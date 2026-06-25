@@ -630,7 +630,7 @@ export default function StrangerPage() {
         )}
       </AnimatePresence>
 
-      {/* Modal Status Account */}
+
       <AnimatePresence>
         {showStatusModal && (
           <motion.div
