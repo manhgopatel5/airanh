@@ -19,6 +19,13 @@ type OrderData = {
   expireAt: FirebaseFirestore.Timestamp;
   paidAt?: FirebaseFirestore.Timestamp;
   sepayTransactionId?: number;
+  upgradeInfo?: { // THÊM DÒNG NÀY
+    from: 'pro';
+    to: 'elite';
+    daysLeft: number;
+    originalPrice: number;
+    discount: number;
+  } | null;
 };
 
 // SỬA: Bỏ $ ở cuối regex, cho phép có chữ phía sau như BankAPINotify
