@@ -170,27 +170,43 @@ export async function POST(req: NextRequest) {
       }
 
       const currentVip = userSnap.data()?.vip;
-      let expireDate = new Date();
-      if (currentVip?.tier!== 'free' && currentVip?.expiresAt) {
-        const currentExpire = currentVip.expiresAt.toDate();
-        if (currentExpire > new Date()) expireDate = currentExpire;
-      }
-      expireDate.setDate(expireDate.getDate() + 30);
+let expireDate: Date;
 
-      tx.update(userRef, {
-        vip: { tier: freshOrder.planId, expiresAt: Timestamp.fromDate(expireDate) },
-        updatedAt: FieldValue.serverTimestamp(),
-      });
-    });
+// Check xem có phải upgrade prorated không
+const isProratedUpgrade =
+  freshOrder.upgradeInfo &&
+  freshOrder.upgradeInfo.from === 'pro' &&
+  freshOrder.upgradeInfo.to === 'elite';
 
-    console.log('[SePay] Success:', orderId, isExpired? '(expired order)' : '');
-    return NextResponse.json({ success: true, wasExpired: isExpired });
-
-  } catch (error: any) {
-    console.error('[SePay] Webhook error:', error.message);
-    if (error.message.includes('Order status changed') || error.message.includes('already has transactionId')) {
-      return NextResponse.json({ error: error.message, reason: 'conflict' }, { status: 409 });
-    }
-    return NextResponse.json({ error: error.message, reason: 'server_error' }, { status: 500 });
+if (isProratedUpgrade) {
+  // NÂNG CẤP PRORATED: Giữ nguyên ngày hết hạn của Pro cũ
+  expireDate = currentVip?.expiresAt?.toDate() || new Date();
+  console.log('[SePay] Prorated upgrade: keep expireDate', expireDate);
+} else {
+  // MUA MỚI/GIA HẠN: Cộng 30 ngày từ ngày hết hạn cũ hoặc từ now
+  expireDate = new Date();
+  if (currentVip?.tier!== 'free' && currentVip?.expiresAt) {
+    const currentExpire = currentVip.expiresAt.toDate();
+    if (currentExpire > new Date()) expireDate = currentExpire;
   }
+  expireDate.setDate(expireDate.getDate() + 30);
+  console.log('[SePay] New/renew: expireDate', expireDate);
+}
+
+tx.update(userRef, {
+  vip: { tier: freshOrder.planId, expiresAt: Timestamp.fromDate(expireDate) },
+  updatedAt: FieldValue.serverTimestamp(),
+});
+});
+
+console.log('[SePay] Success:', orderId, isExpired? '(expired order)' : '');
+return NextResponse.json({ success: true, wasExpired: isExpired });
+
+} catch (error: any) {
+  console.error('[SePay] Webhook error:', error.message);
+  if (error.message.includes('Order status changed') || error.message.includes('already has transactionId')) {
+    return NextResponse.json({ error: error.message, reason: 'conflict' }, { status: 409 });
+  }
+  return NextResponse.json({ error: error.message, reason: 'server_error' }, { status: 500 });
+}
 }
