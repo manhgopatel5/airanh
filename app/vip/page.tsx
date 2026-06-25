@@ -174,11 +174,9 @@ export default function VipPage() {
 
   return (
     <div className="min-h-dvh bg-zinc-50 dark:bg-zinc-950">
-      <div className="bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="max-w-2xl mx-auto px-4 py-3">
-          
-
-     <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl shadow-md">
+<div className="bg-zinc-50 dark:bg-zinc-950">
+  <div className="max-w-2xl mx-auto px-4 pt-3 pb-0">
+    <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl">
   {(['plans', 'compare', 'faq'] as Tab[]).map((tab) => (
     <button
       key={tab}
@@ -298,32 +296,27 @@ className="px-6 h-12 bg-[#0a84ff] text-white rounded-2xl text-sm font-bold disab
                     <>
 <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl mb-5 shadow-inner">
   {VIP_TIERS.map((t) => {
-    const isDisabled = t.id === 'pro' && userVip?.tier === 'elite';
     const isSelected = selectedTierId === t.id;
     
     return (
       <button
         key={t.id}
-        onClick={() => !isDisabled && setSelectedTierId(t.id)}
-        disabled={isDisabled}
+        onClick={() => setSelectedTierId(t.id)}
         className={cn(
-  "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5",
-  isSelected
-  ? t.id === 'elite'
-    ? "bg-amber-500 text-white shadow-lg shadow-amber-500/40"
-      : "bg-[#0a84ff] text-white shadow-lg shadow-blue-500/40"
-    : "text-zinc-500 dark:text-zinc-400",
- !isDisabled &&!isSelected && "hover:text-zinc-900 dark:hover:text-zinc-100",
-  isDisabled && "opacity-40 cursor-not-allowed"
-)}
->
-  <span className="text-lg">{t.badge}</span>
-  {t.name}
-  {t.popular &&!isSelected &&!isDisabled && (
-    <FiStar size={12} className="text-amber-500" />
-  )}
-  {isDisabled && <FiLock size={12} />}
-</button>
+          "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5",
+          isSelected
+           ? t.id === 'elite'
+             ? "bg-amber-500 text-white shadow-lg shadow-amber-500/40"
+              : "bg-[#0a84ff] text-white shadow-lg shadow-blue-500/40"
+            : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+        )}
+      >
+        <span className="text-lg">{t.badge}</span>
+        {t.name}
+        {t.popular && !isSelected && (
+          <FiStar size={12} className="text-amber-500" />
+        )}
+      </button>
     );
   })}
 </div>
@@ -512,32 +505,30 @@ className="px-6 h-12 bg-[#0a84ff] text-white rounded-2xl text-sm font-bold disab
       </div>
     </div>
 
-    <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-900/5 dark:shadow-black/20">
-      <div className="grid grid-cols-3 gap-4 text-center">
-        <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-500/10 shadow-lg shadow-blue-500/10">
-          <div className="w-12 h-12 mx-auto mb-2 bg-blue-500/20 rounded-2xl flex items-center justify-center shadow-md shadow-blue-500/20">
-            <FiLock className="text-blue-500" size={24} strokeWidth={2.5} />
-          </div>
-          <p className="text-xs font-bold text-zinc-900 dark:text-white">Bảo mật</p>
-          <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">PCI DSS</p>
-        </div>
-        <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 shadow-lg shadow-emerald-500/10">
-          <div className="w-12 h-12 mx-auto mb-2 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-md shadow-emerald-500/20">
-            <FiShield className="text-emerald-500" size={24} strokeWidth={2.5} />
-          </div>
-          <p className="text-xs font-bold text-zinc-900 dark:text-white">An toàn</p>
-          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">SSL 256-bit</p>
-        </div>
-        <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-500/10 shadow-lg shadow-purple-500/10">
-          <div className="w-12 h-12 mx-auto mb-2 bg-purple-500/20 rounded-2xl flex items-center justify-center shadow-md shadow-purple-500/20">
-            <FiZap className="text-purple-500" size={24} strokeWidth={2.5} />
-          </div>
-          <p className="text-xs font-bold text-zinc-900 dark:text-white">Tức thì</p>
-          <p className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">Kích hoạt</p>
-        </div>
-      </div>
+   <div className="grid grid-cols-3 gap-4 text-center">
+  <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-500/10 shadow-lg shadow-blue-500/10">
+    <div className="w-12 h-12 mx-auto mb-2 bg-blue-500/20 rounded-2xl flex items-center justify-center shadow-md shadow-blue-500/20">
+      <FiLock className="text-blue-500" size={24} strokeWidth={2.5} />
     </div>
-  </motion.div>
+    <p className="text-xs font-bold text-zinc-900 dark:text-white">Bảo mật</p>
+    <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">PCI DSS</p>
+  </div>
+  <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 shadow-lg shadow-emerald-500/10">
+    <div className="w-12 h-12 mx-auto mb-2 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-md shadow-emerald-500/20">
+      <FiShield className="text-emerald-500" size={24} strokeWidth={2.5} />
+    </div>
+    <p className="text-xs font-bold text-zinc-900 dark:text-white">An toàn</p>
+    <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">SSL 256-bit</p>
+  </div>
+  <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-500/10 shadow-lg shadow-purple-500/10">
+    <div className="w-12 h-12 mx-auto mb-2 bg-purple-500/20 rounded-2xl flex items-center justify-center shadow-md shadow-purple-500/20">
+      <FiZap className="text-purple-500" size={24} strokeWidth={2.5} />
+    </div>
+    <p className="text-xs font-bold text-zinc-900 dark:text-white">Tức thì</p>
+    <p className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">Kích hoạt</p>
+  </div>
+</div>
+</motion.div>
 )}
 
 {activeTab === 'faq' && (
