@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const userData = userSnap.data();
     const plan = VIP_PLANS[planId as PlanId];
     let finalAmount: number = plan.price;
     let upgradeInfo = null;
@@ -58,56 +59,36 @@ export async function POST(req: NextRequest) {
     if (planId === 'elite') {
       console.log('[UPGRADE] Check prorated for user:', userId);
 
-      const subSnap = await db
-      .collection('subscriptions')
-      .where('userId', '==', userId)
-      .where('status', '==', 'active')
-      .limit(1)
-      .get();
+      const currentVip = userData?.vip;
+      console.log('[UPGRADE] Current vip:', JSON.stringify(currentVip));
 
-      console.log('[UPGRADE] Found subs:', subSnap.size);
+      const isPro = currentVip?.tier === 'pro';
+      const expireAt = currentVip?.expiresAt?.toDate();
+      const isNotExpired = expireAt && expireAt > new Date();
 
-      if (!subSnap.empty) {
-        const currentSub = subSnap.docs[0]?.data();
-        console.log('[UPGRADE] Current sub:', JSON.stringify(currentSub));
+      console.log('[UPGRADE] Check:', { isPro, expireAt, isNotExpired, now: new Date() });
 
-        if (!currentSub) {
-          return NextResponse.json(
-            { message: 'Không tìm thấy subscription' },
-            { status: 404 }
-          );
-        }
+      // Chỉ tính prorated khi đang Pro và còn hạn
+      if (isPro && isNotExpired) {
+        const now = new Date();
+        const msPerDay = 1000 * 60 * 60 * 24;
+        const daysLeft = Math.max(0, Math.ceil((expireAt.getTime() - now.getTime()) / msPerDay));
 
-        const isPro = currentSub.planId === 'pro';
-        const expireAt = currentSub.expireAt?.toDate();
-        const isNotExpired = expireAt && expireAt > new Date();
+        const proPerDay = VIP_PLANS.pro.price / 30;
+        const elitePerDay = VIP_PLANS.elite.price / 30;
+        finalAmount = Math.max(0, Math.round((elitePerDay - proPerDay) * daysLeft));
 
-        console.log('[UPGRADE] Check:', { isPro, expireAt, isNotExpired, now: new Date() });
+        upgradeInfo = {
+          from: 'pro',
+          to: 'elite',
+          daysLeft,
+          originalPrice: plan.price,
+          discount: plan.price - finalAmount
+        };
 
-        // Chỉ tính prorated khi đang Pro và còn hạn
-        if (isPro && isNotExpired) {
-          const now = new Date();
-          const msPerDay = 1000 * 60 * 60 * 24;
-          const daysLeft = Math.max(0, Math.ceil((expireAt.getTime() - now.getTime()) / msPerDay));
-
-          const proPerDay = VIP_PLANS.pro.price / 30;
-          const elitePerDay = VIP_PLANS.elite.price / 30;
-          finalAmount = Math.max(0, Math.round((elitePerDay - proPerDay) * daysLeft));
-
-          upgradeInfo = {
-            from: 'pro',
-            to: 'elite',
-            daysLeft,
-            originalPrice: plan.price,
-            discount: plan.price - finalAmount
-          };
-
-          console.log('[UPGRADE] Prorated applied:', { daysLeft, finalAmount, upgradeInfo });
-        } else {
-          console.log('[UPGRADE] Skip prorated: not pro or expired');
-        }
+        console.log('[UPGRADE] Prorated applied:', { daysLeft, finalAmount, upgradeInfo });
       } else {
-        console.log('[UPGRADE] No active subscription');
+        console.log('[UPGRADE] Skip prorated: not pro or expired');
       }
     }
     // === KẾT THÚC LOGIC PRORATED ===
@@ -167,7 +148,6 @@ export async function POST(req: NextRequest) {
 
     await orderRef.set({
       userId,
-      planId,
       planName: plan.name,
       amount: finalAmount,
       originalAmount: plan.price,
