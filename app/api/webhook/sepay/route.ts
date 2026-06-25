@@ -21,12 +21,13 @@ type OrderData = {
   sepayTransactionId?: number;
 };
 
-// SỬA: Regex P hoặc E + 20 ký tự thay vì VIPPRO/VIPELITE
+// SỬA: Bỏ $ ở cuối regex, cho phép có chữ phía sau như BankAPINotify
 function extractOrderId(content: string, description: string): string | null {
   const text = `${content} ${description}`.replace(/\s+/g, '');
-  console.log('[SePay] Text to parse:', text); // THÊM DÒNG NÀY
+  console.log('[SePay] Text to parse:', text);
 
-  const match = text.match(/[PE]([A-Za-z0-9]{20})$/i);
+  // SỬA DÒNG NÀY: Bỏ $
+  const match = text.match(/[PE]([A-Za-z0-9]{20})/i);
   if (!match ||!match[1]) {
     console.error('[SePay] Regex no match for:', text);
     return null;
