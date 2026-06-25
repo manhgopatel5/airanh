@@ -300,6 +300,7 @@ export default function StrangerPage() {
                   <FiInfo size={12} className="text-blue-500" />
                 </button>
               </div>
+            </div>
             <button
               onClick={openFilterModal}
               disabled={isDisabled}
@@ -355,7 +356,7 @@ export default function StrangerPage() {
                   className={cn(
                     "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
                     currentStep === 1
-                     ? "bg-blue-600 text-white border-blue-600 animate-pulse"
+                   ? "bg-blue-600 text-white border-blue-600 animate-pulse"
                       : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   )}
                 >
@@ -368,7 +369,7 @@ export default function StrangerPage() {
                   className={cn(
                     "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
                     currentStep === 2
-                     ? "bg-blue-600 text-white border-blue-600 animate-pulse"
+                   ? "bg-blue-600 text-white border-blue-600 animate-pulse"
                       : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   )}
                 >
@@ -381,7 +382,7 @@ export default function StrangerPage() {
                   className={cn(
                     "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
                     currentStep === 3
-                     ? "bg-blue-600 text-white border-blue-600"
+                   ? "bg-blue-600 text-white border-blue-600"
                       : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   )}
                 >
@@ -404,9 +405,9 @@ export default function StrangerPage() {
                         className={cn(
                           "rounded-3xl p-4 border-2 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 active:scale-95 transition-all disabled:opacity-40 h-44 flex flex-col items-center justify-center gap-3",
                           isSelected
-                           ? "bg-blue-600 text-white border-blue-600"
+                         ? "bg-blue-600 text-white border-blue-600"
                             : isDisabledCard
-                             ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 text-zinc-400"
+                           ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 text-zinc-400"
                               : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                         )}
                       >
@@ -426,7 +427,7 @@ export default function StrangerPage() {
                 </div>
               )}
 
-                       {/* Step 2: Filter preview */}
+              {/* Step 2: Filter preview */}
               {currentStep === 2 && (
                 <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 space-y-4">
                   <h3 className="text-lg font-[800]">Bộ lọc hiện tại</h3>
@@ -443,6 +444,7 @@ export default function StrangerPage() {
                       <span className="text-zinc-500">Tỉnh/TP:</span>
                       <span className="font-[700]">{selectedProvince}</span>
                     </div>
+                  </div>
                   <button
                     onClick={openFilterModal}
                     className="w-full h-12 bg-blue-600 text-white rounded-xl font-[700] active:scale-95"
@@ -667,7 +669,7 @@ export default function StrangerPage() {
                         className={cn(
                           "h-12 rounded-xl text-sm font-[600] transition-all active:scale-95 border",
                           tempGender === g.value
-                           ? "bg-blue-600 text-white border-blue-600"
+                         ? "bg-blue-600 text-white border-blue-600"
                             : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                         )}
                       >
