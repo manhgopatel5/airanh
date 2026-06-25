@@ -15,11 +15,19 @@ type Order = {
   planId: 'pro' | 'elite';
   planName: string;
   amount: number;
+  originalAmount?: number; // Thêm
   status: 'pending' | 'paid' | 'expired';
   qrUrl: string;
   createdAt: Timestamp;
   expireAt: Timestamp;
   paidAt?: Timestamp;
+  upgradeInfo?: { // Thêm block này
+    from: 'pro' | 'free';
+    to: 'elite';
+    daysLeft: number;
+    originalPrice: number;
+    discount: number;
+  }
 };
 
 export default function PaymentPage() {
@@ -218,32 +226,52 @@ export default function PaymentPage() {
             "text-white p-6",
             isElite ? "bg-amber-500" : "bg-[#0a84ff]"
           )}>
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2">
-                {isElite ? <Sparkles size={28} /> : <Zap size={28} />}
-                <h1 className="text-2xl font-black">Đăng ký {order.planName}</h1>
-              </div>
-              <div className="rounded-full bg-white/20 px-3 py-1.5 text-sm font-bold backdrop-blur-sm">
-                {order.amount.toLocaleString('vi-VN')}đ
-              </div>
-            </div>
-            <p className="text-sm text-white/90 font-medium">Mã đơn: #{orderId}</p>
-          </div>
+        <div className="flex items-start justify-between mb-2">
+  <div className="flex items-center gap-2">
+    {isElite ? <Sparkles size={28} /> : <Zap size={28} />}
+    <h1 className="text-2xl font-black">Đăng ký {order.planName}</h1>
+  </div>
+  <div className="text-right">
+    <div className="rounded-full bg-white/20 px-3 py-1.5 text-sm font-bold backdrop-blur-sm">
+      {order.amount.toLocaleString('vi-VN')}đ
+    </div>
+    {order.upgradeInfo && (
+      <div className="text-xs text-white/80 mt-1 line-through">
+        {order.upgradeInfo.originalPrice.toLocaleString('vi-VN')}đ
+      </div>
+    )}
+  </div>
+</div>
+<p className="text-sm text-white/90 font-medium">Mã đơn: #{orderId}</p>
 
-          <div className="p-6">
-            <AnimatePresence mode="wait">
-              {isPaid ? (
-                <motion.div
-                  key="paid"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="py-12 text-center"
-                >
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", duration: 0.6 }}
-                  >
+{order.upgradeInfo && (
+  <div className="mt-3 rounded-xl bg-white/10 p-3 text-sm">
+    <p className="font-bold">🎉 Nâng cấp từ VIP Pro</p>
+    <p className="text-white/90 mt-1">
+      Còn {order.upgradeInfo.daysLeft} ngày → Chỉ trả thêm {' '}
+      <span className="font-black">{order.amount.toLocaleString('vi-VN')}đ</span>
+    </p>
+    <p className="text-xs text-white/70 mt-1">
+      Tiết kiệm {order.upgradeInfo.discount.toLocaleString('vi-VN')}đ
+    </p>
+  </div>
+)}
+</div>
+
+<div className="p-6">
+  <AnimatePresence mode="wait">
+    {isPaid ? (
+      <motion.div
+        key="paid"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="py-12 text-center"
+      >
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", duration: 0.6 }}
+        >
                     <CheckCircle2 className="mx-auto h-20 w-20 text-emerald-500" strokeWidth={2.5} />
                   </motion.div>
                   <h3 className="mt-4 text-2xl font-black">Thanh toán thành công!</h3>
@@ -368,24 +396,31 @@ export default function PaymentPage() {
                         </div>
                       </div>
                       
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-zinc-500 font-medium">Số tiền:</span>
-                        <span className={cn(
-                          "font-black text-lg",
-                          isElite ? "text-amber-500" : "text-[#0a84ff]"
-                        )}>
-                          {order.amount.toLocaleString('vi-VN')}đ
-                        </span>
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-zinc-500 font-medium">Nội dung:</span>
-                        <div className="flex items-center gap-2">
-                          <button 
-                            className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-                            onClick={() => copyInfo(`${order.planId === 'pro' ? 'VIPPRO' : 'VIPELITE'} ${orderId}`, 'nội dung', 'nd')}
-                          >
-                            {copiedField === 'nd' ? (
+                   <div className="flex justify-between items-center">
+  <span className="text-sm text-zinc-500 font-medium">Số tiền:</span>
+  <div className="text-right">
+    <span className={cn(
+      "font-black text-lg",
+      isElite ? "text-amber-500" : "text-[#0a84ff]"
+    )}>
+      {order.amount.toLocaleString('vi-VN')}đ
+    </span>
+    {order.upgradeInfo && (
+      <div className="text-xs text-zinc-500 line-through">
+        {order.upgradeInfo.originalPrice.toLocaleString('vi-VN')}đ
+      </div>
+    )}
+  </div>
+</div>
+
+<div className="flex justify-between items-center">
+  <span className="text-sm text-zinc-500 font-medium">Nội dung:</span>
+  <div className="flex items-center gap-2">
+    <button 
+      className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+      onClick={() => copyInfo(`${order.planId === 'pro' ? 'VIPPRO' : 'VIPELITE'} ${orderId}`, 'nội dung', 'nd')}
+    >
+      {copiedField === 'nd' ? (
                               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                             ) : (
                               <Copy className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
