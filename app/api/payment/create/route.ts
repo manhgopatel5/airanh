@@ -5,16 +5,17 @@ import { Timestamp } from 'firebase-admin/firestore';
 const SEPAY_ACCOUNT = '4187547';
 const SEPAY_BANK = 'ACB';
 
+// SỬA: Rút gọn code để des <= 25 ký tự: P + 20 = 21, E + 20 = 21
 const VIP_PLANS = {
   pro: {
     price: 49000,
     name: 'VIP Pro',
-    code: 'VIPPRO'
+    code: 'P'
   },
   elite: {
     price: 149000,
     name: 'VIP Elite',
-    code: 'VIPELITE'
+    code: 'E'
   }
 };
 
@@ -142,22 +143,20 @@ export async function POST(req: NextRequest) {
     const orderRef = db.collection('orders').doc();
     const orderId = orderRef.id;
 
-    // FIX SEPAY: Rút gọn description xuống < 25 ký tự
-    const shortOrderId = orderId.slice(-8); // Lấy 8 ký tự cuối
-    const description = encodeURIComponent(`${plan.code}${shortOrderId}`); // VIPELITEJiQZgr = 14 ký tự
-    const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${SEPAY_BANK}&amount=${finalAmount}&des=${description}`;
+    // SỬA: Dùng full orderId 20 ký tự để khớp webhook regex
+    // E + 20 = 21 ký tự < 25 → SePay ok
+    const description = `${plan.code}${orderId}`; // EBSQRspautPNpsBJiQZgr
+    const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${SEPAY_BANK}&amount=${finalAmount}&des=${encodeURIComponent(description)}`;
 
     // Test QR URL trước khi lưu
     console.log('[SEPAY] Generated QR:', {
       orderId,
-      shortOrderId,
-      description: `${plan.code}${shortOrderId}`,
-      descLength: `${plan.code}${shortOrderId}`.length,
+      description,
+      descLength: description.length,
       qrUrl,
       amount: finalAmount
     });
 
-    // Check QR có load được không
     try {
       const qrCheck = await fetch(qrUrl, { method: 'HEAD' });
       console.log('[SEPAY] QR Status:', qrCheck.status, qrCheck.ok ? 'OK' : 'FAILED');
@@ -179,8 +178,7 @@ export async function POST(req: NextRequest) {
       upgradeInfo,
       status: 'pending',
       qrUrl,
-      orderCode: shortOrderId, // Lưu mã ngắn để webhook check
-      description: `${plan.code}${shortOrderId}`, // Lưu để debug
+      description, // Lưu để webhook check
       createdAt: Timestamp.now(),
       expireAt: Timestamp.fromDate(new Date(Date.now() + 15 * 60 * 1000))
     });
