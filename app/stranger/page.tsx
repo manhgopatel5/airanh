@@ -328,7 +328,7 @@ export default function StrangerPage() {
                 Hủy tìm kiếm
               </button>
             </motion.div>
-) : prefs? (
+          ) : (
             <motion.div
               key="ready"
               initial={{ opacity: 0 }}
