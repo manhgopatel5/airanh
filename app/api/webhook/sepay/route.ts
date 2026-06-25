@@ -97,12 +97,28 @@ export async function POST(req: NextRequest) {
       amount: order.amount,
       expireAt: order.expireAt.toDate(),
       isExpired,
-      transferAmount: data.transferAmount
+      transferAmount: data.transferAmount,
+      sepayTransactionId: order.sepayTransactionId
     });
 
-    if (order.status === 'paid') {
-      console.log('[SePay] Order already paid:', orderId);
-      return NextResponse.json({ success: true, message: 'Already paid' });
+    // SỬA 1: CHẶN CỨNG - CHỈ CHO PHÉP THANH TOÁN ORDER PENDING
+    if (order.status!== 'pending') {
+      console.error('[SePay] Order not pending:', orderId, 'status:', order.status);
+      return NextResponse.json({
+        error: 'Order already processed',
+        reason: 'invalid_status',
+        status: order.status
+      }, { status: 409 });
+    }
+
+    // SỬA 2: CHỐNG REPLAY - NẾU ĐÃ CÓ sepayTransactionId THÌ REJECT
+    if (order.sepayTransactionId) {
+      console.error('[SePay] Order already has transactionId:', order.sepayTransactionId);
+      return NextResponse.json({
+        error: 'Order already linked to transaction',
+        reason: 'duplicate_webhook',
+        transactionId: order.sepayTransactionId
+      }, { status: 409 });
     }
 
     if (Number(order.amount)!== Number(data.transferAmount)) {
@@ -123,7 +139,14 @@ export async function POST(req: NextRequest) {
       // 1. ĐỌC HẾT TRƯỚC
       const freshOrderSnap = await tx.get(orderRef);
       const freshOrder = freshOrderSnap.data() as OrderData;
-      if (freshOrder.status === 'paid') return;
+
+      // SỬA 3: DOUBLE CHECK TRONG TRANSACTION ĐỂ CHỐNG RACE CONDITION
+      if (freshOrder.status!== 'pending') {
+        throw new Error('Order status changed during transaction');
+      }
+      if (freshOrder.sepayTransactionId) {
+        throw new Error('Order already has transactionId');
+      }
 
       const userRef = db.collection('users').doc(freshOrder.userId);
       const userSnap = await tx.get(userRef);
@@ -137,7 +160,7 @@ export async function POST(req: NextRequest) {
       tx.update(orderRef, {
         status: 'paid',
         paidAt: Timestamp.now(),
-        sepayTransactionId: data.id,
+        sepayTransactionId: data.id, // Lock bằng transactionId của SePay
       });
 
       if (promoRef) {
@@ -162,7 +185,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, wasExpired: isExpired });
 
   } catch (error: any) {
-    console.error('[SePay] Webhook error:', error);
+    console.error('[SePay] Webhook error:', error.message);
+    // Nếu lỗi do race condition thì trả 409
+    if (error.message.includes('Order status changed') || error.message.includes('already has transactionId')) {
+      return NextResponse.json({ error: error.message, reason: 'conflict' }, { status: 409 });
+    }
     return NextResponse.json({ error: error.message, reason: 'server_error' }, { status: 500 });
   }
 }
