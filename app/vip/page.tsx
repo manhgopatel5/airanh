@@ -10,7 +10,7 @@ import { differenceInDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiLoader, FiCheck, FiShield, FiGift, FiCreditCard,
-  FiChevronDown, FiLock, FiStar, FiZap, FiCheckCircle,
+  FiChevronDown, FiLock, FiStar, FiZap,
   FiX, FiUsers, FiCalendar, FiMessageCircle, FiMapPin,
   FiGlobe, FiTrendingUp, FiRefreshCw, FiHeadphones,
   FiCpu, FiAward, FiUserPlus, FiBell
