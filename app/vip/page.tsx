@@ -115,38 +115,34 @@ export default function VipPage() {
   }, [user?.uid, db]);
 
   const handlePurchaseVip = async (tierId: 'pro' | 'elite') => {
-    if (!user?.uid) return toast.error("Vui lòng đăng nhập");
-    const tier = VIP_TIERS.find(t => t.id === tierId);
-    if (!tier) return;
+  if (!user?.uid) return toast.error("Vui lòng đăng nhập");
+  const tier = VIP_TIERS.find(t => t.id === tierId);
+  if (!tier) return;
 
-    setPurchasingVip(tierId);
-    try {
-      const finalPrice = appliedPromo
-       ? Math.round(tier.price * (1 - appliedPromo.discount / 100))
-        : tier.price;
+  setPurchasingVip(tierId);
+  try {
+    const res = await fetch('/api/payment/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.uid,
+        planId: tierId,
+        // Bỏ amount, BE tự tính
+        promoCode: appliedPromo?.code || null,
+      })
+    });
 
-      const res = await fetch('/api/payment/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          planId: tierId,
-          amount: finalPrice,
-          promoCode: appliedPromo?.code || null,
-        })
-      });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Lỗi tạo đơn');
+    if (!data.orderId) throw new Error('Không nhận được mã đơn');
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Lỗi tạo đơn');
-      if (!data.orderId) throw new Error('Không nhận được mã đơn');
-
-      router.push(`/vip/payment/${data.orderId}`);
-    } catch (error: any) {
-      toast.error("Lỗi: " + error.message);
-    } finally {
-      setPurchasingVip(null);
-    }
-  };
+    router.push(`/vip/payment/${data.orderId}`);
+  } catch (error: any) {
+    toast.error("Lỗi: " + error.message);
+  } finally {
+    setPurchasingVip(null);
+  }
+};
 
   const applyPromoCode = async () => {
     if (!promoCode) return toast.error("Nhập mã giảm giá");
@@ -246,6 +242,19 @@ export default function VipPage() {
                   </div>
                 </div>
               )}
+{userVip?.tier === 'pro' && selectedTierId === 'elite' && (
+  <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-4">
+    <div className="flex items-center gap-3 mb-2">
+      <FiZap className="text-amber-500" size={20} />
+      <p className="text-sm font-bold text-amber-600 dark:text-amber-500">
+        Nâng cấp lên Elite
+      </p>
+    </div>
+    <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+      Bạn đang dùng Pro còn {daysLeft} ngày. Khi nâng cấp, hệ thống tự tính tiền chênh lệch cho {daysLeft} ngày còn lại thay vì trả full 149.000đ.
+    </p>
+  </div>
+)}
 
               {!appliedPromo? (
                 <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800">
@@ -409,21 +418,27 @@ export default function VipPage() {
                           <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                         )}
 
-                        <span className="relative z-10 flex items-center gap-2">
-                          {purchasingVip === tier.id? (
-                            <FiLoader className="animate-spin" size={22} />
-                          ) : isActive? (
-                            <>
-                              <FiCheck size={20} strokeWidth={3} /> Đang sử dụng
-                            </>
-                          ) : (
-                            <>
-                              <FiCreditCard size={20} className="group-hover:scale-110 transition-transform" />
-                              Nâng cấp ngay
-                              <FiZap size={18} className="group-hover:rotate-12 transition-transform" />
-                            </>
-                          )}
-                        </span>
+              <span className="relative z-10 flex items-center gap-2">
+  {purchasingVip === tier.id? (
+    <FiLoader className="animate-spin" size={22} />
+  ) : isActive ? (
+    <>
+      <FiCheck size={20} strokeWidth={3} /> Đang sử dụng
+    </>
+  ) : userVip?.tier === 'pro' && tier.id === 'elite' ? (
+    <>
+      <FiTrendingUp size={20} className="group-hover:scale-110 transition-transform" />
+      Nâng cấp lên Elite
+      <FiZap size={18} className="group-hover:rotate-12 transition-transform" />
+    </>
+  ) : (
+    <>
+      <FiCreditCard size={20} className="group-hover:scale-110 transition-transform" />
+      Nâng cấp ngay
+      <FiZap size={18} className="group-hover:rotate-12 transition-transform" />
+    </>
+  )}
+</span>
                       </button>
                     </>
                   );
