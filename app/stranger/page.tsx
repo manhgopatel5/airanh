@@ -296,10 +296,10 @@ export default function StrangerPage() {
                 className="w-full h-14 bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 text-white rounded-2xl text-base font-[700] disabled:opacity-40 shadow-2xl shadow-pink-500/40 hover:shadow-pink-500/60 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 <FiCheck size={20} />
-                Lưu & Bắt đầu
+                           Lưu & Bắt đầu
               </button>
             </motion.div>
-          ) : inQueue? (
+          ) : inQueue && prefs? (
             <motion.div
               key="queue"
               initial={{ opacity: 0, scale: 0.95 }}
