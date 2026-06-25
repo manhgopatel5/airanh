@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   try {
     const { userId, planId, amount, promoCode } = await req.json();
 
-    if (!userId ||!planId) {
+    if (!userId || !planId) {
       return NextResponse.json(
         { message: 'Thiếu userId hoặc planId' },
         { status: 400 }
@@ -68,7 +68,6 @@ export async function POST(req: NextRequest) {
 
       console.log('[UPGRADE] Check:', { isPro, expireAt, isNotExpired, now: new Date() });
 
-      // Chỉ tính prorated khi đang Pro và còn hạn
       if (isPro && isNotExpired) {
         const now = new Date();
         const msPerDay = 1000 * 60 * 60 * 24;
@@ -133,7 +132,7 @@ export async function POST(req: NextRequest) {
       finalAmount = Math.round(finalAmount * (1 - appliedDiscount / 100));
     }
 
-    if (amount!== undefined && amount!== finalAmount) {
+    if (amount !== undefined && amount !== finalAmount) {
       return NextResponse.json(
         { message: 'Số tiền không hợp lệ' },
         { status: 400 }
@@ -143,11 +142,35 @@ export async function POST(req: NextRequest) {
     const orderRef = db.collection('orders').doc();
     const orderId = orderRef.id;
 
-    const description = encodeURIComponent(`${plan.code} ${orderId}`);
-    const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${SEPAY_BANK}&amount=${finalAmount}&des=${description}&template=compact`;
+    // FIX SEPAY: Rút gọn description xuống < 25 ký tự
+    const shortOrderId = orderId.slice(-8); // Lấy 8 ký tự cuối
+    const description = encodeURIComponent(`${plan.code}${shortOrderId}`); // VIPELITEJiQZgr = 14 ký tự
+    const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${SEPAY_BANK}&amount=${finalAmount}&des=${description}`;
+
+    // Test QR URL trước khi lưu
+    console.log('[SEPAY] Generated QR:', {
+      orderId,
+      shortOrderId,
+      description: `${plan.code}${shortOrderId}`,
+      descLength: `${plan.code}${shortOrderId}`.length,
+      qrUrl,
+      amount: finalAmount
+    });
+
+    // Check QR có load được không
+    try {
+      const qrCheck = await fetch(qrUrl, { method: 'HEAD' });
+      console.log('[SEPAY] QR Status:', qrCheck.status, qrCheck.ok ? 'OK' : 'FAILED');
+      if (!qrCheck.ok) {
+        console.error('[SEPAY] QR generation failed:', await qrCheck.text());
+      }
+    } catch (err: any) {
+      console.error('[SEPAY] QR fetch error:', err.message);
+    }
 
     await orderRef.set({
       userId,
+      planId,
       planName: plan.name,
       amount: finalAmount,
       originalAmount: plan.price,
@@ -156,11 +179,13 @@ export async function POST(req: NextRequest) {
       upgradeInfo,
       status: 'pending',
       qrUrl,
+      orderCode: shortOrderId, // Lưu mã ngắn để webhook check
+      description: `${plan.code}${shortOrderId}`, // Lưu để debug
       createdAt: Timestamp.now(),
       expireAt: Timestamp.fromDate(new Date(Date.now() + 15 * 60 * 1000))
     });
 
-    console.log('[ORDER] Created:', { orderId, finalAmount, upgradeInfo });
+    console.log('[ORDER] Created:', { orderId, finalAmount, upgradeInfo, qrUrl });
 
     return NextResponse.json({
       qrUrl,
