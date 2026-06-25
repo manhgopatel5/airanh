@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
       .get();
 
       if (!subSnap.empty) {
-        const currentSub = subSnap.docs[0].data();
+const currentSub = subSnap.docs[0]?.data();
+if (!currentSub) return NextResponse.json({ message: 'Không tìm thấy subscription' }, { status: 404 });
 
         // Chỉ tính prorated khi đang Pro và còn hạn
         if (currentSub.planId === 'pro' && currentSub.expireAt.toDate() > new Date()) {
