@@ -114,27 +114,30 @@ export default function PaymentPage() {
   }, [order?.status, router]);
 
   const checkPaymentStatus = async (silent = false) => {
-    if (!orderId || checking) return;
-    setChecking(true);
+  if (!orderId) return;
+  if (!silent && checking) return; // Chỉ chặn double-click khi user bấm
+  
+  // Không setChecking nếu là silent polling
+  if (!silent) setChecking(true);
+  
+  try {
+    const res = await fetch(`/api/payment/check/${orderId}`, {
+      method: 'GET',
+    });
+    const data = await res.json();
     
-    try {
-      const res = await fetch(`/api/payment/check/${orderId}`, {
-        method: 'GET',
-      });
-      const data = await res.json();
-      
-      if (data.status === 'paid') {
-        toast.success('Đã xác nhận thanh toán!');
-        // onSnapshot sẽ tự update order
-      } else if (!silent) {
-        toast.info('Chưa nhận được thanh toán. Vui lòng đợi 1-3 phút sau khi chuyển khoản.');
-      }
-    } catch (error: any) {
-      if (!silent) toast.error('Lỗi kiểm tra: ' + error.message);
-    } finally {
-      setChecking(false);
+    if (data.status === 'paid') {
+      toast.success('Đã xác nhận thanh toán!');
+      // onSnapshot sẽ tự update order
+    } else if (!silent) {
+      toast.info('Chưa nhận được thanh toán. Vui lòng đợi 1-3 phút sau khi chuyển khoản.');
     }
-  };
+  } catch (error: any) {
+    if (!silent) toast.error('Lỗi kiểm tra: ' + error.message);
+  } finally {
+    if (!silent) setChecking(false);
+  }
+};
 
   const copyInfo = async (text: string, label: string, field: string) => {
     await navigator.clipboard.writeText(text);
@@ -320,15 +323,14 @@ export default function PaymentPage() {
                     </button>
                   </div>
 
-             <button 
-  onClick={() => checkPaymentStatus()}
-  // Bỏ disabled={checking}
+        <button 
+  onClick={() => checkPaymentStatus(false)} // false = manual, hiện loading
   className={cn(
     "mb-6 w-full h-12 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer",
     isElite 
       ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:bg-amber-600" 
       : "bg-[#0a84ff] text-white shadow-lg shadow-blue-500/30 hover:bg-[#0095ff]",
-    checking && "opacity-80 cursor-wait" // Chỉ giảm opacity nhẹ, không blur
+    checking && "opacity-80 cursor-wait" // Chỉ mờ nhẹ, không blur
   )}
 >
   <RefreshCw className={cn("h-5 w-5", checking && "animate-spin")} />
