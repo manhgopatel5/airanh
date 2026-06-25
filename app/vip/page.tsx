@@ -176,16 +176,7 @@ export default function VipPage() {
     <div className="min-h-dvh bg-zinc-50 dark:bg-zinc-950">
       <div className="bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
         <div className="max-w-2xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            {userVip && userVip.tier!== 'free' && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full">
-                <FiCheckCircle className="text-emerald-500" size={16} />
-                <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                  {VIP_TIERS.find(t => t.id === userVip.tier)?.name}
-                </span>
-              </div>
-            )}
-          </div>
+          
 
           <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl">
             {(['plans', 'compare', 'faq'] as Tab[]).map((tab) => (
@@ -302,30 +293,39 @@ export default function VipPage() {
 
                   return (
                     <>
-                      <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl mb-5">
-                        {VIP_TIERS.map((t) => (
-                          <button
-                            key={t.id}
-                            onClick={() => setSelectedTierId(t.id)}
-                            className={cn(
-                              "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5",
-                              selectedTierId === t.id
-                               ? t.id === 'elite'
-                                 ? "bg-amber-500 text-white shadow-sm shadow-amber-500/30"
-                                  : "bg-[#0a84ff] text-white shadow-sm shadow-blue-500/30"
-                                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-                            )}
-                          >
-                            <span className="text-lg">{t.badge}</span>
-                            {t.name}
-                            {t.popular && selectedTierId!== t.id && (
-                              <FiStar size={12} className="text-amber-500" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
+                    <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl mb-5">
+  {VIP_TIERS.map((t) => {
+    const isDisabled = t.id === 'pro' && userVip?.tier === 'elite';
+    const isSelected = selectedTierId === t.id;
+    
+    return (
+      <button
+        key={t.id}
+        onClick={() => !isDisabled && setSelectedTierId(t.id)}
+        disabled={isDisabled}
+        className={cn(
+          "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5",
+          isSelected
+           ? t.id === 'elite'
+             ? "bg-amber-500 text-white shadow-sm shadow-amber-500/30"
+              : "bg-[#0a84ff] text-white shadow-sm shadow-blue-500/30"
+            : "text-zinc-500 dark:text-zinc-400",
+          !isDisabled && !isSelected && "hover:text-zinc-900 dark:hover:text-zinc-100",
+          isDisabled && "opacity-40 cursor-not-allowed"
+        )}
+      >
+        <span className="text-lg">{t.badge}</span>
+        {t.name}
+        {t.popular && !isSelected && !isDisabled && (
+          <FiStar size={12} className="text-amber-500" />
+        )}
+        {isDisabled && <FiLock size={12} />}
+      </button>
+    );
+  })}
+</div>
 
-                      {tier.id === 'pro' && (
+{tier.id === 'pro' && (
                         <div className="absolute -top-3 left-6 px-3 py-1 bg-[#0a84ff] rounded-full">
                           <span className="text-xs font-bold text-white flex items-center gap-1">
                             <FiStar size={12} /> PHỔ BIẾN
@@ -547,7 +547,7 @@ export default function VipPage() {
                   {[
                     {
                       q: "VIP có tự động gia hạn không?",
-                      a: "Có. Tự động gia hạn mỗi 30 ngày qua VNPay/Momo. Hủy bất cứ lúc nào trong Cài đặt > VIP. Hủy xong vẫn dùng đến hết chu kỳ đã trả, không mất ngày."
+                      a: "Không . Không tự động gia hạn, cần đăng kí thủ công . Bạn có thể gia hạn hoặc huỷ bất cứ lúc nào trong VIP > Cài đặt. Hủy xong vẫn dùng đến hết chu kỳ đã trả, không mất ngày."
                     },
                     {
                       q: "Nâng cấp từ Pro lên Elite được không?",
@@ -555,19 +555,19 @@ export default function VipPage() {
                     },
                     {
                       q: "Hủy VIP thì mất gì?",
-                      a: "Giữ toàn bộ quyền đến ngày hết hạn. Sau đó về Free: mất huy hiệu VIP, nhóm >10 thành viên không thêm người mới, ghim >3 tự bỏ bớt, file >10MB không tải mới. Tin nhắn và nhóm cũ không xóa."
+                      a: "Giữ toàn bộ quyền đến ngày hết hạn. Sau đó về Free: mất huy hiệu VIP và toàn bộ quyền lợi VIP."
                     },
                     {
                       q: "Thanh toán có an toàn không?",
-                      a: "Có. Hỗ trợ Momo, ZaloPay, VNPay QR, thẻ ATM/Visa. Cổng thanh toán VNPay/PayOS chuẩn PCI DSS Level 1, mã hóa SSL 256-bit. Không lưu thông tin thẻ. Hóa đơn gửi email tự động."
+                      a: "Có. Hiện Huha đang hỗ trợ thanh toán qua VNPay QR. Cổng thanh toán VNPay/PayOS chuẩn PCI DSS Level 1, mã hóa SSL 256-bit. Không lưu thông tin. Hóa đơn gửi email tự động."
                     },
                     {
                       q: "Mua nhầm gói có hoàn tiền không?",
-                      a: "Có hoàn tiền trong 7 ngày nếu chưa sử dụng tính năng VIP như tải file >10MB, tạo nhóm >10 người. Liên hệ admin@huha.online với mã đơn để được xử lý trong 24h."
+                      a: "Có hoàn tiền trong 7 ngày nếu chưa sử dụng tính năng VIP . Liên hệ admin@huha.online với mã đơn để được xử lý trong 24h."
                     },
                     {
                       q: "VIP Pro và Elite khác nhau gì?",
-                      a: "Elite hơn Pro: nhóm không giới hạn vs 50 thành viên, sự kiện không giới hạn vs 5/ngày, xem ai đã đọc tin nhắn, thu hồi tin không giới hạn, hỗ trợ 24/7, huy hiệu động."
+                      a: "Elite hơn Pro: nhóm không giới hạn vs 50 thành viên, sự kiện không giới hạn vs 5/ngày, xem ai đã đọc tin nhắn, thu hồi tin không giới hạn, hỗ trợ 24/7, huy hiệu động và nhiều tính năng độc quyền khác ."
                     },
                     {
                       q: "Mã giảm giá dùng được mấy lần?",
@@ -579,11 +579,11 @@ export default function VipPage() {
                     },
                     {
                       q: "Quên gia hạn VIP có sao không?",
-                      a: "Hết hạn sẽ tự về Free sau 3 ngày grace period. Trong 3 ngày đó vẫn dùng VIP bình thường. Gia hạn trong 3 ngày này không mất dữ liệu nhóm/ghim."
+                      a: "Hết hạn sẽ tự về Free. Bạn có thể đăng kí lại bất kì lúc nào."
                     },
                     {
                       q: "Doanh nghiệp mua VIP cho nhân viên được không?",
-                      a: "Được. Gói Enterprise: mua từ 10 user trở lên giảm 20%, xuất hóa đơn VAT, quản lý tập trung, hỗ trợ riêng. Liên hệ admin@huha.online."
+                      a: "Được. Gói Enterprise: mua từ 10 user trở lên giảm 20%, quản lý tập trung, hỗ trợ riêng. Liên hệ admin@huha.online."
                     }
                   ].map((item, i) => (
                     <div key={i} className="border-b border-zinc-100 dark:border-zinc-800 last:border-0">
@@ -644,7 +644,7 @@ export default function VipPage() {
 
         <div className="pt-4">
           <p className="text-xs text-center text-zinc-500 leading-relaxed">
-            Tự động gia hạn. Hủy bất cứ lúc nào.
+            Không tự động gia hạn. Hủy bất cứ lúc nào.
             <br />
             <button onClick={() => router.push('/vip/terms')} className="font-semibold text-zinc-900 dark:text-white active:opacity-60">
               Điều khoản
