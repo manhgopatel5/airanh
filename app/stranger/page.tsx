@@ -7,7 +7,7 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
 import { doc, onSnapshot, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { FiUserX, FiStar, FiLoader, FiEdit, FiUsers, FiSettings, FiInfo, FiX, FiCheck, FiChevronRight, FiShield, FiTrendingUp, FiAlertTriangle } from "react-icons/fi";
+import { FiUserX, FiStar, FiEdit2, FiGrid, FiCalendar, FiUsers, FiMapPin, FiLoader, FiEdit, FiUsers, FiSettings, FiInfo, FiX, FiCheck, FiChevronRight, FiShield, FiTrendingUp, FiAlertTriangle } from "react-icons/fi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -270,7 +270,7 @@ export default function StrangerPage() {
     <div className="min-h-dvh bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-white">
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-4 pb-24">
 
-                 {/* Card User Info */}
+                     {/* Card User Info */}
         <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20">
           <div className="flex items-center gap-3">
             <img
@@ -293,21 +293,19 @@ export default function StrangerPage() {
                 onClick={() => setShowStatusModal(true)}
                 className={cn(
                   "h-11 px-3 rounded-2xl flex items-center gap-2 active:scale-90 transition-all border-2",
-                  (accountStatus?? "tich-cuc") === "tich-cuc" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
+                  (accountStatus || "tich-cuc") === "tich-cuc" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
                   accountStatus === "canh-bao" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
                   accountStatus === "cam" && "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-700 dark:text-red-400"
                 )}
               >
                 <div className={cn(
                   "w-2 h-2 rounded-full",
-                  (accountStatus?? "tich-cuc") === "tich-cuc" && "bg-green-500",
+                  (accountStatus || "tich-cuc") === "tich-cuc" && "bg-green-500",
                   accountStatus === "canh-bao" && "bg-yellow-500",
                   accountStatus === "cam" && "bg-red-500"
                 )} />
                 <span className="text-xs font-[700]">
-                  {(accountStatus?? "tich-cuc") === "tich-cuc" && "Tích cực"}
-                  {accountStatus === "canh-bao" && "Cảnh báo"}
-                  {accountStatus === "cam" && "Bị cấm"}
+                  {(accountStatus || "tich-cuc") === "tich-cuc"? "Tích cực" : accountStatus === "canh-bao"? "Cảnh báo" : "Bị cấm"}
                 </span>
               </button>
               <button
@@ -437,39 +435,62 @@ export default function StrangerPage() {
                 </div>
               )}
 
-                         {/* Step 2: Filter preview */}
+                                  {/* Step 2: Filter preview - Premium UI */}
               {currentStep === 2 && (
-                <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 space-y-4">
-                  <h3 className="text-lg font-[800]">Bộ lọc hiện tại</h3>
-                  <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
-                    <table className="w-full text-sm">
-                      <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                        <tr className="bg-zinc-50/50 dark:bg-zinc-800/50">
-                          <td className="px-4 py-3 text-zinc-500 font-[600] w-1/3">Danh mục</td>
-                          <td className="px-4 py-3 font-[700] text-zinc-900 dark:text-white">
-                            {selectAllMode? "Tất cả" : selectedCats.map(id => CATEGORIES.find(c => c.id === id)?.label).join(", ")}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3 text-zinc-500 font-[600]">Độ tuổi</td>
-                          <td className="px-4 py-3 font-[700] text-zinc-900 dark:text-white">{ageFrom} - {ageTo}</td>
-                        </tr>
-                        <tr className="bg-zinc-50/50 dark:bg-zinc-800/50">
-                          <td className="px-4 py-3 text-zinc-500 font-[600]">Giới tính</td>
-                          <td className="px-4 py-3 font-[700] text-zinc-900 dark:text-white">{GENDERS.find(g => g.value === selectedGender)?.label}</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3 text-zinc-500 font-[600]">Khu vực</td>
-                          <td className="px-4 py-3 font-[700] text-zinc-900 dark:text-white">{selectedProvince}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                <div className="space-y-4">
+                  <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20">
+                    <div className="flex items-center justify-between mb-5">
+                      <div>
+                        <h3 className="text-lg font-[800]">Bộ lọc đã chọn</h3>
+                        <p className="text-xs text-zinc-500 mt-0.5">Xem lại trước khi tìm kiếm</p>
+                      </div>
+                      <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                        <FiFilter size={18} className="text-blue-600 dark:text-blue-400" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <FiGrid size={16} className="text-purple-500" />
+                          <span className="text-xs font-[600] text-zinc-500">Danh mục</span>
+                        </div>
+                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">
+                          {selectAllMode? "Tất cả" : selectedCats.map(id => CATEGORIES.find(c => c.id === id)?.label).join(", ")}
+                        </p>
+                      </div>
+
+                      <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <FiCalendar size={16} className="text-orange-500" />
+                          <span className="text-xs font-[600] text-zinc-500">Độ tuổi</span>
+                        </div>
+                        <p className="text-sm font-[700] text-zinc-900 dark:text-white">{ageFrom} - {ageTo} tuổi</p>
+                      </div>
+
+                      <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <FiUsers size={16} className="text-pink-500" />
+                          <span className="text-xs font-[600] text-zinc-500">Giới tính</span>
+                        </div>
+                        <p className="text-sm font-[700] text-zinc-900 dark:text-white">{GENDERS.find(g => g.value === selectedGender)?.label}</p>
+                      </div>
+
+                      <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <FiMapPin size={16} className="text-emerald-500" />
+                          <span className="text-xs font-[600] text-zinc-500">Khu vực</span>
+                        </div>
+                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">{selectedProvince}</p>
+                      </div>
+                    </div>
                   </div>
+
                   <button
                     onClick={openFilterModal}
-                    className="w-full h-12 bg-blue-600 text-white rounded-xl font-[700] active:scale-95 flex items-center justify-center gap-2"
+                    className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-[700] active:scale-95 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
                   >
-                    <FiEdit size={18} />
+                    <FiEdit2 size={18} />
                     Chỉnh sửa bộ lọc
                   </button>
                 </div>
