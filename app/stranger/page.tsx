@@ -265,7 +265,7 @@ export default function StrangerPage() {
     <div className="min-h-dvh bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-white">
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-4 pb-24">
 
-             {/* Card User Info */}
+            {/* Card User Info */}
         <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20">
           <div className="flex items-center gap-3">
             <img
@@ -282,9 +282,16 @@ export default function StrangerPage() {
                 <FiStar className="text-amber-500" size={16} fill="currentColor" />
                 <span className="text-xl font-[800] leading-none">{userKarma}</span>
               </button>
+            </div>
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowStatusModal(true)}
-                className="flex items-center gap-2 mt-1.5 active:scale-95 transition-all"
+                className={cn(
+                  "h-11 px-3 rounded-2xl flex items-center gap-2 active:scale-90 transition-all border-2",
+                  accountStatus === "tich-cuc" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
+                  accountStatus === "canh-bao" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
+                  accountStatus === "cam" && "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-700 dark:text-red-400"
+                )}
               >
                 <div className={cn(
                   "w-2 h-2 rounded-full",
@@ -292,25 +299,20 @@ export default function StrangerPage() {
                   accountStatus === "canh-bao" && "bg-yellow-500",
                   accountStatus === "cam" && "bg-red-500"
                 )} />
-                <span className={cn(
-                  "text-xs font-[600]",
-                  accountStatus === "tich-cuc" && "text-green-600 dark:text-green-400",
-                  accountStatus === "canh-bao" && "text-yellow-600 dark:text-yellow-400",
-                  accountStatus === "cam" && "text-red-600 dark:text-red-400"
-                )}>
+                <span className="text-xs font-[700]">
                   {accountStatus === "tich-cuc" && "Tích cực"}
-                  {accountStatus === "canh-bao" && "Bị cảnh báo"}
+                  {accountStatus === "canh-bao" && "Cảnh báo"}
                   {accountStatus === "cam" && "Bị cấm"}
                 </span>
               </button>
+              <button
+                onClick={openFilterModal}
+                disabled={isDisabled}
+                className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90 shadow-lg shadow-zinc-900/5 disabled:opacity-40"
+              >
+                <FiSettings size={20} className="text-zinc-700 dark:text-zinc-300" />
+              </button>
             </div>
-            <button
-              onClick={openFilterModal}
-              disabled={isDisabled}
-              className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90 shadow-lg shadow-zinc-900/5 disabled:opacity-40"
-            >
-              <FiSettings size={20} className="text-zinc-700 dark:text-zinc-300" />
-            </button>
           </div>
           {accountStatus === "cam" && (
             <div className="mt-3 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-sm text-red-700 dark:text-red-400 font-[600] flex items-center gap-2">
