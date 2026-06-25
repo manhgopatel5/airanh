@@ -24,9 +24,9 @@ export async function POST(req: NextRequest) {
   try {
     const { userId, planId, amount, promoCode } = await req.json();
 
-    if (!userId ||!planId || amount == null) {
+    if (!userId ||!planId) {
       return NextResponse.json(
-        { message: 'Thiếu userId, planId hoặc amount' },
+        { message: 'Thiếu userId hoặc planId' },
         { status: 400 }
       );
     }
@@ -50,8 +50,47 @@ export async function POST(req: NextRequest) {
 
     const plan = VIP_PLANS[planId as PlanId];
     let finalAmount: number = plan.price;
+    let upgradeInfo = null;
     let appliedDiscount = 0;
     let appliedCode: string | null = null;
+
+    // === LOGIC PRORATED UPGRADE ===
+    if (planId === 'elite') {
+      const subSnap = await db
+      .collection('subscriptions')
+      .where('userId', '==', userId)
+      .where('status', '==', 'active')
+      .limit(1)
+      .get();
+
+      if (!subSnap.empty) {
+        const currentSub = subSnap.docs[0].data();
+
+        // Chỉ tính prorated khi đang Pro và còn hạn
+        if (currentSub.planId === 'pro' && currentSub.expireAt.toDate() > new Date()) {
+          const now = new Date();
+          const expireAt = currentSub.expireAt.toDate();
+          const msPerDay = 1000 * 60 * 60 * 24;
+          const daysLeft = Math.max(0, Math.ceil((expireAt.getTime() - now.getTime()) / msPerDay));
+
+          // Giá/ngày: Pro = 49000/30, Elite = 149000/30
+          const proPerDay = VIP_PLANS.pro.price / 30;
+          const elitePerDay = VIP_PLANS.elite.price / 30;
+
+          // Tiền chênh lệch = (Elite - Pro) * ngày còn lại
+          finalAmount = Math.max(0, Math.round((elitePerDay - proPerDay) * daysLeft));
+
+          upgradeInfo = {
+            from: 'pro',
+            to: 'elite',
+            daysLeft,
+            originalPrice: plan.price,
+            discount: plan.price - finalAmount
+          };
+        }
+      }
+    }
+    // === KẾT THÚC LOGIC PRORATED ===
 
     if (promoCode) {
       const code = promoCode.toUpperCase().trim();
@@ -90,12 +129,15 @@ export async function POST(req: NextRequest) {
 
       appliedDiscount = promo.discount;
       appliedCode = code;
-      finalAmount = Math.round(plan.price * (1 - appliedDiscount / 100));
+
+      // Áp promo lên giá đã prorated nếu có
+      finalAmount = Math.round(finalAmount * (1 - appliedDiscount / 100));
 
       // KHÔNG TĂNG usedCount ở đây nữa. Chuyển xuống webhook
     }
 
-    if (amount!== finalAmount) {
+    // Chỉ check amount nếu client có gửi lên
+    if (amount!== undefined && amount!== finalAmount) {
       return NextResponse.json(
         { message: 'Số tiền không hợp lệ' },
         { status: 400 }
@@ -117,6 +159,7 @@ export async function POST(req: NextRequest) {
       originalAmount: plan.price,
       promoCode: appliedCode,
       discount: appliedDiscount,
+      upgradeInfo, // Thêm info upgrade
       status: 'pending',
       qrUrl,
       createdAt: Timestamp.now(),
@@ -128,7 +171,8 @@ export async function POST(req: NextRequest) {
       orderId,
       amount: finalAmount,
       planName: plan.name,
-      discount: appliedDiscount
+      discount: appliedDiscount,
+      upgradeInfo // Trả về cho FE hiển thị
     });
 
   } catch (error: any) {
