@@ -39,44 +39,44 @@ export default function StrangerPage() {
 
   // Load user data + prefs
   useEffect(() => {
-    if (!user?.uid) return;
+  if (!user?.uid) return;
+  
+  const unsubUser = onSnapshot(doc(db, "users", user.uid), async (snap) => {
+    const data = snap.data();
+    setUserKarma(data?.karma || 100);
     
-    const unsubUser = onSnapshot(doc(db, "users", user.uid), async (snap) => {
-      const data = snap.data();
-      setUserKarma(data?.karma || 100);
-      
-      // Check đã setup chưa
-      const strangerPrefs = data?.strangerPrefs as StrangerPref | undefined;
-if ((strangerPrefs?.interests?.length || 0) >= 3) {
-        setPrefs(strangerPrefs);
-        setIsSetup(true);
-      } else {
-        setIsSetup(false);
-      }
-      setLoading(false);
-    });
+    // Check đã setup chưa - FIX Ở ĐÂY
+    const strangerPrefs = data?.strangerPrefs as StrangerPref | undefined;
+    if (strangerPrefs && (strangerPrefs.interests?.length || 0) >= 3) {
+      setPrefs(strangerPrefs);
+      setIsSetup(true);
+    } else {
+      setIsSetup(false);
+    }
+    setLoading(false);
+  });
 
-    // Listen queue để auto vào khi match
-    const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
-      const data = snap.data();
-      if (data?.matchedChatId) {
-        router.push(`/stranger/${data.matchedChatId}`);
-        setInQueue(false);
-        setFindingStranger(false);
-      } else if (data &&!data?.matchedChatId) {
-        setInQueue(true);
-        setFindingStranger(true);
-      } else {
-        setInQueue(false);
-        setFindingStranger(false);
-      }
-    });
+  // Listen queue để auto vào khi match
+  const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
+    const data = snap.data();
+    if (data?.matchedChatId) {
+      router.push(`/stranger/${data.matchedChatId}`);
+      setInQueue(false);
+      setFindingStranger(false);
+    } else if (data &&!data?.matchedChatId) {
+      setInQueue(true);
+      setFindingStranger(true);
+    } else {
+      setInQueue(false);
+      setFindingStranger(false);
+    }
+  });
 
-    return () => {
-      unsubUser();
-      unsubQueue();
-    };
-  }, [user?.uid, db, router]);
+  return () => {
+    unsubUser();
+    unsubQueue();
+  };
+}, [user?.uid, db, router]);
 
   const handleSavePrefs = async () => {
     if (!user?.uid) return;
@@ -103,7 +103,7 @@ if ((strangerPrefs?.interests?.length || 0) >= 3) {
 
   const handleFindStranger = async () => {
     if (!user?.uid ||!prefs) return;
-    if (userKarma < 50) return toast.error("Karma dưới 50, không thể chat người lạ");
+    if (userKarma < 50) return toast.error("Huha dưới 50, không thể chat người lạ");
 
     setFindingStranger(true);
     setInQueue(true);
@@ -195,7 +195,7 @@ if ((strangerPrefs?.interests?.length || 0) >= 3) {
           </div>
           {userKarma < 70 && (
             <div className="mt-3 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-sm text-amber-700 dark:text-amber-400 font-[500]">
-              ⚠️ Karma thấp! Chat tử tế để không bị cấm
+              ⚠️ Huha thấp! Chat tử tế để không bị cấm
             </div>
           )}
           {userKarma < 50 && (
@@ -375,7 +375,7 @@ if ((strangerPrefs?.interests?.length || 0) >= 3) {
               </button>
 
               <p className="text-xs text-center text-zinc-500 leading-relaxed">
-                Karma dưới 50 sẽ bị cấm chat người lạ
+                Huha dưới 50 sẽ bị cấm chat người lạ
                 <br />
                 <span className="font-[600] text-zinc-900 dark:text-white">Chat văn minh • Không spam • Không 18+</span>
               </p>
