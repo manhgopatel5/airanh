@@ -265,17 +265,22 @@ match /promoCodes/{code} {
     }
 
     // ========== FRIEND REQUESTS ==========
-    match /friendRequests/{reqId} {
-      allow read: if isSignedIn() && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+match /friendRequests/{reqId} {
+  allow read: if isSignedIn() && 
+    (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
 
-      allow create: if isSignedIn()
-        && request.auth.uid == request.resource.data.from
-        && request.resource.data.to is string
-        && request.resource.data.status == 'pending'
-        && request.resource.data.createdAt is timestamp;
+  allow create: if isSignedIn()
+    && request.auth.uid == request.resource.data.fromUserId
+    && request.resource.data.toUserId is string
+    && request.resource.data.status == 'pending'
+    && request.resource.data.createdAt is timestamp;
 
-      allow delete: if isSignedIn() && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
-    }
+  allow update: if isSignedIn() && 
+    (request.auth.uid == resource.data.toUserId || request.auth.uid == resource.data.fromUserId);
+
+  allow delete: if isSignedIn() && 
+    (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
+}
 
     // ========== USERNAMES ==========
     match /usernames/{username} {
