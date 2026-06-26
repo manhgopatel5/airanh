@@ -224,49 +224,48 @@ export default function StrangerPage() {
   };
 
   const handleFindStranger = async () => {
-    if (!user?.uid) return;
-    if (userKarma === null) return toast.error("Đang tải dữ liệu...");
-    if (isDisabled) return toast.error("Tài khoản bị cấm");
+  if (!user?.uid) return;
+  if (isDisabled) return toast.error("Tài khoản bị cấm");
 
-    // BỎ CHECK TRỪ ĐIỂM, CHỈ CHẶN < 50
-    if (userKarma < 50) return toast.error("Cần ít nhất 50 điểm để tìm kiếm");
-    
-    const finalCats = selectAllMode 
-     ? CATEGORIES.filter(c => c.id!== "tat-ca").map(c => c.id) 
-      : selectedCats;
+  // XÓA DÒNG NÀY: if (userKarma < 50) return toast.error("Cần ít nhất 50 điểm để tìm kiếm");
+  
+  const finalCats = selectAllMode 
+   ? CATEGORIES.filter(c => c.id!== "tat-ca").map(c => c.id) 
+    : selectedCats;
 
-    if (finalCats.length < 3) return toast.error("Chọn ít nhất 3 sở thích");
-    if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
+  if (finalCats.length < 3) return toast.error("Chọn ít nhất 3 sở thích");
+  if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
 
-    setFindingStranger(true);
-    setInQueue(true);
+  setFindingStranger(true);
+  setInQueue(true);
 
-    try {
-      const functions = getFunctions(getApp(), "asia-southeast1");
-      const findFn = httpsCallable(functions, 'findStranger');
+  try {
+    const functions = getFunctions(getApp(), "asia-southeast1");
+    const findFn = httpsCallable(functions, 'findStranger');
 
-      const result = await findFn({
-        interests: finalCats,
-        ageRange: `${ageFrom}-${ageTo}`,
-        wantGender: selectedGender,
-        province: selectedProvince,
-      });
+    const result = await findFn({
+      interests: finalCats,
+      ageRange: `${ageFrom}-${ageTo}`,
+      wantGender: selectedGender,
+      province: selectedProvince,
+    });
 
-      const data = result.data as { chatId: string, matched: boolean };
+    const data = result.data as { chatId: string, matched: boolean };
 
-      if (data.matched) {
-        toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
-        setInQueue(false);
-      } else {
-        toast.success("Đã vào hàng đợi. Hệ thống sẽ thông báo khi có người match", { duration: 4000 });
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Lỗi tìm kiếm");
+    if (data.matched) {
+      toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
       setInQueue(false);
-    } finally {
-      setFindingStranger(false);
+    } else {
+      toast.success("Đã vào hàng đợi. Hệ thống sẽ thông báo khi có người match", { duration: 4000 });
     }
-  };
+  } catch (e: any) {
+    // Backend sẽ trả lỗi "Cần tối thiểu 50 điểm. Hiện tại: 0" nếu chưa đủ
+    toast.error(e.message || "Lỗi tìm kiếm");
+    setInQueue(false);
+  } finally {
+    setFindingStranger(false);
+  }
+};
 
   const handleCancelQueue = async () => {
     if (!user?.uid) return;
