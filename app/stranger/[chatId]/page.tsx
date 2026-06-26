@@ -179,6 +179,58 @@ export default function ChatRoomPage() {
       setInput(text);
     }
   };
+const handleSend = async () => {
+  if (!input.trim() ||!user?.uid ||!chatId || chatData?.status === "ended" || isExpired) return;
+
+  const msg: Message = {
+    id: crypto.randomUUID(),
+    text: input.trim(),
+    senderId: user.uid,
+    timestamp: new Date(),
+  };
+
+  const text = input.trim();
+  setInput("");
+  setShowEmoji(false);
+  inputRef.current?.focus();
+
+  try {
+    await updateDoc(doc(db, "stranger_chats", chatId), {
+      messages: arrayUnion(msg),
+      lastMessage: text,
+      lastMessageTime: serverTimestamp(),
+      [`unreadCounts.${partnerId}`]: ((chatData?.unreadCounts || {})[partnerId] || 0) + 1,
+    });
+  } catch (err: any) {
+    toast.error("Gửi tin nhắn thất bại");
+    console.error(err);
+    setInput(text);
+  }
+};
+
+// THÊM HÀM NÀY
+const handleSendWave = async () => {
+  if (!user?.uid ||!chatId || chatData?.status === "ended" || isExpired) return;
+
+  const msg: Message = {
+    id: crypto.randomUUID(),
+    text: "👋",
+    senderId: user.uid,
+    timestamp: new Date(),
+  };
+
+  try {
+    await updateDoc(doc(db, "stranger_chats", chatId), {
+      messages: arrayUnion(msg),
+      lastMessage: "👋",
+      lastMessageTime: serverTimestamp(),
+      [`unreadCounts.${partnerId}`]: ((chatData?.unreadCounts || {})[partnerId] || 0) + 1,
+    });
+  } catch (err: any) {
+    toast.error("Gửi tin nhắn thất bại");
+    console.error(err);
+  }
+};
 
   const handleEmojiClick = (emojiData: EmojiClickData) => {
     setInput(prev => prev + emojiData.emoji);
@@ -311,14 +363,17 @@ export default function ChatRoomPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full gap-2">
-            <div className="text-6xl">👋</div>
-            <p className="text-sm text-zinc-400 font-[600]">
-              Bắt đầu cuộc trò chuyện
-            </p>
-          </div>
-        )}
+ {messages.length === 0 && (
+  <button
+    onClick={handleSendWave}
+    className="flex flex-col items-center justify-center h-full gap-2 active:scale-95 transition-all"
+  >
+    <div className="text-6xl animate-waving">👋</div>
+    <p className="text-sm text-zinc-400 font-[600]">
+      Bắt đầu cuộc trò chuyện
+    </p>
+  </button>
+)}
 
         {showInviteNotice && timeLeft <= 120 && timeLeft > 0 && (
           <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-2 border-red-500 rounded-2xl p-4 mx-2 animate-in">
