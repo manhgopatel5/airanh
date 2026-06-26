@@ -82,43 +82,46 @@ export default function StrangerPage() {
   const [tempAgeTo, setTempAgeTo] = useState<number | string>(30);
   const [tempGender, setTempGender] = useState<"all" | "male" | "female">("all");
   const [tempProvince, setTempProvince] = useState("Toàn quốc");
+const [queueData, setQueueData] = useState<any>(null); // THÊM DÒNG NÀY
 
-  useEffect(() => {
-    if (!user?.uid) return;
+useEffect(() => {
+  if (!user?.uid) return;
 
-    const unsubUser = onSnapshot(doc(db, "users", user.uid), (snap) => {
-      const data = snap.data();
-      setUserKarma(data?.karma?? 0); // Không fake 100 nữa
-      setUserName(data?.displayName || "Bạn");
-      setUserAvatar(data?.photoURL || "");
-      setUserTier(data?.tier || "user");
-      setAccountStatus(data?.status || "active");
-      setCurrentChatId(data?.currentChatId || null);
-    });
+  const unsubUser = onSnapshot(doc(db, "users", user.uid), (snap) => {
+    const data = snap.data();
+    setUserKarma(data?.karma ?? 0);
+    setUserName(data?.displayName || "Bạn");
+    setUserAvatar(data?.photoURL || "");
+    setUserTier(data?.tier || "user");
+    setAccountStatus(data?.status || "active");
+    setCurrentChatId(data?.currentChatId || null);
+  });
 
-    const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
-      const data = snap.data();
-      if (data?.matchedChatId) {
-        toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
-        setInQueue(false);
-        setFindingStranger(false);
-      } else if (data &&!data?.matchedChatId) {
-        setInQueue(true);
-        setFindingStranger(true);
-      } else {
-        setInQueue(false);
-        setFindingStranger(false);
-      }
-    });
+  const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
+    const data = snap.data();
+    if (data?.matchedChatId) {
+      toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
+      setInQueue(false);
+      setFindingStranger(false);
+      setQueueData(null); // THÊM: clear khi match
+    } else if (data && !data?.matchedChatId) {
+      setInQueue(true);
+      setFindingStranger(true);
+      setQueueData(data); // THÊM: lưu data để lấy interests
+    } else {
+      setInQueue(false);
+      setFindingStranger(false);
+      setQueueData(null); // THÊM: clear khi thoát queue
+    }
+  });
 
-    return () => {
-      unsubUser();
-      unsubQueue();
-    };
-  }, [user?.uid, db]);
+  return () => {
+    unsubUser();
+    unsubQueue();
+  };
+}, [user?.uid, db]);
 
-  const isDisabled = accountStatus === "banned";
-
+const isDisabled = accountStatus === "banned";
   const toggleCategory = (catId: string) => {
     if (isDisabled) return;
 
@@ -340,32 +343,39 @@ export default function StrangerPage() {
         </div>
 
         <AnimatePresence mode="wait">
-          {inQueue? (
-            <motion.div
-              key="queue"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
-            >
-              <div className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-blue-600/30">
-                <FiLoader className="text-white animate-spin" size={36} />
-              </div>
-              <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
-              <p className="text-sm text-zinc-500 mb-2">
-                {selectAllMode? "Tất cả mục" : `${selectedCats.length} mục đã chọn`}
-              </p>
-              <p className="text-xs text-zinc-400 mb-6">
-                Bạn có thể thoát ra, hệ thống sẽ tự thông báo khi có người match
-              </p>
-              <button
-                onClick={handleCancelQueue}
-                className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-[700] active:scale-95 transition-all"
-              >
-                Hủy tìm kiếm
-              </button>
-            </motion.div>
-          ) : (
+    {inQueue? (
+  <motion.div
+    key="queue"
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.95 }}
+    className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
+  >
+    <div className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-blue-600/30">
+      <FiLoader className="text-white animate-spin" size={36} />
+    </div>
+    <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
+    <p className="text-sm text-zinc-500 mb-2">
+      {queueData?.interests
+       ? queueData.interests.length === CATEGORIES.length - 1
+         ? "Tất cả mục"
+          : `${queueData.interests.length} mục đã chọn`
+        : selectAllMode
+         ? "Tất cả mục"
+          : `${selectedCats.length} mục đã chọn`
+      }
+    </p>
+    <p className="text-xs text-zinc-400 mb-6">
+      Bạn có thể thoát ra, hệ thống sẽ tự thông báo khi có người match
+    </p>
+    <button
+      onClick={handleCancelQueue}
+      className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-[700] active:scale-95 transition-all"
+    >
+      Hủy tìm kiếm
+    </button>
+  </motion.div>
+) : (
             <motion.div
               key="grid"
               initial={{ opacity: 0 }}
