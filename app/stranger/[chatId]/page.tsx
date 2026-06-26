@@ -21,6 +21,8 @@ interface ChatData {
   partnerAvatars: Record<string, string>;
   status: "active" | "ended" | "waiting";
   onlineStatus: Record<string, boolean>;
+  unreadCounts?: Record<string, number>; // THÊM DÒNG NÀY
+  messages?: Message[];
 }
 
 export default function ChatRoomPage() {
