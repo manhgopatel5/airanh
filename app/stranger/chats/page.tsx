@@ -32,33 +32,46 @@ export default function ChatsPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
+    
     const q = query(
       collection(db, "stranger_chats"),
       where("members", "array-contains", user.uid),
       orderBy("lastMessageTime", "desc")
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const chatList = snap.docs.map(d => {
-        const data = d.data();
-        const partnerIdx = data.members.findIndex((m: string) => m!== user.uid);
-        return {
-          id: d.id,
-          partnerName: data.partnerNames?.[partnerIdx] || "Người lạ",
-          partnerAvatar: data.partnerAvatars?.[partnerIdx] || "",
-          partnerId: data.members[partnerIdx] || "",
-          lastMessage: data.lastMessage || "Bắt đầu trò chuyện",
-          lastMessageTime: data.lastMessageTime?.toMillis() || 0,
-          unreadCount: data.unreadCounts?.[user.uid] || 0,
-          isPartnerOnline: data.onlineStatus?.[data.members[partnerIdx]] || false,
-          status: data.status || "active",
-          members: data.members,
-        } as ChatItem;
-      });
-      setChats(chatList);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(q, 
+      (snap) => {
+        const chatList = snap.docs.map(d => {
+          const data = d.data();
+          const partnerIdx = data.members?.findIndex((m: string) => m!== user.uid)?? -1;
+          const partnerId = partnerIdx >= 0? data.members[partnerIdx] : "";
+          
+          return {
+            id: d.id,
+            partnerName: data.partnerNames?.[partnerId] || data.partnerName || "Người lạ",
+            partnerAvatar: data.partnerAvatars?.[partnerId] || data.partnerAvatar || "",
+            partnerId,
+            lastMessage: data.lastMessage || "Bắt đầu trò chuyện",
+            lastMessageTime: data.lastMessageTime?.toMillis() || 0,
+            unreadCount: data.unreadCounts?.[user.uid] || 0,
+            isPartnerOnline: data.onlineStatus?.[partnerId] || false,
+            status: data.status || "active",
+            members: data.members || [],
+          } as ChatItem;
+        });
+        setChats(chatList);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Chats snapshot error:", error);
+        toast.error("Lỗi tải danh sách chat");
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
   }, [user?.uid, db]);
@@ -99,7 +112,6 @@ export default function ChatsPage() {
 
   const handleDeleteChat = async (chatId: string) => {
     try {
-      // Xóa user khỏi members để ẩn chat
       await updateDoc(doc(db, "stranger_chats", chatId), {
         members: arrayRemove(user?.uid),
       });
@@ -123,7 +135,6 @@ export default function ChatsPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800">
         <div className="p-4 space-y-3">
           <div className="flex items-center justify-between">
@@ -136,7 +147,6 @@ export default function ChatsPage() {
             </button>
           </div>
 
-          {/* Search */}
           <div className="relative">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
             <input
@@ -157,7 +167,6 @@ export default function ChatsPage() {
         </div>
       </div>
 
-      {/* List */}
       <div className="p-4 space-y-2">
         <AnimatePresence mode="popLayout">
           {filteredChats.map(chat => (
@@ -174,7 +183,6 @@ export default function ChatsPage() {
               )}
             >
               <div className="flex items-center gap-3">
-                {/* Avatar */}
                 <div className="relative flex-shrink-0">
                   <img
                     src={chat.partnerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chat.partnerName)}&background=random`}
@@ -186,7 +194,6 @@ export default function ChatsPage() {
                   )}
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
                     <div className="flex items-center gap-2">
@@ -206,14 +213,13 @@ export default function ChatsPage() {
                       {chat.lastMessage}
                     </p>
                     {chat.unreadCount > 0 && (
-                      <span className="ml-2 min-w-[20px] h-5 px-1.5 bg-blue-600 text-white text-[11px] font-[800] rounded-full flex items-center justify-center">
+                      <span className="ml-2 min-w- h-5 px-1.5 bg-blue-600 text-white text- font-[800] rounded-full flex items-center justify-center">
                         {chat.unreadCount > 99? "99+" : chat.unreadCount}
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                   {chat.status === "active" && (
                     <button
@@ -257,7 +263,6 @@ export default function ChatsPage() {
         )}
       </div>
 
-      {/* Confirm Delete Modal */}
       <AnimatePresence>
         {confirmDelete && (
           <motion.div
