@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
 import { useAuth } from "@/lib/AuthContext";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
@@ -12,6 +11,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import ChatButton from "@/components/stranger/ChatButton";
+
 const CATEGORIES = [
   { id: "tat-ca", label: "Tất cả", icon: "🌟", count: 0 },
   { id: "thich-di-phuot", label: "Thích đi phượt", icon: "🏍️", count: 93 },
@@ -55,23 +55,20 @@ const PROVINCES = [
 
 export default function StrangerPage() {
   const { user } = useAuth();
-
   const db = getFirebaseDB();
 
-  const [userKarma, setUserKarma] = useState(100);
+  const [userKarma, setUserKarma] = useState<number | null>(null);
   const [userTier, setUserTier] = useState<"user" | "vip" | "elite">("user");
   const [accountStatus, setAccountStatus] = useState<"active" | "warning" | "banned">("active");
   const [userName, setUserName] = useState("");
   const [userAvatar, setUserAvatar] = useState("");
   const [findingStranger, setFindingStranger] = useState(false);
   const [inQueue, setInQueue] = useState(false);
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null); // THÊM DÒNG NÀY
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
 
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [selectAllMode, setSelectAllMode] = useState(false);
-
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
-
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -85,47 +82,42 @@ export default function StrangerPage() {
   const [tempAgeTo, setTempAgeTo] = useState<number | string>(30);
   const [tempGender, setTempGender] = useState<"all" | "male" | "female">("all");
   const [tempProvince, setTempProvince] = useState("Toàn quốc");
+
   useEffect(() => {
-  if (!user?.uid) return;
+    if (!user?.uid) return;
 
-  const unsubUser = onSnapshot(doc(db, "users", user.uid), (snap) => {
-    const data = snap.data();
-    setUserKarma(data?.karma || 100);
-    setUserName(data?.displayName || "Bạn");
-    setUserAvatar(data?.photoURL || "");
-    setUserTier(data?.tier || "user");
-    setAccountStatus(data?.status || "active");
-    setCurrentChatId(data?.currentChatId || null); // THÊM DÒNG NÀY
-  });
+    const unsubUser = onSnapshot(doc(db, "users", user.uid), (snap) => {
+      const data = snap.data();
+      setUserKarma(data?.karma?? 0); // Không fake 100 nữa
+      setUserName(data?.displayName || "Bạn");
+      setUserAvatar(data?.photoURL || "");
+      setUserTier(data?.tier || "user");
+      setAccountStatus(data?.status || "active");
+      setCurrentChatId(data?.currentChatId || null);
+    });
 
-  const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
-    const data = snap.data();
-    if (data?.matchedChatId) {
-      // XÓA: router.push(`/stranger/${data.matchedChatId}`);
-      // XÓA: setSelectedCats([]);
-      // XÓA: setSelectAllMode(false);
-      // XÓA: setCurrentStep(1);
-      
-      // THAY BẰNG:
-      toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
-      setInQueue(false);
-      setFindingStranger(false);
-    } else if (data && !data?.matchedChatId) {
-      setInQueue(true);
-      setFindingStranger(true);
-    } else {
-      setInQueue(false);
-      setFindingStranger(false);
-    }
-  });
+    const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
+      const data = snap.data();
+      if (data?.matchedChatId) {
+        toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
+        setInQueue(false);
+        setFindingStranger(false);
+      } else if (data &&!data?.matchedChatId) {
+        setInQueue(true);
+        setFindingStranger(true);
+      } else {
+        setInQueue(false);
+        setFindingStranger(false);
+      }
+    });
 
-  return () => {
-    unsubUser();
-    unsubQueue();
-  };
-}, [user?.uid, db]); // XÓA router khỏi deps
+    return () => {
+      unsubUser();
+      unsubQueue();
+    };
+  }, [user?.uid, db]);
 
-const isDisabled = accountStatus === "banned";
+  const isDisabled = accountStatus === "banned";
 
   const toggleCategory = (catId: string) => {
     if (isDisabled) return;
@@ -163,158 +155,134 @@ const isDisabled = accountStatus === "banned";
   };
 
   const saveFilters = () => {
-  const from = Number(tempAgeFrom);
-  const to = Number(tempAgeTo);
-
-  if (from > to) {
-    return toast.error("Độ tuổi không hợp lệ");
-  }
-  if (from < 18) {
-    return toast.error("Độ tuổi tối thiểu là 18");
-  }
-  if (to > 100) {
-    return toast.error("Độ tuổi tối đa là 100");
-  }
-
-  setAgeFrom(from);
-  setAgeTo(to);
-  setSelectedGender(tempGender);
-  setSelectedProvince(tempProvince);
-  setShowFilterModal(false);
-  toast.success("Đã lưu bộ lọc");
-  
-  // Xóa dòng này: if (currentStep === 2) setCurrentStep(3);
-};
-
-  const handleStepClick = (step: 1 | 2 | 3) => {
-  if (isDisabled) return;
-  
-  if (step === 1) {
-    setCurrentStep(1);
-    return;
-  }
-  
-  if (step === 2) {
-    if (selectedCats.length === 0) {
-      toast.error("Chọn ít nhất 1 mục trước");
-      return;
-    }
-    setCurrentStep(2);
-    return;
-  }
-  
-  if (step === 3) {
-    if (selectedCats.length === 0) {
-      toast.error("Chọn ít nhất 1 mục trước");
-      return;
-    }
-
-    // Validate + lưu filter trước khi qua bước 3
     const from = Number(tempAgeFrom);
     const to = Number(tempAgeTo);
 
-    if (from > to) {
-      toast.error("Độ tuổi không hợp lệ");
-      setCurrentStep(2);
-      openFilterModal();
-      return;
-    }
-    if (from < 18) {
-      toast.error("Độ tuổi tối thiểu là 18");
-      setCurrentStep(2);
-      openFilterModal();
-      return;
-    }
-    if (to > 100) {
-      toast.error("Độ tuổi tối đa là 100");
-      setCurrentStep(2);
-      openFilterModal();
-      return;
-    }
+    if (from > to) return toast.error("Độ tuổi không hợp lệ");
+    if (from < 18) return toast.error("Độ tuổi tối thiểu là 18");
+    if (to > 100) return toast.error("Độ tuổi tối đa là 100");
 
-    // Lưu để UI bước 3 hiển thị đúng
     setAgeFrom(from);
     setAgeTo(to);
     setSelectedGender(tempGender);
     setSelectedProvince(tempProvince);
+    setShowFilterModal(false);
+    toast.success("Đã lưu bộ lọc");
+  };
+
+  const handleStepClick = (step: 1 | 2 | 3) => {
+    if (isDisabled) return;
     
-    setCurrentStep(3);
-    // Không gọi handleFindStranger() ở đây
-  }
-};
+    if (step === 1) {
+      setCurrentStep(1);
+      return;
+    }
+    
+    if (step === 2) {
+      if (selectedCats.length === 0) {
+        toast.error("Chọn ít nhất 1 mục trước");
+        return;
+      }
+      setCurrentStep(2);
+      return;
+    }
+    
+    if (step === 3) {
+      if (selectedCats.length === 0) {
+        toast.error("Chọn ít nhất 1 mục trước");
+        return;
+      }
+
+      const from = Number(tempAgeFrom);
+      const to = Number(tempAgeTo);
+
+      if (from > to) {
+        toast.error("Độ tuổi không hợp lệ");
+        setCurrentStep(2);
+        openFilterModal();
+        return;
+      }
+      if (from < 18) {
+        toast.error("Độ tuổi tối thiểu là 18");
+        setCurrentStep(2);
+        openFilterModal();
+        return;
+      }
+      if (to > 100) {
+        toast.error("Độ tuổi tối đa là 100");
+        setCurrentStep(2);
+        openFilterModal();
+        return;
+      }
+
+      setAgeFrom(from);
+      setAgeTo(to);
+      setSelectedGender(tempGender);
+      setSelectedProvince(tempProvince);
+      setCurrentStep(3);
+    }
+  };
 
   const handleFindStranger = async () => {
-  if (!user?.uid) return;
-  if (isDisabled) return toast.error("Tài khoản bị cấm");
+    if (!user?.uid) return;
+    if (userKarma === null) return toast.error("Đang tải dữ liệu...");
+    if (isDisabled) return toast.error("Tài khoản bị cấm");
 
-  const maxKarma = userTier === "elite" ? 400 : userTier === "vip" ? 200 : 100;
-  
-  if (userKarma < 10) return toast.error("Cần ít nhất 10 điểm để tìm kiếm");
-  if (userKarma > maxKarma) {
-    return toast.error(`Điểm vượt giới hạn ${maxKarma}. Vui lòng liên hệ admin`);
-  }
-  
-  const finalCats = selectAllMode 
-    ? CATEGORIES.filter(c => c.id !== "tat-ca").map(c => c.id) 
-    : selectedCats;
+    // BỎ CHECK TRỪ ĐIỂM, CHỈ CHẶN < 50
+    if (userKarma < 50) return toast.error("Cần ít nhất 50 điểm để tìm kiếm");
+    
+    const finalCats = selectAllMode 
+     ? CATEGORIES.filter(c => c.id!== "tat-ca").map(c => c.id) 
+      : selectedCats;
 
-  if (finalCats.length < 3) return toast.error("Chọn ít nhất 3 sở thích"); // Đổi text
-  if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
-  
- 
+    if (finalCats.length < 3) return toast.error("Chọn ít nhất 3 sở thích");
+    if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
 
-  setFindingStranger(true);
-  setInQueue(true);
+    setFindingStranger(true);
+    setInQueue(true);
 
-  try {
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const findFn = httpsCallable(functions, 'findStranger');
+    try {
+      const functions = getFunctions(getApp(), "asia-southeast1");
+      const findFn = httpsCallable(functions, 'findStranger');
 
-    const result = await findFn({
-      interests: finalCats, // Đổi từ categories -> interests
-      ageRange: `${ageFrom}-${ageTo}`,
-      wantGender: selectedGender,
-     
-      province: selectedProvince, // Field này Function chưa dùng, bỏ cũng được
-    });
+      const result = await findFn({
+        interests: finalCats,
+        ageRange: `${ageFrom}-${ageTo}`,
+        wantGender: selectedGender,
+        province: selectedProvince,
+      });
 
-    const data = result.data as { chatId: string, matched: boolean };
+      const data = result.data as { chatId: string, matched: boolean };
 
-    if (data.matched) {
-      toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
+      if (data.matched) {
+        toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
+        setInQueue(false);
+      } else {
+        toast.success("Đã vào hàng đợi. Hệ thống sẽ thông báo khi có người match", { duration: 4000 });
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Lỗi tìm kiếm");
       setInQueue(false);
-    } else {
-      toast.success("Đã vào hàng đợi. Hệ thống sẽ thông báo khi có người match", { duration: 4000 });
+    } finally {
+      setFindingStranger(false);
     }
-  } catch (e: any) {
-    toast.error(e.message || "Lỗi tìm kiếm");
-    setInQueue(false);
-  } finally {
-    setFindingStranger(false);
-  }
-};
+  };
 
-const handleCancelQueue = async () => {
-  if (!user?.uid) return;
-  try {
-    await deleteDoc(doc(db, "stranger_queue", user.uid));
-    setInQueue(false);
-    setFindingStranger(false);
-    // XÓA 3 DÒNG NÀY - không reset về bước 1 nữa
-    // setSelectedCats([]);
-    // setSelectAllMode(false);
-    // setCurrentStep(1);
-    toast.info("Đã hủy tìm kiếm");
-  } catch {
-    toast.error("Lỗi hủy hàng đợi");
-  }
-};
+  const handleCancelQueue = async () => {
+    if (!user?.uid) return;
+    try {
+      await deleteDoc(doc(db, "stranger_queue", user.uid));
+      setInQueue(false);
+      setFindingStranger(false);
+      toast.info("Đã hủy tìm kiếm");
+    } catch {
+      toast.error("Lỗi hủy hàng đợi");
+    }
+  };
 
   return (
     <div className="min-h-dvh bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-white">
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-4 pb-24">
-
-                     {/* Card User Info */}
         <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20">
           <div className="flex items-center gap-3">
             <img
@@ -329,96 +297,95 @@ const handleCancelQueue = async () => {
                 className="flex items-center gap-2 mt-0.5 active:scale-95 transition-all"
               >
                 <FiStar className="text-amber-500" size={16} fill="currentColor" />
-                <span className="text-xl font-[800] leading-none">{userKarma}</span>
+                <span className="text-xl font-[800] leading-none">
+                  {userKarma === null? "..." : userKarma}
+                </span>
               </button>
             </div>
-         <div className="flex items-center gap-2">
-  <ChatButton chatId={currentChatId} variant="default" showDetails />
-
-  <button
-    onClick={() => setShowStatusModal(true)}
-    className={cn(
-      "h-11 px-3 rounded-2xl flex items-center gap-2 active:scale-90 transition-all border-2",
-      accountStatus === "active" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
-      accountStatus === "warning" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
-      accountStatus === "banned" && "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-700 dark:text-red-400"
-    )}
-  >
-    <div className={cn(
-      "w-2 h-2 rounded-full",
-      accountStatus === "active" && "bg-green-500",
-      accountStatus === "warning" && "bg-yellow-500",
-      accountStatus === "banned" && "bg-red-500"
-    )} />
-    <span className="text-xs font-[700]">
-      {accountStatus === "active"? "Tích cực" : accountStatus === "warning"? "Cảnh báo" : "Bị cấm"}
-    </span>
-  </button>
-
-  <button
-    onClick={openFilterModal}
-    disabled={isDisabled}
-    className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90 shadow-lg shadow-zinc-900/5 disabled:opacity-40"
-  >
-    <FiSettings size={20} className="text-zinc-700 dark:text-zinc-300" />
-  </button>
-</div>
-</div>
-{accountStatus === "banned" && (
-  <div className="mt-3 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-sm text-red-700 dark:text-red-400 font-[600] flex items-center gap-2">
-    <FiUserX size={16} />
-    Tài khoản bị cấm chat người lạ
-  </div>
-)}
+            <div className="flex items-center gap-2">
+              <ChatButton chatId={currentChatId} variant="default" showDetails />
+              <button
+                onClick={() => setShowStatusModal(true)}
+                className={cn(
+                  "h-11 px-3 rounded-2xl flex items-center gap-2 active:scale-90 transition-all border-2",
+                  accountStatus === "active" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
+                  accountStatus === "warning" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
+                  accountStatus === "banned" && "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-700 dark:text-red-400"
+                )}
+              >
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  accountStatus === "active" && "bg-green-500",
+                  accountStatus === "warning" && "bg-yellow-500",
+                  accountStatus === "banned" && "bg-red-500"
+                )} />
+                <span className="text-xs font-[700]">
+                  {accountStatus === "active"? "Tích cực" : accountStatus === "warning"? "Cảnh báo" : "Bị cấm"}
+                </span>
+              </button>
+              <button
+                onClick={openFilterModal}
+                disabled={isDisabled}
+                className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90 shadow-lg shadow-zinc-900/5 disabled:opacity-40"
+              >
+                <FiSettings size={20} className="text-zinc-700 dark:text-zinc-300" />
+              </button>
+            </div>
+          </div>
+          {accountStatus === "banned" && (
+            <div className="mt-3 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-sm text-red-700 dark:text-red-400 font-[600] flex items-center gap-2">
+              <FiUserX size={16} />
+              Tài khoản bị cấm chat người lạ
+            </div>
+          )}
         </div>
 
         <AnimatePresence mode="wait">
-      {inQueue? (
-  <motion.div
-    key="queue"
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    exit={{ opacity: 0, scale: 0.95 }}
-    className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
-  >
-    <div className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-blue-600/30">
-      <FiLoader className="text-white animate-spin" size={36} />
-    </div>
-    <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
-    <p className="text-sm text-zinc-500 mb-2">
-      {selectAllMode? "Tất cả mục" : `${selectedCats.length} mục đã chọn`}
-    </p>
-    <p className="text-xs text-zinc-400 mb-6">
-      Bạn có thể thoát ra, hệ thống sẽ tự thông báo khi có người match
-    </p>
-    <button
-      onClick={handleCancelQueue}
-      className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-[700] active:scale-95 transition-all"
-    >
-      Hủy tìm kiếm
-    </button>
-  </motion.div>
-) : (
-  <motion.div
-    key="grid"
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="space-y-4"
-  >
-    {/* Step buttons */}
-    <div className="flex items-center gap-2">
-      <button
-        onClick={() => handleStepClick(1)}
-        disabled={isDisabled}
-        className={cn(
-          "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
-          currentStep === 1
-        ? "bg-blue-600 text-white border-blue-600 animate-pulse"
-            : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-        )}
-      >
-        Bước 1
+          {inQueue? (
+            <motion.div
+              key="queue"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
+            >
+              <div className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-blue-600/30">
+                <FiLoader className="text-white animate-spin" size={36} />
+              </div>
+              <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
+              <p className="text-sm text-zinc-500 mb-2">
+                {selectAllMode? "Tất cả mục" : `${selectedCats.length} mục đã chọn`}
+              </p>
+              <p className="text-xs text-zinc-400 mb-6">
+                Bạn có thể thoát ra, hệ thống sẽ tự thông báo khi có người match
+              </p>
+              <button
+                onClick={handleCancelQueue}
+                className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-[700] active:scale-95 transition-all"
+              >
+                Hủy tìm kiếm
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="grid"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-4"
+            >
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleStepClick(1)}
+                  disabled={isDisabled}
+                  className={cn(
+                    "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
+                    currentStep === 1
+                   ? "bg-blue-600 text-white border-blue-600 animate-pulse"
+                    : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                  )}
+                >
+                  Bước 1
                   {currentStep === 1 && selectedCats.length > 0 && <FiChevronRight size={16} className="animate-pulse" />}
                 </button>
                 <button
@@ -428,7 +395,7 @@ const handleCancelQueue = async () => {
                     "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
                     currentStep === 2
                    ? "bg-blue-600 text-white border-blue-600 animate-pulse"
-                      : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                    : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   )}
                 >
                   Bước 2
@@ -441,14 +408,13 @@ const handleCancelQueue = async () => {
                     "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
                     currentStep === 3
                    ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                    : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                   )}
                 >
                   {findingStranger? <FiLoader className="animate-spin" size={16} /> : "Bước 3"}
                 </button>
               </div>
 
-              {/* Grid categories - chỉ hiện ở step 1 */}
               {currentStep === 1 && (
                 <div className="grid grid-cols-2 gap-3">
                   {CATEGORIES.map(cat => {
@@ -464,9 +430,9 @@ const handleCancelQueue = async () => {
                           "rounded-3xl p-4 border-2 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 active:scale-95 transition-all disabled:opacity-40 h-44 flex flex-col items-center justify-center gap-3",
                           isSelected
                          ? "bg-blue-600 text-white border-blue-600"
-                            : isDisabledCard
-                           ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 text-zinc-400"
-                              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                          : isDisabledCard
+                         ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 text-zinc-400"
+                          : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                         )}
                       >
                         <div className="text-5xl">{cat.icon}</div>
@@ -485,7 +451,6 @@ const handleCancelQueue = async () => {
                 </div>
               )}
 
-                                  {/* Step 2: Filter preview - Premium UI */}
               {currentStep === 2 && (
                 <div className="space-y-4">
                   <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20">
@@ -546,7 +511,6 @@ const handleCancelQueue = async () => {
                 </div>
               )}
 
-                        {/* Step 3: Confirm search - Premium UI */}
               {currentStep === 3 && (
                 <div className="space-y-4">
                   <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20">
@@ -599,7 +563,7 @@ const handleCancelQueue = async () => {
                     <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl p-3 flex items-center gap-2">
                       <FiInfo size={16} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
                       <p className="text-sm font-[600] text-blue-700 dark:text-blue-300">
-                        Mỗi lần tìm kiếm sẽ trừ 10 điểm
+                        Cần tối thiểu 50 điểm để tìm kiếm
                       </p>
                     </div>
                   </div>
@@ -619,7 +583,6 @@ const handleCancelQueue = async () => {
         </AnimatePresence>
       </div>
 
-      {/* Modal Info Huha - Premium UI */}
       <AnimatePresence>
         {showInfoModal && (
           <motion.div
@@ -636,7 +599,6 @@ const handleCancelQueue = async () => {
               onClick={(e) => e.stopPropagation()}
               className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
             >
-              {/* Header */}
               <div className="p-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -659,16 +621,14 @@ const handleCancelQueue = async () => {
                 </div>
               </div>
 
-              {/* Content */}
               <div className="p-6 overflow-y-auto space-y-3">
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-2xl p-4">
                   <p className="text-sm text-blue-700 dark:text-blue-300 font-[600]">
-                    <b>Huha</b> là điểm dùng để tìm kiếm bạn chat. Mỗi lần tìm -10 điểm.
+                                     <b>Huha</b> là điểm dùng để tìm kiếm bạn chat. Cần tối thiểu 50 điểm.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
-                  {/* Cách kiếm điểm */}
                   <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center">
@@ -692,7 +652,6 @@ const handleCancelQueue = async () => {
                     </div>
                   </div>
 
-                  {/* Trừ điểm */}
                   <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
@@ -701,10 +660,6 @@ const handleCancelQueue = async () => {
                       <span className="text-sm font-[800] text-zinc-900 dark:text-white">Trừ điểm</span>
                     </div>
                     <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                      <div className="flex items-center justify-between">
-                        <span>Mỗi lần tìm kiếm</span>
-                        <span className="font-[700] text-red-600 dark:text-red-400">-10</span>
-                      </div>
                       <div className="flex items-center justify-between">
                         <span>Bị report</span>
                         <span className="font-[700] text-red-600 dark:text-red-400">-10</span>
@@ -716,7 +671,6 @@ const handleCancelQueue = async () => {
                     </div>
                   </div>
 
-                  {/* Hạng tài khoản */}
                   <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
@@ -770,7 +724,6 @@ const handleCancelQueue = async () => {
         )}
       </AnimatePresence>
 
-      {/* Modal Status Account */}
       <AnimatePresence>
         {showStatusModal && (
           <motion.div
@@ -794,38 +747,37 @@ const handleCancelQueue = async () => {
                 </button>
               </div>
               <div className="space-y-4">
-             <div className={cn(
-  "p-4 rounded-xl border-2",
-  accountStatus === "active" && "bg-green-50 dark:bg-green-900/20 border-green-500",
-  accountStatus === "warning" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500",
-  accountStatus === "banned" && "bg-red-50 dark:bg-red-900/20 border-red-500"
-)}>
-  <div className="flex items-center gap-3 mb-2">
-    <div className={cn(
-      "w-3 h-3 rounded-full",
-      accountStatus === "active" && "bg-green-500",
-      accountStatus === "warning" && "bg-yellow-500",
-      accountStatus === "banned" && "bg-red-500"
-    )} />
-    <p className="font-[800] text-zinc-900 dark:text-white">
-      {accountStatus === "active" && "Tích cực"}
-      {accountStatus === "warning" && "Bị cảnh báo"}
-      {accountStatus === "banned" && "Bị cấm"}
-    </p>
-  </div>
-  <p className="text-sm text-zinc-600 dark:text-zinc-400">
-    {accountStatus === "active" && "Tài khoản hoạt động bình thường. Hãy tiếp tục trò chuyện văn minh để giữ trạng thái này!"}
-    {accountStatus === "warning" && "Bạn đã vi phạm quy tắc cộng đồng. Nếu tiếp tục vi phạm, tài khoản sẽ bị cấm. Hãy cẩn thận hơn!"}
-    {accountStatus === "banned" && "Tài khoản bị khóa do vi phạm nghiêm trọng. Bạn không thể sử dụng tính năng chat người lạ. Liên hệ hỗ trợ để kháng cáo."}
-  </p>
-</div>
+                <div className={cn(
+                  "p-4 rounded-xl border-2",
+                  accountStatus === "active" && "bg-green-50 dark:bg-green-900/20 border-green-500",
+                  accountStatus === "warning" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500",
+                  accountStatus === "banned" && "bg-red-50 dark:bg-red-900/20 border-red-500"
+                )}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={cn(
+                      "w-3 h-3 rounded-full",
+                      accountStatus === "active" && "bg-green-500",
+                      accountStatus === "warning" && "bg-yellow-500",
+                      accountStatus === "banned" && "bg-red-500"
+                    )} />
+                    <p className="font-[800] text-zinc-900 dark:text-white">
+                      {accountStatus === "active" && "Tích cực"}
+                      {accountStatus === "warning" && "Bị cảnh báo"}
+                      {accountStatus === "banned" && "Bị cấm"}
+                    </p>
+                  </div>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    {accountStatus === "active" && "Tài khoản hoạt động bình thường. Hãy tiếp tục trò chuyện văn minh để giữ trạng thái này!"}
+                    {accountStatus === "warning" && "Bạn đã vi phạm quy tắc cộng đồng. Nếu tiếp tục vi phạm, tài khoản sẽ bị cấm. Hãy cẩn thận hơn!"}
+                    {accountStatus === "banned" && "Tài khoản bị khóa do vi phạm nghiêm trọng. Bạn không thể sử dụng tính năng chat người lạ. Liên hệ hỗ trợ để kháng cáo."}
+                  </p>
+                </div>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Modal Filter Setting */}
       <AnimatePresence>
         {showFilterModal && (
           <motion.div
@@ -902,7 +854,7 @@ const handleCancelQueue = async () => {
                         className={cn(
                           "h-12 rounded-xl text-sm font-[600] transition-all active:scale-95 border",
                           tempGender === g.value
-                         ? "bg-blue-600 text-white border-blue-600"
+                        ? "bg-blue-600 text-white border-blue-600"
                             : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                         )}
                       >
@@ -929,7 +881,7 @@ const handleCancelQueue = async () => {
                   onClick={saveFilters}
                   className="w-full h-12 bg-blue-600 text-white rounded-xl text-base font-[800] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
-                <FiCheck size={20} />
+                  <FiCheck size={20} />
                   Lưu bộ lọc
                 </button>
               </div>
