@@ -415,35 +415,44 @@ export const updateHotScore = onSchedule(
   }
 );
 
-// 8. TÌM NGƯỜI LẠ CHAT 1-1 - BỎ VOICE
+// 8. TÌM NGƯỜI LẠ CHAT 1-1 - CHUẨN
 export const findStranger = onCall(
   { region: "asia-southeast1" },
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
 
-    const { interests, ageRange, wantGender } = request.data; // BỎ voiceUrl
+    const { interests, ageRange, wantGender } = request.data;
 
     if (!interests || interests.length < 3) {
       throw new HttpsError("invalid-argument", "Chọn ít nhất 3 sở thích");
     }
-    // XÓA CHECK voiceUrl
 
-    const userDoc = await db.doc(`users/${uid}`).get();
-    const userData = userDoc.data();
+    const userRef = db.doc(`users/${uid}`);
+    const userDoc = await userRef.get();
+    let userData = userDoc.data();
 
-    if ((userData?.karma || 0) < 50) {
-      throw new HttpsError("permission-denied", "Karma quá thấp, cần >= 50");
+    // TỰ TẠO KARMA THEO TIER NẾU CHƯA CÓ
+    if (userData?.karma === undefined) {
+      const tier = userData?.tier || "user";
+      const defaultKarma = tier === "elite" ? 400 : tier === "vip" ? 200 : 100;
+      await userRef.set({ karma: defaultKarma }, { merge: true });
+      userData = { ...userData, karma: defaultKarma };
+    }
+
+    const userKarma = userData?.karma || 0;
+    if (userKarma < 50) {
+      throw new HttpsError("permission-denied", `Cần tối thiểu 50 điểm. Hiện tại: ${userKarma}`);
     }
 
     const userGender = userData?.gender || "other";
     const queueRef = db.collection("stranger_queue");
 
     const matches = await queueRef
-    .where("status", "==", "waiting")
-    .where("userId", "!=", uid)
-    .limit(20)
-    .get();
+      .where("status", "==", "waiting")
+      .where("userId", "!=", uid)
+      .limit(20)
+      .get();
 
     let bestMatch: DocumentSnapshot | null = null;
     let maxCommon = 0;
@@ -451,9 +460,9 @@ export const findStranger = onCall(
     for (const doc of matches.docs) {
       const d = doc.data();
       
-      if (wantGender!== "all" && d.gender!== wantGender) continue;
-      if (d.wantGender!== "all" && d.wantGender!== userGender) continue;
-      if (ageRange && d.ageRange!== ageRange) continue;
+      if (wantGender !== "all" && d.gender !== wantGender) continue;
+      if (d.wantGender !== "all" && d.wantGender !== userGender) continue;
+      if (ageRange && d.ageRange !== ageRange) continue;
 
       const common = interests.filter((i: string) => d.interests?.includes(i)).length;
       if (common >= 2 && common > maxCommon) {
@@ -479,7 +488,6 @@ export const findStranger = onCall(
           members: [uid, other.userId],
           topic: interests,
           ageRange,
-          // XÓA voiceIntros
           messages: [],
           createdAt: FieldValue.serverTimestamp(),
           expiresAt: Timestamp.fromDate(new Date(Date.now() + 5 * 60 * 1000)),
@@ -489,6 +497,8 @@ export const findStranger = onCall(
         });
 
         transaction.delete(bestMatch!.ref);
+        
+        // KHÔNG TRỪ ĐIỂM Ở ĐÂY NỮA
       });
 
       return { matched: true, chatId };
@@ -499,7 +509,6 @@ export const findStranger = onCall(
       interests,
       ageRange,
       wantGender,
-      // XÓA voiceUrl
       gender: userGender,
       status: "waiting",
       createdAt: FieldValue.serverTimestamp(),
