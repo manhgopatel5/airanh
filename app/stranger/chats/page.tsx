@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, doc, updateDoc, arrayRemove } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, updateDoc, arrayRemove, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { FiTrash2, FiX, FiMessageCircle, FiClock, FiUsers } from "react-icons/fi";
@@ -24,7 +24,7 @@ interface ChatItem {
 }
 
 export default function ChatsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const db = getFirebaseDB();
   const router = useRouter();
   const [chats, setChats] = useState<ChatItem[]>([]);
@@ -32,6 +32,8 @@ export default function ChatsPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+
     if (!user?.uid) {
       setLoading(false);
       return;
@@ -63,8 +65,8 @@ export default function ChatsPage() {
             createdAt: data.createdAt?.toMillis() || 0,
           } as ChatItem;
         })
-      .filter(c => c.status!== "ended" || c.members.includes(user.uid))
-      .sort((a, b) => b.lastMessageTime - a.lastMessageTime);
+     .filter(c => c.status!== "ended" || c.members.includes(user.uid))
+     .sort((a, b) => b.lastMessageTime - a.lastMessageTime);
 
         setChats(chatList);
         setLoading(false);
@@ -77,7 +79,7 @@ export default function ChatsPage() {
     );
 
     return () => unsub();
-  }, [user?.uid, db]);
+  }, [user?.uid, authLoading, db]);
 
   const formatTime = (timestamp: number) => {
     if (!timestamp) return "";
@@ -98,9 +100,9 @@ export default function ChatsPage() {
     try {
       await updateDoc(doc(db, "stranger_chats", chatId), {
         status: "ended",
-        endedAt: new Date(),
+        endedAt: serverTimestamp(),
         lastMessage: "Cuộc trò chuyện đã kết thúc",
-        lastMessageTime: new Date(),
+        lastMessageTime: serverTimestamp(),
       });
       toast.success("Đã kết thúc cuộc trò chuyện");
     } catch {
@@ -109,9 +111,10 @@ export default function ChatsPage() {
   };
 
   const handleDeleteChat = async (chatId: string) => {
+    if (!user?.uid) return;
     try {
       await updateDoc(doc(db, "stranger_chats", chatId), {
-        members: arrayRemove(user?.uid),
+        members: arrayRemove(user.uid),
       });
       toast.success("Đã ẩn cuộc trò chuyện");
       setConfirmDelete(null);
@@ -120,7 +123,7 @@ export default function ChatsPage() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black p-4 space-y-2">
         {[1,2,3,4].map(i => (
@@ -141,7 +144,7 @@ export default function ChatsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              onClick={() => router.push(`/chat/${chat.id}`)}
+              onClick={() => router.push(`/stranger/${chat.id}`)}
               className={cn(
                 "p-4 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all cursor-pointer",
                 chat.status === "ended" && "opacity-60"
