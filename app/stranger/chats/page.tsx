@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect, useState, useMemo } from "react";
-import { collection, query, where, onSnapshot, orderBy, doc, updateDoc, deleteDoc, arrayRemove } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, doc, updateDoc, arrayRemove } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { FiSearch, FiTrash2, FiX, FiMessageCircle, FiClock } from "react-icons/fi";
