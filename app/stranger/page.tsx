@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+
 import { useAuth } from "@/lib/AuthContext";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
