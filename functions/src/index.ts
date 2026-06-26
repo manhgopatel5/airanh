@@ -460,20 +460,20 @@ export const findStranger = onCall(
 
       // CHECK XEM ĐÃ CÓ CHAT VỚI AI CHƯA - TRÁNH TẠO LẠI
       const existingChat = await db.collection("stranger_chats")
-       .where("members", "array-contains", uid)
-       .where("status", "==", "active")
-       .limit(1)
-       .get();
+      .where("members", "array-contains", uid)
+      .where("status", "==", "active")
+      .limit(1)
+      .get();
       
       if (!existingChat.empty) {
         return { matched: true, chatId: existingChat.docs[0].id };
       }
 
       const matches = await queueRef
-       .where("status", "==", "waiting")
-       .where("userId", "!=", uid)
-       .limit(50)
-       .get();
+      .where("status", "==", "waiting")
+      .where("userId", "!=", uid)
+      .limit(50)
+      .get();
 
       let bestMatch: DocumentSnapshot | null = null;
       let maxCommon = 0;
@@ -515,18 +515,27 @@ export const findStranger = onCall(
           // NẾU CHƯA CÓ CHAT THÌ TẠO MỚI
           if (!existingChatSnap.exists) {
             transaction.set(chatRef, {
-              members: [uid, other.userId],
+              members: [uid, other.userId].sort(), // SORT ĐỂ ĐẢM BẢO THỨ TỰ
               topic: interests,
               ageRange,
               province,
               messages: [],
               createdAt: FieldValue.serverTimestamp(),
-              lastMessageTime: FieldValue.serverTimestamp(), // THÊM ĐỂ QUERY RA
-              lastMessage: "Đã kết nối. Hãy chào nhau 👋", // THÊM
+              lastMessageTime: FieldValue.serverTimestamp(),
+              lastMessage: "Đã kết nối. Hãy chào nhau 👋",
               expiresAt: Timestamp.fromDate(new Date(Date.now() + 5 * 60 * 1000)),
               extended: false,
               reportedBy: [],
               status: "active",
+              unreadCounts: { [uid]: 0, [other.userId]: 0 }, // THÊM
+              onlineStatus: { [uid]: true, [other.userId]: false }, // THÊM
+              friendRequests: {}, // THÊM
+              filters: { // THÊM DÒNG NÀY - QUAN TRỌNG
+                interests,
+                ageRange,
+                wantGender,
+                province
+              }
             });
           }
 
@@ -565,7 +574,6 @@ export const findStranger = onCall(
     }
   }
 );
-
 // 9. BÁO CÁO NGƯỜI LẠ
 export const reportStranger = onCall(
   { region: "asia-southeast1" },
