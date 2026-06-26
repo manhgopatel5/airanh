@@ -226,11 +226,9 @@ export default function StrangerPage() {
   const handleFindStranger = async () => {
   if (!user?.uid) return;
   if (isDisabled) return toast.error("Tài khoản bị cấm");
-
-  // XÓA DÒNG NÀY: if (userKarma < 50) return toast.error("Cần ít nhất 50 điểm để tìm kiếm");
   
   const finalCats = selectAllMode 
-   ? CATEGORIES.filter(c => c.id!== "tat-ca").map(c => c.id) 
+   ? CATEGORIES.filter(c => c.id !== "tat-ca").map(c => c.id) 
     : selectedCats;
 
   if (finalCats.length < 3) return toast.error("Chọn ít nhất 3 sở thích");
@@ -259,9 +257,11 @@ export default function StrangerPage() {
       toast.success("Đã vào hàng đợi. Hệ thống sẽ thông báo khi có người match", { duration: 4000 });
     }
   } catch (e: any) {
-    // Backend sẽ trả lỗi "Cần tối thiểu 50 điểm. Hiện tại: 0" nếu chưa đủ
-    toast.error(e.message || "Lỗi tìm kiếm");
+    // Backend trả lỗi nếu < 50 điểm hoặc lỗi khác
+    const msg = e.message || "Lỗi tìm kiếm";
+    toast.error(msg);
     setInQueue(false);
+    console.error("findStranger error:", e);
   } finally {
     setFindingStranger(false);
   }
