@@ -84,12 +84,14 @@ export default function StrangerPage() {
   const [tempProvince, setTempProvince] = useState("Toàn quốc");
 const [queueData, setQueueData] = useState<any>(null); // THÊM DÒNG NÀY
 
+const [matchedChatId, setMatchedChatId] = useState<string | null>(null);
+
 useEffect(() => {
   if (!user?.uid) return;
 
   const unsubUser = onSnapshot(doc(db, "users", user.uid), (snap) => {
     const data = snap.data();
-    setUserKarma(data?.karma ?? 0);
+    setUserKarma(data?.karma?? 0);
     setUserName(data?.displayName || "Bạn");
     setUserAvatar(data?.photoURL || "");
     setUserTier(data?.tier || "user");
@@ -100,18 +102,21 @@ useEffect(() => {
   const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
     const data = snap.data();
     if (data?.matchedChatId) {
-      toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
+      setMatchedChatId(data.matchedChatId); // THÊM: Lưu chatId
+      toast.success("Đã tìm thấy bạn phù hợp!", { duration: 3000 });
       setInQueue(false);
       setFindingStranger(false);
-      setQueueData(null); // THÊM: clear khi match
-    } else if (data && !data?.matchedChatId) {
+      setQueueData(null);
+    } else if (data &&!data?.matchedChatId) {
       setInQueue(true);
       setFindingStranger(true);
-      setQueueData(data); // THÊM: lưu data để lấy interests
+      setQueueData(data);
+      setMatchedChatId(null);
     } else {
       setInQueue(false);
       setFindingStranger(false);
-      setQueueData(null); // THÊM: clear khi thoát queue
+      setQueueData(null);
+      setMatchedChatId(null);
     }
   });
 
@@ -283,99 +288,120 @@ const isDisabled = accountStatus === "banned";
   };
 
   return (
-    <div className="min-h-dvh bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-white">
-      <div className="max-w-2xl mx-auto px-4 py-5 space-y-4 pb-24">
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20">
-          <div className="flex items-center gap-3">
-            <img
-              src={userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`}
-              alt={userName}
-              className="w-14 h-14 rounded-2xl object-cover shadow-lg shadow-zinc-900/10"
-            />
-            <div className="flex-1">
-              <p className="text-base font-[800]">{userName}</p>
-              <button
-                onClick={() => setShowInfoModal(true)}
-                className="flex items-center gap-2 mt-0.5 active:scale-95 transition-all"
-              >
-                <FiStar className="text-amber-500" size={16} fill="currentColor" />
-                <span className="text-xl font-[800] leading-none">
-                  {userKarma === null? "..." : userKarma}
-                </span>
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <ChatButton chatId={currentChatId} variant="default" showDetails />
-              <button
-                onClick={() => setShowStatusModal(true)}
-                className={cn(
-                  "h-11 px-3 rounded-2xl flex items-center gap-2 active:scale-90 transition-all border-2",
-                  accountStatus === "active" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
-                  accountStatus === "warning" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
-                  accountStatus === "banned" && "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-700 dark:text-red-400"
-                )}
-              >
-                <div className={cn(
-                  "w-2 h-2 rounded-full",
-                  accountStatus === "active" && "bg-green-500",
-                  accountStatus === "warning" && "bg-yellow-500",
-                  accountStatus === "banned" && "bg-red-500"
-                )} />
-                <span className="text-xs font-[700]">
-                  {accountStatus === "active"? "Tích cực" : accountStatus === "warning"? "Cảnh báo" : "Bị cấm"}
-                </span>
-              </button>
-              <button
-                onClick={openFilterModal}
-                disabled={isDisabled}
-                className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90 shadow-lg shadow-zinc-900/5 disabled:opacity-40"
-              >
-                <FiSettings size={20} className="text-zinc-700 dark:text-zinc-300" />
-              </button>
-            </div>
+  <div className="min-h-dvh bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-white">
+    <div className="max-w-2xl mx-auto px-4 py-5 space-y-4 pb-24">
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20">
+        <div className="flex items-center gap-3">
+          <img
+            src={userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`}
+            alt={userName}
+            className="w-14 h-14 rounded-2xl object-cover shadow-lg shadow-zinc-900/10"
+          />
+          <div className="flex-1">
+            <p className="text-base font-[800]">{userName}</p>
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="flex items-center gap-2 mt-0.5 active:scale-95 transition-all"
+            >
+              <FiStar className="text-amber-500" size={16} fill="currentColor" />
+              <span className="text-xl font-[800] leading-none">
+                {userKarma === null? "..." : userKarma}
+              </span>
+            </button>
           </div>
-          {accountStatus === "banned" && (
-            <div className="mt-3 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-sm text-red-700 dark:text-red-400 font-[600] flex items-center gap-2">
-              <FiUserX size={16} />
-              Tài khoản bị cấm chat người lạ
-            </div>
-          )}
-        </div>
+          <div className="flex items-center gap-2">
+            <ChatButton chatId={currentChatId} variant="default" showDetails />
+            <button
+              onClick={() => setShowStatusModal(true)}
+              className={cn(
+                "h-11 px-3 rounded-2xl flex items-center gap-2 active:scale-90 transition-all border-2",
+                accountStatus === "active" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
+                accountStatus === "warning" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
+                accountStatus === "banned" && "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-700 dark:text-red-400"
+              )}
+            >
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                accountStatus === "active" && "bg-green-500",
+                accountStatus === "warning" && "bg-yellow-500",
+                accountStatus === "banned" && "bg-red-500"
+              )} />
+              <span className="text-xs font-[700]">
+                {accountStatus === "active"? "Tích cực" : accountStatus === "warning"? "Cảnh báo" : "Bị cấm"}
+              </span>
+            </button>
+            <button
+              onClick={openFilterModal}
+              disabled={isDisabled}
+              className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90 shadow-lg shadow-zinc-900/5 disabled:opacity-40"
+            >
+              <FiSettings size={20} className="text-zinc-700 dark:text-zinc-300" />
+            </button>
+          </div>
+        {accountStatus === "banned" && (
+          <div className="mt-3 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-sm text-red-700 dark:text-red-400 font-[600] flex items-center gap-2">
+            <FiUserX size={16} />
+            Tài khoản bị cấm chat người lạ
+          </div>
+        )}
+      </div>
 
-        <AnimatePresence mode="wait">
-    {inQueue? (
-  <motion.div
-    key="queue"
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    exit={{ opacity: 0, scale: 0.95 }}
-    className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
-  >
-    <div className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-blue-600/30">
-      <FiLoader className="text-white animate-spin" size={36} />
-    </div>
-    <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
-    <p className="text-sm text-zinc-500 mb-2">
-      {queueData?.interests
-       ? queueData.interests.length === CATEGORIES.length - 1
-         ? "Tất cả mục"
-          : `${queueData.interests.length} mục đã chọn`
-        : selectAllMode
-         ? "Tất cả mục"
-          : `${selectedCats.length} mục đã chọn`
-      }
-    </p>
-    <p className="text-xs text-zinc-400 mb-6">
-      Bạn có thể thoát ra, hệ thống sẽ tự thông báo khi có người match
-    </p>
-    <button
-      onClick={handleCancelQueue}
-      className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-[700] active:scale-95 transition-all"
-    >
-      Hủy tìm kiếm
-    </button>
-  </motion.div>
-) : (
+      <AnimatePresence mode="wait">
+        {matchedChatId? (
+          <motion.div
+            key="matched"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-green-50 dark:bg-green-900/20 rounded-3xl p-8 border border-green-200 dark:border-green-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
+          >
+            <div className="w-20 h-20 mx-auto mb-4 bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-600/30">
+              <FiCheck className="text-white" size={36} />
+            </div>
+            <h3 className="text-lg font-[800] mb-2">Đã tìm thấy bạn!</h3>
+            <p className="text-sm text-zinc-500 mb-6">
+              Bấm để bắt đầu trò chuyện ngay
+            </p>
+            <button
+              onClick={() => router.push(`/chat/${matchedChatId}`)}
+              className="w-full h-12 bg-green-600 text-white rounded-xl font-[700] active:scale-95 transition-all"
+            >
+              Trò chuyện ngay
+            </button>
+          </motion.div>
+        ) : inQueue? (
+          <motion.div
+            key="queue"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
+          >
+            <div className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-blue-600/30">
+              <FiLoader className="text-white animate-spin" size={36} />
+            </div>
+            <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
+            <p className="text-sm text-zinc-500 mb-2">
+              {queueData?.interests
+              ? queueData.interests.length === CATEGORIES.length - 1
+                ? "Tất cả mục"
+                  : `${queueData.interests.length} mục đã chọn`
+                : selectAllMode
+                ? "Tất cả mục"
+                  : `${selectedCats.length} mục đã chọn`
+              }
+            </p>
+            <p className="text-xs text-zinc-400 mb-6">
+              Bạn có thể thoát ra, hệ thống sẽ tự thông báo khi có người match
+            </p>
+            <button
+              onClick={handleCancelQueue}
+              className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-[700] active:scale-95 transition-all"
+            >
+              Hủy tìm kiếm
+            </button>
+          </motion.div>
+        ) : (
             <motion.div
               key="grid"
               initial={{ opacity: 0 }}
