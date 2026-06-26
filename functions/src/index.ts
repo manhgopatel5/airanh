@@ -415,21 +415,19 @@ export const updateHotScore = onSchedule(
   }
 );
 
-// 8. TÌM NGƯỜI LẠ CHAT 1-1 - ĐÃ FIX
+// 8. TÌM NGƯỜI LẠ CHAT 1-1 - BỎ VOICE
 export const findStranger = onCall(
   { region: "asia-southeast1" },
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
 
-    const { interests, ageRange, wantGender, voiceUrl } = request.data;
+    const { interests, ageRange, wantGender } = request.data; // BỎ voiceUrl
 
     if (!interests || interests.length < 3) {
       throw new HttpsError("invalid-argument", "Chọn ít nhất 3 sở thích");
     }
-    if (!voiceUrl) {
-      throw new HttpsError("invalid-argument", "Cần voice intro");
-    }
+    // XÓA CHECK voiceUrl
 
     const userDoc = await db.doc(`users/${uid}`).get();
     const userData = userDoc.data();
@@ -447,7 +445,6 @@ export const findStranger = onCall(
     .limit(20)
     .get();
 
-    // SỬA TYPE Ở ĐÂY
     let bestMatch: DocumentSnapshot | null = null;
     let maxCommon = 0;
 
@@ -467,7 +464,7 @@ export const findStranger = onCall(
 
     if (bestMatch) {
       const other = bestMatch.data();
-      if (!other) throw new HttpsError("internal", "Lỗi data"); // THÊM CHECK
+      if (!other) throw new HttpsError("internal", "Lỗi data");
       
       const chatId = `str_${[uid, other.userId].sort().join("_")}_${Date.now()}`;
 
@@ -482,7 +479,7 @@ export const findStranger = onCall(
           members: [uid, other.userId],
           topic: interests,
           ageRange,
-          voiceIntros: { [uid]: voiceUrl, [other.userId]: other.voiceUrl },
+          // XÓA voiceIntros
           messages: [],
           createdAt: FieldValue.serverTimestamp(),
           expiresAt: Timestamp.fromDate(new Date(Date.now() + 5 * 60 * 1000)),
@@ -502,7 +499,7 @@ export const findStranger = onCall(
       interests,
       ageRange,
       wantGender,
-      voiceUrl,
+      // XÓA voiceUrl
       gender: userGender,
       status: "waiting",
       createdAt: FieldValue.serverTimestamp(),
