@@ -17,12 +17,14 @@ interface Message {
 
 interface ChatData {
   members: string[];
-  partnerNames: Record<string, string>;
-  partnerAvatars: Record<string, string>;
   status: "active" | "ended" | "waiting";
-  onlineStatus: Record<string, boolean>;
-  unreadCounts?: Record<string, number>; // THÊM DÒNG NÀY
   messages?: Message[];
+  partnerName?: string;
+  partnerAvatar?: string;
+  partnerNames?: Record<string, string>;
+  partnerAvatars?: Record<string, string>;
+  onlineStatus?: Record<string, boolean>;
+  unreadCounts?: Record<string, number>;
 }
 
 export default function ChatRoomPage() {
@@ -34,62 +36,65 @@ export default function ChatRoomPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const partnerId = chatData?.members.find(m => m!== user?.uid) || "";
-  const partnerName = chatData?.partnerNames?.[partnerId] || "Người lạ";
-  const partnerAvatar = chatData?.partnerAvatars?.[partnerId] || "";
+  const partnerId = chatData?.members?.find(m => m!== user?.uid) || "";
+  const partnerName = chatData?.partnerNames?.[partnerId] || chatData?.partnerName || "Người lạ";
+  const partnerAvatar = chatData?.partnerAvatars?.[partnerId] || chatData?.partnerAvatar || "";
   const isPartnerOnline = chatData?.onlineStatus?.[partnerId] || false;
 
-  // Load chat data
   useEffect(() => {
-    if (!chatId ||!user?.uid) return;
-
-    const unsub = onSnapshot(doc(db, "stranger_chats", chatId), (snap) => {
-      if (!snap.exists()) {
-        toast.error("Không tìm thấy cuộc trò chuyện");
-        router.push("/stranger");
-        return;
-      }
-      const data = snap.data() as ChatData;
-
-      // Check user có trong members không
-      if (!data.members.includes(user.uid)) {
-        toast.error("Bạn không có quyền truy cập");
-        router.push("/stranger");
-        return;
-      }
-
-      setChatData(data);
+    if (!chatId ||!user?.uid) {
       setLoading(false);
+      setError("Thiếu thông tin");
+      return;
+    }
 
-      // Reset unread khi vào chat
-      updateDoc(snap.ref, {
-        [`unreadCounts.${user.uid}`]: 0,
-        [`onlineStatus.${user.uid}`]: true,
-      });
-    });
+    const unsub = onSnapshot(doc(db, "stranger_chats", chatId), 
+      (snap) => {
+        if (!snap.exists()) {
+          setError("Không tìm thấy cuộc trò chuyện");
+          setLoading(false);
+          setTimeout(() => router.push("/stranger/chats"), 2000);
+          return;
+        }
+        
+        const data = snap.data() as ChatData;
+
+        if (!data.members?.includes(user.uid)) {
+          setError("Bạn không có quyền truy cập");
+          setLoading(false);
+          setTimeout(() => router.push("/stranger/chats"), 2000);
+          return;
+        }
+
+        setChatData(data);
+        setMessages(data.messages || []);
+        setLoading(false);
+        setError(null);
+
+        updateDoc(snap.ref, {
+          [`unreadCounts.${user.uid}`]: 0,
+          [`onlineStatus.${user.uid}`]: true,
+        }).catch(() => {});
+      },
+      (err) => {
+        console.error("Snapshot error:", err);
+        setError(`Lỗi: ${err.code}`);
+        setLoading(false);
+      }
+    );
 
     return () => {
-      // Set offline khi rời chat
-      if (user?.uid) {
+      if (user?.uid && chatId) {
         updateDoc(doc(db, "stranger_chats", chatId), {
           [`onlineStatus.${user.uid}`]: false,
-        });
+        }).catch(() => {});
       }
       unsub();
     };
   }, [chatId, user?.uid, db, router]);
-
-  // Load messages
-  useEffect(() => {
-    if (!chatId) return;
-    const unsub = onSnapshot(doc(db, "stranger_chats", chatId), (snap) => {
-      const data = snap.data();
-      setMessages(data?.messages || []);
-    });
-    return () => unsub();
-  }, [chatId, db]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -112,10 +117,11 @@ export default function ChatRoomPage() {
         messages: arrayUnion(msg),
         lastMessage: input.trim(),
         lastMessageTime: serverTimestamp(),
-        [`unreadCounts.${partnerId}`]: (chatData?.unreadCounts?.[partnerId] || 0) + 1,
+        [`unreadCounts.${partnerId}`]: ((chatData?.unreadCounts || {})[partnerId] || 0) + 1,
       });
-    } catch {
+    } catch (err: any) {
       toast.error("Gửi tin nhắn thất bại");
+      console.error(err);
     }
   };
 
@@ -126,8 +132,8 @@ export default function ChatRoomPage() {
         status: "ended",
         endedAt: serverTimestamp(),
       });
-      toast.success("Đã kết thúc cuộc trò chuyện");
-      router.push("/stranger");
+      toast.success("Đã kết thúc");
+      router.push("/stranger/chats");
     } catch {
       toast.error("Lỗi kết thúc chat");
     }
@@ -137,21 +143,28 @@ export default function ChatRoomPage() {
     return (
       <div className="h-screen bg-white dark:bg-black p-4 space-y-3">
         <div className="h-14 bg-zinc-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
-        {[1,2,3,4].map(i => (
-          <div key={i} className={cn(
-            "h-12 w-2/3 rounded-2xl animate-pulse",
-            i % 2 === 0? "ml-auto bg-blue-100 dark:bg-blue-900/30" : "bg-zinc-100 dark:bg-zinc-900"
-          )} />
-        ))}
+        <div className="h-12 w-2/3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
+        <div className="h-12 w-1/2 ml-auto bg-blue-100 dark:bg-blue-900/30 rounded-2xl animate-pulse" />
       </div>
     );
   }
 
-  if (!chatData) return null;
+  if (error ||!chatData) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center gap-4 bg-white dark:bg-black">
+        <p className="text-zinc-500">{error || "Không tìm thấy chat"}</p>
+        <button
+          onClick={() => router.push("/stranger/chats")}
+          className="px-6 h-11 bg-blue-600 text-white rounded-xl font-[700] active:scale-95"
+        >
+          Về danh sách chat
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col bg-white dark:bg-black">
-      {/* Header */}
       <div className="h-16 px-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
@@ -188,8 +201,12 @@ export default function ChatRoomPage() {
         )}
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        {messages.length === 0 && (
+          <p className="text-center text-sm text-zinc-400 mt-8">
+            Bắt đầu cuộc trò chuyện 👋
+          </p>
+        )}
         {messages.map((msg) => {
           const isMe = msg.senderId === user?.uid;
           return (
@@ -198,7 +215,7 @@ export default function ChatRoomPage() {
                 className={cn(
                   "max-w-[75%] px-4 py-2 rounded-2xl text-sm",
                   isMe
-                  ? "bg-blue-600 text-white rounded-br-md"
+                ? "bg-blue-600 text-white rounded-br-md"
                     : "bg-zinc-100 dark:bg-zinc-900 rounded-bl-md"
                 )}
               >
@@ -210,7 +227,6 @@ export default function ChatRoomPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       {chatData.status === "active"? (
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black">
           <div className="flex items-center gap-2">
