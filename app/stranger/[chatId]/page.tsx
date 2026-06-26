@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useParams, useRouter } from "next/navigation";
-import { FiArrowLeft, FiSend, FiX } from "react-icons/fi";
+import { FiArrowLeft, FiSend } from "react-icons/fi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
