@@ -242,7 +242,7 @@ export default function ChatRoomPage() {
     }
   };
 
-  const handleContinueSearch = async () => {
+const handleContinueSearch = async () => {
   if (!chatId ||!user?.uid || isSearching) return;
   setIsSearching(true);
   try {
@@ -251,27 +251,32 @@ export default function ChatRoomPage() {
       endedAt: serverTimestamp(),
     });
     
-    // LẤY ĐÚNG FILTER TỪ CHAT CŨ
     const oldFilters = chatData?.filters;
-    if (!oldFilters) {
-      toast.error("Không tìm thấy bộ lọc cũ");
+    if (!oldFilters ||!oldFilters.interests?.length) {
+      toast.error("Không tìm thấy bộ lọc cũ, về trang chủ chọn lại");
       router.push("/stranger");
       return;
     }
     
-    const newChatId = await matchStranger(user.uid, {
-      interests: oldFilters.interests || [],
-      ageRange: oldFilters.ageRange as any || "18-30",
-      wantGender: oldFilters.wantGender as any || "all",
-      province: oldFilters.province || "Toàn quốc"
+    const functions = getFunctions(getApp(), "asia-southeast1");
+    const findFn = httpsCallable(functions, 'findStranger');
+
+    const result = await findFn({
+      interests: oldFilters.interests,
+      ageRange: oldFilters.ageRange,
+      wantGender: oldFilters.wantGender,
+      province: oldFilters.province
     });
-    
-    if (newChatId) {
-      setMatchedChatId(newChatId);
+
+    const data = result.data as { chatId: string, matched: boolean };
+
+    if (data.matched) {
+      setMatchedChatId(data.chatId);
       toast.success("Đã tìm thấy bạn phù hợp!");
     } else {
+      // QUAN TRỌNG: KHÔNG PUSH NỮA, Ở LẠI TRANG NÀY
       toast.info("Đang tìm người phù hợp...");
-      router.push("/stranger");
+      // router.push("/stranger"); // XÓA DÒNG NÀY
     }
   } catch (err: any) {
     console.error(err);
