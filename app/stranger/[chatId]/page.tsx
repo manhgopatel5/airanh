@@ -4,11 +4,12 @@ import { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { doc, getDoc, onSnapshot, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useParams, useRouter } from "next/navigation";
-import { FiSend, FiSmile, FiUserPlus, FiAlertCircle, FiClock, FiX } from "react-icons/fi";
+import { FiSend, FiSmile, FiUserPlus, FiAlertCircle, FiClock, FiX, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import EmojiPicker, { EmojiClickData, Theme, EmojiStyle } from "emoji-picker-react";
 import { sendFriendRequest, acceptRequest, type FriendRequest } from "@/lib/friendService";
+
 interface Message {
   id: string;
   text: string;
@@ -53,7 +54,6 @@ export default function ChatRoomPage() {
   const hasSentRequest = chatData?.friendRequests?.[user?.uid || ""] || false;
   const partnerSentRequest = chatData?.friendRequests?.[partnerId] || false;
 
-  // Click outside emoji để đóng
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (emojiRef.current &&!emojiRef.current.contains(e.target as Node)) {
@@ -64,38 +64,31 @@ export default function ChatRoomPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showEmoji]);
 
-  // Auto scroll khi có tin nhắn mới
   useLayoutEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   }, [messages]);
 
-  // Countdown timer
   useEffect(() => {
     if (!chatData?.expiresAt) return;
-
     const expires = chatData.expiresAt.toMillis();
     const interval = setInterval(() => {
       const now = Date.now();
       const diff = Math.max(0, Math.floor((expires - now) / 1000));
       setTimeLeft(diff);
-
       if (diff === 120 &&!hasSentNotice.current) {
         hasSentNotice.current = true;
         setShowInviteNotice(true);
       }
-
       if (diff === 0) {
         setIsExpired(true);
         clearInterval(interval);
       }
     }, 1000);
-
     return () => clearInterval(interval);
   }, [chatData?.expiresAt]);
 
   useEffect(() => {
     if (authLoading) return;
-
     if (!chatId ||!user?.uid) {
       setLoading(false);
       setError("Thiếu thông tin");
@@ -111,21 +104,17 @@ export default function ChatRoomPage() {
           setLoading(false);
           return;
         }
-
         const data = snap.data() as ChatData;
-
         if (!data.members?.includes(user.uid)) {
           setError("Bạn không có quyền truy cập");
           setLoading(false);
           setTimeout(() => router.push("/stranger"), 2000);
           return;
         }
-
         setChatData(data);
         setMessages(data.messages || []);
         setLoading(false);
         setError(null);
-
         if (!hasSetOnline.current) {
           hasSetOnline.current = true;
           updateDoc(chatRef, {
@@ -151,59 +140,52 @@ export default function ChatRoomPage() {
     };
   }, [chatId, user?.uid, authLoading, db, router]);
 
-  
-const handleSend = async () => {
-  if (!input.trim() ||!user?.uid ||!chatId || chatData?.status === "ended" || isExpired) return;
-
-  const msg: Message = {
-    id: crypto.randomUUID(),
-    text: input.trim(),
-    senderId: user.uid,
-    timestamp: new Date(),
+  const handleSend = async () => {
+    if (!input.trim() ||!user?.uid ||!chatId || chatData?.status === "ended" || isExpired) return;
+    const msg: Message = {
+      id: crypto.randomUUID(),
+      text: input.trim(),
+      senderId: user.uid,
+      timestamp: new Date(),
+    };
+    const text = input.trim();
+    setInput("");
+    setShowEmoji(false);
+    inputRef.current?.focus();
+    try {
+      await updateDoc(doc(db, "stranger_chats", chatId), {
+        messages: arrayUnion(msg),
+        lastMessage: text,
+        lastMessageTime: serverTimestamp(),
+        [`unreadCounts.${partnerId}`]: ((chatData?.unreadCounts || {})[partnerId] || 0) + 1,
+      });
+    } catch (err: any) {
+      toast.error("Gửi tin nhắn thất bại");
+      console.error(err);
+      setInput(text);
+    }
   };
 
-  const text = input.trim();
-  setInput("");
-  setShowEmoji(false);
-  inputRef.current?.focus();
-
-  try {
-    await updateDoc(doc(db, "stranger_chats", chatId), {
-      messages: arrayUnion(msg),
-      lastMessage: text,
-      lastMessageTime: serverTimestamp(),
-      [`unreadCounts.${partnerId}`]: ((chatData?.unreadCounts || {})[partnerId] || 0) + 1,
-    });
-  } catch (err: any) {
-    toast.error("Gửi tin nhắn thất bại");
-    console.error(err);
-    setInput(text);
-  }
-};
-
-// THÊM HÀM NÀY
-const handleSendWave = async () => {
-  if (!user?.uid ||!chatId || chatData?.status === "ended" || isExpired) return;
-
-  const msg: Message = {
-    id: crypto.randomUUID(),
-    text: "👋",
-    senderId: user.uid,
-    timestamp: new Date(),
+  const handleSendWave = async () => {
+    if (!user?.uid ||!chatId || chatData?.status === "ended" || isExpired) return;
+    const msg: Message = {
+      id: crypto.randomUUID(),
+      text: "👋",
+      senderId: user.uid,
+      timestamp: new Date(),
+    };
+    try {
+      await updateDoc(doc(db, "stranger_chats", chatId), {
+        messages: arrayUnion(msg),
+        lastMessage: "👋",
+        lastMessageTime: serverTimestamp(),
+        [`unreadCounts.${partnerId}`]: ((chatData?.unreadCounts || {})[partnerId] || 0) + 1,
+      });
+    } catch (err: any) {
+      toast.error("Gửi tin nhắn thất bại");
+      console.error(err);
+    }
   };
-
-  try {
-    await updateDoc(doc(db, "stranger_chats", chatId), {
-      messages: arrayUnion(msg),
-      lastMessage: "👋",
-      lastMessageTime: serverTimestamp(),
-      [`unreadCounts.${partnerId}`]: ((chatData?.unreadCounts || {})[partnerId] || 0) + 1,
-    });
-  } catch (err: any) {
-    toast.error("Gửi tin nhắn thất bại");
-    console.error(err);
-  }
-};
 
   const handleEmojiClick = (emojiData: EmojiClickData) => {
     setInput(prev => prev + emojiData.emoji);
@@ -211,37 +193,29 @@ const handleSendWave = async () => {
   };
 
   const handleSendFriendRequest = async () => {
-  if (!chatId ||!user?.uid || hasSentRequest ||!partnerId) return;
-
-  try {
-    // 1. Update UI chat để disable nút
-    await updateDoc(doc(db, "stranger_chats", chatId), {
-      [`friendRequests.${user.uid}`]: true,
-    });
-
-    // 2. Dùng hàm chuẩn từ friendService
-    await sendFriendRequest(user.uid, partnerId);
-    
-    toast.success("Đã gửi lời mời kết bạn");
-
-    // 3. Nếu partner cũng gửi rồi thì accept luôn
-    if (partnerSentRequest) {
-      const requestId = [user.uid, partnerId].sort().join("_");
-      const reqSnap = await getDoc(doc(db, "friendRequests", requestId));
-      if (reqSnap.exists()) {
-        await acceptRequest({ id: requestId, ...reqSnap.data() } as FriendRequest);
-        toast.success("Đã kết bạn thành công! 🎉");
+    if (!chatId ||!user?.uid || hasSentRequest ||!partnerId) return;
+    try {
+      await updateDoc(doc(db, "stranger_chats", chatId), {
+        [`friendRequests.${user.uid}`]: true,
+      });
+      await sendFriendRequest(user.uid, partnerId);
+      toast.success("Đã gửi lời mời kết bạn");
+      if (partnerSentRequest) {
+        const requestId = [user.uid, partnerId].sort().join("_");
+        const reqSnap = await getDoc(doc(db, "friendRequests", requestId));
+        if (reqSnap.exists()) {
+          await acceptRequest({ id: requestId,...reqSnap.data() } as FriendRequest);
+          toast.success("Đã kết bạn thành công! 🎉");
+        }
       }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Lỗi gửi lời mời");
+      await updateDoc(doc(db, "stranger_chats", chatId), {
+        [`friendRequests.${user.uid}`]: false,
+      }).catch(() => {});
     }
-  } catch (err: any) {
-    console.error(err);
-    toast.error(err.message || "Lỗi gửi lời mời");
-    // Rollback UI nếu lỗi
-    await updateDoc(doc(db, "stranger_chats", chatId), {
-      [`friendRequests.${user.uid}`]: false,
-    }).catch(() => {});
-  }
-};
+  };
 
   const handleEndChat = async () => {
     if (!chatId) return;
@@ -254,6 +228,19 @@ const handleSendWave = async () => {
       router.push("/stranger");
     } catch {
       toast.error("Lỗi kết thúc chat");
+    }
+  };
+
+  const handleContinueSearch = async () => {
+    if (!chatId) return;
+    try {
+      await updateDoc(doc(db, "stranger_chats", chatId), {
+        status: "ended",
+        endedAt: serverTimestamp(),
+      });
+      router.push("/stranger");
+    } catch {
+      toast.error("Lỗi");
     }
   };
 
@@ -270,16 +257,12 @@ const handleSendWave = async () => {
           <FiAlertCircle size={40} className="text-zinc-400" />
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-[800] text-zinc-900 dark:text-white">
-            Cuộc trò chuyện đã bị xoá
-          </h2>
-          <p className="text-sm text-zinc-500">
-            Phòng chat này đã hết hạn sau 5 phút
-          </p>
+          <h2 className="text-xl font-[800] text-zinc-900 dark:text-white">Cuộc trò chuyện đã bị xoá</h2>
+          <p className="text-sm text-zinc-500">Phòng chat này đã hết hạn sau 5 phút</p>
         </div>
         <button
           onClick={() => router.push("/stranger")}
-          className="px-8 h-12 bg-blue-600 text-white rounded-2xl font-[700] active:scale-95 transition-all"
+          className="px-8 h-12 bg-blue-600 text-white rounded-2xl font-[700] active:scale-95 transition-all shadow-lg shadow-blue-500/30"
         >
           Quay về
         </button>
@@ -303,7 +286,7 @@ const handleSendWave = async () => {
         <p className="text-zinc-500">{error || "Không tìm thấy chat"}</p>
         <button
           onClick={() => router.push("/stranger")}
-          className="px-6 h-11 bg-blue-600 text-white rounded-xl font-[700] active:scale-95"
+          className="px-6 h-11 bg-blue-600 text-white rounded-xl font-[700] active:scale-95 shadow-lg shadow-blue-500/30"
         >
           Về trang chủ
         </button>
@@ -315,57 +298,50 @@ const handleSendWave = async () => {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-zinc-50 to-white dark:from-black dark:to-zinc-950">
-      {/* Top Bar: Notice + Timer + Kết thúc */}
-      <div className="shrink-0 bg-gradient-to-r from-red-500 to-rose-500 text-white px-4 py-2 flex items-center justify-between" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
-        <div className="flex-1 text-xs font-[700]">
-          Cuộc trò chuyện sẽ tự động xoá sau 5 phút
-        </div>
-        <div className="flex items-center gap-2">
-          <div className={cn(
-            "px-3 py-1.5 rounded-lg font-[800] transition-all flex items-center gap-1 bg-white/20 backdrop-blur",
-            isUrgent && "animate-pulse"
-          )}>
-            <FiClock size={14} />
-            {formatTime(timeLeft)}
-          </div>
-          {chatData.status === "active" && (
-            <button
-              onClick={handleEndChat}
-              className="px-3 h-8 bg-white/20 backdrop-blur text-white rounded-lg text-xs font-[700] active:scale-95 flex items-center gap-1"
-            >
-              <FiX size={16} />
-              Kết thúc
-            </button>
+      {/* Top Bar: 3 nút cân đối, 3 màu khác nhau, nền trắng */}
+      <div className="shrink-0 bg-white dark:bg-black px-3 py-2 flex items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
+        <button
+          className={cn(
+            "flex-1 px-3 h-9 rounded-xl font-[800] text-sm transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95",
+            isUrgent? "bg-amber-500 text-white animate-pulse" : "bg-blue-500 text-white"
           )}
-        </div>
+        >
+          <FiClock size={16} />
+          {formatTime(timeLeft)}
+        </button>
+        
+        <button
+          onClick={handleEndChat}
+          className="flex-1 px-3 h-9 bg-rose-500 text-white rounded-xl text-sm font-[800] active:scale-95 flex items-center justify-center gap-1.5 shadow-md"
+        >
+          <FiX size={16} />
+          Kết thúc
+        </button>
+
+        <button
+          onClick={handleContinueSearch}
+          className="flex-1 px-3 h-9 bg-emerald-500 text-white rounded-xl text-sm font-[800] active:scale-95 flex items-center justify-center gap-1.5 shadow-md"
+        >
+          <FiRefreshCw size={16} />
+          Tiếp tục
+        </button>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
- {messages.length === 0 && (
-  <button
-    onClick={handleSendWave}
-    className="flex flex-col items-center justify-center h-full gap-2 active:scale-95 transition-all"
-  >
-    <div className="text-6xl animate-waving">👋</div>
-    <p className="text-sm text-zinc-400 font-[600]">
-      Bắt đầu cuộc trò chuyện
-    </p>
-  </button>
-)}
-
+        {/* Notice sắp hết giờ - GHIM ĐẦU */}
         {showInviteNotice && timeLeft <= 120 && timeLeft > 0 && (
-          <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-2 border-red-500 rounded-2xl p-4 mx-2 animate-in">
+          <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-2 border-amber-500 rounded-2xl p-4 mb-3 shadow-lg">
             <div className="flex items-start gap-3">
-              <FiAlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
+              <FiAlertCircle className="text-amber-500 flex-shrink-0 mt-0.5" size={20} />
               <div className="flex-1">
-                <p className="text-sm font-[700] text-red-600 dark:text-red-400 mb-2">
+                <p className="text-sm font-[700] text-amber-600 dark:text-amber-400 mb-2">
                   Sắp hết giờ! Gửi lời mời để giữ liên lạc
                 </p>
                 <button
                   onClick={handleSendFriendRequest}
                   disabled={hasSentRequest}
-                  className="w-full h-10 bg-gradient-to-r from-red-600 to-rose-600 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-700 dark:disabled:to-zinc-700 text-white rounded-xl text-sm font-[700] active:scale-95 flex items-center justify-center gap-2"
+                  className="w-full h-10 bg-gradient-to-r from-amber-500 to-orange-500 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-700 dark:disabled:to-zinc-700 text-white rounded-xl text-sm font-[700] active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/30"
                 >
                   <FiUserPlus size={16} />
                   {hasSentRequest? "Đã gửi lời mời" : "Gửi lời mời kết bạn"}
@@ -373,6 +349,16 @@ const handleSendWave = async () => {
               </div>
             </div>
           </div>
+        )}
+
+        {messages.length === 0 && (
+          <button
+            onClick={handleSendWave}
+            className="flex flex-col items-center justify-center h-full gap-2 active:scale-95 transition-all w-full"
+          >
+            <div className="text-6xl animate-waving">👋</div>
+            <p className="text-sm text-zinc-400 font-[600]">Bắt đầu cuộc trò chuyện</p>
+          </button>
         )}
 
         {messages.map((msg) => {
@@ -385,15 +371,14 @@ const handleSendWave = async () => {
               </div>
             );
           }
-
           const isMe = msg.senderId === user?.uid;
           return (
             <div key={msg.id} className={cn("flex", isMe? "justify-end" : "justify-start")}>
               <div
                 className={cn(
-                  "max-w-[75%] px-4 py-2.5 rounded-3xl text-sm shadow-sm break-words",
+                  "max-w-[75%] px-4 py-2.5 rounded-3xl text-sm shadow-md break-words",
                   isMe
-               ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
+              ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
                     : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-bl-lg"
                 )}
               >
@@ -403,9 +388,18 @@ const handleSendWave = async () => {
           );
         })}
         <div ref={messagesEndRef} />
+
+        {/* Text thông báo tự xóa - căn giữa trong khung chat */}
+        {chatData.status === "active" && (
+          <div className="text-center pt-4">
+            <p className="text-xs text-zinc-400 font-[600]">
+              Cuộc trò chuyện sẽ tự động xoá sau 5 phút
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Input - Fixed bottom */}
+      {/* Input - Nút nổi, bỏ viền xanh khi focus */}
       {chatData.status === "active"? (
         <div className="shrink-0 p-3 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-black/95 backdrop-blur-xl" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
           {showEmoji && (
@@ -426,7 +420,7 @@ const handleSendWave = async () => {
           <div className="flex items-end gap-2">
             <button
               onClick={() => setShowEmoji(!showEmoji)}
-              className="w-11 h-11 bg-zinc-100 dark:bg-zinc-900 rounded-2xl flex items-center justify-center active:scale-90 shrink-0"
+              className="w-11 h-11 bg-zinc-100 dark:bg-zinc-900 rounded-2xl flex items-center justify-center active:scale-90 shrink-0 shadow-md"
             >
               <FiSmile size={22} />
             </button>
@@ -436,12 +430,12 @@ const handleSendWave = async () => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSend()}
               placeholder="Nhắn tin..."
-              className="flex-1 min-h-11 max-h-[120px] px-4 py-3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl outline-none text-sm"
+              className="flex-1 min-h-11 max-h-[120px] px-4 py-3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl outline-none text-sm shadow-md focus:ring-0 focus:border-transparent"
             />
             <button
               onClick={handleSend}
               disabled={!input.trim()}
-              className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-800 dark:disabled:to-zinc-800 text-white rounded-2xl flex items-center justify-center active:scale-90 shrink-0"
+              className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-800 dark:disabled:to-zinc-800 text-white rounded-2xl flex items-center justify-center active:scale-90 shrink-0 shadow-lg shadow-blue-500/30"
             >
               <FiSend size={18} />
             </button>
