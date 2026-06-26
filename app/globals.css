@@ -447,35 +447,3 @@
   font-size: 26px!important;
 }
 
-/* Ẩn preview "What's Your Mood?" */
-.EmojiPickerReact.epr-preview {
-  display: none!important;
-}
-
-/* Fix iOS keyboard overlap */
-@supports (-webkit-touch-callout: none) {
-.EmojiPickerReact {
-    margin-bottom: env(safe-area-inset-bottom);
-  }
-}
-
-/* ================= FIX CHAT LAYOUT ================= */
-
-/* Dùng grid thay flex để cố định header/footer */
-.h-dvh {
-  height: 100dvh;
-  height: -webkit-fill-available;
-}
-
-@supports (height: 100dvh) {
- .h-dvh {
-    height: 100dvh;
-  }
-}
-
-/* Fix iOS safe area */
-@supports (padding: max(0px)) {
-.pb-safe {
-    padding-bottom: max(12px, env(safe-area-inset-bottom))!important;
-  }
-}
