@@ -410,49 +410,72 @@
   }
 }
 
-/* ================= MODAL OPEN - HIDE BOTTOM NAV ================= */
-
-body.modal-open nav,
-body.modal-open.fixed.bottom-0,
-body.modal-open [class*="bottom-0"] {
-
-  display: none !important;
-}
 /* ================= EMOJI PICKER FIX ================= */
 
 .EmojiPickerReact {
-  --epr-emoji-size: 28px !important;
-  --epr-emoji-gap: 8px !important;
-  --epr-hover-bg-color: theme('colors.zinc.100') !important;
-  --epr-focus-bg-color: theme('colors.blue.100') !important;
-  --epr-bg-color: theme('colors.white') !important;
-  --epr-category-label-bg-color: theme('colors.zinc.50') !important;
-  --epr-text-color: theme('colors.zinc.900') !important;
-  --epr-search-input-bg-color: theme('colors.zinc.100') !important;
-  --epr-picker-border-color: theme('colors.zinc.200') !important;
-  border-radius: 1rem !important;
-  box-shadow: 0 10px 40px -10px rgb(0 0 0 / 0.2) !important;
+  --epr-emoji-size: 28px!important;
+  --epr-emoji-gap: 8px!important;
+  --epr-hover-bg-color: theme('colors.zinc.100')!important;
+  --epr-focus-bg-color: theme('colors.blue.100')!important;
+  --epr-bg-color: theme('colors.white')!important;
+  --epr-category-label-bg-color: theme('colors.zinc.50')!important;
+  --epr-text-color: theme('colors.zinc.900')!important;
+  --epr-search-input-bg-color: theme('colors.zinc.100')!important;
+  --epr-picker-border-color: theme('colors.zinc.200')!important;
+  --epr-search-input-border-radius: 12px!important;
+  border-radius: 1.5rem!important;
+  box-shadow: 0 20px 60px -10px rgb(0 0 0 / 0.25)!important;
+  border: 1px solid theme('colors.zinc.200')!important;
 }
 
-.dark .EmojiPickerReact {
-  --epr-hover-bg-color: theme('colors.zinc.800') !important;
-  --epr-focus-bg-color: theme('colors.blue.900') !important;
-  --epr-bg-color: theme('colors.zinc.900') !important;
-  --epr-category-label-bg-color: theme('colors.zinc.950') !important;
-  --epr-text-color: theme('colors.zinc.100') !important;
-  --epr-search-input-bg-color: theme('colors.zinc.800') !important;
-  --epr-picker-border-color: theme('colors.zinc.800') !important;
+.dark.EmojiPickerReact {
+  --epr-hover-bg-color: theme('colors.zinc.800')!important;
+  --epr-focus-bg-color: theme('colors.blue.900')!important;
+  --epr-bg-color: theme('colors.zinc.900')!important;
+  --epr-category-label-bg-color: theme('colors.zinc.950')!important;
+  --epr-text-color: theme('colors.zinc.100')!important;
+  --epr-search-input-bg-color: theme('colors.zinc.800')!important;
+  --epr-picker-border-color: theme('colors.zinc.800')!important;
+  border: 1px solid theme('colors.zinc.800')!important;
 }
 
-.EmojiPickerReact .epr-emoji-native,
-.EmojiPickerReact .epr-emoji {
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
-}
-
-.EmojiPickerReact .epr-preview {
-  display: none !important;
-}
-
+/* Fix emoji không hiện - ép dùng native font */
+.EmojiPickerReact.epr-emoji-native,
+.EmojiPickerReact.epr-emoji,
 .EmojiPickerReact li.epr-emoji-category-content button {
-  font-size: 24px !important;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"!important;
+  font-size: 26px!important;
+}
+
+/* Ẩn preview "What's Your Mood?" */
+.EmojiPickerReact.epr-preview {
+  display: none!important;
+}
+
+/* Fix iOS keyboard overlap */
+@supports (-webkit-touch-callout: none) {
+.EmojiPickerReact {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ================= FIX CHAT LAYOUT ================= */
+
+/* Dùng grid thay flex để cố định header/footer */
+.h-dvh {
+  height: 100dvh;
+  height: -webkit-fill-available;
+}
+
+@supports (height: 100dvh) {
+ .h-dvh {
+    height: 100dvh;
+  }
+}
+
+/* Fix iOS safe area */
+@supports (padding: max(0px)) {
+.pb-safe {
+    padding-bottom: max(12px, env(safe-area-inset-bottom))!important;
+  }
 }
