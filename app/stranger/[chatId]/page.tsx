@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import EmojiPicker, { EmojiClickData, Theme, EmojiStyle } from "emoji-picker-react";
 import { sendFriendRequest, acceptRequest, type FriendRequest } from "@/lib/friendService";
-import { matchStranger } from "@/lib/strangerService";
+
 
 interface Message {
   id: string;
