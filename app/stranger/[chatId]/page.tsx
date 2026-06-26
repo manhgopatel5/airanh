@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { doc, getDoc, onSnapshot, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useParams, useRouter } from "next/navigation";
-import { FiSend, FiSmile, FiUserPlus, FiAlertCircle, FiClock, FiX, FiRefreshCw } from "react-icons/fi";
+import { FiSend, FiCheckCircle, FiSmile, FiUserPlus, FiAlertCircle, FiClock, FiX, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import EmojiPicker, { EmojiClickData, Theme, EmojiStyle } from "emoji-picker-react";
