@@ -289,61 +289,59 @@ match /promoCodes/{code} {
       allow update, delete: if false;
     }
 
-match /notifications/{notifId} {
-  allow read: if isSignedIn() && request.auth.uid == resource.data.toUserId;
-  allow create: if isSignedIn();
-  allow update, delete: if isSignedIn() && request.auth.uid == resource.data.toUserId;
-}
-
-    // ========== STRANGER CHAT ==========
-    match /stranger_chats/{chatId} {
-      allow read: if isSignedIn() && request.auth.uid in resource.data.members;
-      allow create: if false;
-      allow update: if isSignedIn()
-        && request.auth.uid in resource.data.members
-        && request.resource.data.diff(resource.data).changedKeys()
-      .hasOnly(['messages', 'extended', 'expiresAt', 'reportedBy']);
-      allow delete: if false;
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.toUserId;
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.toUserId;
     }
 
-// ========== STRANGER QUEUE ==========
-match /stranger_queue/{userId} {
-  allow read: if isOwner(userId);
-  allow create: if isOwner(userId);
-  allow update: if isOwner(userId);
-  allow delete: if isOwner(userId);
-} 
-
-// ========== ORDERS ==========
-match /orders/{orderId} {
-  allow read: if isSignedIn() && (
-    request.auth.uid == resource.data.userId || 
-    isAdmin()
-  );
-  allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
-  allow update, delete: if false; 
-}
-// ========== STRANGER CHAT ==========
+    // ========== STRANGER CHAT - GỘP DUY NHẤT ==========
     match /stranger_chats/{chatId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.members;
-      allow create: if false;
+      allow create: if false; // Chỉ Cloud Function tạo
       allow update: if isSignedIn()
         && request.auth.uid in resource.data.members
         && request.resource.data.diff(resource.data).changedKeys()
           .hasOnly([
             'messages', 'lastMessage', 'lastMessageTime', 'status', 
             'endedAt', 'extended', 'expiresAt', 'reportedBy',
-            'unreadCounts', 'onlineStatus', 'partnerNames', 'partnerAvatars'
+            'unreadCounts', 'onlineStatus', 'partnerNames', 'partnerAvatars',
+            'members' // Cho phép arrayRemove khi ẩn chat
           ]);
       allow delete: if false;
+
+      match /messages/{msgId} {
+        allow read: if isSignedIn() && 
+          request.auth.uid in get(/databases/$(database)/documents/stranger_chats/$(chatId)).data.members;
+        
+        allow create: if isSignedIn()
+          && request.auth.uid == request.resource.data.senderId
+          && request.auth.uid in get(/databases/$(database)/documents/stranger_chats/$(chatId)).data.members
+          && get(/databases/$(database)/documents/stranger_chats/$(chatId)).data.status == 'active';
+        
+        allow update: if isSignedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/stranger_chats/$(chatId)).data.members
+          && request.resource.data.diff(resource.data).changedKeys()
+            .hasOnly(['seenBy', 'reactions', 'text', 'editedAt', 'edited']);
+        
+        allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
+      }
     }
 
-// ========== STRANGER QUEUE ==========
-match /stranger_queue/{userId} {
-  allow read: if isSignedIn();
-  allow create: if isOwner(userId);
-  allow update: if isOwner(userId);
-  allow delete: if isOwner(userId) || isSignedIn(); // THÊM isSignedIn
-}
+    // ========== STRANGER QUEUE - GỘP DUY NHẤT ==========
+    match /stranger_queue/{userId} {
+      allow read: if isSignedIn(); // Cho Cloud Function đọc để match
+      allow create, update, delete: if isOwner(userId); // Chỉ owner tự sửa queue mình
+    }
+
+    // ========== ORDERS ==========
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.userId || 
+        isAdmin()
+      );
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if false; 
+    }
   }
 }
