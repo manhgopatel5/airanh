@@ -380,16 +380,19 @@ export default function ChatRoomPage() {
       {/* Input */}
       {chatData.status === "active"? (
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black relative">
-          {showEmoji && (
-            <div ref={emojiRef} className="absolute bottom-full left-4 mb-2 z-50">
-              <EmojiPicker 
-                onEmojiClick={handleEmojiClick}
-                theme={Theme.AUTO}
-                width={320}
-                height={400}
-              />
-            </div>
-          )}
+      {showEmoji && (
+  <div ref={emojiRef} className="absolute bottom-full left-0 right-0 mx-4 mb-2 z-50">
+    <EmojiPicker 
+      onEmojiClick={handleEmojiClick}
+      theme={Theme.AUTO}
+      width="100%"
+      height={350}
+      lazyLoadEmojis={true}
+      previewConfig={{ showPreview: false }}
+      searchPlaceHolder="Tìm emoji..."
+    />
+  </div>
+)}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowEmoji(!showEmoji)}
