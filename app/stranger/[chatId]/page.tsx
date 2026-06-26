@@ -25,6 +25,8 @@ interface ChatData {
   partnerAvatars?: Record<string, string>;
   onlineStatus?: Record<string, boolean>;
   unreadCounts?: Record<string, number>;
+  lastMessage?: string;
+  lastMessageTime?: any;
 }
 
 export default function ChatRoomPage() {
@@ -51,7 +53,8 @@ export default function ChatRoomPage() {
       return;
     }
 
-    const unsub = onSnapshot(doc(db, "stranger_chats", chatId), 
+    const unsub = onSnapshot(
+      doc(db, "stranger_chats", chatId),
       (snap) => {
         if (!snap.exists()) {
           setError("Không tìm thấy cuộc trò chuyện");
@@ -59,7 +62,7 @@ export default function ChatRoomPage() {
           setTimeout(() => router.push("/stranger/chats"), 2000);
           return;
         }
-        
+
         const data = snap.data() as ChatData;
 
         if (!data.members?.includes(user.uid)) {
@@ -74,10 +77,11 @@ export default function ChatRoomPage() {
         setLoading(false);
         setError(null);
 
+        // Set online + reset unread, không để crash nếu rule chặn
         updateDoc(snap.ref, {
           [`unreadCounts.${user.uid}`]: 0,
           [`onlineStatus.${user.uid}`]: true,
-        }).catch(() => {});
+        }).catch((err) => console.warn("Update status failed:", err.message));
       },
       (err) => {
         console.error("Snapshot error:", err);
@@ -110,18 +114,20 @@ export default function ChatRoomPage() {
       timestamp: new Date(),
     };
 
+    const text = input.trim();
     setInput("");
 
     try {
       await updateDoc(doc(db, "stranger_chats", chatId), {
         messages: arrayUnion(msg),
-        lastMessage: input.trim(),
+        lastMessage: text,
         lastMessageTime: serverTimestamp(),
         [`unreadCounts.${partnerId}`]: ((chatData?.unreadCounts || {})[partnerId] || 0) + 1,
       });
     } catch (err: any) {
       toast.error("Gửi tin nhắn thất bại");
       console.error(err);
+      setInput(text); // Rollback
     }
   };
 
@@ -145,6 +151,7 @@ export default function ChatRoomPage() {
         <div className="h-14 bg-zinc-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
         <div className="h-12 w-2/3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
         <div className="h-12 w-1/2 ml-auto bg-blue-100 dark:bg-blue-900/30 rounded-2xl animate-pulse" />
+        <div className="h-12 w-2/3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
       </div>
     );
   }
