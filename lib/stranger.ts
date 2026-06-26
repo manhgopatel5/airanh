@@ -30,57 +30,54 @@ export async function findStranger(user: any) {
 
     // 2. Tìm người khác đang đợi
     const otherUserSnap = await runTransaction(db, async (transaction) => {
-      const myQueue = await transaction.get(queueRef);
-      if (!myQueue.exists()) throw new Error("Chưa vào hàng đợi");
+  const myQueue = await transaction.get(queueRef);
+  if (!myQueue.exists()) throw new Error("Chưa vào hàng đợi");
 
-      // Tìm 1 người khác trong queue - PHẢI getDocs NGOÀI transaction
-      const q = query(
-        collection(db, "stranger_queue"),
-        where("status", "==", "waiting"),
-        where("userId", "!=", user.uid),
-        limit(1)
-      );
-      
-      const otherSnap = await getDocs(q);
-      if (otherSnap.empty) return null;
-      
-      const otherDoc = otherSnap.docs[0];
-      const otherData = otherDoc.data();
+  const q = query(
+    collection(db, "stranger_queue"),
+    where("status", "==", "waiting"),
+    where("userId", "!=", user.uid),
+    limit(1)
+  );
+  
+  const otherSnap = await getDocs(q);
+  if (otherSnap.empty) return null;
+  
+  const otherDoc = otherSnap.docs[0];
+  if (!otherDoc) return null; // FIX TS ERROR
+  const otherData = otherDoc.data();
 
-      // Tạo chat room - DÙNG transaction.set THAY addDoc
-      const chatRef = doc(collection(db, "stranger_chats"));
-      transaction.set(chatRef, {
-        members: [user.uid, otherData.userId],
-        partnerNames: {
-          [user.uid]: otherData.name,
-          [otherData.userId]: user.displayName || "Người lạ",
-        },
-        partnerAvatars: {
-          [user.uid]: otherData.avatar,
-          [otherData.userId]: user.photoURL || "",
-        },
-        onlineStatus: {
-          [user.uid]: true,
-          [otherData.userId]: false,
-        },
-        unreadCounts: {
-          [user.uid]: 0,
-          [otherData.userId]: 0,
-        },
-        messages: [],
-        lastMessage: "",
-        lastMessageTime: serverTimestamp(),
-        status: "active",
-        createdAt: serverTimestamp(),
-      });
+  const chatRef = doc(collection(db, "stranger_chats"));
+  transaction.set(chatRef, {
+    members: [user.uid, otherData.userId],
+    partnerNames: {
+      [user.uid]: otherData.name,
+      [otherData.userId]: user.displayName || "Người lạ",
+    },
+    partnerAvatars: {
+      [user.uid]: otherData.avatar,
+      [otherData.userId]: user.photoURL || "",
+    },
+    onlineStatus: {
+      [user.uid]: true,
+      [otherData.userId]: false,
+    },
+    unreadCounts: {
+      [user.uid]: 0,
+      [otherData.userId]: 0,
+    },
+    messages: [],
+    lastMessage: "",
+    lastMessageTime: serverTimestamp(),
+    status: "active",
+    createdAt: serverTimestamp(),
+  });
 
-      // Xóa cả 2 khỏi queue
-      transaction.delete(queueRef);
-      transaction.delete(doc(db, "stranger_queue", otherData.userId));
+  transaction.delete(queueRef);
+  transaction.delete(doc(db, "stranger_queue", otherData.userId));
 
-      return { chatId: chatRef.id, partnerName: otherData.name };
-    });
-
+  return { chatId: chatRef.id, partnerName: otherData.name };
+});
     if (otherUserSnap) {
       toast.success(`Đã ghép với ${otherUserSnap.partnerName}`);
       return otherUserSnap.chatId;
