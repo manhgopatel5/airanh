@@ -274,7 +274,7 @@ const isDisabled = accountStatus === "banned";
       interests: finalCats, // Đổi từ categories -> interests
       ageRange: `${ageFrom}-${ageTo}`,
       wantGender: selectedGender,
-      voiceUrl: voiceUrl, // THÊM FIELD NÀY
+     
       province: selectedProvince, // Field này Function chưa dùng, bỏ cũng được
     });
 
