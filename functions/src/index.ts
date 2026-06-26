@@ -432,7 +432,17 @@ export const findStranger = onCall(
     const userDoc = await userRef.get();
     let userData = userDoc.data();
 
-    // TỰ TẠO KARMA THEO TIER NẾU CHƯA CÓ
+    // CASE 1: USER CHƯA CÓ DOC -> TẠO MỚI
+    if (!userDoc.exists) {
+      await userRef.set({ 
+        karma: 100,
+        tier: 'user',
+        createdAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+      userData = (await userRef.get()).data();
+    }
+
+    // CASE 2: USER CÓ DOC NHƯNG THIẾU KARMA -> TỰ TẠO THEO TIER
     if (userData?.karma === undefined) {
       const tier = userData?.tier || "user";
       const defaultKarma = tier === "elite" ? 400 : tier === "vip" ? 200 : 100;
@@ -497,8 +507,6 @@ export const findStranger = onCall(
         });
 
         transaction.delete(bestMatch!.ref);
-        
-        // KHÔNG TRỪ ĐIỂM Ở ĐÂY NỮA
       });
 
       return { matched: true, chatId };
