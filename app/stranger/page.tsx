@@ -100,18 +100,21 @@ useEffect(() => {
   const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
     const data = snap.data();
     if (data?.matchedChatId) {
-      toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
+      setMatchedChatId(data.matchedChatId); // DÙNG setMatchedChatId Ở ĐÂY
+      toast.success("Đã tìm thấy bạn phù hợp!", { duration: 3000 });
       setInQueue(false);
       setFindingStranger(false);
-      setQueueData(null); // THÊM: clear khi match
+      setQueueData(null);
     } else if (data && !data?.matchedChatId) {
       setInQueue(true);
       setFindingStranger(true);
-      setQueueData(data); // THÊM: lưu data để lấy interests
+      setQueueData(data);
+      setMatchedChatId(null); // RESET KHI CHƯA MATCH
     } else {
       setInQueue(false);
       setFindingStranger(false);
-      setQueueData(null); // THÊM: clear khi thoát queue
+      setQueueData(null);
+      setMatchedChatId(null); // RESET KHI THOÁT QUEUE
     }
   });
 
