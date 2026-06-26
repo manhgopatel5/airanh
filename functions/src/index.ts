@@ -494,10 +494,10 @@ export const reportStranger = onCall(
   { region: "asia-southeast1" },
   async (request) => {
     const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError("unauthenticated");
+if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
 
     const { chatId, reason } = request.data;
-    if (!chatId ||!reason) throw new HttpsError("invalid-argument");
+if (!chatId ||!reason) throw new HttpsError("invalid-argument", "Thiếu chatId hoặc reason");
 
     await db.doc(`users/${uid}`).update({
       karma: FieldValue.increment(-20),
@@ -533,10 +533,10 @@ export const addStrangerFriend = onCall(
   { region: "asia-southeast1" },
   async (request) => {
     const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError("unauthenticated");
+if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
 
     const { chatId, otherUid } = request.data;
-    if (!otherUid) throw new HttpsError("invalid-argument");
+if (!otherUid) throw new HttpsError("invalid-argument", "Thiếu otherUid");
 
     const chatDoc = await db.doc(`stranger_chats/${chatId}`).get();
     if (!chatDoc.exists) throw new HttpsError("not-found", "Phòng chat không tồn tại");
