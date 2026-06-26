@@ -11,7 +11,7 @@ import { FiUserX, FiSearch, FiStar, FiAward, FiFilter, FiEdit2, FiGrid, FiCalend
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-
+import ChatButton from "@/components/stranger/ChatButton";
 const CATEGORIES = [
   { id: "tat-ca", label: "Tất cả", icon: "🌟", count: 0 },
   { id: "thich-di-phuot", label: "Thích đi phượt", icon: "🏍️", count: 93 },
@@ -60,11 +60,12 @@ export default function StrangerPage() {
 
   const [userKarma, setUserKarma] = useState(100);
   const [userTier, setUserTier] = useState<"user" | "vip" | "elite">("user");
-const [accountStatus, setAccountStatus] = useState<"active" | "warning" | "banned">("active");
+  const [accountStatus, setAccountStatus] = useState<"active" | "warning" | "banned">("active");
   const [userName, setUserName] = useState("");
   const [userAvatar, setUserAvatar] = useState("");
   const [findingStranger, setFindingStranger] = useState(false);
   const [inQueue, setInQueue] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null); // THÊM DÒNG NÀY
 
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [selectAllMode, setSelectAllMode] = useState(false);
@@ -84,42 +85,45 @@ const [accountStatus, setAccountStatus] = useState<"active" | "warning" | "banne
   const [tempAgeTo, setTempAgeTo] = useState<number | string>(30);
   const [tempGender, setTempGender] = useState<"all" | "male" | "female">("all");
   const [tempProvince, setTempProvince] = useState("Toàn quốc");
-
   useEffect(() => {
-    if (!user?.uid) return;
+  if (!user?.uid) return;
 
-    const unsubUser = onSnapshot(doc(db, "users", user.uid), (snap) => {
-  const data = snap.data();
-  setUserKarma(data?.karma || 100);
-  setUserName(data?.displayName || "Bạn");
-  setUserAvatar(data?.photoURL || "");
-  setUserTier(data?.tier || "user");
-  setAccountStatus(data?.status || "active"); // Dùng thẳng active | warning | banned
-});
+  const unsubUser = onSnapshot(doc(db, "users", user.uid), (snap) => {
+    const data = snap.data();
+    setUserKarma(data?.karma || 100);
+    setUserName(data?.displayName || "Bạn");
+    setUserAvatar(data?.photoURL || "");
+    setUserTier(data?.tier || "user");
+    setAccountStatus(data?.status || "active");
+    setCurrentChatId(data?.currentChatId || null); // THÊM DÒNG NÀY
+  });
 
-const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
-  const data = snap.data();
-  if (data?.matchedChatId) {
-    router.push(`/stranger/${data.matchedChatId}`);
-    setInQueue(false);
-    setFindingStranger(false);
-    setSelectedCats([]);
-    setSelectAllMode(false);
-    setCurrentStep(1);
-  } else if (data && !data?.matchedChatId) {
-    setInQueue(true);
-    setFindingStranger(true);
-  } else {
-    setInQueue(false);
-    setFindingStranger(false);
-  }
-});
+  const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
+    const data = snap.data();
+    if (data?.matchedChatId) {
+      // XÓA: router.push(`/stranger/${data.matchedChatId}`);
+      // XÓA: setSelectedCats([]);
+      // XÓA: setSelectAllMode(false);
+      // XÓA: setCurrentStep(1);
+      
+      // THAY BẰNG:
+      toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
+      setInQueue(false);
+      setFindingStranger(false);
+    } else if (data && !data?.matchedChatId) {
+      setInQueue(true);
+      setFindingStranger(true);
+    } else {
+      setInQueue(false);
+      setFindingStranger(false);
+    }
+  });
 
-return () => {
-  unsubUser();
-  unsubQueue();
-};
-}, [user?.uid, db, router]);
+  return () => {
+    unsubUser();
+    unsubQueue();
+  };
+}, [user?.uid, db]); // XÓA router khỏi deps
 
 const isDisabled = accountStatus === "banned";
 
@@ -205,7 +209,7 @@ const isDisabled = accountStatus === "banned";
       return;
     }
 
-    // Chỉ validate + lưu filter, KHÔNG gọi handleFindStranger
+    // Validate + lưu filter trước khi qua bước 3
     const from = Number(tempAgeFrom);
     const to = Number(tempAgeTo);
 
@@ -235,7 +239,7 @@ const isDisabled = accountStatus === "banned";
     setSelectedProvince(tempProvince);
     
     setCurrentStep(3);
-    // XÓA DÒNG NÀY: handleFindStranger();
+    // Không gọi handleFindStranger() ở đây
   }
 };
 
@@ -269,35 +273,37 @@ const isDisabled = accountStatus === "banned";
     const data = result.data as { chatId: string, matched: boolean };
 
     if (data.matched) {
-      router.push(`/stranger/${data.chatId}`);
+      // XÓA: router.push(`/stranger/${data.chatId}`);
+      // Backend sẽ tự set currentChatId, nút "Trò chuyện" sẽ hiện
+      toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
+      setInQueue(false);
     } else {
-      toast.success("Đã vào hàng đợi. Đang tìm bạn phù hợp...", { duration: 4000 });
+      toast.success("Đã vào hàng đợi. Bạn có thể thoát ra, hệ thống sẽ thông báo khi có người match", { duration: 4000 });
     }
   } catch (e: any) {
     toast.error(e.message || "Lỗi tìm kiếm");
     setInQueue(false);
-    // Chỉ tắt queue, giữ nguyên ở bước 3 cho user bấm lại
-    // XÓA: setSelectedCats([]);
-    // XÓA: setSelectAllMode(false);
-    // XÓA: setCurrentStep(1);
+    // Không reset gì hết, giữ nguyên ở bước 3 cho user bấm lại
   } finally {
     setFindingStranger(false);
   }
 };
-  const handleCancelQueue = async () => {
-    if (!user?.uid) return;
-    try {
-      await deleteDoc(doc(db, "stranger_queue", user.uid));
-      setInQueue(false);
-      setFindingStranger(false);
-      setSelectedCats([]);
-      setSelectAllMode(false);
-      setCurrentStep(1);
-      toast.info("Đã hủy tìm kiếm");
-    } catch {
-      toast.error("Lỗi hủy hàng đợi");
-    }
-  };
+
+const handleCancelQueue = async () => {
+  if (!user?.uid) return;
+  try {
+    await deleteDoc(doc(db, "stranger_queue", user.uid));
+    setInQueue(false);
+    setFindingStranger(false);
+    // XÓA 3 DÒNG NÀY - không reset về bước 1 nữa
+    // setSelectedCats([]);
+    // setSelectAllMode(false);
+    // setCurrentStep(1);
+    toast.info("Đã hủy tìm kiếm");
+  } catch {
+    toast.error("Lỗi hủy hàng đợi");
+  }
+};
 
   return (
     <div className="min-h-dvh bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-white">
@@ -321,36 +327,39 @@ const isDisabled = accountStatus === "banned";
                 <span className="text-xl font-[800] leading-none">{userKarma}</span>
               </button>
             </div>
-            <div className="flex items-center gap-2">
-          <button
-  onClick={() => setShowStatusModal(true)}
-  className={cn(
-    "h-11 px-3 rounded-2xl flex items-center gap-2 active:scale-90 transition-all border-2",
-    accountStatus === "active" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
-    accountStatus === "warning" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
-    accountStatus === "banned" && "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-700 dark:text-red-400"
-  )}
->
-  <div className={cn(
-    "w-2 h-2 rounded-full",
-    accountStatus === "active" && "bg-green-500",
-    accountStatus === "warning" && "bg-yellow-500",
-    accountStatus === "banned" && "bg-red-500"
-  )} />
-  <span className="text-xs font-[700]">
-    {accountStatus === "active"? "Tích cực" : accountStatus === "warning"? "Cảnh báo" : "Bị cấm"}
-  </span>
-</button>
-              <button
-                onClick={openFilterModal}
-                disabled={isDisabled}
-                className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90 shadow-lg shadow-zinc-900/5 disabled:opacity-40"
-              >
-                <FiSettings size={20} className="text-zinc-700 dark:text-zinc-300" />
-              </button>
-            </div>
-          </div>
-       {accountStatus === "banned" && (
+         <div className="flex items-center gap-2">
+  <ChatButton chatId={currentChatId} variant="default" showDetails />
+
+  <button
+    onClick={() => setShowStatusModal(true)}
+    className={cn(
+      "h-11 px-3 rounded-2xl flex items-center gap-2 active:scale-90 transition-all border-2",
+      accountStatus === "active" && "bg-green-50 dark:bg-green-900/20 border-green-500/30 text-green-700 dark:text-green-400",
+      accountStatus === "warning" && "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
+      accountStatus === "banned" && "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-700 dark:text-red-400"
+    )}
+  >
+    <div className={cn(
+      "w-2 h-2 rounded-full",
+      accountStatus === "active" && "bg-green-500",
+      accountStatus === "warning" && "bg-yellow-500",
+      accountStatus === "banned" && "bg-red-500"
+    )} />
+    <span className="text-xs font-[700]">
+      {accountStatus === "active"? "Tích cực" : accountStatus === "warning"? "Cảnh báo" : "Bị cấm"}
+    </span>
+  </button>
+
+  <button
+    onClick={openFilterModal}
+    disabled={isDisabled}
+    className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90 shadow-lg shadow-zinc-900/5 disabled:opacity-40"
+  >
+    <FiSettings size={20} className="text-zinc-700 dark:text-zinc-300" />
+  </button>
+</div>
+</div>
+{accountStatus === "banned" && (
   <div className="mt-3 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-sm text-red-700 dark:text-red-400 font-[600] flex items-center gap-2">
     <FiUserX size={16} />
     Tài khoản bị cấm chat người lạ
@@ -359,49 +368,52 @@ const isDisabled = accountStatus === "banned";
         </div>
 
         <AnimatePresence mode="wait">
-          {inQueue? (
-            <motion.div
-              key="queue"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
-            >
-              <div className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-blue-600/30">
-                <FiLoader className="text-white animate-spin" size={36} />
-              </div>
-              <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
-              <p className="text-sm text-zinc-500 mb-6">
-                {selectAllMode? "Tất cả mục" : `${selectedCats.length} mục đã chọn`}
-              </p>
-              <button
-                onClick={handleCancelQueue}
-                className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-[700] active:scale-95 transition-all"
-              >
-                Hủy tìm kiếm
-              </button>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="grid"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-4"
-            >
-              {/* Step buttons */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleStepClick(1)}
-                  disabled={isDisabled}
-                  className={cn(
-                    "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
-                    currentStep === 1
-                   ? "bg-blue-600 text-white border-blue-600 animate-pulse"
-                      : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-                  )}
-                >
-                  Bước 1
+      {inQueue? (
+  <motion.div
+    key="queue"
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.95 }}
+    className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
+  >
+    <div className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-blue-600/30">
+      <FiLoader className="text-white animate-spin" size={36} />
+    </div>
+    <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
+    <p className="text-sm text-zinc-500 mb-2">
+      {selectAllMode? "Tất cả mục" : `${selectedCats.length} mục đã chọn`}
+    </p>
+    <p className="text-xs text-zinc-400 mb-6">
+      Bạn có thể thoát ra, hệ thống sẽ tự thông báo khi có người match
+    </p>
+    <button
+      onClick={handleCancelQueue}
+      className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-[700] active:scale-95 transition-all"
+    >
+      Hủy tìm kiếm
+    </button>
+  </motion.div>
+) : (
+  <motion.div
+    key="grid"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="space-y-4"
+  >
+    {/* Step buttons */}
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => handleStepClick(1)}
+        disabled={isDisabled}
+        className={cn(
+          "flex-1 h-11 rounded-xl text-sm font-[700] transition-all active:scale-95 border-2 flex items-center justify-center gap-2 disabled:opacity-40",
+          currentStep === 1
+        ? "bg-blue-600 text-white border-blue-600 animate-pulse"
+            : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+        )}
+      >
+        Bước 1
                   {currentStep === 1 && selectedCats.length > 0 && <FiChevronRight size={16} className="animate-pulse" />}
                 </button>
                 <button
