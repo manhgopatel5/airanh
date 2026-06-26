@@ -4,7 +4,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
-
+import type { DocumentSnapshot } from "firebase-admin/firestore";
 initializeApp();
 const db = getFirestore();
 
@@ -418,14 +418,14 @@ export const findStranger = onCall(
     const userGender = userData?.gender || "other";
     const queueRef = db.collection("stranger_queue");
 
-    // BƯỚC 1: Tìm người match TRƯỚC - KHÔNG TRONG TRANSACTION
     const matches = await queueRef
-     .where("status", "==", "waiting")
-     .where("userId", "!=", uid)
-     .limit(20)
-     .get();
+    .where("status", "==", "waiting")
+    .where("userId", "!=", uid)
+    .limit(20)
+    .get();
 
-    let bestMatch: FirebaseFirestore.QueryDocumentSnapshot | null = null;
+    // SỬA TYPE Ở ĐÂY
+    let bestMatch: DocumentSnapshot | null = null;
     let maxCommon = 0;
 
     for (const doc of matches.docs) {
@@ -442,19 +442,18 @@ export const findStranger = onCall(
       }
     }
 
-    // BƯỚC 2: Nếu có match thì tạo chat trong transaction
     if (bestMatch) {
       const other = bestMatch.data();
+      if (!other) throw new HttpsError("internal", "Lỗi data"); // THÊM CHECK
+      
       const chatId = `str_${[uid, other.userId].sort().join("_")}_${Date.now()}`;
 
       await db.runTransaction(async (transaction) => {
-        // Check lại other user còn trong queue không
-        const otherQueueSnap = await transaction.get(bestMatch.ref);
+        const otherQueueSnap = await transaction.get(bestMatch!.ref);
         if (!otherQueueSnap.exists) {
           throw new HttpsError("aborted", "Người kia vừa thoát hàng đợi");
         }
 
-        // Tạo chat room - DÙNG transaction.set
         const chatRef = db.doc(`stranger_chats/${chatId}`);
         transaction.set(chatRef, {
           members: [uid, other.userId],
@@ -469,14 +468,12 @@ export const findStranger = onCall(
           status: "active",
         });
 
-        // Xóa other khỏi queue
-        transaction.delete(bestMatch.ref);
+        transaction.delete(bestMatch!.ref);
       });
 
       return { matched: true, chatId };
     } 
     
-    // BƯỚC 3: Không có match thì vào queue
     await queueRef.doc(uid).set({
       userId: uid,
       interests,
