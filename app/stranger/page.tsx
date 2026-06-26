@@ -253,8 +253,16 @@ const isDisabled = accountStatus === "banned";
   if (userKarma > maxKarma) {
     return toast.error(`Điểm vượt giới hạn ${maxKarma}. Vui lòng liên hệ admin`);
   }
-  if (selectedCats.length === 0) return toast.error("Chọn ít nhất 1 mục");
+  
+  const finalCats = selectAllMode 
+    ? CATEGORIES.filter(c => c.id !== "tat-ca").map(c => c.id) 
+    : selectedCats;
+
+  if (finalCats.length < 3) return toast.error("Chọn ít nhất 3 sở thích"); // Đổi text
   if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
+  
+  // TẠM HARDCODE voiceUrl nếu chưa làm bước ghi âm
+  if (!voiceUrl) return toast.error("Cần ghi âm giới thiệu");
 
   setFindingStranger(true);
   setInQueue(true);
@@ -264,26 +272,24 @@ const isDisabled = accountStatus === "banned";
     const findFn = httpsCallable(functions, 'findStranger');
 
     const result = await findFn({
-      categories: selectAllMode ? CATEGORIES.filter(c => c.id !== "tat-ca").map(c => c.id) : selectedCats,
+      interests: finalCats, // Đổi từ categories -> interests
       ageRange: `${ageFrom}-${ageTo}`,
       wantGender: selectedGender,
-      province: selectedProvince,
+      voiceUrl: voiceUrl, // THÊM FIELD NÀY
+      province: selectedProvince, // Field này Function chưa dùng, bỏ cũng được
     });
 
     const data = result.data as { chatId: string, matched: boolean };
 
     if (data.matched) {
-      // XÓA: router.push(`/stranger/${data.chatId}`);
-      // Backend sẽ tự set currentChatId, nút "Trò chuyện" sẽ hiện
       toast.success("Đã tìm thấy bạn phù hợp! Bấm 'Trò chuyện' để bắt đầu", { duration: 5000 });
       setInQueue(false);
     } else {
-      toast.success("Đã vào hàng đợi. Bạn có thể thoát ra, hệ thống sẽ thông báo khi có người match", { duration: 4000 });
+      toast.success("Đã vào hàng đợi. Hệ thống sẽ thông báo khi có người match", { duration: 4000 });
     }
   } catch (e: any) {
     toast.error(e.message || "Lỗi tìm kiếm");
     setInQueue(false);
-    // Không reset gì hết, giữ nguyên ở bước 3 cho user bấm lại
   } finally {
     setFindingStranger(false);
   }
