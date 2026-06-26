@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
-import { doc, onSnapshot, deleteDoc } from "firebase/firestore";
+import { doc, onSnapshot, getDoc, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { FiUserX, FiSearch, FiStar, FiAward, FiFilter, FiEdit2, FiGrid, FiCalendar, FiMapPin, FiLoader, FiUsers, FiSettings, FiInfo, FiX, FiCheck, FiCheckCircle, FiChevronRight, FiTrendingUp, FiAlertTriangle } from "react-icons/fi";
 import { toast } from "sonner";
@@ -359,11 +359,30 @@ const isDisabled = accountStatus === "banned";
       </div>
       <h3 className="text-lg font-[800] mb-2">Đã tìm thấy bạn!</h3>
       <p className="text-sm text-zinc-500 mb-6">Bấm để bắt đầu trò chuyện ngay</p>
-  <button
-  onClick={() => {
-    router.push(`/chat/${matchedChatId}`);
-    if (user?.uid) {
-      deleteDoc(doc(db, "stranger_queue", user.uid)); // Thêm check null
+<button
+  onClick={async () => {
+    if (!matchedChatId ||!user?.uid) return;
+
+    // CHECK DOC TỒN TẠI TRƯỚC KHI PUSH
+    try {
+      const chatSnap = await getDoc(doc(db, "stranger_chats", matchedChatId));
+      if (chatSnap.exists()) {
+        router.push(`/stranger/${matchedChatId}`);
+        deleteDoc(doc(db, "stranger_queue", user.uid)).catch(() => {});
+      } else {
+        toast.error("Phòng chat chưa sẵn sàng, thử lại sau 1s");
+        setTimeout(async () => {
+          const retrySnap = await getDoc(doc(db, "stranger_chats", matchedChatId));
+          if (retrySnap.exists()) {
+            router.push(`/stranger/${matchedChatId}`);
+            deleteDoc(doc(db, "stranger_queue", user.uid)).catch(() => {});
+          } else {
+            toast.error("Không thể vào phòng chat");
+          }
+        }, 1000);
+      }
+    } catch (err) {
+      toast.error("Lỗi kiểm tra phòng chat");
     }
   }}
   className="w-full h-12 bg-green-600 text-white rounded-xl font-[700] active:scale-95 transition-all"
