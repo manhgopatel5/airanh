@@ -4,7 +4,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
-import type { DocumentSnapshot } from "firebase-admin/firestore";
+import { DocumentSnapshot } from "firebase-admin/firestore";
 initializeApp();
 const db = getFirestore();
 
@@ -422,7 +422,7 @@ export const findStranger = onCall(
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
 
-    const { interests, ageRange, wantGender } = request.data;
+    const { interests, ageRange, wantGender, province } = request.data;
 
     if (!interests || interests.length < 3) {
       throw new HttpsError("invalid-argument", "Chọn ít nhất 3 sở thích");
@@ -444,7 +444,7 @@ export const findStranger = onCall(
 
     // CASE 2: USER CÓ DOC NHƯNG THIẾU KARMA -> TỰ TẠO THEO TIER
     if (userData?.karma === undefined) {
-      const tier = userData?.tier || "user";
+      const tier = userData?.vip?.tier || userData?.tier || "user";
       const defaultKarma = tier === "elite" ? 400 : tier === "vip" ? 200 : 100;
       await userRef.set({ karma: defaultKarma }, { merge: true });
       userData = { ...userData, karma: defaultKarma };
@@ -461,7 +461,7 @@ export const findStranger = onCall(
     const matches = await queueRef
       .where("status", "==", "waiting")
       .where("userId", "!=", uid)
-      .limit(20)
+      .limit(50)
       .get();
 
     let bestMatch: DocumentSnapshot | null = null;
@@ -470,9 +470,19 @@ export const findStranger = onCall(
     for (const doc of matches.docs) {
       const d = doc.data();
       
+      // Lọc giới tính
       if (wantGender !== "all" && d.gender !== wantGender) continue;
       if (d.wantGender !== "all" && d.wantGender !== userGender) continue;
+      
+      // Lọc độ tuổi
       if (ageRange && d.ageRange !== ageRange) continue;
+
+      // LỌC TỈNH CHO TẤT CẢ USER
+      if (province && province !== "Toàn quốc") {
+        // Nếu user chọn tỉnh cụ thể, chỉ match người cùng tỉnh hoặc người chọn "Toàn quốc"
+        if (d.province !== province && d.province !== "Toàn quốc") continue;
+      }
+      // Nếu user chọn "Toàn quốc" thì match tất cả, không filter
 
       const common = interests.filter((i: string) => d.interests?.includes(i)).length;
       if (common >= 2 && common > maxCommon) {
@@ -498,6 +508,7 @@ export const findStranger = onCall(
           members: [uid, other.userId],
           topic: interests,
           ageRange,
+          province,
           messages: [],
           createdAt: FieldValue.serverTimestamp(),
           expiresAt: Timestamp.fromDate(new Date(Date.now() + 5 * 60 * 1000)),
@@ -518,6 +529,7 @@ export const findStranger = onCall(
       ageRange,
       wantGender,
       gender: userGender,
+      province: province || "Toàn quốc",
       status: "waiting",
       createdAt: FieldValue.serverTimestamp(),
     });
