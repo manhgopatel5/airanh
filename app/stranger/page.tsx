@@ -196,7 +196,6 @@ const isDisabled = accountStatus === "banned";
       return;
     }
     setCurrentStep(2);
-    // Bỏ openFilterModal() - chỉ chuyển tab, không ép mở modal
     return;
   }
   
@@ -206,7 +205,7 @@ const isDisabled = accountStatus === "banned";
       return;
     }
 
-    // Auto lưu filter từ temp -> state chính trước khi qua bước 3
+    // Chỉ validate + lưu filter, KHÔNG gọi handleFindStranger
     const from = Number(tempAgeFrom);
     const to = Number(tempAgeTo);
 
@@ -229,62 +228,62 @@ const isDisabled = accountStatus === "banned";
       return;
     }
 
-    // Lưu luôn
+    // Lưu để UI bước 3 hiển thị đúng
     setAgeFrom(from);
     setAgeTo(to);
     setSelectedGender(tempGender);
     setSelectedProvince(tempProvince);
     
     setCurrentStep(3);
-    handleFindStranger();
+    // XÓA DÒNG NÀY: handleFindStranger();
   }
 };
 
   const handleFindStranger = async () => {
-    if (!user?.uid) return;
-    if (isDisabled) return toast.error("Tài khoản bị cấm");
+  if (!user?.uid) return;
+  if (isDisabled) return toast.error("Tài khoản bị cấm");
 
-    const maxKarma = userTier === "elite" ? 400 : userTier === "vip" ? 200 : 100;
-    
-    if (userKarma < 10) return toast.error("Cần ít nhất 10 điểm để tìm kiếm");
-    if (userKarma > maxKarma) {
-      return toast.error(`Điểm vượt giới hạn ${maxKarma}. Vui lòng liên hệ admin`);
+  const maxKarma = userTier === "elite" ? 400 : userTier === "vip" ? 200 : 100;
+  
+  if (userKarma < 10) return toast.error("Cần ít nhất 10 điểm để tìm kiếm");
+  if (userKarma > maxKarma) {
+    return toast.error(`Điểm vượt giới hạn ${maxKarma}. Vui lòng liên hệ admin`);
+  }
+  if (selectedCats.length === 0) return toast.error("Chọn ít nhất 1 mục");
+  if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
+
+  setFindingStranger(true);
+  setInQueue(true);
+
+  try {
+    const functions = getFunctions(getApp(), "asia-southeast1");
+    const findFn = httpsCallable(functions, 'findStranger');
+
+    const result = await findFn({
+      categories: selectAllMode ? CATEGORIES.filter(c => c.id !== "tat-ca").map(c => c.id) : selectedCats,
+      ageRange: `${ageFrom}-${ageTo}`,
+      wantGender: selectedGender,
+      province: selectedProvince,
+    });
+
+    const data = result.data as { chatId: string, matched: boolean };
+
+    if (data.matched) {
+      router.push(`/stranger/${data.chatId}`);
+    } else {
+      toast.success("Đã vào hàng đợi. Đang tìm bạn phù hợp...", { duration: 4000 });
     }
-    if (selectedCats.length === 0) return toast.error("Chọn ít nhất 1 mục");
-    if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
-
-    setFindingStranger(true);
-    setInQueue(true);
-
-    try {
-      const functions = getFunctions(getApp(), "asia-southeast1");
-      const findFn = httpsCallable(functions, 'findStranger');
-
-      const result = await findFn({
-        categories: selectAllMode ? CATEGORIES.filter(c => c.id !== "tat-ca").map(c => c.id) : selectedCats,
-        ageRange: `${ageFrom}-${ageTo}`,
-        wantGender: selectedGender,
-        province: selectedProvince,
-      });
-
-      const data = result.data as { chatId: string, matched: boolean };
-
-      if (data.matched) {
-        router.push(`/stranger/${data.chatId}`);
-      } else {
-        toast.success("Đã vào hàng đợi. Đang tìm bạn phù hợp...", { duration: 4000 });
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Lỗi tìm kiếm");
-      setInQueue(false);
-      setSelectedCats([]);
-      setSelectAllMode(false);
-      setCurrentStep(1);
-    } finally {
-      setFindingStranger(false);
-    }
-  };
-
+  } catch (e: any) {
+    toast.error(e.message || "Lỗi tìm kiếm");
+    setInQueue(false);
+    // Chỉ tắt queue, giữ nguyên ở bước 3 cho user bấm lại
+    // XÓA: setSelectedCats([]);
+    // XÓA: setSelectAllMode(false);
+    // XÓA: setCurrentStep(1);
+  } finally {
+    setFindingStranger(false);
+  }
+};
   const handleCancelQueue = async () => {
     if (!user?.uid) return;
     try {
