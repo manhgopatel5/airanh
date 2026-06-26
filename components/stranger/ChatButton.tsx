@@ -39,6 +39,7 @@ export default function ChatButton({
   useEffect(() => {
     if (!chatId) {
       setLoading(false);
+      setChatData(null);
       return;
     }
 
@@ -65,13 +66,6 @@ export default function ChatButton({
     return () => unsub();
   }, [chatId, db]);
 
-  if (!chatId || loading) return null;
-  if (!chatData) return null;
-
-  const handleClick = () => {
-    router.push(`/stranger/${chatId}`);
-  };
-
   const formatTime = (timestamp: number) => {
     if (!timestamp) return "";
     const diff = Date.now() - timestamp;
@@ -83,6 +77,62 @@ export default function ChatButton({
     if (minutes < 60) return `${minutes}p`;
     if (hours < 24) return `${hours}h`;
     return `${days}d`;
+  };
+
+  // KHÔNG CÓ CHATID -> NÚT QUẢN LÝ CHAT
+  if (!chatId || loading ||!chatData) {
+    const handleClick = () => {
+      router.push(`/stranger/chats`);
+    };
+
+    if (variant === "icon") {
+      return (
+        <button
+          onClick={handleClick}
+          className={cn(
+            "relative w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center active:scale-90 transition-all border border-zinc-200 dark:border-zinc-700",
+            className
+          )}
+          title="Chat"
+        >
+          <FiUsers size={20} />
+        </button>
+      );
+    }
+
+    if (variant === "compact") {
+      return (
+        <button
+          onClick={handleClick}
+          className={cn(
+            "h-11 px-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center gap-2 active:scale-90 transition-all border border-zinc-200 dark:border-zinc-700",
+            className
+          )}
+        >
+          <FiUsers size={18} />
+          <span className="text-xs font-[700]">Chat</span>
+        </button>
+      );
+    }
+
+    // Default
+    return (
+      <button
+        onClick={handleClick}
+        className={cn(
+          "h-11 px-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center gap-2 active:scale-90 transition-all border border-zinc-200 dark:border-zinc-700",
+          className
+        )}
+      >
+        <FiUsers size={18} />
+        <span className="text-xs font-[700]">Chat</span>
+      </button>
+    );
+  }
+
+  // CÓ CHATID -> NÚT VÀO CHAT
+  const handleClick = () => {
+    router.push(`/stranger/${chatId}`);
   };
 
   // Variant: Icon only
