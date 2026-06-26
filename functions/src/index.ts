@@ -1,4 +1,4 @@
-import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentUpdated, onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { initializeApp } from "firebase-admin/app";
@@ -392,7 +392,7 @@ export const updateHotScore = onSchedule(
   }
 );
 
-// 8. TÌM NGƯỜI LẠ CHAT 1-1
+// 8. TÌM NGƯỜI LẠ CHAT 1-1 - ĐÃ FIX
 export const findStranger = onCall(
   { region: "asia-southeast1" },
   async (request) => {
@@ -418,56 +418,77 @@ export const findStranger = onCall(
     const userGender = userData?.gender || "other";
     const queueRef = db.collection("stranger_queue");
 
-    const matches = await queueRef.where("ageRange", "==", ageRange).limit(20).get();
+    // BƯỚC 1: Tìm người match TRƯỚC - KHÔNG TRONG TRANSACTION
+    const matches = await queueRef
+     .where("status", "==", "waiting")
+     .where("userId", "!=", uid)
+     .limit(20)
+     .get();
 
-    let bestMatch: QueryDocumentSnapshot | null = null;
+    let bestMatch: FirebaseFirestore.QueryDocumentSnapshot | null = null;
     let maxCommon = 0;
 
     for (const doc of matches.docs) {
       const d = doc.data();
-      if (d.uid === uid) continue;
-
+      
       if (wantGender!== "all" && d.gender!== wantGender) continue;
       if (d.wantGender!== "all" && d.wantGender!== userGender) continue;
+      if (ageRange && d.ageRange!== ageRange) continue;
 
-      const common = interests.filter((i: string) => d.interests.includes(i)).length;
+      const common = interests.filter((i: string) => d.interests?.includes(i)).length;
       if (common >= 2 && common > maxCommon) {
         maxCommon = common;
         bestMatch = doc;
       }
     }
 
+    // BƯỚC 2: Nếu có match thì tạo chat trong transaction
     if (bestMatch) {
       const other = bestMatch.data();
-      const chatId = `str_${[uid, other.uid].sort().join("_")}_${Date.now()}`;
+      const chatId = `str_${[uid, other.userId].sort().join("_")}_${Date.now()}`;
 
-      await db.doc(`stranger_chats/${chatId}`).set({
-        members: [uid, other.uid],
-        topic: interests,
-        ageRange,
-        voiceIntros: { [uid]: voiceUrl, [other.uid]: other.voiceUrl },
-        messages: [],
-        createdAt: FieldValue.serverTimestamp(),
-        expiresAt: Timestamp.fromDate(new Date(Date.now() + 5 * 60 * 1000)),
-        extended: false,
-        reportedBy: [],
+      await db.runTransaction(async (transaction) => {
+        // Check lại other user còn trong queue không
+        const otherQueueSnap = await transaction.get(bestMatch.ref);
+        if (!otherQueueSnap.exists) {
+          throw new HttpsError("aborted", "Người kia vừa thoát hàng đợi");
+        }
+
+        // Tạo chat room - DÙNG transaction.set
+        const chatRef = db.doc(`stranger_chats/${chatId}`);
+        transaction.set(chatRef, {
+          members: [uid, other.userId],
+          topic: interests,
+          ageRange,
+          voiceIntros: { [uid]: voiceUrl, [other.userId]: other.voiceUrl },
+          messages: [],
+          createdAt: FieldValue.serverTimestamp(),
+          expiresAt: Timestamp.fromDate(new Date(Date.now() + 5 * 60 * 1000)),
+          extended: false,
+          reportedBy: [],
+          status: "active",
+        });
+
+        // Xóa other khỏi queue
+        transaction.delete(bestMatch.ref);
       });
-
-      await bestMatch.ref.delete();
 
       return { matched: true, chatId };
-    } else {
-      await queueRef.doc(uid).set({
-        uid,
-        interests,
-        ageRange,
-        wantGender,
-        voiceUrl,
-        gender: userGender,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-      return { matched: false };
-    }
+    } 
+    
+    // BƯỚC 3: Không có match thì vào queue
+    await queueRef.doc(uid).set({
+      userId: uid,
+      interests,
+      ageRange,
+      wantGender,
+      voiceUrl,
+      gender: userGender,
+      status: "waiting",
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    
+    return { matched: false };
   }
 );
 
