@@ -17,6 +17,7 @@ interface Message {
   senderId: string;
   timestamp: any;
   type?: "text" | "system";
+  action?: "continue_request"; // THÊM
 }
 
 interface ChatData {
@@ -246,17 +247,30 @@ const handleContinueSearch = async () => {
   if (!chatId ||!user?.uid || isSearching) return;
   setIsSearching(true);
   try {
-    await updateDoc(doc(db, "stranger_chats", chatId), {
-      status: "ended",
-      endedAt: serverTimestamp(),
-    });
-    
     const oldFilters = chatData?.filters;
     if (!oldFilters ||!oldFilters.interests?.length) {
       toast.error("Không tìm thấy bộ lọc cũ, về trang chủ chọn lại");
       router.push("/stranger");
       return;
     }
+
+    // GỬI SYSTEM MESSAGE CHO NGƯỜI KIA
+    const systemMsg: Message = {
+      id: crypto.randomUUID(),
+      text: "Đối phương đã bấm 'Tiếp tục' và rời phòng. Bạn có muốn kết thúc hay tiếp tục tìm người mới?",
+      senderId: "system",
+      timestamp: new Date(),
+      type: "system",
+      action: "continue_request" // THÊM FIELD NÀY
+    } as any;
+
+    await updateDoc(doc(db, "stranger_chats", chatId), {
+      status: "ended",
+      endedAt: serverTimestamp(),
+      messages: arrayUnion(systemMsg),
+      lastMessage: "Đối phương đã rời phòng",
+      lastMessageTime: serverTimestamp(),
+    });
     
     const functions = getFunctions(getApp(), "asia-southeast1");
     const findFn = httpsCallable(functions, 'findStranger');
@@ -271,10 +285,11 @@ const handleContinueSearch = async () => {
     const data = result.data as { chatId: string, matched: boolean };
 
     if (data.matched) {
-      setMatchedChatId(data.chatId);
       toast.success("Đã tìm thấy bạn phù hợp!");
+      router.push(`/stranger/${data.chatId}`);
     } else {
       toast.info("Đang tìm người phù hợp...");
+      router.push("/stranger");
     }
   } catch (err: any) {
     console.error(err);
@@ -284,7 +299,6 @@ const handleContinueSearch = async () => {
     setIsSearching(false);
   }
 };
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -425,34 +439,68 @@ const handleContinueSearch = async () => {
           </button>
         )}
 
-        {messages.map((msg) => {
-          if (msg.type === "system") {
-            return (
-              <div key={msg.id} className="text-center">
-                <span className="text-xs text-zinc-400 bg-zinc-100 dark:bg-zinc-900 px-3 py-1 rounded-full">
-                  {msg.text}
-                </span>
-              </div>
-            );
-          }
-          const isMe = msg.senderId === user?.uid;
-          return (
-            <div key={msg.id} className={cn("flex", isMe? "justify-end" : "justify-start")}>
-              <div
-                className={cn(
-                  "max-w-[75%] px-4 py-2.5 rounded-3xl text-sm break-words",
-                  isMe
-           ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
-                    : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-bl-lg"
-                )}
-              >
+    {messages.map((msg) => {
+  if (msg.type === "system") {
+    // NẾU LÀ SYSTEM MESSAGE TỪ CONTINUE REQUEST
+    if (msg.action === "continue_request" && msg.senderId === "system") {
+      return (
+        <div key={msg.id} className="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-500 rounded-2xl p-4 my-3 mx-2">
+          <div className="flex items-start gap-3">
+            <FiAlertCircle className="text-amber-500 flex-shrink-0 mt-0.5" size={20} />
+            <div className="flex-1">
+              <p className="text-sm font-[700] text-amber-600 dark:text-amber-400 mb-3 text-center">
                 {msg.text}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleEndChat}
+                  className="flex-1 h-10 bg-rose-500 text-white rounded-xl text-sm font-[800] active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  <FiX size={16} />
+                  Kết thúc
+                </button>
+                <button
+                  onClick={handleContinueSearch}
+                  disabled={isSearching}
+                  className="flex-1 h-10 bg-emerald-500 disabled:bg-zinc-300 disabled:dark:bg-zinc-700 text-white rounded-xl text-sm font-[800] active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  <FiRefreshCw size={16} className={isSearching? "animate-spin" : ""} />
+                  {isSearching? "Đang tìm..." : "Tiếp tục"}
+                </button>
               </div>
             </div>
-          );
-        })}
-        <div ref={messagesEndRef} />
+          </div>
+        </div>
+      );
+    }
+    // SYSTEM MESSAGE THƯỜNG
+    return (
+      <div key={msg.id} className="text-center my-2">
+        <span className="text-xs text-zinc-400 bg-zinc-100 dark:bg-zinc-900 px-3 py-1.5 rounded-full font-[600]">
+          {msg.text}
+        </span>
       </div>
+    );
+  }
+  
+  const isMe = msg.senderId === user?.uid;
+  return (
+    <div key={msg.id} className={cn("flex", isMe? "justify-end" : "justify-start")}>
+      <div
+        className={cn(
+          "max-w-[75%] px-4 py-2.5 rounded-3xl text-sm break-words",
+          isMe
+           ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
+            : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-bl-lg"
+        )}
+      >
+        {msg.text}
+      </div>
+    </div>
+  );
+})}
+<div ref={messagesEndRef} />
+</div>
 
       {/* Dòng thông báo 5 phút - ghim dưới, không trôi */}
       {chatData.status === "active" &&!isEndedLocal && (
