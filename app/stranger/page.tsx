@@ -55,7 +55,7 @@ const PROVINCES = [
 
 export default function StrangerPage() {
   const { user } = useAuth();
-  const router = useRouter();
+
   const db = getFirebaseDB();
 
   const [userKarma, setUserKarma] = useState(100);
