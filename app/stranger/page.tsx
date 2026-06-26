@@ -261,8 +261,7 @@ const isDisabled = accountStatus === "banned";
   if (finalCats.length < 3) return toast.error("Chọn ít nhất 3 sở thích"); // Đổi text
   if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
   
-  // TẠM HARDCODE voiceUrl nếu chưa làm bước ghi âm
-  if (!voiceUrl) return toast.error("Cần ghi âm giới thiệu");
+ 
 
   setFindingStranger(true);
   setInQueue(true);
