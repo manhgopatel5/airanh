@@ -1,10 +1,10 @@
 "use client";
 import { useAuth } from "@/lib/AuthContext";
-import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, doc, updateDoc, arrayRemove, serverTimestamp } from "firebase/firestore";
+import { useEffect, useState, useMemo } from "react";
+import { collection, query, where, onSnapshot, orderBy, doc, updateDoc, arrayRemove } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-import { FiTrash2, FiX, FiMessageCircle, FiClock, FiUsers } from "react-icons/fi";
+import { FiSearch, FiTrash2, FiX, FiMessageCircle, FiClock } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -15,59 +15,54 @@ interface ChatItem {
   partnerAvatar: string;
   partnerId: string;
   lastMessage: string;
-  lastMessageTime: number;
+  lastMessageTime: any;
   unreadCount: number;
   isPartnerOnline: boolean;
   status: "active" | "ended" | "waiting";
   members: string[];
-  createdAt: number;
 }
 
 export default function ChatsPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const db = getFirebaseDB();
   const router = useRouter();
   const [chats, setChats] = useState<ChatItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    if (authLoading) return;
-
     if (!user?.uid) {
       setLoading(false);
       return;
     }
-
+    
     const q = query(
       collection(db, "stranger_chats"),
-      where("members", "array-contains", user.uid)
+      where("members", "array-contains", user.uid),
+      orderBy("lastMessageTime", "desc")
     );
 
-    const unsub = onSnapshot(q,
+    const unsub = onSnapshot(q, 
       (snap) => {
         const chatList = snap.docs.map(d => {
           const data = d.data();
           const partnerIdx = data.members?.findIndex((m: string) => m!== user.uid)?? -1;
           const partnerId = partnerIdx >= 0? data.members[partnerIdx] : "";
-
+          
           return {
             id: d.id,
             partnerName: data.partnerNames?.[partnerId] || data.partnerName || "Người lạ",
             partnerAvatar: data.partnerAvatars?.[partnerId] || data.partnerAvatar || "",
             partnerId,
-            lastMessage: data.lastMessage || "Đã kết nối. Hãy chào nhau 👋",
-            lastMessageTime: data.lastMessageTime?.toMillis() || data.createdAt?.toMillis() || 0,
+            lastMessage: data.lastMessage || "Bắt đầu trò chuyện",
+            lastMessageTime: data.lastMessageTime?.toMillis() || 0,
             unreadCount: data.unreadCounts?.[user.uid] || 0,
             isPartnerOnline: data.onlineStatus?.[partnerId] || false,
             status: data.status || "active",
             members: data.members || [],
-            createdAt: data.createdAt?.toMillis() || 0,
           } as ChatItem;
-        })
-     .filter(c => c.status!== "ended" || c.members.includes(user.uid))
-     .sort((a, b) => b.lastMessageTime - a.lastMessageTime);
-
+        });
         setChats(chatList);
         setLoading(false);
       },
@@ -79,7 +74,14 @@ export default function ChatsPage() {
     );
 
     return () => unsub();
-  }, [user?.uid, authLoading, db]);
+  }, [user?.uid, db]);
+
+  const filteredChats = useMemo(() => {
+    if (!search) return chats;
+    return chats.filter(c =>
+      c.partnerName.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [chats, search]);
 
   const formatTime = (timestamp: number) => {
     if (!timestamp) return "";
@@ -92,7 +94,7 @@ export default function ChatsPage() {
     if (minutes < 60) return `${minutes} phút`;
     if (hours < 24) return `${hours} giờ`;
     if (days < 7) return `${days} ngày`;
-    return new Date(timestamp).toLocaleDateString("vi-VN", { day: '2-digit', month: '2-digit' });
+    return new Date(timestamp).toLocaleDateString("vi-VN");
   };
 
   const handleEndChat = async (chatId: string, e: React.MouseEvent) => {
@@ -100,9 +102,7 @@ export default function ChatsPage() {
     try {
       await updateDoc(doc(db, "stranger_chats", chatId), {
         status: "ended",
-        endedAt: serverTimestamp(),
-        lastMessage: "Cuộc trò chuyện đã kết thúc",
-        lastMessageTime: serverTimestamp(),
+        endedAt: new Date(),
       });
       toast.success("Đã kết thúc cuộc trò chuyện");
     } catch {
@@ -111,23 +111,23 @@ export default function ChatsPage() {
   };
 
   const handleDeleteChat = async (chatId: string) => {
-    if (!user?.uid) return;
     try {
       await updateDoc(doc(db, "stranger_chats", chatId), {
-        members: arrayRemove(user.uid),
+        members: arrayRemove(user?.uid),
       });
-      toast.success("Đã ẩn cuộc trò chuyện");
+      toast.success("Đã xóa cuộc trò chuyện");
       setConfirmDelete(null);
     } catch {
       toast.error("Lỗi xóa chat");
     }
   };
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-black p-4 space-y-2">
-        {[1,2,3,4].map(i => (
-          <div key={i} className="h-20 bg-white dark:bg-zinc-900 rounded-2xl animate-pulse border border-zinc-200 dark:border-zinc-800" />
+      <div className="p-4 space-y-3">
+        <div className="h-8 w-40 bg-zinc-200 dark:bg-zinc-800 rounded-xl animate-pulse" />
+        {[1,2,3].map(i => (
+          <div key={i} className="h-20 bg-zinc-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
         ))}
       </div>
     );
@@ -135,9 +135,41 @@ export default function ChatsPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
+      <div className="sticky top-0 z-10 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800">
+        <div className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-[800]">Chat của bạn</h1>
+            <button
+              onClick={() => router.push("/stranger")}
+              className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center active:scale-90"
+            >
+              <FiMessageCircle size={20} />
+            </button>
+          </div>
+
+          <div className="relative">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm kiếm theo tên..."
+              className="w-full h-11 pl-10 pr-4 bg-zinc-100 dark:bg-zinc-900 rounded-xl text-sm outline-none"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+              >
+                <FiX className="text-zinc-400" size={18} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="p-4 space-y-2">
         <AnimatePresence mode="popLayout">
-          {chats.map(chat => (
+          {filteredChats.map(chat => (
             <motion.div
               key={chat.id}
               layout
@@ -146,7 +178,7 @@ export default function ChatsPage() {
               exit={{ opacity: 0, scale: 0.9 }}
               onClick={() => router.push(`/stranger/${chat.id}`)}
               className={cn(
-                "p-4 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all cursor-pointer",
+                "p-4 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all",
                 chat.status === "ended" && "opacity-60"
               )}
             >
@@ -177,14 +209,11 @@ export default function ChatsPage() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <p className={cn(
-                      "text-sm truncate",
-                      chat.unreadCount > 0? "text-zinc-900 dark:text-white font-[600]" : "text-zinc-500"
-                    )}>
+                    <p className="text-sm text-zinc-500 truncate">
                       {chat.lastMessage}
                     </p>
                     {chat.unreadCount > 0 && (
-                      <span className="ml-2 min-w-5 h-5 px-1.5 bg-blue-600 text-white text-xs font-[800] rounded-full flex items-center justify-center">
+                      <span className="ml-2 min-w- h-5 px-1.5 bg-blue-600 text-white text- font-[800] rounded-full flex items-center justify-center">
                         {chat.unreadCount > 99? "99+" : chat.unreadCount}
                       </span>
                     )}
@@ -214,20 +243,22 @@ export default function ChatsPage() {
           ))}
         </AnimatePresence>
 
-        {chats.length === 0 && (
-          <div className="text-center py-20">
+        {filteredChats.length === 0 && (
+          <div className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-3 bg-zinc-100 dark:bg-zinc-900 rounded-full flex items-center justify-center">
               <FiMessageCircle className="text-zinc-400" size={28} />
             </div>
-            <p className="text-zinc-500 font-[600] mb-4">
-              Chưa có cuộc trò chuyện nào
+            <p className="text-zinc-500 font-[600]">
+              {search? "Không tìm thấy cuộc trò chuyện" : "Chưa có cuộc trò chuyện nào"}
             </p>
-            <button
-              onClick={() => router.push("/stranger")}
-              className="px-6 h-11 bg-blue-600 text-white rounded-xl font-[700] active:scale-95 shadow-lg shadow-blue-600/20"
-            >
-              Tìm bạn mới
-            </button>
+            {!search && (
+              <button
+                onClick={() => router.push("/stranger")}
+                className="mt-4 px-6 h-11 bg-blue-600 text-white rounded-xl font-[700] active:scale-95"
+              >
+                Tìm bạn mới
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -246,9 +277,9 @@ export default function ChatsPage() {
               animate={{ scale: 1 }}
               exit={{ scale: 0.9 }}
               onClick={e => e.stopPropagation()}
-              className="bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl"
+              className="bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full"
             >
-              <h3 className="text-lg font-[800] mb-2">Ẩn cuộc trò chuyện?</h3>
+              <h3 className="text-lg font-[800] mb-2">Xóa cuộc trò chuyện?</h3>
               <p className="text-sm text-zinc-500 mb-6">
                 Bạn sẽ không thấy lại cuộc trò chuyện này nữa. Người kia vẫn có thể xem.
               </p>
@@ -263,20 +294,13 @@ export default function ChatsPage() {
                   onClick={() => handleDeleteChat(confirmDelete)}
                   className="flex-1 h-11 bg-red-600 text-white rounded-xl font-[700] active:scale-95"
                 >
-                  Ẩn
+                  Xóa
                 </button>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <button
-        onClick={() => router.push("/stranger")}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-600/30 flex items-center justify-center active:scale-90 z-20"
-      >
-        <FiUsers size={24} />
-      </button>
     </div>
   );
 }
