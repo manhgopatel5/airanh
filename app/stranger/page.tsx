@@ -345,62 +345,63 @@ const isDisabled = accountStatus === "banned";
           )}
         </div>
 
-            <AnimatePresence mode="wait">
-          {matchedChatId? (
-            <motion.div
-              key="matched"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-green-50 dark:bg-green-900/20 rounded-3xl p-8 border border-green-200 dark:border-green-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
-            >
-              <div className="w-20 h-20 mx-auto mb-4 bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-600/30">
-                <FiCheck className="text-white" size={36} />
-              </div>
-              <h3 className="text-lg font-[800] mb-2">Đã tìm thấy bạn!</h3>
-              <p className="text-sm text-zinc-500 mb-6">
-                Bấm để bắt đầu trò chuyện ngay
-              </p>
-              <button
-                onClick={() => router.push(`/chat/${matchedChatId}`)}
-                className="w-full h-12 bg-green-600 text-white rounded-xl font-[700] active:scale-95 transition-all"
-              >
-                Trò chuyện ngay
-              </button>
-            </motion.div>
-          ) : inQueue? (
-            <motion.div
-              key="queue"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
-            >
-              <div className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-blue-600/30">
-                <FiLoader className="text-white animate-spin" size={36} />
-              </div>
-              <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
-              <p className="text-sm text-zinc-500 mb-2">
-                {queueData?.interests
-                 ? queueData.interests.length === CATEGORIES.length - 1
-                   ? "Tất cả mục"
-                    : `${queueData.interests.length} mục đã chọn`
-                  : selectAllMode
-                 ? "Tất cả mục"
-                  : `${selectedCats.length} mục đã chọn`
-                }
-              </p>
-              <p className="text-xs text-zinc-400 mb-6">
-                Bạn có thể thoát ra, hệ thống sẽ tự thông báo khi có người match
-              </p>
-              <button
-                onClick={handleCancelQueue}
-                className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-[700] active:scale-95 transition-all"
-              >
-                Hủy tìm kiếm
-              </button>
-            </motion.div>
-          ) : (
+   <AnimatePresence mode="wait">
+  {matchedChatId? (
+    <motion.div
+      key="matched"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="bg-green-50 dark:bg-green-900/20 rounded-3xl p-8 border border-green-200 dark:border-green-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
+    >
+      <div className="w-20 h-20 mx-auto mb-4 bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-600/30">
+        <FiCheck className="text-white" size={36} />
+      </div>
+      <h3 className="text-lg font-[800] mb-2">Đã tìm thấy bạn!</h3>
+      <p className="text-sm text-zinc-500 mb-6">Bấm để bắt đầu trò chuyện ngay</p>
+      <button
+        onClick={() => {
+          router.push(`/chat/${matchedChatId}`);
+          deleteDoc(doc(db, "stranger_queue", user.uid)); // Xóa queue khi vào chat
+        }}
+        className="w-full h-12 bg-green-600 text-white rounded-xl font-[700] active:scale-95 transition-all"
+      >
+        Trò chuyện ngay
+      </button>
+    </motion.div>
+  ) : inQueue? (
+    <motion.div
+      key="queue"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
+    >
+      <div className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-blue-600/30">
+        <FiLoader className="text-white animate-spin" size={36} />
+      </div>
+      <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
+      <p className="text-sm text-zinc-500 mb-2">
+        {queueData?.interests
+         ? queueData.interests.length === CATEGORIES.length - 1
+           ? "Tất cả mục"
+            : `${queueData.interests.length} mục đã chọn`
+          : selectAllMode
+         ? "Tất cả mục"
+          : `${selectedCats.length} mục đã chọn`
+        }
+      </p>
+      <p className="text-xs text-zinc-400 mb-6">
+        Bạn có thể thoát ra, hệ thống sẽ tự thông báo khi có người match
+      </p>
+      <button
+        onClick={handleCancelQueue}
+        className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-[700] active:scale-95 transition-all"
+      >
+        Hủy tìm kiếm
+      </button>
+    </motion.div>
+  ) : (
             <motion.div
               key="grid"
               initial={{ opacity: 0 }}
