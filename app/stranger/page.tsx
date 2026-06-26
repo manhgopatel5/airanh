@@ -359,15 +359,17 @@ const isDisabled = accountStatus === "banned";
       </div>
       <h3 className="text-lg font-[800] mb-2">Đã tìm thấy bạn!</h3>
       <p className="text-sm text-zinc-500 mb-6">Bấm để bắt đầu trò chuyện ngay</p>
-      <button
-        onClick={() => {
-          router.push(`/chat/${matchedChatId}`);
-          deleteDoc(doc(db, "stranger_queue", user.uid)); // Xóa queue khi vào chat
-        }}
-        className="w-full h-12 bg-green-600 text-white rounded-xl font-[700] active:scale-95 transition-all"
-      >
-        Trò chuyện ngay
-      </button>
+  <button
+  onClick={() => {
+    router.push(`/chat/${matchedChatId}`);
+    if (user?.uid) {
+      deleteDoc(doc(db, "stranger_queue", user.uid)); // Thêm check null
+    }
+  }}
+  className="w-full h-12 bg-green-600 text-white rounded-xl font-[700] active:scale-95 transition-all"
+>
+  Trò chuyện ngay
+</button>
     </motion.div>
   ) : inQueue? (
     <motion.div
