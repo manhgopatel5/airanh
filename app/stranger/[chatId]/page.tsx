@@ -368,6 +368,7 @@ export default function ChatRoomPage() {
               <FiSend size={18} />
             </button>
           </div>
+
         </div>
       ) : (
         <div className="p-4 text-center text-sm text-zinc-500 border-t border-zinc-200 dark:border-zinc-800">
