@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { FiArrowLeft, FiSend, FiSmile, FiUserPlus, FiAlertCircle } from "react-icons/fi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 
 interface Message {
   id: string;
@@ -44,13 +44,26 @@ export default function ChatRoomPage() {
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [showEmoji, setShowEmoji] = useState(false);
   const [showInviteNotice, setShowInviteNotice] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const emojiRef = useRef<HTMLDivElement>(null);
   const hasSetOnline = useRef(false);
   const hasSentNotice = useRef(false);
 
   const partnerId = chatData?.members?.find(m => m!== user?.uid) || "";
   const hasSentRequest = chatData?.friendRequests?.[user?.uid || ""] || false;
   const partnerSentRequest = chatData?.friendRequests?.[partnerId] || false;
+
+  // Click outside emoji để đóng
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (emojiRef.current &&!emojiRef.current.contains(e.target as Node)) {
+        setShowEmoji(false);
+      }
+    };
+    if (showEmoji) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showEmoji]);
 
   // Countdown timer
   useEffect(() => {
@@ -62,13 +75,13 @@ export default function ChatRoomPage() {
       const diff = Math.max(0, Math.floor((expires - now) / 1000));
       setTimeLeft(diff);
 
-      // Hiện thông báo lúc 2 phút
       if (diff === 120 &&!hasSentNotice.current) {
         hasSentNotice.current = true;
         setShowInviteNotice(true);
       }
 
       if (diff === 0) {
+        setIsExpired(true);
         clearInterval(interval);
       }
     }, 1000);
@@ -90,9 +103,8 @@ export default function ChatRoomPage() {
       chatRef,
       (snap) => {
         if (!snap.exists()) {
-          setError("Cuộc trò chuyện đã hết hạn");
+          setIsExpired(true);
           setLoading(false);
-          setTimeout(() => router.push("/stranger/chats"), 2000);
           return;
         }
 
@@ -140,7 +152,7 @@ export default function ChatRoomPage() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() ||!user?.uid ||!chatId || chatData?.status === "ended") return;
+    if (!input.trim() ||!user?.uid ||!chatId || chatData?.status === "ended" || isExpired) return;
 
     const msg: Message = {
       id: crypto.randomUUID(),
@@ -180,16 +192,18 @@ export default function ChatRoomPage() {
       });
       toast.success("Đã gửi lời mời kết bạn");
 
-      // Nếu cả 2 đã gửi thì tạo friend
+      // Nếu cả 2 đã gửi thì tự động kết bạn
       if (partnerSentRequest) {
-        await setDoc(doc(db, "users", user.uid, "friends", partnerId), {
-          createdAt: serverTimestamp(),
-          status: "accepted",
-        });
-        await setDoc(doc(db, "users", partnerId, "friends", user.uid), {
-          createdAt: serverTimestamp(),
-          status: "accepted",
-        });
+        await Promise.all([
+          setDoc(doc(db, "users", user.uid, "friends", partnerId), {
+            createdAt: serverTimestamp(),
+            status: "accepted",
+          }),
+          setDoc(doc(db, "users", partnerId, "friends", user.uid), {
+            createdAt: serverTimestamp(),
+            status: "accepted",
+          })
+        ]);
         toast.success("Đã kết bạn thành công!");
       }
     } catch {
@@ -217,9 +231,34 @@ export default function ChatRoomPage() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Màn hình trắng khi hết giờ
+  if (isExpired) {
+    return (
+      <div className="h-dvh flex flex-col items-center justify-center bg-white dark:bg-black gap-6 px-4">
+        <div className="w-20 h-20 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
+          <FiAlertCircle size={40} className="text-zinc-400" />
+        </div>
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-[800] text-zinc-900 dark:text-white">
+            Cuộc trò chuyện đã bị xoá
+          </h2>
+          <p className="text-sm text-zinc-500">
+            Phòng chat này đã hết hạn sau 5 phút
+          </p>
+        </div>
+        <button
+          onClick={() => router.push("/stranger/chats")}
+          className="px-8 h-12 bg-blue-600 text-white rounded-2xl font-[700] active:scale-95 transition-all"
+        >
+          Quay về
+        </button>
+      </div>
+    );
+  }
+
   if (authLoading || loading) {
     return (
-      <div className="h-screen bg-white dark:bg-black p-4 space-y-3">
+      <div className="h-dvh bg-white dark:bg-black p-4 space-y-3">
         <div className="h-14 bg-zinc-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
         <div className="h-12 w-2/3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
         <div className="h-12 w-1/2 ml-auto bg-blue-100 dark:bg-blue-900/30 rounded-2xl animate-pulse" />
@@ -229,7 +268,7 @@ export default function ChatRoomPage() {
 
   if (error ||!chatData) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center gap-4 bg-white dark:bg-black">
+      <div className="h-dvh flex flex-col items-center justify-center gap-4 bg-white dark:bg-black">
         <p className="text-zinc-500">{error || "Không tìm thấy chat"}</p>
         <button
           onClick={() => router.push("/stranger/chats")}
@@ -244,7 +283,7 @@ export default function ChatRoomPage() {
   const isUrgent = timeLeft <= 120;
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-b from-zinc-50 to-white dark:from-black dark:to-zinc-950">
+    <div className="h-dvh flex flex-col bg-gradient-to-b from-zinc-50 to-white dark:from-black dark:to-zinc-950">
       {/* Header */}
       <div className="h-16 px-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <button
@@ -258,7 +297,7 @@ export default function ChatRoomPage() {
         <div className={cn(
           "px-4 py-1.5 rounded-xl font-[800] transition-all",
           isUrgent
-           ? "bg-red-500 text-white text-lg animate-pulse scale-110"
+          ? "bg-red-500 text-white text-lg animate-pulse scale-110"
             : "bg-zinc-100 dark:bg-zinc-900 text-sm"
         )}>
           {formatTime(timeLeft)}
@@ -279,8 +318,8 @@ export default function ChatRoomPage() {
         Cuộc trò chuyện sẽ tự động xoá sau 5 phút
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      {/* Messages - pb-24 để không bị input che */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
         {messages.length === 0 && (
           <p className="text-center text-sm text-zinc-400 mt-8">
             Bắt đầu cuộc trò chuyện 👋
@@ -324,9 +363,9 @@ export default function ChatRoomPage() {
             <div key={msg.id} className={cn("flex", isMe? "justify-end" : "justify-start")}>
               <div
                 className={cn(
-                  "max-w-[75%] px-4 py-2.5 rounded-3xl text-sm shadow-sm",
+                  "max-w-[75%] px-4 py-2.5 rounded-3xl text-sm shadow-sm break-words",
                   isMe
-                   ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
+                  ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
                     : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-bl-lg"
                 )}
               >
@@ -342,8 +381,13 @@ export default function ChatRoomPage() {
       {chatData.status === "active"? (
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black relative">
           {showEmoji && (
-            <div className="absolute bottom-full left-4 mb-2 z-50">
-              <EmojiPicker onEmojiClick={handleEmojiClick} />
+            <div ref={emojiRef} className="absolute bottom-full left-4 mb-2 z-50">
+              <EmojiPicker 
+                onEmojiClick={handleEmojiClick}
+                theme={Theme.AUTO}
+                width={320}
+                height={400}
+              />
             </div>
           )}
           <div className="flex items-center gap-2">
@@ -368,7 +412,6 @@ export default function ChatRoomPage() {
               <FiSend size={18} />
             </button>
           </div>
-
         </div>
       ) : (
         <div className="p-4 text-center text-sm text-zinc-500 border-t border-zinc-200 dark:border-zinc-800">
