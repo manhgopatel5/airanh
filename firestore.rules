@@ -17,10 +17,8 @@ match /admin_credentials/{docId} {
 }
 
 match /users/{userId} {
-  // Cho phép đọc public để query BXH chạy được
   allow read: if true;
   
-  // FIX: Bỏ 'vip' khỏi list, chặn client tự sửa vip
   allow update: if isOwner(userId) 
     && !request.resource.data.diff(resource.data).changedKeys().hasAny(['vip'])
     && request.resource.data.diff(resource.data).changedKeys()
@@ -39,16 +37,32 @@ match /users/{userId} {
   }
 }
 
-    // ========== EVENTS - CHỈ ADMIN MỚI SỬA ĐƯỢC ==========
+    // ========== FRIENDS COLLECTION GỐC - THÊM MỚI ==========
+    match /friends/{friendId} {
+      allow read: if isSignedIn() && request.auth.uid in friendId.split('_');
+      allow create: if isSignedIn() && request.auth.uid in friendId.split('_');
+      allow delete: if isSignedIn() && request.auth.uid in friendId.split('_');
+    }
+
+    // ========== BLOCKS - THÊM MỚI ==========
+    match /blocks/{blockId} {
+      allow read: if isSignedIn() && request.auth.uid in blockId.split('_');
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.fromUserId;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.fromUserId;
+    }
+
+    // ========== EVENTS ==========
     match /events/{eventId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
-match /promoCodes/{code} {
-  allow read: if false; // Chặn client đọc trực tiếp
-  allow write: if false; // Chỉ Admin SDK ghi
-}
-    // ========== CHECKINS - MỚI THÊM ==========
+
+    match /promoCodes/{code} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // ========== CHECKINS ==========
     match /checkins/{checkinId} {
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
@@ -163,7 +177,7 @@ match /promoCodes/{code} {
       allow write: if isSignedIn();
     }
 
-    // ========== GROUPS - FIX HOÀN CHỈNH ==========
+    // ========== GROUPS ==========
     match /groups/{groupId} {
       allow read: if isSignedIn() && (
         request.auth.uid in resource.data.members ||
@@ -220,7 +234,7 @@ match /promoCodes/{code} {
       }
     }
 
-    // ========== CHATS - ĐÃ SỬA CHO PUBLIC ROOM ==========
+    // ========== CHATS ==========
     match /chats/{chatId} {
       allow read: if isSignedIn() && (isPublic(chatId) || request.auth.uid in resource.data.members);
 
@@ -264,23 +278,26 @@ match /promoCodes/{code} {
       }
     }
 
-    // ========== FRIEND REQUESTS ==========
-match /friendRequests/{reqId} {
-  allow read: if isSignedIn() && 
-    (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
+    // ========== FRIEND REQUESTS - ĐÃ FIX ==========
+    match /friendRequests/{reqId} {
+      allow read: if isSignedIn() && 
+        (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
 
-  allow create: if isSignedIn()
-    && request.auth.uid == request.resource.data.fromUserId
-    && request.resource.data.toUserId is string
-    && request.resource.data.status == 'pending'
-    && request.resource.data.createdAt is timestamp;
+      allow create: if isSignedIn()
+        && request.auth.uid == request.resource.data.fromUserId
+        && request.resource.data.toUserId is string
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt is timestamp
+        && reqId == [request.resource.data.fromUserId, request.resource.data.toUserId].sort().join('_');
 
-  allow update: if isSignedIn() && 
-    (request.auth.uid == resource.data.toUserId || request.auth.uid == resource.data.fromUserId);
+      allow update: if isSignedIn() && 
+        (request.auth.uid == resource.data.toUserId || request.auth.uid == resource.data.fromUserId)
+        && request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['status', 'updatedAt']);
 
-  allow delete: if isSignedIn() && 
-    (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
-}
+      allow delete: if isSignedIn() && 
+        (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
+    }
 
     // ========== USERNAMES ==========
     match /usernames/{username} {
@@ -300,18 +317,18 @@ match /friendRequests/{reqId} {
       allow update, delete: if isSignedIn() && request.auth.uid == resource.data.toUserId;
     }
 
-    // ========== STRANGER CHAT - GỘP DUY NHẤT ==========
+    // ========== STRANGER CHAT ==========
     match /stranger_chats/{chatId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.members;
-      allow create: if false; // Chỉ Cloud Function tạo
+      allow create: if false;
       allow update: if isSignedIn()
         && request.auth.uid in resource.data.members
         && request.resource.data.diff(resource.data).changedKeys()
           .hasOnly([
-            'messages', 'lastMessage', 'lastMessageTime', 'status', 
+            'messages', 'lastMessageTime', 'status', 
             'endedAt', 'extended', 'expiresAt', 'reportedBy',
             'unreadCounts', 'onlineStatus', 'partnerNames', 'partnerAvatars',
-            'members' // Cho phép arrayRemove khi ẩn chat
+            'members'
           ]);
       allow delete: if false;
 
@@ -333,10 +350,10 @@ match /friendRequests/{reqId} {
       }
     }
 
-    // ========== STRANGER QUEUE - GỘP DUY NHẤT ==========
+    // ========== STRANGER QUEUE ==========
     match /stranger_queue/{userId} {
-      allow read: if isSignedIn(); // Cho Cloud Function đọc để match
-      allow create, update, delete: if isOwner(userId); // Chỉ owner tự sửa queue mình
+      allow read: if isSignedIn();
+      allow create, update, delete: if isOwner(userId);
     }
 
     // ========== ORDERS ==========
