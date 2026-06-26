@@ -319,7 +319,7 @@ export default function ChatRoomPage() {
       </div>
 
       {/* Messages - pb-24 để không bị input che */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
+<div className="flex-1 overflow-y-auto p-4 space-y-3 pb-32">
         {messages.length === 0 && (
           <p className="text-center text-sm text-zinc-400 mt-8">
             Bắt đầu cuộc trò chuyện 👋
@@ -378,8 +378,8 @@ export default function ChatRoomPage() {
       </div>
 
       {/* Input */}
-      {chatData.status === "active"? (
-        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black relative">
+{chatData.status === "active"? (
+  <div className="fixed bottom-0 left-0 right-0 p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black relative pb-safe">
       {showEmoji && (
   <div ref={emojiRef} className="absolute bottom-full left-0 right-0 mx-4 mb-2 z-50">
     <EmojiPicker 
