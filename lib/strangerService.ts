@@ -1,28 +1,37 @@
-import { getFirebaseDB } from "./firebase";
-import { 
-  doc, 
-  setDoc, 
-  getDoc, 
-  deleteDoc, 
-  collection, 
-  
-  query, 
-  where, 
-  getDocs, 
-  serverTimestamp, 
-  Timestamp,
+import {
+  doc,
   runTransaction,
-  limit
+  collection,
+  serverTimestamp,
+  Timestamp,
+  getDoc,
+  getDocs,
+  writeBatch,
+  limit,
+  orderBy,
+  query,
+  where,
+  Unsubscribe,
+  onSnapshot,
+  addDoc,
+  getCountFromServer,
+  updateDoc,
+  deleteDoc,
+  QueryDocumentSnapshot,
+  DocumentData,
+  setDoc,
 } from "firebase/firestore";
+import { getFirebaseDB } from "./firebase";
 
+/* ================= TYPES ================= */
 export type Gender = "male" | "female" | "other" | "any";
 export type AgeRange = "18-22" | "23-27" | "28-35" | "any";
 
 export type StrangerFilters = {
-  gender?: Gender;
-  ageRange?: AgeRange;
-  location?: string;
   interests?: string[];
+  ageRange?: string;
+  wantGender?: Gender;
+  province?: string;
 };
 
 type UserInfo = {
@@ -50,11 +59,11 @@ const isMatch = (
   filters2: StrangerFilters
 ): boolean => {
   // Check gender 2 chiều
-  if (filters1.gender && filters1.gender!== "any") {
-    if (user2.gender && user2.gender!== filters1.gender) return false;
+  if (filters1.wantGender && filters1.wantGender!== "any") {
+    if (user2.gender && user2.gender!== filters1.wantGender) return false;
   }
-  if (filters2.gender && filters2.gender!== "any") {
-    if (user1.gender && user1.gender!== filters2.gender) return false;
+  if (filters2.wantGender && filters2.wantGender!== "any") {
+    if (user1.gender && user1.gender!== filters2.wantGender) return false;
   }
 
   // Check age range 2 chiều
@@ -68,11 +77,11 @@ const isMatch = (
   }
 
   // Check location 2 chiều
-  if (filters1.location && filters1.location!== "Toàn quốc") {
-    if (user2.location && user2.location!== filters1.location) return false;
+  if (filters1.province && filters1.province!== "Toàn quốc") {
+    if (user2.location && user2.location!== filters1.province) return false;
   }
-  if (filters2.location && filters2.location!== "Toàn quốc") {
-    if (user1.location && user1.location!== filters2.location) return false;
+  if (filters2.province && filters2.province!== "Toàn quốc") {
+    if (user1.location && user1.location!== filters2.province) return false;
   }
 
   // Check interests: ít nhất 1 interest trùng
@@ -169,6 +178,7 @@ export const matchStranger = async (
           createdAt: serverTimestamp(),
           expiresAt,
           friendRequests: {},
+          filters: filters, // LƯU FILTER VÀO CHAT
         });
 
         // Xóa partner khỏi queue
