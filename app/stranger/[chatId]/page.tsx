@@ -9,8 +9,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import EmojiPicker, { EmojiClickData, Theme, EmojiStyle } from "emoji-picker-react";
 import { sendFriendRequest, acceptRequest, type FriendRequest } from "@/lib/friendService";
-
-
+import { getApp } from "firebase/app";
+import { getFunctions, httpsCallable } from "firebase/functions";
 interface Message {
   id: string;
   text: string;
@@ -274,9 +274,7 @@ const handleContinueSearch = async () => {
       setMatchedChatId(data.chatId);
       toast.success("Đã tìm thấy bạn phù hợp!");
     } else {
-      // QUAN TRỌNG: KHÔNG PUSH NỮA, Ở LẠI TRANG NÀY
       toast.info("Đang tìm người phù hợp...");
-      // router.push("/stranger"); // XÓA DÒNG NÀY
     }
   } catch (err: any) {
     console.error(err);
