@@ -151,34 +151,7 @@ export default function ChatRoomPage() {
     };
   }, [chatId, user?.uid, authLoading, db, router]);
 
-  const handleSend = async () => {
-    if (!input.trim() ||!user?.uid ||!chatId || chatData?.status === "ended" || isExpired) return;
-
-    const msg: Message = {
-      id: crypto.randomUUID(),
-      text: input.trim(),
-      senderId: user.uid,
-      timestamp: new Date(),
-    };
-
-    const text = input.trim();
-    setInput("");
-    setShowEmoji(false);
-    inputRef.current?.focus();
-
-    try {
-      await updateDoc(doc(db, "stranger_chats", chatId), {
-        messages: arrayUnion(msg),
-        lastMessage: text,
-        lastMessageTime: serverTimestamp(),
-        [`unreadCounts.${partnerId}`]: ((chatData?.unreadCounts || {})[partnerId] || 0) + 1,
-      });
-    } catch (err: any) {
-      toast.error("Gửi tin nhắn thất bại");
-      console.error(err);
-      setInput(text);
-    }
-  };
+  
 const handleSend = async () => {
   if (!input.trim() ||!user?.uid ||!chatId || chatData?.status === "ended" || isExpired) return;
 
