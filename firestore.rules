@@ -338,12 +338,12 @@ match /orders/{orderId} {
       allow delete: if false;
     }
 
-    // ========== STRANGER QUEUE ==========
-    match /stranger_queue/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
-    } 
+// ========== STRANGER QUEUE ==========
+match /stranger_queue/{userId} {
+  allow read: if isSignedIn();
+  allow create: if isOwner(userId);
+  allow update: if isOwner(userId);
+  allow delete: if isOwner(userId) || isSignedIn(); // THÊM isSignedIn
+}
   }
 }
