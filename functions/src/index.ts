@@ -443,11 +443,11 @@ export const findStranger = onCall(
       }
 
       const tier = userData?.vip?.tier || userData?.tier || "user";
-      const correctKarma = tier === "elite" ? 400 : tier === "vip" ? 200 : 100;
+      const correctKarma = tier === "elite"? 400 : tier === "vip"? 200 : 100;
       
       if (userData?.karma === undefined || userData?.karma < correctKarma) {
         await userRef.set({ karma: correctKarma }, { merge: true });
-        userData = { ...userData, karma: correctKarma };
+        userData = {...userData, karma: correctKarma };
       }
 
       const userKarma = userData?.karma || 0;
@@ -458,11 +458,22 @@ export const findStranger = onCall(
       const userGender = userData?.gender || "other";
       const queueRef = db.collection("stranger_queue");
 
+      // CHECK XEM ĐÃ CÓ CHAT VỚI AI CHƯA - TRÁNH TẠO LẠI
+      const existingChat = await db.collection("stranger_chats")
+       .where("members", "array-contains", uid)
+       .where("status", "==", "active")
+       .limit(1)
+       .get();
+      
+      if (!existingChat.empty) {
+        return { matched: true, chatId: existingChat.docs[0].id };
+      }
+
       const matches = await queueRef
-        .where("status", "==", "waiting")
-        .where("userId", "!=", uid)
-        .limit(50)
-        .get();
+       .where("status", "==", "waiting")
+       .where("userId", "!=", uid)
+       .limit(50)
+       .get();
 
       let bestMatch: DocumentSnapshot | null = null;
       let maxCommon = 0;
@@ -470,12 +481,12 @@ export const findStranger = onCall(
       for (const doc of matches.docs) {
         const d = doc.data();
         
-        if (wantGender !== "all" && d.gender !== wantGender) continue;
-        if (d.wantGender !== "all" && d.wantGender !== userGender) continue;
-        if (ageRange && d.ageRange !== ageRange) continue;
+        if (wantGender!== "all" && d.gender!== wantGender) continue;
+        if (d.wantGender!== "all" && d.wantGender!== userGender) continue;
+        if (ageRange && d.ageRange!== ageRange) continue;
 
-        if (province && province !== "Toàn quốc") {
-          if (d.province !== province && d.province !== "Toàn quốc") continue;
+        if (province && province!== "Toàn quốc") {
+          if (d.province!== province && d.province!== "Toàn quốc") continue;
         }
 
         const common = interests.filter((i: string) => d.interests?.includes(i)).length;
@@ -485,12 +496,13 @@ export const findStranger = onCall(
         }
       }
 
-      // FIX: Check null trước khi dùng bestMatch!
       if (bestMatch && bestMatch.exists) {
         const other = bestMatch.data();
         if (!other) throw new HttpsError("internal", "Lỗi data");
         
-        const chatId = `str_${[uid, other.userId].sort().join("_")}_${Date.now()}`;
+        // FIX: CHATID CỐ ĐỊNH THEO 2 UID - KHÔNG DÙNG Date.now()
+        const chatId = `str_${[uid, other.userId].sort().join("_")}`;
+        const chatRef = db.doc(`stranger_chats/${chatId}`);
 
         await db.runTransaction(async (transaction) => {
           const otherQueueSnap = await transaction.get(bestMatch!.ref);
@@ -498,21 +510,37 @@ export const findStranger = onCall(
             throw new HttpsError("aborted", "Người kia vừa thoát hàng đợi");
           }
 
-          const chatRef = db.doc(`stranger_chats/${chatId}`);
-          transaction.set(chatRef, {
-            members: [uid, other.userId],
-            topic: interests,
-            ageRange,
-            province,
-            messages: [],
-            createdAt: FieldValue.serverTimestamp(),
-            expiresAt: Timestamp.fromDate(new Date(Date.now() + 5 * 60 * 1000)),
-            extended: false,
-            reportedBy: [],
-            status: "active",
-          });
+          const existingChatSnap = await transaction.get(chatRef);
+          
+          // NẾU CHƯA CÓ CHAT THÌ TẠO MỚI
+          if (!existingChatSnap.exists) {
+            transaction.set(chatRef, {
+              members: [uid, other.userId],
+              topic: interests,
+              ageRange,
+              province,
+              messages: [],
+              createdAt: FieldValue.serverTimestamp(),
+              lastMessageTime: FieldValue.serverTimestamp(), // THÊM ĐỂ QUERY RA
+              lastMessage: "Đã kết nối. Hãy chào nhau 👋", // THÊM
+              expiresAt: Timestamp.fromDate(new Date(Date.now() + 5 * 60 * 1000)),
+              extended: false,
+              reportedBy: [],
+              status: "active",
+            });
+          }
 
-          transaction.delete(bestMatch!.ref);
+          // SET MATCHED CHO CẢ 2 USER
+          transaction.update(bestMatch!.ref, { 
+            status: "matched", 
+            matchedChatId: chatId 
+          });
+          transaction.set(queueRef.doc(uid), { 
+            userId: uid,
+            status: "matched", 
+            matchedChatId: chatId,
+            createdAt: FieldValue.serverTimestamp()
+          });
         });
 
         return { matched: true, chatId };
