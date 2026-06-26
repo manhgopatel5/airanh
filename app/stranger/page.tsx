@@ -159,48 +159,82 @@ const isDisabled = accountStatus === "banned";
   };
 
   const saveFilters = () => {
-    const from = Number(tempAgeFrom);
-    const to = Number(tempAgeTo);
+  const from = Number(tempAgeFrom);
+  const to = Number(tempAgeTo);
 
-    if (from > to) {
-      return toast.error("Độ tuổi không hợp lệ");
-    }
-    if (from < 18) {
-      return toast.error("Độ tuổi tối thiểu là 18");
-    }
-    if (to > 100) {
-      return toast.error("Độ tuổi tối đa là 100");
-    }
+  if (from > to) {
+    return toast.error("Độ tuổi không hợp lệ");
+  }
+  if (from < 18) {
+    return toast.error("Độ tuổi tối thiểu là 18");
+  }
+  if (to > 100) {
+    return toast.error("Độ tuổi tối đa là 100");
+  }
 
-    setAgeFrom(from);
-    setAgeTo(to);
-    setSelectedGender(tempGender);
-    setSelectedProvince(tempProvince);
-    setShowFilterModal(false);
-    toast.success("Đã lưu bộ lọc");
-
-    if (currentStep === 2) setCurrentStep(3);
-  };
+  setAgeFrom(from);
+  setAgeTo(to);
+  setSelectedGender(tempGender);
+  setSelectedProvince(tempProvince);
+  setShowFilterModal(false);
+  toast.success("Đã lưu bộ lọc");
+  
+  // Xóa dòng này: if (currentStep === 2) setCurrentStep(3);
+};
 
   const handleStepClick = (step: 1 | 2 | 3) => {
   if (isDisabled) return;
   
   if (step === 1) {
     setCurrentStep(1);
+    return;
   }
   
-  if (step === 2 && selectedCats.length > 0) {
-    setCurrentStep(2);
-    // Đã bỏ openFilterModal() - chỉ chuyển tab thôi
-  }
-  
-  if (step === 3 && selectedCats.length > 0) {
-    if (ageFrom < 18) {
-      toast.error("Vui lòng chỉnh độ tuổi tối thiểu từ 18");
-      setCurrentStep(2);
-      openFilterModal(); // Vẫn giữ ở đây để ép user sửa tuổi
+  if (step === 2) {
+    if (selectedCats.length === 0) {
+      toast.error("Chọn ít nhất 1 mục trước");
       return;
     }
+    setCurrentStep(2);
+    // Bỏ openFilterModal() - chỉ chuyển tab, không ép mở modal
+    return;
+  }
+  
+  if (step === 3) {
+    if (selectedCats.length === 0) {
+      toast.error("Chọn ít nhất 1 mục trước");
+      return;
+    }
+
+    // Auto lưu filter từ temp -> state chính trước khi qua bước 3
+    const from = Number(tempAgeFrom);
+    const to = Number(tempAgeTo);
+
+    if (from > to) {
+      toast.error("Độ tuổi không hợp lệ");
+      setCurrentStep(2);
+      openFilterModal();
+      return;
+    }
+    if (from < 18) {
+      toast.error("Độ tuổi tối thiểu là 18");
+      setCurrentStep(2);
+      openFilterModal();
+      return;
+    }
+    if (to > 100) {
+      toast.error("Độ tuổi tối đa là 100");
+      setCurrentStep(2);
+      openFilterModal();
+      return;
+    }
+
+    // Lưu luôn
+    setAgeFrom(from);
+    setAgeTo(to);
+    setSelectedGender(tempGender);
+    setSelectedProvince(tempProvince);
+    
     setCurrentStep(3);
     handleFindStranger();
   }
