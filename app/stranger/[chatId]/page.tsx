@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp, setDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useParams, useRouter } from "next/navigation";
-import { FiArrowLeft, FiSend, FiSmile, FiUserPlus, FiAlertCircle, FiClock } from "react-icons/fi";
+import { FiSend, FiSmile, FiUserPlus, FiAlertCircle, FiClock, FiX } from "react-icons/fi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import EmojiPicker, { EmojiClickData, Theme, EmojiStyle } from "emoji-picker-react";
@@ -21,8 +21,6 @@ interface ChatData {
   members: string[];
   status: "active" | "ended" | "waiting";
   messages?: Message[];
-  partnerNames?: Record<string, string>;
-  partnerAvatars?: Record<string, string>;
   onlineStatus?: Record<string, boolean>;
   unreadCounts?: Record<string, number>;
   lastMessage?: string;
@@ -54,9 +52,6 @@ export default function ChatRoomPage() {
   const partnerId = chatData?.members?.find(m => m!== user?.uid) || "";
   const hasSentRequest = chatData?.friendRequests?.[user?.uid || ""] || false;
   const partnerSentRequest = chatData?.friendRequests?.[partnerId] || false;
-  const isPartnerOnline = chatData?.onlineStatus?.[partnerId] || false;
-  const partnerName = chatData?.partnerNames?.[partnerId] || "Người lạ";
-  const partnerAvatar = chatData?.partnerAvatars?.[partnerId];
 
   // Click outside emoji để đóng
   useEffect(() => {
@@ -122,7 +117,7 @@ export default function ChatRoomPage() {
         if (!data.members?.includes(user.uid)) {
           setError("Bạn không có quyền truy cập");
           setLoading(false);
-          setTimeout(() => router.push("/stranger/chats"), 2000);
+          setTimeout(() => router.push("/stranger"), 2000);
           return;
         }
 
@@ -225,7 +220,7 @@ export default function ChatRoomPage() {
         endedAt: serverTimestamp(),
       });
       toast.success("Đã kết thúc");
-      router.push("/stranger/chats");
+      router.push("/stranger");
     } catch {
       toast.error("Lỗi kết thúc chat");
     }
@@ -239,7 +234,7 @@ export default function ChatRoomPage() {
 
   if (isExpired) {
     return (
-      <div className="h-dvh flex flex-col items-center justify-center bg-white dark:bg-black gap-6 px-4">
+      <div className="h-[100svh] flex flex-col items-center justify-center bg-white dark:bg-black gap-6 px-4">
         <div className="w-20 h-20 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
           <FiAlertCircle size={40} className="text-zinc-400" />
         </div>
@@ -263,8 +258,8 @@ export default function ChatRoomPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="h-dvh bg-white dark:bg-black p-4 space-y-3">
-        <div className="h-14 bg-zinc-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
+      <div className="h-[100svh] bg-white dark:bg-black p-4 space-y-3">
+        <div className="h-12 bg-zinc-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
         <div className="h-12 w-2/3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
         <div className="h-12 w-1/2 ml-auto bg-blue-100 dark:bg-blue-900/30 rounded-2xl animate-pulse" />
       </div>
@@ -273,13 +268,13 @@ export default function ChatRoomPage() {
 
   if (error ||!chatData) {
     return (
-      <div className="h-dvh flex flex-col items-center justify-center gap-4 bg-white dark:bg-black">
+      <div className="h-[100svh] flex flex-col items-center justify-center gap-4 bg-white dark:bg-black">
         <p className="text-zinc-500">{error || "Không tìm thấy chat"}</p>
         <button
-          onClick={() => router.push("/stranger/chats")}
+          onClick={() => router.push("/stranger")}
           className="px-6 h-11 bg-blue-600 text-white rounded-xl font-[700] active:scale-95"
         >
-          Về danh sách chat
+          Về trang chủ
         </button>
       </div>
     );
@@ -288,59 +283,34 @@ export default function ChatRoomPage() {
   const isUrgent = timeLeft <= 120;
 
   return (
-    <div className="h-dvh grid grid-rows-[auto_auto_1fr_auto] bg-gradient-to-b from-zinc-50 to-white dark:from-black dark:to-zinc-950">
-      {/* Header */}
-      <div className="h-16 px-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-white/80 dark:bg-black/80 backdrop-blur-xl">
-        <button
-          onClick={() => router.push("/stranger/chats")}
-          className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center active:scale-90"
-        >
-          <FiArrowLeft size={20} />
-        </button>
-
-        <div className="flex items-center gap-2">
-          <img 
-            src={partnerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(partnerName)}`}
-            className="w-8 h-8 rounded-full object-cover"
-            alt=""
-          />
-          <div className="flex flex-col">
-            <span className="text-sm font-[700] leading-tight">{partnerName}</span>
-            {isPartnerOnline && (
-              <span className="text-xs text-green-600 font-[600]">Đang hoạt động</span>
-            )}
-          </div>
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-zinc-50 to-white dark:from-black dark:to-zinc-950">
+      {/* Top Bar: Notice + Timer + Kết thúc */}
+      <div className="shrink-0 bg-gradient-to-r from-red-500 to-rose-500 text-white px-4 py-2 flex items-center justify-between" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
+        <div className="flex-1 text-xs font-[700]">
+          Cuộc trò chuyện sẽ tự động xoá sau 5 phút
         </div>
-
         <div className="flex items-center gap-2">
           <div className={cn(
-            "px-3 py-1.5 rounded-xl font-[800] transition-all flex items-center gap-1",
-            isUrgent
-          ? "bg-red-500 text-white text-sm animate-pulse"
-              : "bg-zinc-100 dark:bg-zinc-900 text-xs"
+            "px-3 py-1.5 rounded-lg font-[800] transition-all flex items-center gap-1 bg-white/20 backdrop-blur",
+            isUrgent && "animate-pulse"
           )}>
             <FiClock size={14} />
             {formatTime(timeLeft)}
           </div>
-
           {chatData.status === "active" && (
             <button
               onClick={handleEndChat}
-              className="px-3 h-9 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-[700] active:scale-95"
+              className="px-3 h-8 bg-white/20 backdrop-blur text-white rounded-lg text-xs font-[700] active:scale-95 flex items-center gap-1"
             >
+              <FiX size={16} />
               Kết thúc
             </button>
           )}
         </div>
       </div>
 
-      {/* Notice expire */}
-      <div className="bg-gradient-to-r from-red-500 to-rose-500 text-white text-center py-2 text-xs font-[700]">
-        Cuộc trò chuyện sẽ tự động xoá sau 5 phút
-      </div>
-
       {/* Messages */}
-      <div className="overflow-y-auto px-4 py-3 space-y-2 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <div className="text-6xl">👋</div>
@@ -389,7 +359,7 @@ export default function ChatRoomPage() {
                 className={cn(
                   "max-w-[75%] px-4 py-2.5 rounded-3xl text-sm shadow-sm break-words",
                   isMe
-                ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
+               ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
                     : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-bl-lg"
                 )}
               >
@@ -403,7 +373,7 @@ export default function ChatRoomPage() {
 
       {/* Input - Fixed bottom */}
       {chatData.status === "active"? (
-        <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-black/95 backdrop-blur-xl" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+        <div className="shrink-0 p-3 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-black/95 backdrop-blur-xl" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
           {showEmoji && (
             <div ref={emojiRef} className="absolute bottom-full left-0 right-0 px-3 mb-2">
               <EmojiPicker 
@@ -444,7 +414,7 @@ export default function ChatRoomPage() {
           </div>
         </div>
       ) : (
-        <div className="p-4 text-center text-sm text-zinc-500 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+        <div className="shrink-0 p-4 text-center text-sm text-zinc-500 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
           Cuộc trò chuyện đã kết thúc
         </div>
       )}
