@@ -2,7 +2,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { 
   doc, 
   setDoc, 
-  getDoc, 
+  
   deleteDoc, 
   collection, 
   serverTimestamp, 
