@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import EmojiPicker, { EmojiClickData, Theme, EmojiStyle } from "emoji-picker-react";
 import { sendFriendRequest, acceptRequest, type FriendRequest } from "@/lib/friendService";
-import { matchStranger } from "@/lib/strangerService"; // THÊM DÒNG NÀY
+import { matchStranger } from "@/lib/strangerService";
 
 interface Message {
   id: string;
@@ -46,7 +46,8 @@ export default function ChatRoomPage() {
   const [showInviteNotice, setShowInviteNotice] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
   const [isEndedLocal, setIsEndedLocal] = useState(false);
-  const [isSearching, setIsSearching] = useState(false); // THÊM STATE NÀY
+  const [isSearching, setIsSearching] = useState(false);
+  const [matchedChatId, setMatchedChatId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const emojiRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -235,22 +236,19 @@ export default function ChatRoomPage() {
     }
   };
 
-  // SỬA HÀM NÀY: END CHAT CŨ + TÌM LUÔN
   const handleContinueSearch = async () => {
     if (!chatId ||!user?.uid || isSearching) return;
     setIsSearching(true);
     try {
-      // 1. End chat cũ
       await updateDoc(doc(db, "stranger_chats", chatId), {
         status: "ended",
         endedAt: serverTimestamp(),
       });
       
-      // 2. Gọi hàm match luôn, giữ nguyên filter cũ
       const newChatId = await matchStranger(user.uid);
       if (newChatId) {
-        toast.success("Đã tìm thấy người mới!");
-        router.push(`/stranger/${newChatId}`);
+        setMatchedChatId(newChatId);
+        toast.success("Đã tìm thấy bạn phù hợp!");
       } else {
         toast.info("Đang tìm người phù hợp...");
         router.push("/stranger");
@@ -374,7 +372,27 @@ export default function ChatRoomPage() {
           </div>
         )}
 
-        {messages.length === 0 &&!chatEnded && (
+        {/* Matched UI - Hiện khi match nhưng chưa vào */}
+        {matchedChatId &&!chatEnded && (
+          <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-2xl p-6 mb-3 text-center">
+            <div className="w-16 h-16 mx-auto mb-3 bg-green-600 rounded-full flex items-center justify-center">
+              <FiCheckCircle className="text-white" size={32} />
+            </div>
+            <h3 className="text-lg font-[800] mb-2">Đã tìm thấy bạn!</h3>
+            <p className="text-sm text-zinc-500 mb-4">Bấm để bắt đầu trò chuyện ngay</p>
+            <button
+              onClick={() => {
+                router.push(`/stranger/${matchedChatId}`);
+                setMatchedChatId(null);
+              }}
+              className="w-full h-12 bg-green-600 text-white rounded-xl font-[700] active:scale-95"
+            >
+              Trò chuyện ngay
+            </button>
+          </div>
+        )}
+
+        {messages.length === 0 &&!chatEnded &&!matchedChatId && (
           <button
             onClick={handleSendWave}
             className="flex flex-col items-center justify-center h-full gap-2 active:scale-95 transition-all w-full"
@@ -401,7 +419,7 @@ export default function ChatRoomPage() {
                 className={cn(
                   "max-w-[75%] px-4 py-2.5 rounded-3xl text-sm break-words",
                   isMe
-            ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
+           ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
                     : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-bl-lg"
                 )}
               >
