@@ -8,7 +8,7 @@ import { FiSend, FiSmile, FiUserPlus, FiAlertCircle, FiClock, FiX } from "react-
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import EmojiPicker, { EmojiClickData, Theme, EmojiStyle } from "emoji-picker-react";
-
+import { sendFriendRequest, acceptRequest, type FriendRequest } from "@/lib/friendService";
 interface Message {
   id: string;
   text: string;
@@ -238,31 +238,37 @@ const handleSendWave = async () => {
   };
 
   const handleSendFriendRequest = async () => {
-    if (!chatId ||!user?.uid || hasSentRequest) return;
+  if (!chatId ||!user?.uid || hasSentRequest ||!partnerId) return;
 
-    try {
-      await updateDoc(doc(db, "stranger_chats", chatId), {
-        [`friendRequests.${user.uid}`]: true,
-      });
-      toast.success("Đã gửi lời mời kết bạn");
+  try {
+    // 1. Update UI chat để disable nút
+    await updateDoc(doc(db, "stranger_chats", chatId), {
+      [`friendRequests.${user.uid}`]: true,
+    });
 
-      if (partnerSentRequest) {
-        await Promise.all([
-          setDoc(doc(db, "users", user.uid, "friends", partnerId), {
-            createdAt: serverTimestamp(),
-            status: "accepted",
-          }),
-          setDoc(doc(db, "users", partnerId, "friends", user.uid), {
-            createdAt: serverTimestamp(),
-            status: "accepted",
-          })
-        ]);
+    // 2. Dùng hàm chuẩn từ friendService
+    await sendFriendRequest(user.uid, partnerId);
+    
+    toast.success("Đã gửi lời mời kết bạn");
+
+    // 3. Nếu partner cũng gửi rồi thì accept luôn
+    if (partnerSentRequest) {
+      const requestId = [user.uid, partnerId].sort().join("_");
+      const reqSnap = await getDoc(doc(db, "friendRequests", requestId));
+      if (reqSnap.exists()) {
+        await acceptRequest({ id: requestId, ...reqSnap.data() } as FriendRequest);
         toast.success("Đã kết bạn thành công! 🎉");
       }
-    } catch {
-      toast.error("Lỗi gửi lời mời");
     }
-  };
+  } catch (err: any) {
+    console.error(err);
+    toast.error(err.message || "Lỗi gửi lời mời");
+    // Rollback UI nếu lỗi
+    await updateDoc(doc(db, "stranger_chats", chatId), {
+      [`friendRequests.${user.uid}`]: false,
+    }).catch(() => {});
+  }
+};
 
   const handleEndChat = async () => {
     if (!chatId) return;
