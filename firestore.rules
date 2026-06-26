@@ -323,5 +323,27 @@ match /orders/{orderId} {
   allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
   allow update, delete: if false; 
 }
+// ========== STRANGER CHAT ==========
+    match /stranger_chats/{chatId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.members;
+      allow create: if false;
+      allow update: if isSignedIn()
+        && request.auth.uid in resource.data.members
+        && request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly([
+            'messages', 'lastMessage', 'lastMessageTime', 'status', 
+            'endedAt', 'extended', 'expiresAt', 'reportedBy',
+            'unreadCounts', 'onlineStatus', 'partnerNames', 'partnerAvatars'
+          ]);
+      allow delete: if false;
+    }
+
+    // ========== STRANGER QUEUE ==========
+    match /stranger_queue/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    } 
   }
 }
