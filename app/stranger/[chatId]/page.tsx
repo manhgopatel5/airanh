@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/lib/AuthContext";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp, setDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useParams, useRouter } from "next/navigation";
@@ -69,16 +69,10 @@ export default function ChatRoomPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showEmoji]);
 
-  // Fix iOS viewport khi mở bàn phím
-  useEffect(() => {
-    const handleResize = () => {
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  // Auto scroll khi có tin nhắn mới
+  useLayoutEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+  }, [messages]);
 
   // Countdown timer
   useEffect(() => {
@@ -162,10 +156,6 @@ export default function ChatRoomPage() {
     };
   }, [chatId, user?.uid, authLoading, db, router]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   const handleSend = async () => {
     if (!input.trim() ||!user?.uid ||!chatId || chatData?.status === "ended" || isExpired) return;
 
@@ -247,7 +237,6 @@ export default function ChatRoomPage() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Màn hình trắng khi hết giờ
   if (isExpired) {
     return (
       <div className="h-dvh flex flex-col items-center justify-center bg-white dark:bg-black gap-6 px-4">
@@ -299,9 +288,9 @@ export default function ChatRoomPage() {
   const isUrgent = timeLeft <= 120;
 
   return (
-    <div className="h-dvh flex flex-col bg-gradient-to-b from-zinc-50 to-white dark:from-black dark:to-zinc-950">
+    <div className="h-dvh grid grid-rows-[auto_auto_1fr_auto] bg-gradient-to-b from-zinc-50 to-white dark:from-black dark:to-zinc-950">
       {/* Header */}
-      <div className="shrink-0 h-16 px-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-white/80 dark:bg-black/80 backdrop-blur-xl">
+      <div className="h-16 px-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <button
           onClick={() => router.push("/stranger/chats")}
           className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center active:scale-90"
@@ -318,7 +307,7 @@ export default function ChatRoomPage() {
           <div className="flex flex-col">
             <span className="text-sm font-[700] leading-tight">{partnerName}</span>
             {isPartnerOnline && (
-              <span className="text-[10px] text-green-600 font-[600]">Đang hoạt động</span>
+              <span className="text-xs text-green-600 font-[600]">Đang hoạt động</span>
             )}
           </div>
         </div>
@@ -327,7 +316,7 @@ export default function ChatRoomPage() {
           <div className={cn(
             "px-3 py-1.5 rounded-xl font-[800] transition-all flex items-center gap-1",
             isUrgent
-           ? "bg-red-500 text-white text-sm animate-pulse"
+          ? "bg-red-500 text-white text-sm animate-pulse"
               : "bg-zinc-100 dark:bg-zinc-900 text-xs"
           )}>
             <FiClock size={14} />
@@ -346,12 +335,12 @@ export default function ChatRoomPage() {
       </div>
 
       {/* Notice expire */}
-      <div className="shrink-0 bg-gradient-to-r from-red-500 to-rose-500 text-white text-center py-2 text-xs font-[700]">
+      <div className="bg-gradient-to-r from-red-500 to-rose-500 text-white text-center py-2 text-xs font-[700]">
         Cuộc trò chuyện sẽ tự động xoá sau 5 phút
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 pb-28" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="overflow-y-auto px-4 py-3 space-y-2 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <div className="text-6xl">👋</div>
@@ -400,7 +389,7 @@ export default function ChatRoomPage() {
                 className={cn(
                   "max-w-[75%] px-4 py-2.5 rounded-3xl text-sm shadow-sm break-words",
                   isMe
-                 ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
+                ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
                     : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-bl-lg"
                 )}
               >
@@ -414,7 +403,7 @@ export default function ChatRoomPage() {
 
       {/* Input - Fixed bottom */}
       {chatData.status === "active"? (
-        <div className="shrink-0 fixed bottom-0 left-0 right-0 p-3 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-black/95 backdrop-blur-xl" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+        <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-black/95 backdrop-blur-xl" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
           {showEmoji && (
             <div ref={emojiRef} className="absolute bottom-full left-0 right-0 px-3 mb-2">
               <EmojiPicker 
@@ -443,7 +432,7 @@ export default function ChatRoomPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSend()}
               placeholder="Nhắn tin..."
-              className="flex-1 min-h-[44px] max-h-[120px] px-4 py-3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl outline-none text-sm resize-none"
+              className="flex-1 min-h-11 max-h-[120px] px-4 py-3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl outline-none text-sm"
             />
             <button
               onClick={handleSend}
@@ -455,7 +444,7 @@ export default function ChatRoomPage() {
           </div>
         </div>
       ) : (
-        <div className="shrink-0 fixed bottom-0 left-0 right-0 p-4 text-center text-sm text-zinc-500 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+        <div className="p-4 text-center text-sm text-zinc-500 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
           Cuộc trò chuyện đã kết thúc
         </div>
       )}
