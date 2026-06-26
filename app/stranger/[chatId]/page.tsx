@@ -29,6 +29,12 @@ interface ChatData {
   lastMessageTime?: any;
   expiresAt?: any;
   friendRequests?: Record<string, boolean>;
+  filters?: { // THÊM 6 DÒNG NÀY
+    interests: string[];
+    ageRange: string;
+    wantGender: string;
+    province: string;
+  };
 }
 
 export default function ChatRoomPage() {
@@ -237,30 +243,44 @@ export default function ChatRoomPage() {
   };
 
   const handleContinueSearch = async () => {
-    if (!chatId ||!user?.uid || isSearching) return;
-    setIsSearching(true);
-    try {
-      await updateDoc(doc(db, "stranger_chats", chatId), {
-        status: "ended",
-        endedAt: serverTimestamp(),
-      });
-      
-      const newChatId = await matchStranger(user.uid);
-      if (newChatId) {
-        setMatchedChatId(newChatId);
-        toast.success("Đã tìm thấy bạn phù hợp!");
-      } else {
-        toast.info("Đang tìm người phù hợp...");
-        router.push("/stranger");
-      }
-    } catch (err: any) {
-      console.error(err);
-      toast.error("Lỗi tìm kiếm");
+  if (!chatId ||!user?.uid || isSearching) return;
+  setIsSearching(true);
+  try {
+    await updateDoc(doc(db, "stranger_chats", chatId), {
+      status: "ended",
+      endedAt: serverTimestamp(),
+    });
+    
+    // LẤY ĐÚNG FILTER TỪ CHAT CŨ
+    const oldFilters = chatData?.filters;
+    if (!oldFilters) {
+      toast.error("Không tìm thấy bộ lọc cũ");
       router.push("/stranger");
-    } finally {
-      setIsSearching(false);
+      return;
     }
-  };
+    
+    const newChatId = await matchStranger(user.uid, {
+      interests: oldFilters.interests || [],
+      ageRange: oldFilters.ageRange as any || "18-30",
+      wantGender: oldFilters.wantGender as any || "all",
+      province: oldFilters.province || "Toàn quốc"
+    });
+    
+    if (newChatId) {
+      setMatchedChatId(newChatId);
+      toast.success("Đã tìm thấy bạn phù hợp!");
+    } else {
+      toast.info("Đang tìm người phù hợp...");
+      router.push("/stranger");
+    }
+  } catch (err: any) {
+    console.error(err);
+    toast.error("Lỗi tìm kiếm");
+    router.push("/stranger");
+  } finally {
+    setIsSearching(false);
+  }
+};
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
