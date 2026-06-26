@@ -252,7 +252,7 @@ export default function ChatRoomPage() {
           </p>
         </div>
         <button
-          onClick={() => router.push("/stranger/chats")}
+          onClick={() => router.push("/stranger")}
           className="px-8 h-12 bg-blue-600 text-white rounded-2xl font-[700] active:scale-95 transition-all"
         >
           Quay về
