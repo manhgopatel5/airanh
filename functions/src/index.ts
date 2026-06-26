@@ -247,34 +247,57 @@ export const unfriend = onCall(
 // 5. Tự động xóa task hết hạn sau 7 ngày - chạy 2h sáng mỗi ngày
 export const cleanupExpiredTasks = onSchedule(
   {
-    schedule: "0 2 * *",
+    schedule: "0 2 * * *", // 2h sáng mỗi ngày, đủ 5 phần
     timeZone: "Asia/Ho_Chi_Minh",
     region: "asia-southeast1",
-    memory: "128MiB",
+    memory: "256MiB",
   },
   async () => {
     const sevenDaysAgo = Timestamp.fromDate(
       new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     );
 
-    const expiredTasks = await db
-.collection("tasks")
-.where("deadline", "<", sevenDaysAgo)
-.limit(500)
-.get();
+    let totalDeleted = 0;
 
-    if (expiredTasks.empty) {
+    // 1. Xóa TASKS hết hạn 7 ngày
+    const expiredTasks = await db
+      .collection("tasks")
+      .where("deadline", "<", sevenDaysAgo)
+      .limit(500)
+      .get();
+
+    if (!expiredTasks.empty) {
+      const batch = db.batch();
+      expiredTasks.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      totalDeleted += expiredTasks.size;
+      console.log(`Deleted ${expiredTasks.size} expired tasks`);
+    } else {
       console.log("No expired tasks to delete");
-      return;
     }
 
-    const batch = db.batch();
-    expiredTasks.docs.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
+    // 2. Xóa PLANS hết hạn 7 ngày
+    const expiredPlans = await db
+      .collection("plans")
+      .where("endDate", "<", sevenDaysAgo)
+      .limit(500)
+      .get();
 
-    await batch.commit();
-    console.log(`Deleted ${expiredTasks.size} expired tasks`);
+    if (!expiredPlans.empty) {
+      const batch = db.batch();
+      expiredPlans.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      totalDeleted += expiredPlans.size;
+      console.log(`Deleted ${expiredPlans.size} expired plans`);
+    } else {
+      console.log("No expired plans to delete");
+    }
+
+    console.log(`Total deleted: ${totalDeleted} items`);
   }
 );
 
