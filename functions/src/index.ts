@@ -428,113 +428,113 @@ export const findStranger = onCall(
       throw new HttpsError("invalid-argument", "Chọn ít nhất 3 sở thích");
     }
 
-    const userRef = db.doc(`users/${uid}`);
-    const userDoc = await userRef.get();
-    let userData = userDoc.data();
+    try {
+      const userRef = db.doc(`users/${uid}`);
+      const userDoc = await userRef.get();
+      let userData = userDoc.data();
 
-    // CASE 1: USER CHƯA CÓ DOC -> TẠO MỚI
-    if (!userDoc.exists) {
-      await userRef.set({ 
-        karma: 100,
-        tier: 'user',
-        createdAt: FieldValue.serverTimestamp()
-      }, { merge: true });
-      userData = (await userRef.get()).data();
-    }
+      if (!userDoc.exists) {
+        await userRef.set({ 
+          karma: 100,
+          tier: 'user',
+          createdAt: FieldValue.serverTimestamp()
+        }, { merge: true });
+        userData = (await userRef.get()).data();
+      }
 
-    // CASE 2: USER CÓ DOC NHƯNG THIẾU KARMA -> TỰ TẠO THEO TIER
-    if (userData?.karma === undefined) {
       const tier = userData?.vip?.tier || userData?.tier || "user";
-      const defaultKarma = tier === "elite" ? 400 : tier === "vip" ? 200 : 100;
-      await userRef.set({ karma: defaultKarma }, { merge: true });
-      userData = { ...userData, karma: defaultKarma };
-    }
-
-    const userKarma = userData?.karma || 0;
-    if (userKarma < 50) {
-      throw new HttpsError("permission-denied", `Cần tối thiểu 50 điểm. Hiện tại: ${userKarma}`);
-    }
-
-    const userGender = userData?.gender || "other";
-    const queueRef = db.collection("stranger_queue");
-
-    const matches = await queueRef
-      .where("status", "==", "waiting")
-      .where("userId", "!=", uid)
-      .limit(50)
-      .get();
-
-    let bestMatch: DocumentSnapshot | null = null;
-    let maxCommon = 0;
-
-    for (const doc of matches.docs) {
-      const d = doc.data();
+      const correctKarma = tier === "elite" ? 400 : tier === "vip" ? 200 : 100;
       
-      // Lọc giới tính
-      if (wantGender !== "all" && d.gender !== wantGender) continue;
-      if (d.wantGender !== "all" && d.wantGender !== userGender) continue;
-      
-      // Lọc độ tuổi
-      if (ageRange && d.ageRange !== ageRange) continue;
-
-      // LỌC TỈNH CHO TẤT CẢ USER
-      if (province && province !== "Toàn quốc") {
-        // Nếu user chọn tỉnh cụ thể, chỉ match người cùng tỉnh hoặc người chọn "Toàn quốc"
-        if (d.province !== province && d.province !== "Toàn quốc") continue;
+      if (userData?.karma === undefined || userData?.karma < correctKarma) {
+        await userRef.set({ karma: correctKarma }, { merge: true });
+        userData = { ...userData, karma: correctKarma };
       }
-      // Nếu user chọn "Toàn quốc" thì match tất cả, không filter
 
-      const common = interests.filter((i: string) => d.interests?.includes(i)).length;
-      if (common >= 2 && common > maxCommon) {
-        maxCommon = common;
-        bestMatch = doc;
+      const userKarma = userData?.karma || 0;
+      if (userKarma < 50) {
+        throw new HttpsError("permission-denied", `Cần tối thiểu 50 điểm. Hiện tại: ${userKarma}`);
       }
-    }
 
-    if (bestMatch) {
-      const other = bestMatch.data();
-      if (!other) throw new HttpsError("internal", "Lỗi data");
-      
-      const chatId = `str_${[uid, other.userId].sort().join("_")}_${Date.now()}`;
+      const userGender = userData?.gender || "other";
+      const queueRef = db.collection("stranger_queue");
 
-      await db.runTransaction(async (transaction) => {
-        const otherQueueSnap = await transaction.get(bestMatch!.ref);
-        if (!otherQueueSnap.exists) {
-          throw new HttpsError("aborted", "Người kia vừa thoát hàng đợi");
+      const matches = await queueRef
+        .where("status", "==", "waiting")
+        .where("userId", "!=", uid)
+        .limit(50)
+        .get();
+
+      let bestMatch: DocumentSnapshot | null = null;
+      let maxCommon = 0;
+
+      for (const doc of matches.docs) {
+        const d = doc.data();
+        
+        if (wantGender !== "all" && d.gender !== wantGender) continue;
+        if (d.wantGender !== "all" && d.wantGender !== userGender) continue;
+        if (ageRange && d.ageRange !== ageRange) continue;
+
+        if (province && province !== "Toàn quốc") {
+          if (d.province !== province && d.province !== "Toàn quốc") continue;
         }
 
-        const chatRef = db.doc(`stranger_chats/${chatId}`);
-        transaction.set(chatRef, {
-          members: [uid, other.userId],
-          topic: interests,
-          ageRange,
-          province,
-          messages: [],
-          createdAt: FieldValue.serverTimestamp(),
-          expiresAt: Timestamp.fromDate(new Date(Date.now() + 5 * 60 * 1000)),
-          extended: false,
-          reportedBy: [],
-          status: "active",
+        const common = interests.filter((i: string) => d.interests?.includes(i)).length;
+        if (common >= 2 && common > maxCommon) {
+          maxCommon = common;
+          bestMatch = doc;
+        }
+      }
+
+      // FIX: Check null trước khi dùng bestMatch!
+      if (bestMatch && bestMatch.exists) {
+        const other = bestMatch.data();
+        if (!other) throw new HttpsError("internal", "Lỗi data");
+        
+        const chatId = `str_${[uid, other.userId].sort().join("_")}_${Date.now()}`;
+
+        await db.runTransaction(async (transaction) => {
+          const otherQueueSnap = await transaction.get(bestMatch!.ref);
+          if (!otherQueueSnap.exists) {
+            throw new HttpsError("aborted", "Người kia vừa thoát hàng đợi");
+          }
+
+          const chatRef = db.doc(`stranger_chats/${chatId}`);
+          transaction.set(chatRef, {
+            members: [uid, other.userId],
+            topic: interests,
+            ageRange,
+            province,
+            messages: [],
+            createdAt: FieldValue.serverTimestamp(),
+            expiresAt: Timestamp.fromDate(new Date(Date.now() + 5 * 60 * 1000)),
+            extended: false,
+            reportedBy: [],
+            status: "active",
+          });
+
+          transaction.delete(bestMatch!.ref);
         });
 
-        transaction.delete(bestMatch!.ref);
+        return { matched: true, chatId };
+      } 
+      
+      await queueRef.doc(uid).set({
+        userId: uid,
+        interests,
+        ageRange,
+        wantGender,
+        gender: userGender,
+        province: province || "Toàn quốc",
+        status: "waiting",
+        createdAt: FieldValue.serverTimestamp(),
       });
-
-      return { matched: true, chatId };
-    } 
-    
-    await queueRef.doc(uid).set({
-      userId: uid,
-      interests,
-      ageRange,
-      wantGender,
-      gender: userGender,
-      province: province || "Toàn quốc",
-      status: "waiting",
-      createdAt: FieldValue.serverTimestamp(),
-    });
-    
-    return { matched: false };
+      
+      return { matched: false };
+    } catch (error: any) {
+      console.error("findStranger error:", error);
+      if (error instanceof HttpsError) throw error;
+      throw new HttpsError("internal", error.message || "Lỗi server");
+    }
   }
 );
 
