@@ -328,7 +328,7 @@ match /users/{userId} {
             'messages', 'lastMessageTime', 'status', 
             'endedAt', 'extended', 'expiresAt', 'reportedBy',
             'unreadCounts', 'onlineStatus', 'partnerNames', 'partnerAvatars',
-            'members'
+            'members', 'lastMessage', 'friendRequests', 'filters'
           ]);
       allow delete: if false;
 
