@@ -290,12 +290,14 @@ match /friends/{friendId} {
 
    // ========== FRIEND REQUESTS - FIX LỖI PERMISSION ==========
 match /friendRequests/{reqId} {
-  // Cho phép LIST để query where("fromUserId", "==", uid) chạy được
-  allow list: if isSignedIn() && request.auth.uid == request.query.where[0][2];
+  // Fix: check hẳn tên field, không dùng where[0]
+  allow list: if isSignedIn() && 
+    request.auth.uid == request.query.where.find(w => w[0] == 'fromUserId')[2] ||
+    request.auth.uid == request.query.where.find(w => w[0] == 'toUserId')[2];
   
-  // Cho phép GET 1 doc cụ thể
   allow get: if isSignedIn() && 
-    (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
+    (request.auth.uid == resource.data.fromUserId || 
+     request.auth.uid == resource.data.toUserId);
 
   allow create: if isSignedIn()
     && request.auth.uid == request.resource.data.fromUserId
@@ -307,7 +309,7 @@ match /friendRequests/{reqId} {
   allow update: if isSignedIn() && 
     (request.auth.uid == resource.data.toUserId || request.auth.uid == resource.data.fromUserId)
     && request.resource.data.diff(resource.data).changedKeys()
-     .hasOnly(['status', 'updatedAt', 'respondedAt']); // Thêm respondedAt
+   .hasOnly(['status', 'updatedAt', 'respondedAt']);
 
   allow delete: if isSignedIn() && 
     (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
