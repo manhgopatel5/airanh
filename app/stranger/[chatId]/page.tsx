@@ -8,9 +8,10 @@ import { FiSend, FiCheckCircle, FiSmile, FiUserPlus, FiAlertCircle, FiClock, FiX
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import EmojiPicker, { EmojiClickData, Theme, EmojiStyle } from "emoji-picker-react";
-import { sendFriendRequest, acceptRequest, type FriendRequest } from "@/lib/friendService";
+// XÓA DÒNG NÀY: import { sendFriendRequest, acceptRequest, type FriendRequest } from "@/lib/friendService";
 import { getApp } from "firebase/app";
 import { getFunctions, httpsCallable } from "firebase/functions";
+
 interface Message {
   id: string;
   text: string;
@@ -29,7 +30,7 @@ interface ChatData {
   lastMessageTime?: any;
   expiresAt?: any;
   friendRequests?: Record<string, boolean>;
-  filters?: { // THÊM 6 DÒNG NÀY
+  filters?: {
     interests: string[];
     ageRange: string;
     wantGender: string;
@@ -54,6 +55,7 @@ export default function ChatRoomPage() {
   const [isEndedLocal, setIsEndedLocal] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [matchedChatId, setMatchedChatId] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const emojiRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -202,142 +204,127 @@ export default function ChatRoomPage() {
     inputRef.current?.focus();
   };
 
-  const [isSending, setIsSending] = useState(false); // Thêm state chống spam click
+  // FIX: Đổi sang httpsCallable
+  const handleSendFriendRequest = async () => {
+    if (!chatId ||!user?.uid || hasSentRequest ||!partnerId) {
+      console.warn('[handleSendFriendRequest] Thiếu data:', { chatId, uid: user?.uid, hasSentRequest, partnerId });
+      return;
+    }
 
-const handleSendFriendRequest = async () => {
-  if (!chatId ||!user?.uid || hasSentRequest ||!partnerId) {
-    console.warn('[handleSendFriendRequest] Thiếu data:', { chatId, uid: user?.uid, hasSentRequest, partnerId });
-    return;
-  }
-  
-  // Chống double-click
-  if (isSending) {
-    console.log('[handleSendFriendRequest] Đang gửi, bỏ qua click');
-    return;
-  }
-  
-  setIsSending(true);
-  console.log('[handleSendFriendRequest] Bắt đầu:', { from: user.uid, to: partnerId, chatId });
+    if (isSending) {
+      console.log('[handleSendFriendRequest] Đang gửi, bỏ qua click');
+      return;
+    }
 
-  try {
-    // 1. Gọi sendFriendRequest trước
-    console.log('[handleSendFriendRequest] Gọi sendFriendRequest...');
-    await sendFriendRequest(user.uid, partnerId);
-    console.log('[handleSendFriendRequest] sendFriendRequest OK');
+    setIsSending(true);
+    console.log('[handleSendFriendRequest] Bắt đầu:', { from: user.uid, to: partnerId, chatId });
 
-    // 2. Update stranger_chats sau khi gửi thành công
-    await updateDoc(doc(db, "stranger_chats", chatId), {
-      [`friendRequests.${user.uid}`]: true,
-      [`friendRequestsTime.${user.uid}`]: serverTimestamp(),
-    });
-    console.log('[handleSendFriendRequest] Update stranger_chats OK');
-    
-    toast.success("Đã gửi lời mời kết bạn");
+    try {
+      console.log('[handleSendFriendRequest] Gọi Cloud Function...');
+      const functions = getFunctions(getApp(), "asia-southeast1");
+      const sendRequest = httpsCallable(functions, 'sendFriendRequest');
+      await sendRequest({ toUid: partnerId });
+      console.log('[handleSendFriendRequest] sendFriendRequest OK');
 
-    // 3. Check auto accept nếu partner đã gửi trước
-    if (partnerSentRequest) {
-      console.log('[handleSendFriendRequest] Partner đã gửi trước, check doc');
-      const requestId = [user.uid, partnerId].sort().join("_");
-      const reqRef = doc(db, "friendRequests", requestId);
-      const reqSnap = await getDoc(reqRef);
-      
-      console.log('[handleSendFriendRequest] reqSnap:', reqSnap.exists(), reqSnap.data());
-      
-      // Chỉ accept nếu doc vẫn là pending và toUserId là mình
-      if (reqSnap.exists() && 
-          reqSnap.data().status === 'pending' && 
-          reqSnap.data().toUserId === user.uid) {
-        console.log('[handleSendFriendRequest] Tiến hành auto accept');
-        await acceptRequest({ id: requestId,...reqSnap.data() } as FriendRequest);
+      await updateDoc(doc(db, "stranger_chats", chatId), {
+        [`friendRequests.${user.uid}`]: true,
+        [`friendRequestsTime.${user.uid}`]: serverTimestamp(),
+      });
+      console.log('[handleSendFriendRequest] Update stranger_chats OK');
+
+      toast.success("Đã gửi lời mời kết bạn");
+
+      if (partnerSentRequest) {
+        console.log('[handleSendFriendRequest] Partner đã gửi trước, auto accept');
+        const functions = getFunctions(getApp(), "asia-southeast1");
+        const acceptRequest = httpsCallable(functions, 'acceptFriendRequest');
+        const requestId = [user.uid, partnerId].sort().join("_");
+        await acceptRequest({ fromUid: partnerId, notifId: requestId });
         toast.success("Đã kết bạn thành công! 🎉");
-      } else {
-        console.log('[handleSendFriendRequest] Không đủ điều kiện auto accept');
       }
+    } catch (err: any) {
+      console.error('[handleSendFriendRequest] LỖI:', err.code, err.message, err);
+
+      if (err.code === 'permission-denied') {
+        toast.error("Không có quyền gửi lời mời");
+      } else if (err.message?.includes('hết lượt') || err.message?.includes('resource-exhausted')) {
+        toast.error("Bạn đã gửi 20 lời mời hôm nay");
+      } else if (err.message?.includes('already-exists')) {
+        toast.error("Đã gửi lời mời trước đó");
+      } else {
+        toast.error(err.message || "Lỗi gửi lời mời");
+      }
+    } finally {
+      setIsSending(false);
     }
-  } catch (err: any) {
-    console.error('[handleSendFriendRequest] LỖI:', err.code, err.message, err);
-    
-    // Log lỗi chi tiết hơn
-    if (err.code === 'permission-denied') {
-      toast.error("Không có quyền gửi lời mời. Check Rules/Index");
-    } else if (err.message.includes('hết lượt')) {
-      toast.error("Bạn đã gửi 20 lời mời hôm nay");
-    } else {
-      toast.error(err.message || "Lỗi gửi lời mời");
-    }
-  } finally {
-    setIsSending(false); // Luôn reset state
-  }
-};
+  };
 
   const handleEndChat = async () => {
-  if (!chatId) return;
-  
-  // Nếu chat đã ended rồi thì chỉ cần về trang chủ
-  if (chatData?.status === "ended") {
-    router.push("/stranger");
-    return;
-  }
+    if (!chatId) return;
 
-  // Nếu chưa ended thì mình là người đầu tiên bấm -> end chat
-  setIsEndedLocal(true);
-  try {
-    await updateDoc(doc(db, "stranger_chats", chatId), {
-      status: "ended",
-      endedAt: serverTimestamp(),
-    });
-    toast.success("Đã kết thúc");
-    router.push("/stranger");
-  } catch {
-    toast.error("Lỗi kết thúc chat");
-    setIsEndedLocal(false);
-  }
-};
-
-const handleContinueSearch = async () => {
-  if (!chatId || !user?.uid || isSearching) return;
-  setIsSearching(true);
-  try {
-    await updateDoc(doc(db, "stranger_chats", chatId), {
-      status: "ended",
-      endedAt: serverTimestamp(),
-    });
-    
-    const oldFilters = chatData?.filters;
-    if (!oldFilters || !oldFilters.interests?.length) {
-      toast.error("Không tìm thấy bộ lọc cũ, về trang chủ chọn lại");
+    if (chatData?.status === "ended") {
       router.push("/stranger");
       return;
     }
-    
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const findFn = httpsCallable(functions, 'findStranger');
 
-    const result = await findFn({
-      interests: oldFilters.interests,
-      ageRange: oldFilters.ageRange,
-      wantGender: oldFilters.wantGender,
-      province: oldFilters.province
-    });
-
-    const data = result.data as { chatId: string, matched: boolean };
-
-    if (data.matched) {
-      setMatchedChatId(data.chatId);
-      toast.success("Đã tìm thấy bạn phù hợp!");
-      router.push("/stranger"); // Thêm dòng này
-    } else {
-      toast.info("Đang tìm người phù hợp...");
-      router.push("/stranger"); // Thêm dòng này
+    setIsEndedLocal(true);
+    try {
+      await updateDoc(doc(db, "stranger_chats", chatId), {
+        status: "ended",
+        endedAt: serverTimestamp(),
+      });
+      toast.success("Đã kết thúc");
+      router.push("/stranger");
+    } catch {
+      toast.error("Lỗi kết thúc chat");
+      setIsEndedLocal(false);
     }
-  } catch (err: any) {
-    console.error(err);
-    toast.error("Lỗi tìm kiếm");
-    router.push("/stranger");
-  } finally {
-    setIsSearching(false);
-  }
-};
+  };
+
+  const handleContinueSearch = async () => {
+    if (!chatId ||!user?.uid || isSearching) return;
+    setIsSearching(true);
+    try {
+      await updateDoc(doc(db, "stranger_chats", chatId), {
+        status: "ended",
+        endedAt: serverTimestamp(),
+      });
+
+      const oldFilters = chatData?.filters;
+      if (!oldFilters ||!oldFilters.interests?.length) {
+        toast.error("Không tìm thấy bộ lọc cũ, về trang chủ chọn lại");
+        router.push("/stranger");
+        return;
+      }
+
+      const functions = getFunctions(getApp(), "asia-southeast1");
+      const findFn = httpsCallable(functions, 'findStranger');
+
+      const result = await findFn({
+        interests: oldFilters.interests,
+        ageRange: oldFilters.ageRange,
+        wantGender: oldFilters.wantGender,
+        province: oldFilters.province
+      });
+
+      const data = result.data as { chatId: string, matched: boolean };
+
+      if (data.matched) {
+        setMatchedChatId(data.chatId);
+        toast.success("Đã tìm thấy bạn phù hợp!");
+        router.push("/stranger");
+      } else {
+        toast.info("Đang tìm người phù hợp...");
+        router.push("/stranger");
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Lỗi tìm kiếm");
+      router.push("/stranger");
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -394,40 +381,37 @@ const handleContinueSearch = async () => {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-zinc-50 to-white dark:from-black dark:to-zinc-950">
- {/* Top Bar: Kết thúc | Giờ | Tiếp tục */}
-<div className="shrink-0 bg-white dark:bg-black px-3 py-2 flex items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
-  <button
-    onClick={handleEndChat}
-    disabled={chatEnded}
-    className="flex-1 px-3 h-9 bg-zinc-600 disabled:bg-zinc-300 disabled:dark:bg-zinc-700 text-white rounded-xl text-sm font-[800] active:scale-95 flex items-center justify-center gap-1.5"
-  >
-    <FiX size={16} />
-    Kết thúc
-  </button>
+      <div className="shrink-0 bg-white dark:bg-black px-3 py-2 flex items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
+        <button
+          onClick={handleEndChat}
+          disabled={chatEnded}
+          className="flex-1 px-3 h-9 bg-zinc-600 disabled:bg-zinc-300 disabled:dark:bg-zinc-700 text-white rounded-xl text-sm font-[800] active:scale-95 flex items-center justify-center gap-1.5"
+        >
+          <FiX size={16} />
+          Kết thúc
+        </button>
 
-  <button
-    className={cn(
-      "flex-1 px-3 h-9 rounded-xl font-[800] text-sm transition-all flex items-center justify-center gap-1.5",
-      isUrgent? "bg-slate-600 text-white animate-pulse" : "bg-zinc-500 text-white"
-    )}
-  >
-    <FiClock size={16} />
-    {formatTime(timeLeft)}
-  </button>
+        <button
+          className={cn(
+            "flex-1 px-3 h-9 rounded-xl font-[800] text-sm transition-all flex items-center justify-center gap-1.5",
+            isUrgent? "bg-slate-600 text-white animate-pulse" : "bg-zinc-500 text-white"
+          )}
+        >
+          <FiClock size={16} />
+          {formatTime(timeLeft)}
+        </button>
 
-  <button
-    onClick={handleContinueSearch}
-    disabled={isSearching || chatEnded}
-    className="flex-1 px-3 h-9 bg-neutral-500 disabled:bg-zinc-300 disabled:dark:bg-zinc-700 text-white rounded-xl text-sm font-[800] active:scale-95 flex items-center justify-center gap-1.5"
-  >
-    <FiRefreshCw size={16} className={isSearching? "animate-spin" : ""} />
-    {isSearching? "Đang tìm..." : "Tiếp tục"}
-  </button>
-</div>
+        <button
+          onClick={handleContinueSearch}
+          disabled={isSearching || chatEnded}
+          className="flex-1 px-3 h-9 bg-neutral-500 disabled:bg-zinc-300 disabled:dark:bg-zinc-700 text-white rounded-xl text-sm font-[800] active:scale-95 flex items-center justify-center gap-1.5"
+        >
+          <FiRefreshCw size={16} className={isSearching? "animate-spin" : ""} />
+          {isSearching? "Đang tìm..." : "Tiếp tục"}
+        </button>
+      </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-        {/* Notice sắp hết giờ - GHIM ĐẦU */}
         {showInviteNotice && timeLeft <= 120 && timeLeft > 0 &&!chatEnded && (
           <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-2 border-amber-500 rounded-2xl p-4 mb-3">
             <div className="flex items-start gap-3">
@@ -436,52 +420,50 @@ const handleContinueSearch = async () => {
                 <p className="text-sm font-[700] text-amber-600 dark:text-amber-400 mb-2 text-center">
                   Sắp hết giờ! Gửi lời mời để giữ liên lạc
                 </p>
-               <button
-  onClick={handleSendFriendRequest}
-  disabled={hasSentRequest || isSending}
-  className="w-full h-10 bg-gradient-to-r from-amber-500 to-orange-500 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-700 dark:disabled:to-zinc-700 text-white rounded-xl text-sm font-[700] active:scale-95 flex items-center justify-center gap-2 disabled:active:scale-100 disabled:cursor-not-allowed"
->
-  {isSending? (
-    <>
-      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-      </svg>
-      Đang gửi...
-    </>
-  ) : (
-    <>
-      <FiUserPlus size={16} />
-      {hasSentRequest? "Đã gửi lời mời" : "Gửi lời mời kết bạn"}
-    </>
-  )}
-</button>
+                <button
+                  onClick={handleSendFriendRequest}
+                  disabled={hasSentRequest || isSending}
+                  className="w-full h-10 bg-gradient-to-r from-amber-500 to-orange-500 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-700 dark:disabled:to-zinc-700 text-white rounded-xl text-sm font-[700] active:scale-95 flex items-center justify-center gap-2 disabled:active:scale-100 disabled:cursor-not-allowed"
+                >
+                  {isSending? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                      </svg>
+                      Đang gửi...
+                    </>
+                  ) : (
+                    <>
+                      <FiUserPlus size={16} />
+                      {hasSentRequest? "Đã gửi lời mời" : "Gửi lời mời kết bạn"}
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
         )}
-{/* Notice đối phương đã rời phòng */}
-{chatEnded &&!isEndedLocal &&!isExpired && (
-  <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-2 border-rose-500 rounded-2xl p-4 mb-3">
-    <div className="flex items-start gap-3">
-      <FiAlertCircle className="text-rose-500 flex-shrink-0 mt-0.5" size={20} />
-      <div className="flex-1">
-        <p className="text-sm font-[700] text-rose-600 dark:text-rose-400 mb-3 text-center">
-          Đối phương đã rời phòng
-        </p>
-        <button
-          onClick={handleContinueSearch}
-          disabled={isSearching}
-          className="w-full h-10 bg-gradient-to-r from-emerald-500 to-green-500 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-700 dark:disabled:to-zinc-700 text-white rounded-xl text-sm font-[700] active:scale-95 flex items-center justify-center gap-2"
-        >
-          <FiRefreshCw size={16} className={isSearching? "animate-spin" : ""} />
-          {isSearching? "Đang tìm..." : "Tiếp tục tìm người mới"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-        {/* Matched UI - Hiện khi match nhưng chưa vào */}
+        {chatEnded &&!isEndedLocal &&!isExpired && (
+          <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-2 border-rose-500 rounded-2xl p-4 mb-3">
+            <div className="flex items-start gap-3">
+              <FiAlertCircle className="text-rose-500 flex-shrink-0 mt-0.5" size={20} />
+              <div className="flex-1">
+                <p className="text-sm font-[700] text-rose-600 dark:text-rose-400 mb-3 text-center">
+                  Đối phương đã rời phòng
+                </p>
+                <button
+                  onClick={handleContinueSearch}
+                  disabled={isSearching}
+                  className="w-full h-10 bg-gradient-to-r from-emerald-500 to-green-500 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-700 dark:disabled:to-zinc-700 text-white rounded-xl text-sm font-[700] active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <FiRefreshCw size={16} className={isSearching? "animate-spin" : ""} />
+                  {isSearching? "Đang tìm..." : "Tiếp tục tìm người mới"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {matchedChatId &&!chatEnded && (
           <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-2xl p-6 mb-3 text-center">
             <div className="w-16 h-16 mx-auto mb-3 bg-green-600 rounded-full flex items-center justify-center">
@@ -528,7 +510,7 @@ const handleContinueSearch = async () => {
                 className={cn(
                   "max-w-[75%] px-4 py-2.5 rounded-3xl text-sm break-words",
                   isMe
-           ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
+          ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
                     : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-bl-lg"
                 )}
               >
@@ -540,7 +522,6 @@ const handleContinueSearch = async () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Dòng thông báo 5 phút - ghim dưới, không trôi */}
       {chatData.status === "active" &&!isEndedLocal && (
         <div className="shrink-0 px-4 py-2 text-center border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-black/95">
           <p className="text-xs text-zinc-400 font-[600]">
@@ -549,12 +530,11 @@ const handleContinueSearch = async () => {
         </div>
       )}
 
-      {/* Input - Bỏ shadow, viền xanh mặc định, không thêm khi focus */}
       {chatData.status === "active" &&!isEndedLocal? (
         <div className="shrink-0 p-3 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-black/95 backdrop-blur-xl" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
           {showEmoji && (
             <div ref={emojiRef} className="absolute bottom-full left-0 right-0 px-3 mb-2">
-              <EmojiPicker 
+              <EmojiPicker
                 onEmojiClick={handleEmojiClick}
                 theme={Theme.AUTO}
                 emojiStyle={EmojiStyle.NATIVE}
