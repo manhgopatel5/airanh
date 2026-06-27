@@ -203,29 +203,47 @@ export default function ChatRoomPage() {
   };
 
   const handleSendFriendRequest = async () => {
-    if (!chatId ||!user?.uid || hasSentRequest ||!partnerId) return;
-    try {
-      await updateDoc(doc(db, "stranger_chats", chatId), {
-        [`friendRequests.${user.uid}`]: true,
-      });
-      await sendFriendRequest(user.uid, partnerId);
-      toast.success("Đã gửi lời mời kết bạn");
-      if (partnerSentRequest) {
-        const requestId = [user.uid, partnerId].sort().join("_");
-        const reqSnap = await getDoc(doc(db, "friendRequests", requestId));
-        if (reqSnap.exists()) {
-          await acceptRequest({ id: requestId,...reqSnap.data() } as FriendRequest);
-          toast.success("Đã kết bạn thành công! 🎉");
-        }
+  if (!chatId ||!user?.uid || hasSentRequest ||!partnerId) {
+    console.warn('[handleSendFriendRequest] Thiếu data:', { chatId, uid: user?.uid, hasSentRequest, partnerId });
+    return;
+  }
+
+  console.log('[handleSendFriendRequest] Bắt đầu:', { from: user.uid, to: partnerId, chatId });
+
+  try {
+    // 1. Gọi sendFriendRequest trước, nếu fail thì không update stranger_chats
+    console.log('[handleSendFriendRequest] Gọi sendFriendRequest...');
+    await sendFriendRequest(user.uid, partnerId);
+    console.log('[handleSendFriendRequest] sendFriendRequest OK');
+
+    // 2. Update stranger_chats sau khi gửi thành công
+    await updateDoc(doc(db, "stranger_chats", chatId), {
+      [`friendRequests.${user.uid}`]: true,
+      [`friendRequestsTime.${user.uid}`]: serverTimestamp(),
+    });
+    console.log('[handleSendFriendRequest] Update stranger_chats OK');
+    
+    toast.success("Đã gửi lời mời kết bạn");
+
+    // 3. Check auto accept nếu partner đã gửi trước
+    if (partnerSentRequest) {
+      console.log('[handleSendFriendRequest] Partner đã gửi trước, tiến hành auto accept');
+      const requestId = [user.uid, partnerId].sort().join("_");
+      const reqSnap = await getDoc(doc(db, "friendRequests", requestId));
+      
+      console.log('[handleSendFriendRequest] reqSnap:', reqSnap.exists(), reqSnap.data());
+      
+      if (reqSnap.exists() && reqSnap.data().status === 'pending') {
+        await acceptRequest({ id: requestId,...reqSnap.data() } as FriendRequest);
+        toast.success("Đã kết bạn thành công! 🎉");
       }
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Lỗi gửi lời mời");
-      await updateDoc(doc(db, "stranger_chats", chatId), {
-        [`friendRequests.${user.uid}`]: false,
-      }).catch(() => {});
     }
-  };
+  } catch (err: any) {
+    console.error('[handleSendFriendRequest] LỖI:', err.code, err.message, err);
+    toast.error(err.message || "Lỗi gửi lời mời");
+    // Không cần rollback vì chưa update stranger_chats
+  }
+};
 
   const handleEndChat = async () => {
   if (!chatId) return;
