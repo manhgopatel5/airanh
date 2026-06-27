@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect, useState, useRef, useLayoutEffect } from "react";
-import { doc, getDoc, onSnapshot, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useParams, useRouter } from "next/navigation";
 import { FiSend, FiCheckCircle, FiSmile, FiUserPlus, FiAlertCircle, FiClock, FiX, FiRefreshCw } from "react-icons/fi";
