@@ -351,36 +351,36 @@ const handleContinueSearch = async () => {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-zinc-50 to-white dark:from-black dark:to-zinc-950">
-      {/* Top Bar: Kết thúc | Giờ | Tiếp tục */}
-      <div className="shrink-0 bg-white dark:bg-black px-3 py-2 flex items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
-        <button
-          onClick={handleEndChat}
-          disabled={chatEnded}
-          className="flex-1 px-3 h-9 bg-rose-500 disabled:bg-zinc-300 disabled:dark:bg-zinc-700 text-white rounded-xl text-sm font-[800] active:scale-95 flex items-center justify-center gap-1.5"
-        >
-          <FiX size={16} />
-          Kết thúc
-        </button>
+ {/* Top Bar: Kết thúc | Giờ | Tiếp tục */}
+<div className="shrink-0 bg-white dark:bg-black px-3 py-2 flex items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
+  <button
+    onClick={handleEndChat}
+    disabled={chatEnded}
+    className="flex-1 px-3 h-9 bg-zinc-600 disabled:bg-zinc-300 disabled:dark:bg-zinc-700 text-white rounded-xl text-sm font-[800] active:scale-95 flex items-center justify-center gap-1.5"
+  >
+    <FiX size={16} />
+    Kết thúc
+  </button>
 
-        <button
-          className={cn(
-            "flex-1 px-3 h-9 rounded-xl font-[800] text-sm transition-all flex items-center justify-center gap-1.5",
-            isUrgent? "bg-amber-500 text-white animate-pulse" : "bg-blue-500 text-white"
-          )}
-        >
-          <FiClock size={16} />
-          {formatTime(timeLeft)}
-        </button>
-        
-        <button
-          onClick={handleContinueSearch}
-          disabled={isSearching || chatEnded}
-          className="flex-1 px-3 h-9 bg-emerald-500 disabled:bg-zinc-300 disabled:dark:bg-zinc-700 text-white rounded-xl text-sm font-[800] active:scale-95 flex items-center justify-center gap-1.5"
-        >
-          <FiRefreshCw size={16} className={isSearching? "animate-spin" : ""} />
-          {isSearching? "Đang tìm..." : "Tiếp tục"}
-        </button>
-      </div>
+  <button
+    className={cn(
+      "flex-1 px-3 h-9 rounded-xl font-[800] text-sm transition-all flex items-center justify-center gap-1.5",
+      isUrgent? "bg-slate-600 text-white animate-pulse" : "bg-zinc-500 text-white"
+    )}
+  >
+    <FiClock size={16} />
+    {formatTime(timeLeft)}
+  </button>
+
+  <button
+    onClick={handleContinueSearch}
+    disabled={isSearching || chatEnded}
+    className="flex-1 px-3 h-9 bg-neutral-500 disabled:bg-zinc-300 disabled:dark:bg-zinc-700 text-white rounded-xl text-sm font-[800] active:scale-95 flex items-center justify-center gap-1.5"
+  >
+    <FiRefreshCw size={16} className={isSearching? "animate-spin" : ""} />
+    {isSearching? "Đang tìm..." : "Tiếp tục"}
+  </button>
+</div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
