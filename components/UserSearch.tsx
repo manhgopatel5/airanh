@@ -2,9 +2,12 @@
 
 import { useEffect, useState, useRef } from "react";
 import { searchUsers } from "@/lib/userService";
-import { sendFriendRequest, cancelFriendRequest, getFriendStatus } from "@/lib/friendService";
+import { getFriendStatus } from "@/lib/friendService";
 import { useAuth } from "@/lib/AuthContext";
 import { FiSearch, FiUserPlus, FiCheck, FiX, FiUserX, FiAlertCircle } from "react-icons/fi";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { getApp } from "firebase/app";
+import toast from "react-hot-toast";
 
 type UserResult = {
   uid: string;
@@ -53,7 +56,6 @@ export default function UserSearch() {
         const res = await searchUsers(keyword.trim(), user.uid);
         const filtered = res.users.filter((u: UserResult) => u.uid !== user.uid);
 
-        // Bật lại getFriendStatus - Rules đã fix
         const withStatus = await Promise.all(
           filtered.map(async (u: UserResult) => {
             try {
@@ -95,18 +97,24 @@ export default function UserSearch() {
     setError(null);
 
     try {
-      await sendFriendRequest(user.uid, targetId);
+      // FIX: Gọi Cloud Function thay vì hàm local
+      const functions = getFunctions(getApp(), "asia-southeast1");
+      const sendRequest = httpsCallable(functions, 'sendFriendRequest');
+      await sendRequest({ toUid: targetId });
+      
       if (mountedRef.current) {
         setResults((prev) =>
           prev.map((u) =>
             u.uid === targetId ? { ...u, status: "pending_sent" } : u
           )
         );
+        toast.success("Đã gửi lời mời");
       }
     } catch (err: any) {
       console.error("❌ lỗi kết bạn:", err);
       if (mountedRef.current) {
         setError(err.message || "Gửi lời mời thất bại");
+        toast.error(err.message || "Gửi lời mời thất bại");
       }
     } finally {
       if (mountedRef.current) setSending(null);
@@ -120,18 +128,24 @@ export default function UserSearch() {
     setError(null);
 
     try {
-      await cancelFriendRequest(user.uid, targetId);
+      // FIX: Gọi Cloud Function thay vì hàm local
+      const functions = getFunctions(getApp(), "asia-southeast1");
+      const cancelRequest = httpsCallable(functions, 'cancelFriendRequest');
+      await cancelRequest({ toUid: targetId });
+      
       if (mountedRef.current) {
         setResults((prev) =>
           prev.map((u) =>
             u.uid === targetId ? { ...u, status: "none" } : u
           )
         );
+        toast.success("Đã hủy lời mời");
       }
     } catch (err: any) {
       console.error("❌ lỗi hủy:", err);
       if (mountedRef.current) {
         setError(err.message || "Hủy lời mời thất bại");
+        toast.error(err.message || "Hủy lời mời thất bại");
       }
     } finally {
       if (mountedRef.current) setSending(null);
