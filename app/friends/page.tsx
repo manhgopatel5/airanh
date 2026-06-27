@@ -1188,7 +1188,7 @@ export default function FriendsPage() {
                   <p className="text-lg font-[600]">{selectedFriend.name}</p>
                   <p className="text-sm text-[#8e8e93]">@{selectedFriend.username}</p>
                 </div>
-              <div className="space-y-3">
+                        <div className="space-y-3">
                 <button
                   onClick={() => { handleStartChat(selectedFriend.uid); setSelectedFriend(null); }}
                   className="w-full h-12 flex items-center gap-3 px-5 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl active:scale-98 shadow-sm"
@@ -1204,7 +1204,8 @@ export default function FriendsPage() {
                   <span className="text-base font-[500]">Hủy kết bạn</span>
                 </button>
               </div>
-            </motion.div>
+            </div> {/* THÊM: Đóng div flex items-center gap-3 mb-6 */}
+          </motion.div> {/* THÊM: Đóng motion.div */}
           </>
         )}
       </AnimatePresence>
