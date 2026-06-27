@@ -202,16 +202,25 @@ export default function ChatRoomPage() {
     inputRef.current?.focus();
   };
 
-  const handleSendFriendRequest = async () => {
+  const [isSending, setIsSending] = useState(false); // Thêm state chống spam click
+
+const handleSendFriendRequest = async () => {
   if (!chatId ||!user?.uid || hasSentRequest ||!partnerId) {
     console.warn('[handleSendFriendRequest] Thiếu data:', { chatId, uid: user?.uid, hasSentRequest, partnerId });
     return;
   }
-
+  
+  // Chống double-click
+  if (isSending) {
+    console.log('[handleSendFriendRequest] Đang gửi, bỏ qua click');
+    return;
+  }
+  
+  setIsSending(true);
   console.log('[handleSendFriendRequest] Bắt đầu:', { from: user.uid, to: partnerId, chatId });
 
   try {
-    // 1. Gọi sendFriendRequest trước, nếu fail thì không update stranger_chats
+    // 1. Gọi sendFriendRequest trước
     console.log('[handleSendFriendRequest] Gọi sendFriendRequest...');
     await sendFriendRequest(user.uid, partnerId);
     console.log('[handleSendFriendRequest] sendFriendRequest OK');
@@ -227,21 +236,37 @@ export default function ChatRoomPage() {
 
     // 3. Check auto accept nếu partner đã gửi trước
     if (partnerSentRequest) {
-      console.log('[handleSendFriendRequest] Partner đã gửi trước, tiến hành auto accept');
+      console.log('[handleSendFriendRequest] Partner đã gửi trước, check doc');
       const requestId = [user.uid, partnerId].sort().join("_");
-      const reqSnap = await getDoc(doc(db, "friendRequests", requestId));
+      const reqRef = doc(db, "friendRequests", requestId);
+      const reqSnap = await getDoc(reqRef);
       
       console.log('[handleSendFriendRequest] reqSnap:', reqSnap.exists(), reqSnap.data());
       
-      if (reqSnap.exists() && reqSnap.data().status === 'pending') {
+      // Chỉ accept nếu doc vẫn là pending và toUserId là mình
+      if (reqSnap.exists() && 
+          reqSnap.data().status === 'pending' && 
+          reqSnap.data().toUserId === user.uid) {
+        console.log('[handleSendFriendRequest] Tiến hành auto accept');
         await acceptRequest({ id: requestId,...reqSnap.data() } as FriendRequest);
         toast.success("Đã kết bạn thành công! 🎉");
+      } else {
+        console.log('[handleSendFriendRequest] Không đủ điều kiện auto accept');
       }
     }
   } catch (err: any) {
     console.error('[handleSendFriendRequest] LỖI:', err.code, err.message, err);
-    toast.error(err.message || "Lỗi gửi lời mời");
-    // Không cần rollback vì chưa update stranger_chats
+    
+    // Log lỗi chi tiết hơn
+    if (err.code === 'permission-denied') {
+      toast.error("Không có quyền gửi lời mời. Check Rules/Index");
+    } else if (err.message.includes('hết lượt')) {
+      toast.error("Bạn đã gửi 20 lời mời hôm nay");
+    } else {
+      toast.error(err.message || "Lỗi gửi lời mời");
+    }
+  } finally {
+    setIsSending(false); // Luôn reset state
   }
 };
 
@@ -411,14 +436,26 @@ const handleContinueSearch = async () => {
                 <p className="text-sm font-[700] text-amber-600 dark:text-amber-400 mb-2 text-center">
                   Sắp hết giờ! Gửi lời mời để giữ liên lạc
                 </p>
-                <button
-                  onClick={handleSendFriendRequest}
-                  disabled={hasSentRequest}
-                  className="w-full h-10 bg-gradient-to-r from-amber-500 to-orange-500 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-700 dark:disabled:to-zinc-700 text-white rounded-xl text-sm font-[700] active:scale-95 flex items-center justify-center gap-2"
-                >
-                  <FiUserPlus size={16} />
-                  {hasSentRequest? "Đã gửi lời mời" : "Gửi lời mời kết bạn"}
-                </button>
+               <button
+  onClick={handleSendFriendRequest}
+  disabled={hasSentRequest || isSending}
+  className="w-full h-10 bg-gradient-to-r from-amber-500 to-orange-500 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-700 dark:disabled:to-zinc-700 text-white rounded-xl text-sm font-[700] active:scale-95 flex items-center justify-center gap-2 disabled:active:scale-100 disabled:cursor-not-allowed"
+>
+  {isSending? (
+    <>
+      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+      </svg>
+      Đang gửi...
+    </>
+  ) : (
+    <>
+      <FiUserPlus size={16} />
+      {hasSentRequest? "Đã gửi lời mời" : "Gửi lời mời kết bạn"}
+    </>
+  )}
+</button>
               </div>
             </div>
           </div>
