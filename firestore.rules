@@ -290,12 +290,28 @@ match /friends/{friendId} {
 
    // ========== FRIEND REQUESTS - FIX LỖI PERMISSION ==========
 match /friendRequests/{reqId} {
-  // getDocs dùng allow list
-  allow list: if isSignedIn() &&
-    request.query.where.size() == 2 &&
-    request.query.where[0][0] == 'fromUserId' &&
-    request.auth.uid == request.query.where[0][2] &&
-    request.query.where[1][0] == 'createdAt';
+  // FIX: Cho list cả 2 kiểu để dùng cho "Đã gửi" và "Lời mời đến"
+  allow list: if isSignedIn() && (
+    // Kiểu 1: Query lời mời đến - dùng cho tab Requests
+    (request.query.where.size() == 3 &&
+     request.query.where[0][0] == 'toUserId' &&
+     request.auth.uid == request.query.where[0][2] &&
+     request.query.where[1][0] == 'status' &&
+     request.query.where[2][0] == 'createdAt')
+    ||
+    // Kiểu 2: Query đã gửi - dùng cho tab Sent 
+    (request.query.where.size() == 2 &&
+     request.query.where[0][0] == 'fromUserId' &&
+     request.auth.uid == request.query.where[0][2] &&
+     request.query.where[1][0] == 'createdAt')
+    ||
+    // Kiểu 3: Query đã gửi có status - dùng khi cần filter
+    (request.query.where.size() == 3 &&
+     request.query.where[0][0] == 'fromUserId' &&
+     request.auth.uid == request.query.where[0][2] &&
+     request.query.where[1][0] == 'status' &&
+     request.query.where[2][0] == 'createdAt')
+  );
 
   allow get: if isSignedIn() &&
     (request.auth.uid == resource.data.fromUserId ||
