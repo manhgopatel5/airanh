@@ -1,6 +1,6 @@
 import {
   doc,
-  runTransaction,
+  runTransaction, // THÊM DÒNG NÀY
   collection,
   serverTimestamp,
   Timestamp,
@@ -19,7 +19,6 @@ import {
   deleteDoc,
   QueryDocumentSnapshot,
   DocumentData,
-  
 } from "firebase/firestore";
 import { getFirebaseDB } from "./firebase";
 
@@ -190,7 +189,6 @@ export const sendFriendRequest = async (
     updatedAt: serverTimestamp(),
   });
 
-  // Tăng unread cho người nhận
   const toUserRef = doc(db, "users", to);
   const toUserSnap = await getDoc(toUserRef);
   const currentUnread = toUserSnap.data()?.friendRequestsUnread || 0;
@@ -326,6 +324,8 @@ export const rejectRequest = async (
     ]);
 
     if (!reqSnap.exists()) return;
+    if (reqSnap.data().status !== "pending") return;
+
     const currentUnread = userSnap.data()?.friendRequestsUnread || 0;
 
     transaction.update(reqRef, {
@@ -346,9 +346,7 @@ export const cancelFriendRequest = async (
   const db = getFirebaseDB();
   if (!from || !to) throw new FriendError("Thiếu thông tin");
   const requestId = [from, to].sort().join("_");
-  const batch = writeBatch(db);
-  batch.delete(doc(db, "friendRequests", requestId));
-  await batch.commit();
+  await deleteDoc(doc(db, "friendRequests", requestId));
 };
 
 /* ================= UNFRIEND ================= */
@@ -410,7 +408,7 @@ export const listenFriendsWithUser = (
   });
 };
 
-/* ================= CHECK STATUS - FIXED ================= */
+/* ================= CHECK STATUS ================= */
 export const getFriendStatus = async (
   user1: string,
   user2: string
