@@ -262,10 +262,10 @@ export const cleanupExpiredTasks = onSchedule(
     let totalDeleted = 0;
 
     const expiredTasks = await db
-     .collection("tasks")
-     .where("deadline", "<", sevenDaysAgo)
-     .limit(500)
-     .get();
+    .collection("tasks")
+    .where("deadline", "<", sevenDaysAgo)
+    .limit(500)
+    .get();
 
     if (!expiredTasks.empty) {
       const batch = db.batch();
@@ -280,10 +280,10 @@ export const cleanupExpiredTasks = onSchedule(
     }
 
     const expiredPlans = await db
-     .collection("plans")
-     .where("endDate", "<", sevenDaysAgo)
-     .limit(500)
-     .get();
+    .collection("plans")
+    .where("endDate", "<", sevenDaysAgo)
+    .limit(500)
+    .get();
 
     if (!expiredPlans.empty) {
       const batch = db.batch();
@@ -327,9 +327,9 @@ export const onUserProfileUpdate = onDocumentUpdated(
     console.log(`User ${userId} đổi profile, bắt đầu sync tasks...`);
 
     const tasksSnap = await db
-     .collection("tasks")
-     .where("userId", "==", userId)
-     .get();
+    .collection("tasks")
+    .where("userId", "==", userId)
+    .get();
 
     if (tasksSnap.empty) {
       console.log(`User ${userId} không có task nào`);
@@ -370,9 +370,9 @@ export const updateHotScore = onSchedule(
   async () => {
     const now = Date.now();
     const snap = await db.collection("tasks")
-     .where("status", "in", ["open", "pending", "full", "doing", "in_progress"])
-     .limit(5000)
-     .get();
+    .where("status", "in", ["open", "pending", "full", "doing", "in_progress"])
+    .limit(5000)
+    .get();
 
     if (snap.empty) {
       console.log("No active tasks to update hotScore");
@@ -386,7 +386,6 @@ export const updateHotScore = onSchedule(
     snap.docs.forEach((doc) => {
       const d = doc.data();
 
-      // Lọc banned/hidden ở code thay vì query
       if (d.banned === true || d.hidden === true) return;
 
       const createdAt = d.createdAt?.toMillis() || now;
@@ -464,20 +463,20 @@ export const findStranger = onCall(
       const queueRef = db.collection("stranger_queue");
 
       const existingChat = await db.collection("stranger_chats")
-       .where("members", "array-contains", uid)
-       .where("status", "==", "active")
-       .limit(1)
-       .get();
+      .where("members", "array-contains", uid)
+      .where("status", "==", "active")
+      .limit(1)
+      .get();
 
       if (!existingChat.empty) {
         return { matched: true, chatId: existingChat.docs[0].id };
       }
 
       const matches = await queueRef
-       .where("status", "==", "waiting")
-       .where("userId", "!=", uid)
-       .limit(50)
-       .get();
+      .where("status", "==", "waiting")
+      .where("userId", "!=", uid)
+      .limit(50)
+      .get();
 
       let bestMatch: DocumentSnapshot | null = null;
       let maxCommon = 0;
@@ -656,10 +655,10 @@ export const cleanupStrangerChats = onSchedule(
   async () => {
     const now = Timestamp.now();
     const expired = await db
-     .collection("stranger_chats")
-     .where("expiresAt", "<=", now)
-     .limit(500)
-     .get();
+    .collection("stranger_chats")
+    .where("expiresAt", "<=", now)
+    .limit(500)
+    .get();
 
     if (expired.empty) return;
 
@@ -692,8 +691,8 @@ export const onHuhaScoreUpdate = onDocumentUpdated(
     }
 
     const usersSnap = await db.collection("users")
-     .orderBy("huhaScore", "desc")
-     .get();
+    .orderBy("huhaScore", "desc")
+    .get();
 
     const batch = db.batch();
     usersSnap.docs.forEach((doc, idx) => {
@@ -800,5 +799,93 @@ export const addHuhaScore = onCall(
     });
 
     return { success: true, scoreAdded: score };
+  }
+);
+
+// FIX: Thêm Cloud Function sendFriendRequest - thay getCountFromServer bằng get()
+export const sendFriendRequest = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    const from = request.auth?.uid;
+    const to = request.data.toUid;
+
+    if (!from) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
+    if (!to) throw new HttpsError("invalid-argument", "Thiếu toUid");
+    if (from === to) throw new HttpsError("invalid-argument", "Không thể tự kết bạn");
+
+    // Check block
+    const [block1, block2] = await Promise.all([
+      db.doc(`blocks/${to}_${from}`).get(),
+      db.doc(`blocks/${from}_${to}`).get(),
+    ]);
+    if (block1.exists || block2.exists) {
+      throw new HttpsError("permission-denied", "Không thể gửi lời mời");
+    }
+
+    // Check limit 20/ngày - DÙNG get() thay vì getCountFromServer
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const q = db.collection("friendRequests")
+    .where("fromUserId", "==", from)
+    .where("createdAt", ">=", Timestamp.fromDate(today));
+    
+    const snap = await q.get();
+    if (snap.size >= 20) {
+      throw new HttpsError("resource-exhausted", "Đã hết 20 lượt gửi hôm nay");
+    }
+
+    const requestId = [from, to].sort().join("_");
+    const requestRef = db.doc(`friendRequests/${requestId}`);
+    
+    const reqSnap = await requestRef.get();
+    if (reqSnap.exists) {
+      const status = reqSnap.data()?.status;
+      if (status === "pending") throw new HttpsError("already-exists", "Đã gửi lời mời");
+      if (status === "rejected") {
+        await requestRef.update({
+          status: "pending",
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        return { success: true };
+      }
+    }
+
+    await requestRef.set({
+      fromUserId: from,
+      toUserId: to,
+      status: "pending",
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    return { success: true };
+  }
+);
+
+// FIX: Thêm Cloud Function cancelFriendRequest
+export const cancelFriendRequest = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    const from = request.auth?.uid;
+    const to = request.data.toUid;
+
+    if (!from) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
+    if (!to) throw new HttpsError("invalid-argument", "Thiếu toUid");
+
+    const requestId = [from, to].sort().join("_");
+    const requestRef = db.doc(`friendRequests/${requestId}`);
+    
+    const reqSnap = await requestRef.get();
+    if (!reqSnap.exists) {
+      throw new HttpsError("not-found", "Lời mời không tồn tại");
+    }
+
+    if (reqSnap.data()?.fromUserId!== from) {
+      throw new HttpsError("permission-denied", "Không có quyền hủy");
+    }
+
+    await requestRef.delete();
+    return { success: true };
   }
 );
