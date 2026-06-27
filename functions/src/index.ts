@@ -5,6 +5,7 @@ import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
 import { DocumentSnapshot } from "firebase-admin/firestore";
+
 initializeApp();
 const db = getFirestore();
 
@@ -18,20 +19,21 @@ export const onFriendRequestCreated = onDocumentCreated(
     const data = event.data?.data();
     if (!data) return;
 
-    const { from, to } = data;
+    const { fromUserId, toUserId } = data;
+    if (!fromUserId ||!toUserId) return;
 
     try {
-      const fromUserDoc = await db.doc(`users/${from}`).get();
+      const fromUserDoc = await db.doc(`users/${fromUserId}`).get();
       const fromUser = fromUserDoc.data();
 
-      await db.collection(`notifications/${to}/items`).add({
+      await db.collection(`notifications/${toUserId}/items`).add({
         type: "friend_request",
-        fromUid: from,
+        fromUid: fromUserId,
         fromName: fromUser?.displayName || fromUser?.name || "Người dùng",
         fromAvatar: fromUser?.photoURL || fromUser?.avatar || "",
         title: "Lời mời kết bạn",
         message: "đã gửi lời mời kết bạn",
-        actionData: { requesterId: from },
+        actionData: { requesterId: fromUserId },
         read: false,
         createdAt: FieldValue.serverTimestamp(),
       });
@@ -247,7 +249,7 @@ export const unfriend = onCall(
 // 5. Tự động xóa task hết hạn sau 7 ngày - chạy 2h sáng mỗi ngày
 export const cleanupExpiredTasks = onSchedule(
   {
-    schedule: "0 2 * * *", // 2h sáng mỗi ngày, đủ 5 phần
+    schedule: "0 2 * * *",
     timeZone: "Asia/Ho_Chi_Minh",
     region: "asia-southeast1",
     memory: "256MiB",
@@ -259,12 +261,11 @@ export const cleanupExpiredTasks = onSchedule(
 
     let totalDeleted = 0;
 
-    // 1. Xóa TASKS hết hạn 7 ngày
     const expiredTasks = await db
-      .collection("tasks")
-      .where("deadline", "<", sevenDaysAgo)
-      .limit(500)
-      .get();
+     .collection("tasks")
+     .where("deadline", "<", sevenDaysAgo)
+     .limit(500)
+     .get();
 
     if (!expiredTasks.empty) {
       const batch = db.batch();
@@ -278,12 +279,11 @@ export const cleanupExpiredTasks = onSchedule(
       console.log("No expired tasks to delete");
     }
 
-    // 2. Xóa PLANS hết hạn 7 ngày
     const expiredPlans = await db
-      .collection("plans")
-      .where("endDate", "<", sevenDaysAgo)
-      .limit(500)
-      .get();
+     .collection("plans")
+     .where("endDate", "<", sevenDaysAgo)
+     .limit(500)
+     .get();
 
     if (!expiredPlans.empty) {
       const batch = db.batch();
@@ -327,9 +327,9 @@ export const onUserProfileUpdate = onDocumentUpdated(
     console.log(`User ${userId} đổi profile, bắt đầu sync tasks...`);
 
     const tasksSnap = await db
-.collection("tasks")
-.where("userId", "==", userId)
-.get();
+     .collection("tasks")
+     .where("userId", "==", userId)
+     .get();
 
     if (tasksSnap.empty) {
       console.log(`User ${userId} không có task nào`);
@@ -359,7 +359,7 @@ export const onUserProfileUpdate = onDocumentUpdated(
   }
 );
 
-// 7. THÊM MỚI: Update hotScore cho tab Hot - chạy 15 phút/lần
+// 7. Update hotScore cho tab Hot - chạy 15 phút/lần
 export const updateHotScore = onSchedule(
   {
     schedule: "every 15 minutes",
@@ -370,11 +370,9 @@ export const updateHotScore = onSchedule(
   async () => {
     const now = Date.now();
     const snap = await db.collection("tasks")
-  .where("status", "in", ["open", "pending", "full", "doing", "in_progress"])
-  .where("banned", "!=", true)
-  .where("hidden", "!=", true)
-  .limit(5000)
-  .get();
+     .where("status", "in", ["open", "pending", "full", "doing", "in_progress"])
+     .limit(5000)
+     .get();
 
     if (snap.empty) {
       console.log("No active tasks to update hotScore");
@@ -387,12 +385,19 @@ export const updateHotScore = onSchedule(
 
     snap.docs.forEach((doc) => {
       const d = doc.data();
+
+      // Lọc banned/hidden ở code thay vì query
+      if (d.banned === true || d.hidden === true) return;
+
       const createdAt = d.createdAt?.toMillis() || now;
       const ageHours = (now - createdAt) / 3600000;
 
       let score = 0;
       if (d.type === 'task') {
-        score = (d.viewCount * 0.5 + d.likeCount * 2 + d.commentCount * 3) / Math.pow(ageHours + 2, 1.5);
+        const viewCount = d.viewCount || 0;
+        const likeCount = d.likeCount || 0;
+        const commentCount = d.commentCount || 0;
+        score = (viewCount * 0.5 + likeCount * 2 + commentCount * 3) / Math.pow(ageHours + 2, 1.5);
       } else {
         const joinRate = (d.currentParticipants || 0) / (d.maxParticipants || 1);
         const eventTime = d.eventDate?.toMillis() || now;
@@ -434,7 +439,7 @@ export const findStranger = onCall(
       let userData = userDoc.data();
 
       if (!userDoc.exists) {
-        await userRef.set({ 
+        await userRef.set({
           karma: 100,
           tier: 'user',
           createdAt: FieldValue.serverTimestamp()
@@ -444,7 +449,7 @@ export const findStranger = onCall(
 
       const tier = userData?.vip?.tier || userData?.tier || "user";
       const correctKarma = tier === "elite"? 400 : tier === "vip"? 200 : 100;
-      
+
       if (userData?.karma === undefined || userData?.karma < correctKarma) {
         await userRef.set({ karma: correctKarma }, { merge: true });
         userData = {...userData, karma: correctKarma };
@@ -458,29 +463,28 @@ export const findStranger = onCall(
       const userGender = userData?.gender || "other";
       const queueRef = db.collection("stranger_queue");
 
-      // CHECK XEM ĐÃ CÓ CHAT VỚI AI CHƯA - TRÁNH TẠO LẠI
       const existingChat = await db.collection("stranger_chats")
-      .where("members", "array-contains", uid)
-      .where("status", "==", "active")
-      .limit(1)
-      .get();
-      
+       .where("members", "array-contains", uid)
+       .where("status", "==", "active")
+       .limit(1)
+       .get();
+
       if (!existingChat.empty) {
         return { matched: true, chatId: existingChat.docs[0].id };
       }
 
       const matches = await queueRef
-      .where("status", "==", "waiting")
-      .where("userId", "!=", uid)
-      .limit(50)
-      .get();
+       .where("status", "==", "waiting")
+       .where("userId", "!=", uid)
+       .limit(50)
+       .get();
 
       let bestMatch: DocumentSnapshot | null = null;
       let maxCommon = 0;
 
       for (const doc of matches.docs) {
         const d = doc.data();
-        
+
         if (wantGender!== "all" && d.gender!== wantGender) continue;
         if (d.wantGender!== "all" && d.wantGender!== userGender) continue;
         if (ageRange && d.ageRange!== ageRange) continue;
@@ -499,8 +503,7 @@ export const findStranger = onCall(
       if (bestMatch && bestMatch.exists) {
         const other = bestMatch.data();
         if (!other) throw new HttpsError("internal", "Lỗi data");
-        
-        // FIX: CHATID CỐ ĐỊNH THEO 2 UID - KHÔNG DÙNG Date.now()
+
         const chatId = `str_${[uid, other.userId].sort().join("_")}`;
         const chatRef = db.doc(`stranger_chats/${chatId}`);
 
@@ -511,11 +514,10 @@ export const findStranger = onCall(
           }
 
           const existingChatSnap = await transaction.get(chatRef);
-          
-          // NẾU CHƯA CÓ CHAT THÌ TẠO MỚI
+
           if (!existingChatSnap.exists) {
             transaction.set(chatRef, {
-              members: [uid, other.userId].sort(), // SORT ĐỂ ĐẢM BẢO THỨ TỰ
+              members: [uid, other.userId].sort(),
               topic: interests,
               ageRange,
               province,
@@ -527,10 +529,10 @@ export const findStranger = onCall(
               extended: false,
               reportedBy: [],
               status: "active",
-              unreadCounts: { [uid]: 0, [other.userId]: 0 }, // THÊM
-              onlineStatus: { [uid]: true, [other.userId]: false }, // THÊM
-              friendRequests: {}, // THÊM
-              filters: { // THÊM DÒNG NÀY - QUAN TRỌNG
+              unreadCounts: { [uid]: 0, [other.userId]: 0 },
+              onlineStatus: { [uid]: true, [other.userId]: false },
+              friendRequests: {},
+              filters: {
                 interests,
                 ageRange,
                 wantGender,
@@ -539,22 +541,21 @@ export const findStranger = onCall(
             });
           }
 
-          // SET MATCHED CHO CẢ 2 USER
-          transaction.update(bestMatch!.ref, { 
-            status: "matched", 
-            matchedChatId: chatId 
+          transaction.update(bestMatch!.ref, {
+            status: "matched",
+            matchedChatId: chatId
           });
-          transaction.set(queueRef.doc(uid), { 
+          transaction.set(queueRef.doc(uid), {
             userId: uid,
-            status: "matched", 
+            status: "matched",
             matchedChatId: chatId,
             createdAt: FieldValue.serverTimestamp()
           });
         });
 
         return { matched: true, chatId };
-      } 
-      
+      }
+
       await queueRef.doc(uid).set({
         userId: uid,
         interests,
@@ -565,7 +566,7 @@ export const findStranger = onCall(
         status: "waiting",
         createdAt: FieldValue.serverTimestamp(),
       });
-      
+
       return { matched: false };
     } catch (error: any) {
       console.error("findStranger error:", error);
@@ -574,15 +575,16 @@ export const findStranger = onCall(
     }
   }
 );
+
 // 9. BÁO CÁO NGƯỜI LẠ
 export const reportStranger = onCall(
   { region: "asia-southeast1" },
   async (request) => {
     const uid = request.auth?.uid;
-if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
+    if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
 
     const { chatId, reason } = request.data;
-if (!chatId ||!reason) throw new HttpsError("invalid-argument", "Thiếu chatId hoặc reason");
+    if (!chatId ||!reason) throw new HttpsError("invalid-argument", "Thiếu chatId hoặc reason");
 
     await db.doc(`users/${uid}`).update({
       karma: FieldValue.increment(-20),
@@ -618,10 +620,10 @@ export const addStrangerFriend = onCall(
   { region: "asia-southeast1" },
   async (request) => {
     const uid = request.auth?.uid;
-if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
+    if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
 
     const { chatId, otherUid } = request.data;
-if (!otherUid) throw new HttpsError("invalid-argument", "Thiếu otherUid");
+    if (!otherUid) throw new HttpsError("invalid-argument", "Thiếu otherUid");
 
     const chatDoc = await db.doc(`stranger_chats/${chatId}`).get();
     if (!chatDoc.exists) throw new HttpsError("not-found", "Phòng chat không tồn tại");
@@ -633,8 +635,8 @@ if (!otherUid) throw new HttpsError("invalid-argument", "Thiếu otherUid");
 
     const requestId = `${uid}_${otherUid}`;
     await db.doc(`friendRequests/${requestId}`).set({
-      from: uid,
-      to: otherUid,
+      fromUserId: uid,
+      toUserId: otherUid,
       fromStrangerChat: chatId,
       status: "pending",
       createdAt: FieldValue.serverTimestamp(),
@@ -654,10 +656,10 @@ export const cleanupStrangerChats = onSchedule(
   async () => {
     const now = Timestamp.now();
     const expired = await db
-.collection("stranger_chats")
-.where("expiresAt", "<=", now)
-.limit(500)
-.get();
+     .collection("stranger_chats")
+     .where("expiresAt", "<=", now)
+     .limit(500)
+     .get();
 
     if (expired.empty) return;
 
@@ -689,10 +691,9 @@ export const onHuhaScoreUpdate = onDocumentUpdated(
       console.log(`User ${userId} lên level ${newLevel}`);
     }
 
-    // Update rank cho tất cả user - chạy async để không block
     const usersSnap = await db.collection("users")
-    .orderBy("huhaScore", "desc")
-    .get();
+     .orderBy("huhaScore", "desc")
+     .get();
 
     const batch = db.batch();
     usersSnap.docs.forEach((doc, idx) => {
@@ -703,6 +704,7 @@ export const onHuhaScoreUpdate = onDocumentUpdated(
     console.log(`Updated ranks for ${usersSnap.size} users`);
   }
 );
+
 // 14. TỰ ĐỘNG CẬP NHẬT friendCount khi add friend
 export const onFriendAdded = onDocumentCreated(
   {
@@ -712,10 +714,9 @@ export const onFriendAdded = onDocumentCreated(
   async (event) => {
     const userId = event.params.userId;
     const friendData = event.data?.data();
-    
-    // Chỉ đếm khi status = "active", bỏ qua "removed"
-    if (friendData?.status !== "active") return;
-    
+
+    if (friendData?.status!== "active") return;
+
     await db.doc(`users/${userId}`).update({
       friendCount: FieldValue.increment(1)
     });
@@ -732,8 +733,7 @@ export const onFriendRemoved = onDocumentDeleted(
   async (event) => {
     const userId = event.params.userId;
     const friendData = event.data?.data();
-    
-    // Chỉ giảm nếu trước đó là "active"
+
     if (friendData?.status === "active") {
       await db.doc(`users/${userId}`).update({
         friendCount: FieldValue.increment(-1)
@@ -753,18 +753,16 @@ export const onFriendStatusChanged = onDocumentUpdated(
     const userId = event.params.userId;
     const before = event.data?.before.data();
     const after = event.data?.after.data();
-    
-    if (!before || !after) return;
-    
-    // active -> removed: giảm 1
+
+    if (!before ||!after) return;
+
     if (before.status === "active" && after.status === "removed") {
       await db.doc(`users/${userId}`).update({
         friendCount: FieldValue.increment(-1)
       });
       console.log(`-1 friend for ${userId} via status change`);
     }
-    
-    // removed -> active: tăng 1, phòng case kết bạn lại
+
     if (before.status === "removed" && after.status === "active") {
       await db.doc(`users/${userId}`).update({
         friendCount: FieldValue.increment(1)
@@ -773,6 +771,7 @@ export const onFriendStatusChanged = onDocumentUpdated(
     }
   }
 );
+
 // 13. Function cộng điểm HuhaScore - gọi từ client
 export const addHuhaScore = onCall(
   { region: "asia-southeast1" },
