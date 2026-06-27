@@ -228,31 +228,22 @@ export default function ChatRoomPage() {
   };
 
   const handleEndChat = async () => {
-  if (!chatId) return;
-  
-  // Nếu chat đã ended rồi thì chỉ cần về trang chủ
-  if (chatData?.status === "ended") {
-    router.push("/stranger");
-    return;
-  }
-
-  // Nếu chưa ended thì mình là người đầu tiên bấm -> end chat
-  setIsEndedLocal(true);
-  try {
-    await updateDoc(doc(db, "stranger_chats", chatId), {
-      status: "ended",
-      endedAt: serverTimestamp(),
-    });
-    toast.success("Đã kết thúc");
-    router.push("/stranger");
-  } catch {
-    toast.error("Lỗi kết thúc chat");
-    setIsEndedLocal(false);
-  }
-};
+    if (!chatId) return;
+    setIsEndedLocal(true);
+    try {
+      await updateDoc(doc(db, "stranger_chats", chatId), {
+        status: "ended",
+        endedAt: serverTimestamp(),
+      });
+      toast.success("Đã kết thúc");
+    } catch {
+      toast.error("Lỗi kết thúc chat");
+      setIsEndedLocal(false);
+    }
+  };
 
 const handleContinueSearch = async () => {
-  if (!chatId || !user?.uid || isSearching) return;
+  if (!chatId ||!user?.uid || isSearching) return;
   setIsSearching(true);
   try {
     await updateDoc(doc(db, "stranger_chats", chatId), {
@@ -261,7 +252,7 @@ const handleContinueSearch = async () => {
     });
     
     const oldFilters = chatData?.filters;
-    if (!oldFilters || !oldFilters.interests?.length) {
+    if (!oldFilters ||!oldFilters.interests?.length) {
       toast.error("Không tìm thấy bộ lọc cũ, về trang chủ chọn lại");
       router.push("/stranger");
       return;
@@ -282,10 +273,8 @@ const handleContinueSearch = async () => {
     if (data.matched) {
       setMatchedChatId(data.chatId);
       toast.success("Đã tìm thấy bạn phù hợp!");
-      router.push("/stranger"); // Thêm dòng này
     } else {
       toast.info("Đang tìm người phù hợp...");
-      router.push("/stranger"); // Thêm dòng này
     }
   } catch (err: any) {
     console.error(err);
@@ -405,27 +394,7 @@ const handleContinueSearch = async () => {
             </div>
           </div>
         )}
-{/* Notice đối phương đã rời phòng */}
-{chatEnded &&!isEndedLocal &&!isExpired && (
-  <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-2 border-rose-500 rounded-2xl p-4 mb-3">
-    <div className="flex items-start gap-3">
-      <FiAlertCircle className="text-rose-500 flex-shrink-0 mt-0.5" size={20} />
-      <div className="flex-1">
-        <p className="text-sm font-[700] text-rose-600 dark:text-rose-400 mb-3 text-center">
-          Đối phương đã rời phòng
-        </p>
-        <button
-          onClick={handleContinueSearch}
-          disabled={isSearching}
-          className="w-full h-10 bg-gradient-to-r from-emerald-500 to-green-500 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-700 dark:disabled:to-zinc-700 text-white rounded-xl text-sm font-[700] active:scale-95 flex items-center justify-center gap-2"
-        >
-          <FiRefreshCw size={16} className={isSearching? "animate-spin" : ""} />
-          {isSearching? "Đang tìm..." : "Tiếp tục tìm người mới"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+
         {/* Matched UI - Hiện khi match nhưng chưa vào */}
         {matchedChatId &&!chatEnded && (
           <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-2xl p-6 mb-3 text-center">
