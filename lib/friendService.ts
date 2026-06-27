@@ -1,6 +1,6 @@
 import {
   doc,
-  runTransaction, // THÊM DÒNG NÀY
+  runTransaction,
   collection,
   serverTimestamp,
   Timestamp,
@@ -14,7 +14,6 @@ import {
   Unsubscribe,
   onSnapshot,
   addDoc,
-  getCountFromServer,
   updateDoc,
   deleteDoc,
   QueryDocumentSnapshot,
@@ -147,14 +146,15 @@ export const sendFriendRequest = async (
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const countSnap = await getCountFromServer(
-    query(
-      collection(db, "friendRequests"),
-      where("fromUserId", "==", from),
-      where("createdAt", ">=", Timestamp.fromDate(today))
-    )
+  
+  // FIX: Dùng getDocs thay vì getCountFromServer
+  const q = query(
+    collection(db, "friendRequests"),
+    where("fromUserId", "==", from),
+    where("createdAt", ">=", Timestamp.fromDate(today))
   );
-  if (countSnap.data().count >= 20) {
+  const snap = await getDocs(q);
+  if (snap.size >= 20) {
     throw new FriendError(
       "Bạn đã gửi quá 20 lời mời hôm nay",
       "LIMIT_EXCEEDED"
