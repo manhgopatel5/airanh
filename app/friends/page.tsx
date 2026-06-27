@@ -627,7 +627,7 @@ const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
   const isStranger = 'isStranger' in friend && friend.isStranger;
 
   // FIX: Thêm loading vào button
-  const isLoading = loadingChatId === friend.uid;
+
     return (
   <motion.div className="relative overflow-hidden rounded-xl">
     <motion.div
