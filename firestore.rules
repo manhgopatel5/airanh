@@ -290,44 +290,31 @@ match /friends/{friendId} {
 
    // ========== FRIEND REQUESTS - FIX LỖI PERMISSION ==========
 match /friendRequests/{reqId} {
-  // Fix: Firestore Rules không có.find(), phải check thủ công
+  // Rút gọn: chỉ cho query theo fromUserId thôi, vì bạn chỉ cần đếm 20 req/ngày
   allow list: if isSignedIn() && 
-    (
-      // Case 1: query có where('fromUserId', '==', uid)
-      (request.query.where.size() >= 1 &&
-       request.query.where[0][0] == 'fromUserId' && 
-       request.auth.uid == request.query.where[0][2])
-      ||
-      // Case 2: where('fromUserId', '==', uid) nằm ở vị trí 2
-      (request.query.where.size() >= 2 &&
-       request.query.where[1][0] == 'fromUserId' && 
-       request.auth.uid == request.query.where[1][2])
-      ||
-      // Case 3: check toUserId
-      (request.query.where.size() >= 1 &&
-       request.query.where[0][0] == 'toUserId' && 
-       request.auth.uid == request.query.where[0][2])
-      ||
-      (request.query.where.size() >= 2 &&
-       request.query.where[1][0] == 'toUserId' && 
-       request.auth.uid == request.query.where[1][2])
-    );
+    request.query.where.size() >= 1 &&
+    request.query.where[0][0] == 'fromUserId' && 
+    request.auth.uid == request.query.where[0][2];
   
   allow get: if isSignedIn() && 
     (request.auth.uid == resource.data.fromUserId || 
      request.auth.uid == resource.data.toUserId);
 
+  // Fix: Bỏ.sort() đi, check 2 chiều thủ công
   allow create: if isSignedIn()
     && request.auth.uid == request.resource.data.fromUserId
     && request.resource.data.toUserId is string
     && request.resource.data.status == 'pending'
     && request.resource.data.createdAt is timestamp
-    && reqId == [request.resource.data.fromUserId, request.resource.data.toUserId].sort().join('_');
+    && (
+      reqId == request.resource.data.fromUserId + '_' + request.resource.data.toUserId ||
+      reqId == request.resource.data.toUserId + '_' + request.resource.data.fromUserId
+    );
 
   allow update: if isSignedIn() && 
     (request.auth.uid == resource.data.toUserId || request.auth.uid == resource.data.fromUserId)
     && request.resource.data.diff(resource.data).changedKeys()
-   .hasOnly(['status', 'updatedAt', 'respondedAt']);
+  .hasOnly(['status', 'updatedAt', 'respondedAt']);
 
   allow delete: if isSignedIn() && 
     (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
