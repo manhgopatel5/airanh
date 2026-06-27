@@ -290,10 +290,28 @@ match /friends/{friendId} {
 
    // ========== FRIEND REQUESTS - FIX LỖI PERMISSION ==========
 match /friendRequests/{reqId} {
-  // Fix: check hẳn tên field, không dùng where[0]
+  // Fix: Firestore Rules không có.find(), phải check thủ công
   allow list: if isSignedIn() && 
-    request.auth.uid == request.query.where.find(w => w[0] == 'fromUserId')[2] ||
-    request.auth.uid == request.query.where.find(w => w[0] == 'toUserId')[2];
+    (
+      // Case 1: query có where('fromUserId', '==', uid)
+      (request.query.where.size() >= 1 &&
+       request.query.where[0][0] == 'fromUserId' && 
+       request.auth.uid == request.query.where[0][2])
+      ||
+      // Case 2: where('fromUserId', '==', uid) nằm ở vị trí 2
+      (request.query.where.size() >= 2 &&
+       request.query.where[1][0] == 'fromUserId' && 
+       request.auth.uid == request.query.where[1][2])
+      ||
+      // Case 3: check toUserId
+      (request.query.where.size() >= 1 &&
+       request.query.where[0][0] == 'toUserId' && 
+       request.auth.uid == request.query.where[0][2])
+      ||
+      (request.query.where.size() >= 2 &&
+       request.query.where[1][0] == 'toUserId' && 
+       request.auth.uid == request.query.where[1][2])
+    );
   
   allow get: if isSignedIn() && 
     (request.auth.uid == resource.data.fromUserId || 
