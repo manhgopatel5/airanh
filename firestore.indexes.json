@@ -206,7 +206,14 @@
       ],
       "density": "SPARSE_ALL"
     },
-    
+    {
+      "collectionGroup": "friendRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "fromUserId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
     {
       "collectionGroup": "messages",
       "queryScope": "COLLECTION_GROUP",
@@ -982,56 +989,70 @@
   "density": "SPARSE_ALL"
 },
 {
-  "indexes": [
+  "collectionGroup": "users",
+  "queryScope": "COLLECTION",
+  "fields": [
     {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "shortId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "hidden", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ],
-      "density": "SPARSE_ALL"
+      "fieldPath": "shortId",
+      "order": "ASCENDING"
     },
     {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "huhaScore", "order": "DESCENDING" },
-        { "fieldPath": "nameLower", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ],
-      "density": "SPARSE_ALL"
+      "fieldPath": "status",
+      "order": "ASCENDING"
     },
     {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "huhaScore", "order": "ASCENDING" },
-        { "fieldPath": "nameLower", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ],
-      "density": "SPARSE_ALL"
+      "fieldPath": "hidden",
+      "order": "ASCENDING"
     },
     {
-      "collectionGroup": "friendRequests",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "fromUserId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
+      "fieldPath": "deletedAt",
+      "order": "ASCENDING"
     },
     {
-      "collectionGroup": "stranger_queue",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
+      "fieldPath": "__name__",
+      "order": "ASCENDING"
     }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "users",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "huhaScore",
+      "order": "DESCENDING"
+    },
+    {
+      "fieldPath": "nameLower",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "ASCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+},
+{
+  "collectionGroup": "users",
+  "queryScope": "COLLECTION",
+  "fields": [
+    {
+      "fieldPath": "huhaScore",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "nameLower",
+      "order": "ASCENDING"
+    },
+    {
+      "fieldPath": "__name__",
+      "order": "ASCENDING"
+    }
+  ],
+  "density": "SPARSE_ALL"
+}
   ],
   "fieldOverrides": []
 }
