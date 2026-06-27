@@ -755,24 +755,17 @@ const unpinMessage = async () => {
   )}
 </p>
         </div>
-      <div className="flex items-center gap-1">
-  <button 
-    onClick={() => setShowSearch(true)} 
-    className="p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors active:scale-90"
-  >
-    <Search size={20} className="text-gray-600 dark:text-zinc-400" />
-  </button>
-  <button 
-    className="p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors active:scale-90"
-  >
-    <Phone size={20} className="text-gray-600 dark:text-zinc-400" />
-  </button>
-  <button 
-    className="p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors active:scale-90"
-  >
-    <Video size={20} className="text-gray-600 dark:text-zinc-400" />
-  </button>
-</div>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setShowSearch(true)} className="p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
+            <Search size={20} className="text-gray-700 dark:text-zinc-300" />
+          </button>
+          <button className="p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
+            <Phone size={20} className="text-gray-700 dark:text-zinc-300" />
+          </button>
+          <button className="p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
+            <Video size={20} className="text-gray-700 dark:text-zinc-300" />
+          </button>
+        </div>
       </div>
 
       {/* PINNED MESSAGE */}
