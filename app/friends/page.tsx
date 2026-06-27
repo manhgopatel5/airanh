@@ -377,99 +377,114 @@ useEffect(() => {
     }
   };
 
-  const fetchSuggestedUsers = async () => {
-    setLoadingSuggested(true);
-    try {
-      const auth = getAuth();
-      const currentUid = auth.currentUser?.uid;
-      if (!currentUid) return;
+const fetchSuggestedUsers = async () => {
+  setLoadingSuggested(true);
+  try {
+    const auth = getAuth();
+    const currentUid = auth.currentUser?.uid;
+    if (!currentUid) return;
 
-      const friendIds = friends.map(f => f.uid);
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, limit(50));
-      const snap = await getDocs(q);
-      const results: UserSuggestion[] = [];
-      const randomUsers: UserSuggestion[] = [];
+    const db = getFirebaseDB();
+    
+    // 1. Lấy list bạn hiện tại 1 lần duy nhất
+    const myFriendsSnap = await getDocs(
+      query(collection(db, "friends"), where("userId", "==", currentUid), limit(500))
+    );
+    const myFriendIds = new Set(myFriendsSnap.docs.map(d => d.data().friendId));
 
-      for (const docSnap of snap.docs) {
-        if (docSnap.id === currentUid) continue;
-        if (friendIds.includes(docSnap.id)) continue;
+    // 2. Lấy 50 user random
+    const usersSnap = await getDocs(query(collection(db, "users"), limit(50)));
+    const candidates = usersSnap.docs
+     .filter(d => d.id!== currentUid &&!myFriendIds.has(d.id))
+     .map(d => ({ uid: d.id,...d.data() } as any));
 
-        const data = docSnap.data();
+    // 3. Lấy bạn của tất cả candidates trong 1 query
+    const candidateUids = candidates.map(u => u.uid);
+    const allFriendsSnap = await getDocs(
+      query(collection(db, "friends"), where("userId", "in", candidateUids.slice(0, 10)))
+    );
 
-        const friendDoc = await getDoc(doc(db, "users", currentUid, "friends", docSnap.id));
-        if (friendDoc.exists()) continue;
+    // 4. Map mutual count
+    const friendsMap = new Map<string, Set<string>>();
+    allFriendsSnap.docs.forEach(d => {
+      const { userId, friendId } = d.data();
+      if (!friendsMap.has(userId)) friendsMap.set(userId, new Set());
+      friendsMap.get(userId)!.add(friendId);
+    });
 
-        const myFriendsSnap = await getDocs(collection(db, "users", currentUid, "friends"));
-        const theirFriendsSnap = await getDocs(collection(db, "users", docSnap.id, "friends"));
-        const myFriends = new Set(myFriendsSnap.docs.map(d => d.id));
-        const mutualCount = theirFriendsSnap.docs.filter(d => myFriends.has(d.id)).length;
+    const results: UserSuggestion[] = [];
+    const randomUsers: UserSuggestion[] = [];
 
-        const userData: UserSuggestion = {
-          uid: docSnap.id,
-          username: data.username || "",
-          name: data.name || "",
-          avatarUrl: data.avatarUrl,
-          status: "none",
-          mutualFriends: mutualCount,
-          age: data.age,
-          gender: data.gender
-        };
+    for (const u of candidates.slice(0, 10)) { // Giới hạn 10 để tránh vượt limit 'in'
+      const theirFriends = friendsMap.get(u.uid) || new Set();
+      let mutualCount = 0;
+      myFriendIds.forEach(id => {
+        if (theirFriends.has(id)) mutualCount++;
+      });
 
-        if (mutualCount > 0) {
-          results.push(userData);
-        } else {
-          randomUsers.push(userData);
-        }
-      }
+      const userData: UserSuggestion = {
+        uid: u.uid,
+        username: u.username || "",
+        name: u.name || "",
+        avatarUrl: u.avatarUrl,
+        status: "none",
+        mutualFriends: mutualCount,
+        age: u.age,
+        gender: u.gender
+      };
 
-      results.sort((a, b) => (b.mutualFriends || 0) - (a.mutualFriends || 0));
-
-      if (results.length === 0) {
-        const shuffled = randomUsers.sort(() => 0.5 - Math.random());
-        setSuggestions(shuffled.slice(0, 10));
-      } else {
-        setSuggestions(results.slice(0, 10));
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingSuggested(false);
+      if (mutualCount > 0) results.push(userData);
+      else randomUsers.push(userData);
     }
-  };
 
-  const handleStartChat = async (friendId: string) => {
-    if (!user?.uid) return;
-    const chatId = [user.uid, friendId].sort().join("_");
-    const [currentUserDoc, friendDoc] = await Promise.all([
-      getDoc(doc(db, "users", user.uid)),
-      getDoc(doc(db, "users", friendId))
-    ]);
-    const currentData = currentUserDoc.data();
-    const friendData = friendDoc.data();
+    results.sort((a, b) => (b.mutualFriends || 0) - (a.mutualFriends || 0));
 
-    await setDoc(doc(db, "chats", chatId), {
-      members: [user.uid, friendId],
-      isGroup: false,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      membersInfo: {
-        [user.uid]: { name: currentData?.name || "User", avatar: currentData?.avatar || "", username: currentData?.username || "" },
-        [friendId]: { name: friendData?.name || "User", avatar: friendData?.avatar || "", username: friendData?.username || "" }
-      }
-    }, { merge: true });
+    if (results.length === 0) {
+      const shuffled = randomUsers.sort(() => 0.5 - Math.random());
+      setSuggestions(shuffled.slice(0, 10));
+    } else {
+      setSuggestions(results.slice(0, 10));
+    }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    setLoadingSuggested(false);
+  }
+};
 
-    router.push(`/chat/${chatId}`);
-  };
+const handleStartChat = async (friendId: string) => {
+  if (!user?.uid) return;
+  const db = getFirebaseDB();
+  const chatId = [user.uid, friendId].sort().join("_");
+  const [currentUserDoc, friendDoc] = await Promise.all([
+    getDoc(doc(db, "users", user.uid)),
+    getDoc(doc(db, "users", friendId))
+  ]);
+  const currentData = currentUserDoc.data();
+  const friendData = friendDoc.data();
 
-  const handleAccept = async (uid: string) => {
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const accept = httpsCallable(functions, 'acceptFriendRequest');
-    await accept({ fromUid: uid });
-    toast.success("Đã chấp nhận");
-  };
+  await setDoc(doc(db, "chats", chatId), {
+    members: [user.uid, friendId],
+    isGroup: false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    membersInfo: {
+      [user.uid]: { name: currentData?.name || "User", avatar: currentData?.avatar || "", username: currentData?.username || "" },
+      [friendId]: { name: friendData?.name || "User", avatar: friendData?.avatar || "", username: friendData?.username || "" }
+    }
+  }, { merge: true });
 
-  const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
+  router.push(`/chat/${chatId}`);
+};
+
+const handleAccept = async (uid: string) => {
+  const functions = getFunctions(getApp(), "asia-southeast1");
+  const accept = httpsCallable(functions, 'acceptFriendRequest');
+  await accept({ fromUid: uid });
+  toast.success("Đã chấp nhận");
+};
+
+const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
 
 const handleAddFriend = async (toUid: string, username?: string) => {
   if (!user?.uid || sentRequests.has(toUid)) return;
@@ -493,33 +508,33 @@ const handleAddFriend = async (toUid: string, username?: string) => {
   }
 };
 
-  const copyMyLink = () => {
-    if (!myUsername) {
-      toast.error("Chưa có username");
-      return;
-    }
-    const link = `${window.location.origin}/u/${myUsername}`;
-    navigator.clipboard.writeText(link);
-    if ("vibrate" in navigator) navigator.vibrate(10);
-    toast.success("Đã copy link mời bạn");
-  };
+const copyMyLink = () => {
+  if (!myUsername) {
+    toast.error("Chưa có username");
+    return;
+  }
+  const link = `${window.location.origin}/u/${myUsername}`;
+  navigator.clipboard.writeText(link);
+  if ("vibrate" in navigator) navigator.vibrate(10);
+  toast.success("Đã copy link mời bạn");
+};
 
-  const handleRemoveFriend = async (friend: FriendItem) => {
-    if (!confirm(`Xóa ${friend.name} khỏi danh sách bạn bè?`)) return;
-    const functions = getFunctions(getApp(), "asia-southeast1");
-    const unfriend = httpsCallable(functions, 'unfriend');
-    await unfriend({ friendUid: friend.uid });
-    toast.success("Đã hủy kết bạn");
-    setSelectedFriend(null);
-    if ("vibrate" in navigator) navigator.vibrate(10);
-  };
+const handleRemoveFriend = async (friend: FriendItem) => {
+  if (!confirm(`Xóa ${friend.name} khỏi danh sách bạn bè?`)) return;
+  const functions = getFunctions(getApp(), "asia-southeast1");
+  const unfriend = httpsCallable(functions, 'unfriend');
+  await unfriend({ friendUid: friend.uid });
+  toast.success("Đã hủy kết bạn");
+  setSelectedFriend(null);
+  if ("vibrate" in navigator) navigator.vibrate(10);
+};
 
-  const formatLastSeen = (timestamp?: any): string => {
-    if (!timestamp?.toDate) return "Lâu rồi";
-    return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
-  };
+const formatLastSeen = (timestamp?: any): string => {
+  if (!timestamp?.toDate) return "Lâu rồi";
+  return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
+};
 
-  const allItems = useMemo((): (FriendItem | StrangerChatItem)[] => {
+const allItems = useMemo((): (FriendItem | StrangerChatItem)[] => {
   return [...friends,...strangerChats];
 }, [friends, strangerChats]);
 
@@ -534,12 +549,14 @@ const filteredFriends = useMemo((): (FriendItem | StrangerChatItem)[] => {
     return a.name.localeCompare(b.name);
   });
 }, [allItems, search]);
-  const onlineCount = friends.filter(f => f.isOnline).length;
 
-  const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
+const onlineCount = friends.filter(f => f.isOnline).length;
+
+const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
   const x = useMotionValue(0);
   const opacity = useTransform(x, [-100, 0], [1, 0]);
   const isStranger = 'isStranger' in friend && friend.isStranger;
+ 
 
   return (
     <motion.div className="relative overflow-hidden rounded-xl">
