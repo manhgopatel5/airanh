@@ -148,54 +148,75 @@ export default function FriendsPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user?.uid) return;
-    setFriendsLoading(true);
+  if (!user?.uid) return;
+  setFriendsLoading(true);
 
-    const friendsRef = collection(db, "users", user.uid, "friends");
-    const unsub = onSnapshot(friendsRef, async (snapshot) => {
-      const activeFriendIds = snapshot.docs.filter(d => d.data()?.status!== "removed").map(d => d.id);
-      if (activeFriendIds.length === 0) {
-        setFriends([]);
-        setFriendsLoading(false);
-        return;
-      }
+  // FIX: Đổi sang collection gốc /friends
+  const q = query(
+    collection(db, "friends"),
+    where("userId", "==", user.uid)
+  );
 
-      const userDocs = await Promise.all(activeFriendIds.map(id => getDoc(doc(db, "users", id))));
-      const friendsData = await Promise.all(
-        userDocs.map(async (userDoc) => {
-          if (!userDoc.exists()) return null;
-          const data = userDoc.data();
-
-          if (data.isStranger === true) return null;
-
-          const theirFriendsSnap = await getDoc(doc(db, "users", userDoc.id, "friends", user.uid));
-          const mutualCount = theirFriendsSnap.exists()
-       ? Object.keys(data.friends || {}).filter(fid => activeFriendIds.includes(fid)).length
-            : 0;
-
-          const friend: FriendItem = {
-            uid: userDoc.id,
-            name: data.name || "User",
-            username: data.username || "",
-            avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
-            userId: data.userId || "",
-            isOnline: Boolean(data.isOnline),
-            lastSeen: data.lastSeen,
-            isDeletedByThem: Boolean(snapshot.docs.find(d => d.id === userDoc.id)?.data()?.removedBy),
-            mutualFriends: mutualCount,
-            vip: data.vip || { tier: 'free' }
-          };
-          return friend;
-        })
-      );
-
-      const filtered = friendsData.filter(f => f!== null) as FriendItem[];
-      setFriends(filtered);
+  const unsub = onSnapshot(q, async (snapshot) => {
+    const friendIds = snapshot.docs.map(d => d.data().friendId);
+    
+    if (friendIds.length === 0) {
+      setFriends([]);
       setFriendsLoading(false);
-    });
+      return;
+    }
 
-    return () => unsub();
-  }, [user?.uid, db]);
+    const userDocs = await Promise.all(
+      friendIds.map(id => getDoc(doc(db, "users", id)))
+    );
+
+    const friendsData = await Promise.all(
+      userDocs.map(async (userDoc) => {
+        if (!userDoc.exists()) return null;
+        const data = userDoc.data();
+
+        if (data.isStranger === true) return null;
+
+        // Check mutual friends - đếm từ collection /friends
+        const mutualQuery = query(
+          collection(db, "friends"),
+          where("userId", "==", user.uid)
+        );
+        const myFriendsSnap = await getDocs(mutualQuery);
+        const myFriendIds = new Set(myFriendsSnap.docs.map(d => d.data().friendId));
+
+        const theirFriendsQuery = query(
+          collection(db, "friends"),
+          where("userId", "==", userDoc.id)
+        );
+        const theirFriendsSnap = await getDocs(theirFriendsQuery);
+        const mutualCount = theirFriendsSnap.docs.filter(d => 
+          myFriendIds.has(d.data().friendId)
+        ).length;
+
+        const friend: FriendItem = {
+          uid: userDoc.id,
+          name: data.name || "User",
+          username: data.username || "",
+          avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
+          userId: data.userId || "",
+          isOnline: Boolean(data.isOnline),
+          lastSeen: data.lastSeen,
+          isDeletedByThem: false, // Không còn subcollection nên bỏ check này
+          mutualFriends: mutualCount,
+          vip: data.vip || { tier: 'free' }
+        };
+        return friend;
+      })
+    );
+
+    const filtered = friendsData.filter(f => f !== null) as FriendItem[];
+    setFriends(filtered);
+    setFriendsLoading(false);
+  });
+
+  return () => unsub();
+}, [user?.uid, db]);
 
   useEffect(() => {
     if (!user?.uid) return;
