@@ -20,29 +20,39 @@ match /users/{userId} {
   allow read: if true;
   
   allow update: if isOwner(userId) 
-    && !request.resource.data.diff(resource.data).changedKeys().hasAny(['vip'])
+    &&!request.resource.data.diff(resource.data).changedKeys().hasAny(['vip', 'role', 'banned'])
     && request.resource.data.diff(resource.data).changedKeys()
-      .hasOnly(['name', 'avatar', 'bio', 'birthday', 'phone', 'title', 'location', 
-               'skills', 'portfolio', 'online', 'lastSeen', 'nameLower', 'huhaScore']);
+    .hasOnly(['name', 'avatar', 'bio', 'birthday', 'phone', 'title', 'location', 
+               'skills', 'portfolio', 'online', 'lastSeen', 'nameLower', 'huhaScore', 'fcmToken']);
   
   allow create: if isOwner(userId);
   allow delete: if isAdmin();
-
-  match /friends/{friendId} {
-    allow read: if isOwner(userId);
-    allow create: if false;
-    allow update: if isSignedIn()
-      && request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'removedAt', 'updatedAt']);
-    allow delete: if isOwner(userId);
-  }
+  
+  // XÓA HẾT SUBCOLLECTION friends ở đây
 }
 
-    // ========== FRIENDS COLLECTION GỐC - THÊM MỚI ==========
-    match /friends/{friendId} {
-      allow read: if isSignedIn() && request.auth.uid in friendId.split('_');
-      allow create: if isSignedIn() && request.auth.uid in friendId.split('_');
-      allow delete: if isSignedIn() && request.auth.uid in friendId.split('_');
-    }
+// ========== FRIENDS COLLECTION GỐC - DÙNG CÁI NÀY ==========
+match /friends/{friendId} {
+  // Cho phép LIST để query where("userId", "==", uid) chạy được
+  allow list: if isSignedIn() && request.auth.uid == request.query.where[0][2];
+  
+  // Cho phép GET 1 doc cụ thể 
+  allow get: if isSignedIn() && request.auth.uid in friendId.split('_');
+  
+  // Cho phép tạo doc có id = userId_friendId
+  allow create: if isSignedIn() && 
+    request.auth.uid == request.resource.data.userId &&
+    friendId == request.resource.data.userId + '_' + request.resource.data.friendId &&
+    request.resource.data.keys().hasAll(['userId', 'friendId', 'createdAt']);
+    
+  // Cho phép update lastInteractionAt
+  allow update: if isSignedIn() && 
+    request.auth.uid == resource.data.userId &&
+    request.resource.data.diff(resource.data).changedKeys()
+    .hasOnly(['lastInteractionAt', 'updatedAt']);
+    
+  allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+}
 
     // ========== BLOCKS - THÊM MỚI ==========
     match /blocks/{blockId} {
@@ -278,26 +288,30 @@ match /users/{userId} {
       }
     }
 
-    // ========== FRIEND REQUESTS - ĐÃ FIX ==========
-    match /friendRequests/{reqId} {
-      allow read: if isSignedIn() && 
-        (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
+   // ========== FRIEND REQUESTS - FIX LỖI PERMISSION ==========
+match /friendRequests/{reqId} {
+  // Cho phép LIST để query where("fromUserId", "==", uid) chạy được
+  allow list: if isSignedIn() && request.auth.uid == request.query.where[0][2];
+  
+  // Cho phép GET 1 doc cụ thể
+  allow get: if isSignedIn() && 
+    (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
 
-      allow create: if isSignedIn()
-        && request.auth.uid == request.resource.data.fromUserId
-        && request.resource.data.toUserId is string
-        && request.resource.data.status == 'pending'
-        && request.resource.data.createdAt is timestamp
-        && reqId == [request.resource.data.fromUserId, request.resource.data.toUserId].sort().join('_');
+  allow create: if isSignedIn()
+    && request.auth.uid == request.resource.data.fromUserId
+    && request.resource.data.toUserId is string
+    && request.resource.data.status == 'pending'
+    && request.resource.data.createdAt is timestamp
+    && reqId == [request.resource.data.fromUserId, request.resource.data.toUserId].sort().join('_');
 
-      allow update: if isSignedIn() && 
-        (request.auth.uid == resource.data.toUserId || request.auth.uid == resource.data.fromUserId)
-        && request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly(['status', 'updatedAt']);
+  allow update: if isSignedIn() && 
+    (request.auth.uid == resource.data.toUserId || request.auth.uid == resource.data.fromUserId)
+    && request.resource.data.diff(resource.data).changedKeys()
+     .hasOnly(['status', 'updatedAt', 'respondedAt']); // Thêm respondedAt
 
-      allow delete: if isSignedIn() && 
-        (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
-    }
+  allow delete: if isSignedIn() && 
+    (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
+}
 
     // ========== USERNAMES ==========
     match /usernames/{username} {
