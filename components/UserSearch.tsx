@@ -53,31 +53,30 @@ export default function UserSearch() {
         const res = await searchUsers(keyword.trim(), user.uid);
         const filtered = res.users.filter((u: UserResult) => u.uid !== user.uid);
 
-        // ✅ BẬT LẠI getFriendStatus - GIỜ RULE ĐÃ ĐÚNG
+        // Bật lại getFriendStatus - Rules đã fix
         const withStatus = await Promise.all(
-  filtered.map(async (u: UserResult) => {
-    try {
-      const status = await getFriendStatus(user.uid, u.uid);
-      // ✅ Map "blocked" về "none" vì UI không hiển thị blocked
-      const mappedStatus: UserResult["status"] = 
-        status === "blocked" ? "none" : status;
-      return { ...u, status: mappedStatus };
-    } catch (e) {
-      console.error("Lỗi getFriendStatus:", e);
-      return { ...u, status: "none" as const };
-    }
-  })
-);
+          filtered.map(async (u: UserResult) => {
+            try {
+              const status = await getFriendStatus(user.uid, u.uid);
+              const mappedStatus: UserResult["status"] = 
+                status === "blocked" ? "none" : status;
+              return { ...u, status: mappedStatus };
+            } catch (e) {
+              console.error("Lỗi getFriendStatus:", e);
+              return { ...u, status: "none" as const };
+            }
+          })
+        );
 
         if (mountedRef.current) setResults(withStatus);
-   } catch (err: any) {
-  if (err.name !== "AbortError") {
-    console.error("❌ Lỗi search chi tiết:", err.code, err.message, err);
-    if (mountedRef.current) {
-      setError(`${err.code || 'unknown'}: ${err.message || 'Lỗi không xác định'}`);
-      setResults([]);
-    }
-  }
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.error("❌ Lỗi search chi tiết:", err.code, err.message, err);
+          if (mountedRef.current) {
+            setError(`${err.code || 'unknown'}: ${err.message || 'Lỗi không xác định'}`);
+            setResults([]);
+          }
+        }
       } finally {
         if (mountedRef.current) setLoading(false);
       }
