@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() { return request.auth != null; }
+    function isSignedIn() { return request.auth!= null; }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function isAdmin() {
       return isSignedIn() && 
@@ -22,39 +22,43 @@ match /users/{userId} {
   allow update: if isOwner(userId) 
     &&!request.resource.data.diff(resource.data).changedKeys().hasAny(['vip', 'role', 'banned'])
     && request.resource.data.diff(resource.data).changedKeys()
-    .hasOnly(['name', 'avatar', 'bio', 'birthday', 'phone', 'title', 'location', 
+   .hasOnly(['name', 'avatar', 'bio', 'birthday', 'phone', 'title', 'location', 
                'skills', 'portfolio', 'online', 'lastSeen', 'nameLower', 'huhaScore', 'fcmToken']);
   
   allow create: if isOwner(userId);
   allow delete: if isAdmin();
-  
-  // XÓA HẾT SUBCOLLECTION friends ở đây
 }
 
-// ========== FRIENDS COLLECTION GỐC - DÙNG CÁI NÀY ==========
+// ========== FRIENDS - FIX CHÍNH ==========
 match /friends/{friendId} {
-  // Cho phép LIST để query where("userId", "==", uid) chạy được
-  allow list: if isSignedIn() && request.auth.uid == request.query.where[0][2];
+  // FIX: Cho phép list theo userId, không check size() để chấp nhận thêm where/orderBy
+  allow list: if isSignedIn() && 
+    request.query.where[0][0] == 'userId' && 
+    request.auth.uid == request.query.where[0][2];
   
-  // Cho phép GET 1 doc cụ thể 
-  allow get: if isSignedIn() && request.auth.uid in friendId.split('_');
+  // Cho phép get 1 doc nếu mình là userId hoặc friendId
+  allow get: if isSignedIn() && (
+    request.auth.uid == resource.data.userId ||
+    request.auth.uid == resource.data.friendId
+  );
   
-  // Cho phép tạo doc có id = userId_friendId
   allow create: if isSignedIn() && 
     request.auth.uid == request.resource.data.userId &&
     friendId == request.resource.data.userId + '_' + request.resource.data.friendId &&
     request.resource.data.keys().hasAll(['userId', 'friendId', 'createdAt']);
     
-  // Cho phép update lastInteractionAt
   allow update: if isSignedIn() && 
     request.auth.uid == resource.data.userId &&
     request.resource.data.diff(resource.data).changedKeys()
-    .hasOnly(['lastInteractionAt', 'updatedAt']);
+   .hasOnly(['lastInteractionAt', 'updatedAt']);
     
-  allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+  allow delete: if isSignedIn() && (
+    request.auth.uid == resource.data.userId ||
+    request.auth.uid == resource.data.friendId
+  );
 }
 
-    // ========== BLOCKS - THÊM MỚI ==========
+    // ========== BLOCKS ==========
     match /blocks/{blockId} {
       allow read: if isSignedIn() && request.auth.uid in blockId.split('_');
       allow create: if isSignedIn() && request.auth.uid == request.resource.data.fromUserId;
@@ -100,7 +104,7 @@ match /friends/{friendId} {
         && request.auth.uid == resource.data.uid
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.diff(resource.data).changedKeys()
-      .hasOnly(['lastActive', 'current', 'ip', 'location', 'browser', 'os', 'userAgent', 'device']);
+     .hasOnly(['lastActive', 'current', 'ip', 'location', 'browser', 'os', 'userAgent', 'device']);
 
       allow delete: if isSignedIn() && request.auth.uid == resource.data.uid;
     }
@@ -113,7 +117,7 @@ match /friends/{friendId} {
       allow update: if isSignedIn() && (
         request.auth.uid == resource.data.userId ||
         request.resource.data.diff(resource.data).changedKeys()
-      .hasOnly(['savedBy', 'likedBy', 'likeCount', 'commentCount', 'applicants', 'appliedCount'])
+     .hasOnly(['savedBy', 'likedBy', 'likeCount', 'commentCount', 'applicants', 'appliedCount'])
       );
 
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
@@ -126,23 +130,23 @@ match /friends/{friendId} {
           (
             request.auth.uid == resource.data.userId &&
             request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly(['text', 'edited', 'updatedAt'])
+         .hasOnly(['text', 'edited', 'updatedAt'])
           ) ||
           (
             request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly(['likeCount', 'likedBy'])
+         .hasOnly(['likeCount', 'likedBy'])
           ) ||
           (
             request.auth.uid == resource.data.userId &&
             request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly(['deleted', 'text', 'updatedAt']) &&
+         .hasOnly(['deleted', 'text', 'updatedAt']) &&
             request.resource.data.deleted == true
           ) ||
           (
-            resource.data.parentId != null &&
+            resource.data.parentId!= null &&
             get(/databases/$(database)/documents/tasks/$(taskId)/comments/$(resource.data.parentId)).data.userId == request.auth.uid &&
             request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly(['deleted', 'text', 'updatedAt']) &&
+         .hasOnly(['deleted', 'text', 'updatedAt']) &&
             request.resource.data.deleted == true
           )
         );
@@ -192,7 +196,7 @@ match /friends/{friendId} {
       allow read: if isSignedIn() && (
         request.auth.uid in resource.data.members ||
         request.auth.uid == resource.data.ownerId ||
-        request.query.where.groupCode != null
+        request.query.where.groupCode!= null
       );
       
       allow list: if isSignedIn();
@@ -221,7 +225,7 @@ match /friends/{friendId} {
         (
           request.auth.uid in request.resource.data.members &&
           request.resource.data.diff(resource.data).changedKeys()
-            .hasOnly(['members', 'memberCount', 'unreadCount', 'lastMessage', 'lastSenderId', 'updatedAt', 'seen', 'typing'])
+           .hasOnly(['members', 'memberCount', 'unreadCount', 'lastMessage', 'lastSenderId', 'updatedAt', 'seen', 'typing'])
         )
       );
       
@@ -238,7 +242,7 @@ match /friends/{friendId} {
         allow update: if isSignedIn()
           && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members
           && request.resource.data.diff(resource.data).changedKeys()
-            .hasOnly(['seenBy', 'reactions', 'text', 'editedAt', 'edited']);
+           .hasOnly(['seenBy', 'reactions', 'text', 'editedAt', 'edited']);
         
         allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
       }
@@ -269,7 +273,7 @@ match /friends/{friendId} {
             request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
           )
           && get(/databases/$(database)/documents/chats/$(chatId)).data.get('status', 'active') == 'active'
-          && !(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('blockedUsers', []));
+          &&!(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('blockedUsers', []));
 
         allow update: if isSignedIn()
           && (
@@ -288,29 +292,17 @@ match /friends/{friendId} {
       }
     }
 
-   // ========== FRIEND REQUESTS - FIX LỖI PERMISSION ==========
+   // ========== FRIEND REQUESTS - FIX CHÍNH ==========
 match /friendRequests/{reqId} {
-  // FIX: Cho list cả 2 kiểu để dùng cho "Đã gửi" và "Lời mời đến"
+  // FIX: Bỏ check.size() để chấp nhận query có orderBy/limit
   allow list: if isSignedIn() && (
-    // Kiểu 1: Query lời mời đến - dùng cho tab Requests
-    (request.query.where.size() == 3 &&
-     request.query.where[0][0] == 'toUserId' &&
-     request.auth.uid == request.query.where[0][2] &&
-     request.query.where[1][0] == 'status' &&
-     request.query.where[2][0] == 'createdAt')
+    // Query lời mời đến
+    (request.query.where[0][0] == 'toUserId' && 
+     request.auth.uid == request.query.where[0][2])
     ||
-    // Kiểu 2: Query đã gửi - dùng cho tab Sent 
-    (request.query.where.size() == 2 &&
-     request.query.where[0][0] == 'fromUserId' &&
-     request.auth.uid == request.query.where[0][2] &&
-     request.query.where[1][0] == 'createdAt')
-    ||
-    // Kiểu 3: Query đã gửi có status - dùng khi cần filter
-    (request.query.where.size() == 3 &&
-     request.query.where[0][0] == 'fromUserId' &&
-     request.auth.uid == request.query.where[0][2] &&
-     request.query.where[1][0] == 'status' &&
-     request.query.where[2][0] == 'createdAt')
+    // Query đã gửi
+    (request.query.where[0][0] == 'fromUserId' && 
+     request.auth.uid == request.query.where[0][2])
   );
 
   allow get: if isSignedIn() &&
@@ -321,19 +313,16 @@ match /friendRequests/{reqId} {
     && request.auth.uid == request.resource.data.fromUserId
     && request.resource.data.toUserId is string
     && request.resource.data.status == 'pending'
-    && request.resource.data.createdAt is timestamp
-    && (
-      reqId == request.resource.data.fromUserId + '_' + request.resource.data.toUserId ||
-      reqId == request.resource.data.toUserId + '_' + request.resource.data.fromUserId
-    );
+    && request.resource.data.createdAt is timestamp;
 
   allow update: if isSignedIn() &&
-    (request.auth.uid == resource.data.toUserId || request.auth.uid == resource.data.fromUserId)
+    request.auth.uid == resource.data.toUserId
     && request.resource.data.diff(resource.data).changedKeys()
 .hasOnly(['status', 'updatedAt', 'respondedAt']);
 
   allow delete: if isSignedIn() &&
-    (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
+    (request.auth.uid == resource.data.fromUserId || 
+     request.auth.uid == resource.data.toUserId);
 }
 
     // ========== USERNAMES ==========
@@ -343,7 +332,7 @@ match /friendRequests/{reqId} {
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasAll(['uid', 'createdAt'])
-        && !exists(/databases/$(database)/documents/usernames/$(username));
+        &&!exists(/databases/$(database)/documents/usernames/$(username));
 
       allow update, delete: if false;
     }
@@ -361,7 +350,7 @@ match /friendRequests/{reqId} {
       allow update: if isSignedIn()
         && request.auth.uid in resource.data.members
         && request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly([
+         .hasOnly([
             'messages', 'lastMessageTime', 'status', 
             'endedAt', 'extended', 'expiresAt', 'reportedBy',
             'unreadCounts', 'onlineStatus', 'partnerNames', 'partnerAvatars',
@@ -381,7 +370,7 @@ match /friendRequests/{reqId} {
         allow update: if isSignedIn()
           && request.auth.uid in get(/databases/$(database)/documents/stranger_chats/$(chatId)).data.members
           && request.resource.data.diff(resource.data).changedKeys()
-            .hasOnly(['seenBy', 'reactions', 'text', 'editedAt', 'edited']);
+           .hasOnly(['seenBy', 'reactions', 'text', 'editedAt', 'edited']);
         
         allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
       }
