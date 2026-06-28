@@ -31,8 +31,9 @@ match /users/{userId} {
 
 // ========== FRIENDS - FIX DỨT ĐIỂM ==========
 match /friends/{friendId} {
-  // Chỉ check UID, bỏ check tên field để chấp nhận mọi query có where + orderBy + limit
-  allow list: if isSignedIn() && request.auth.uid == request.query.where[0][2];
+  // FIX: Check xem query có filter theo userId không, bất kể vị trí
+  allow list: if isSignedIn() && 
+    request.query.where.hasAny([['userId', '==', request.auth.uid]]);
   
   allow get: if isSignedIn() && (
     request.auth.uid == resource.data.userId ||
@@ -291,8 +292,11 @@ match /friends/{friendId} {
 
    // ========== FRIEND REQUESTS - FIX DỨT ĐIỂM ==========
 match /friendRequests/{reqId} {
-  // Chỉ check UID, bỏ check tên field để chấp nhận mọi query có where + orderBy + limit
-  allow list: if isSignedIn() && request.auth.uid == request.query.where[0][2];
+  // FIX: Chấp nhận query theo toUserId HOẶC fromUserId, bất kể orderBy/limit
+  allow list: if isSignedIn() && (
+    request.query.where.hasAny([['toUserId', '==', request.auth.uid]]) ||
+    request.query.where.hasAny([['fromUserId', '==', request.auth.uid]])
+  );
 
   allow get: if isSignedIn() && (
     request.auth.uid == resource.data.fromUserId ||
