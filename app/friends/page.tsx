@@ -149,55 +149,48 @@ const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions' | 'strange
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user?.uid) return;
-    setFriendsLoading(true);
+  if (!user?.uid) return;
+  setFriendsLoading(true);
 
-    const friendsRef = collection(db, "users", user.uid, "friends");
-    const unsub = onSnapshot(friendsRef, async (snapshot) => {
-      const activeFriendIds = snapshot.docs.filter(d => d.data()?.status!== "removed").map(d => d.id);
-      if (activeFriendIds.length === 0) {
-        setFriends([]);
-        setFriendsLoading(false);
-        return;
-      }
+  const friendsRef = collection(db, "users", user.uid, "friends");
+  const q = query(friendsRef, orderBy("createdAt", "desc"));
 
-      const userDocs = await Promise.all(activeFriendIds.map(id => getDoc(doc(db, "users", id))));
-      const friendsData = await Promise.all(
-        userDocs.map(async (userDoc) => {
-          if (!userDoc.exists()) return null;
-          const data = userDoc.data();
-          
-          // THÊM DÒNG NÀY: Bỏ qua nếu là người lạ
-          if (data.isStranger === true) return null;
-          
-          const theirFriendsSnap = await getDoc(doc(db, "users", userDoc.id, "friends", user.uid));
-          const mutualCount = theirFriendsSnap.exists()
-         ? Object.keys(data.friends || {}).filter(fid => activeFriendIds.includes(fid)).length
-            : 0;
-
-          const friend: FriendItem = {
-            uid: userDoc.id,
-            name: data.name || "User",
-            username: data.username || "",
-            avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
-            userId: data.userId || "",
-            isOnline: Boolean(data.isOnline),
-            lastSeen: data.lastSeen,
-            isDeletedByThem: Boolean(snapshot.docs.find(d => d.id === userDoc.id)?.data()?.removedBy),
-            mutualFriends: mutualCount,
-            vip: data.vip || { tier: 'free' }
-          };
-          return friend;
-        })
-      );
-
-      const filtered = friendsData.filter(f => f!== null) as FriendItem[];
-      setFriends(filtered);
-      setFriendsLoading(false);
+  const unsub = onSnapshot(q, async (snapshot) => {
+    // Lọc bỏ doc đã xóa hoặc chưa có status
+    const friendDocs = snapshot.docs.filter(d => {
+      const status = d.data()?.status;
+      return status === "active" || status === undefined; // Cho cả doc cũ chưa có status
     });
 
-    return () => unsub();
-  }, [user?.uid, db]);
+    if (friendDocs.length === 0) {
+      setFriends([]);
+      setFriendsLoading(false);
+      return;
+    }
+
+    // Đọc thẳng từ doc friends, không getDoc users nữa
+    const friendsData = friendDocs.map((d) => {
+      const data = d.data();
+      return {
+        uid: d.id,
+        name: data.name || data.displayName || "User",
+        username: data.username || "",
+        avatar: data.avatar || data.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
+        userId: data.uid || d.id,
+        isOnline: false, // Tạm thời, sau listen riêng
+        lastSeen: data.lastSeen,
+        isDeletedByThem: false,
+        mutualFriends: 0,
+        vip: data.vip || { tier: 'free' }
+      } as FriendItem;
+    });
+
+    setFriends(friendsData);
+    setFriendsLoading(false);
+  });
+
+  return () => unsub();
+}, [user?.uid, db]);
 
   // QUERY CHAT NGƯỜI LẠ CHƯA KẾT BẠN
 useEffect(() => {
