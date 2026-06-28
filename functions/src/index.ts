@@ -81,55 +81,84 @@ export const onFriendAccepted = onDocumentCreated(
   }
 );
 
-// 3. Function accept lời mời
+// 3. Function accept lời mời - BẢN DEBUG
 export const acceptFriendRequest = onCall(
   { region: "asia-southeast1" },
   async (request) => {
     const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
+    if (!uid) {
+      console.error("No uid");
+      throw new HttpsError("unauthenticated", "Chưa đăng nhập");
+    }
 
     const { fromUid, requestId } = request.data;
     if (!fromUid ||!requestId) {
+      console.error("Missing params:", request.data);
       throw new HttpsError("invalid-argument", "Thiếu fromUid hoặc requestId");
     }
 
     const requestRef = db.doc(`friendRequests/${requestId}`);
     const requestDoc = await requestRef.get();
-    if (!requestDoc.exists) throw new HttpsError("not-found", "Lời mời không tồn tại");
+    
+    if (!requestDoc.exists) {
+      console.error("Request not found:", requestId);
+      throw new HttpsError("not-found", "Lời mời không tồn tại");
+    }
 
     const requestData = requestDoc.data();
+    console.log("requestData:", JSON.stringify(requestData));
+
     if (!requestData || requestData.toUserId!== uid) {
+      console.error("Permission denied. toUserId:", requestData?.toUserId, "uid:", uid);
       throw new HttpsError("permission-denied", "Không có quyền");
     }
 
+    // CHECK BẮT BUỘC - NẾU THIẾU THÌ BÁO LỖI LUÔN
+    if (!requestData.fromUserName ||!requestData.toUserName) {
+      console.error("Missing names in requestData:", requestData);
+      throw new HttpsError("failed-precondition", "Lời mời thiếu thông tin tên. Hãy gửi lại lời mời mới.");
+    }
+
+    // KHÔNG FALLBACK VỀ "User" NỮA - ĐỂ BIẾT LỖI Ở ĐÂU
+    const fromName = requestData.fromUserName;
+    const fromAvatar = requestData.fromUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fromName)}&background=random`;
+    const fromUsername = requestData.fromUsername || "";
+
+    const currentName = requestData.toUserName;
+    const currentAvatar = requestData.toUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentName)}&background=random`;
+    const currentUsername = requestData.toUsername || "";
+
+    console.log("Data sẽ ghi vào chat:", {
+      currentUser: { uid, name: currentName, avatar: currentAvatar },
+      fromUser: { uid: fromUid, name: fromName, avatar: fromAvatar }
+    });
+
     const batch = db.batch();
 
-    // LẤY LUÔN TỪ requestData VÌ users RỖNG
-    const fromName = requestData?.fromUserName || "User";
-    const fromAvatar = requestData?.fromUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fromName)}&background=random`;
-    const fromUsername = requestData?.fromUsername || "";
-
-    const currentName = requestData?.toUserName || request.auth?.token?.email?.split('@')[0] || "User";
-    const currentAvatar = requestData?.toUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentName)}&background=random`;
-    const currentUsername = requestData?.toUsername || "";
-
-    console.log("Final data:", { fromName, fromAvatar, currentName, currentAvatar });
-
-    // 1. Lưu friends
+    // 1. Lưu friends 2 chiều
     batch.set(db.doc(`users/${uid}/friends/${fromUid}`), {
-      uid: fromUid, name: fromName, avatar: fromAvatar, username: fromUsername,
-      createdAt: FieldValue.serverTimestamp(), status: "active",
+      uid: fromUid,
+      name: fromName,
+      avatar: fromAvatar,
+      username: fromUsername,
+      createdAt: FieldValue.serverTimestamp(),
+      status: "active",
     });
+    
     batch.set(db.doc(`users/${fromUid}/friends/${uid}`), {
-      uid: uid, name: currentName, avatar: currentAvatar, username: currentUsername,
-      createdAt: FieldValue.serverTimestamp(), status: "active",
+      uid: uid,
+      name: currentName,
+      avatar: currentAvatar,
+      username: currentUsername,
+      createdAt: FieldValue.serverTimestamp(),
+      status: "active",
     });
 
     // 2. XÓA CHAT NGƯỜI LẠ CŨ
     const strangerChatId = `str_${[uid, fromUid].sort().join("_")}`;
     batch.delete(db.doc(`chats/${strangerChatId}`));
 
-    // 3. Tạo chat mới
+    // 3. TẠO CHAT MỚI - DÙNG set KHÔNG DÙNG merge
     const chatId = [uid, fromUid].sort().join("_");
     batch.set(db.doc(`chats/${chatId}`), {
       members: [uid, fromUid],
@@ -140,15 +169,26 @@ export const acceptFriendRequest = onCall(
       lastMessage: "Các bạn đã là bạn bè",
       lastSenderName: "Hệ thống",
       membersInfo: {
-        [uid]: { name: currentName, avatar: currentAvatar, username: currentUsername },
-        [fromUid]: { name: fromName, avatar: fromAvatar, username: fromUsername },
+        [uid]: {
+          name: currentName,
+          avatar: currentAvatar,
+          username: currentUsername,
+        },
+        [fromUid]: {
+          name: fromName,
+          avatar: fromAvatar,
+          username: fromUsername,
+        },
       },
     });
 
+    // 4. Xóa request
     batch.delete(requestRef);
+    
     await batch.commit();
     
-    return { chatId };
+    console.log("SUCCESS: Chat created", chatId);
+    return { chatId, fromName, currentName };
   }
 );
 // 4. Function hủy kết bạn: A xóa B → B còn A nhưng status = "removed"
