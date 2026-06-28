@@ -115,16 +115,21 @@ export const acceptFriendRequest = onCall(
     const currentData = currentUserDoc.data();
     const fromData = fromUserDoc.data();
 
-    // SỬA: Ưu tiên displayName/photoURL trước, fallback từ friendRequests
-    const fromName = fromData?.displayName || fromData?.name || requestData?.fromUserName || "User";
-    const fromAvatar = fromData?.photoURL || fromData?.avatar || requestData?.fromUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fromName)}&background=random`;
-    const fromUsername = fromData?.username || requestData?.fromUsername || "";
+    console.log("currentData:", currentData);
+    console.log("fromData:", fromData);
+    console.log("requestData:", requestData);
 
-    const currentName = currentData?.displayName || currentData?.name || "User";
-    const currentAvatar = currentData?.photoURL || currentData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentName)}&background=random`;
-    const currentUsername = currentData?.username || "";
+    // SỬA: ƯU TIÊN requestData TRƯỚC VÌ users THƯỜNG RỖNG
+    const fromName = requestData?.fromUserName || fromData?.displayName || fromData?.name || "User";
+    const fromAvatar = requestData?.fromUserAvatar || fromData?.photoURL || fromData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(requestData?.fromUserName || "User")}&background=random`;
+    const fromUsername = requestData?.fromUsername || fromData?.username || "";
 
-    // 1. Lưu friends 2 chiều với data chuẩn
+    // Thằng được accept thì lấy từ users, fallback về email
+    const currentName = currentData?.displayName || currentData?.name || requestData?.toUserName || request.auth?.token?.email?.split('@')[0] || "User";
+    const currentAvatar = currentData?.photoURL || currentData?.avatar || requestData?.toUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentName)}&background=random`;
+    const currentUsername = currentData?.username || requestData?.toUsername || "";
+
+    // 1. Lưu friends 2 chiều
     batch.set(db.doc(`users/${uid}/friends/${fromUid}`), {
       uid: fromUid,
       name: fromName,
@@ -142,7 +147,7 @@ export const acceptFriendRequest = onCall(
       status: "active",
     });
 
-    // 2. Tạo/update chat - BỎ { merge: true } để ép ghi đè membersInfo
+    // 2. Tạo chat - KHÔNG DÙNG merge để ghi đè membersInfo
     const chatId = [uid, fromUid].sort().join("_");
     batch.set(db.doc(`chats/${chatId}`), {
       members: [uid, fromUid],
@@ -164,10 +169,16 @@ export const acceptFriendRequest = onCall(
           username: fromUsername,
         },
       },
-    }); // ĐÃ BỎ { merge: true }
+    });
 
     batch.delete(requestRef);
     await batch.commit();
+    
+    console.log("Saved membersInfo:", {
+      [uid]: { name: currentName, avatar: currentAvatar },
+      [fromUid]: { name: fromName, avatar: fromAvatar }
+    });
+    
     return { chatId };
   }
 );
