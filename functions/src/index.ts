@@ -88,8 +88,8 @@ export const acceptFriendRequest = onCall(
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
 
-    const { fromUid, requestId } = request.data; // ĐỔI notifId -> requestId
-    if (!fromUid || !requestId) {
+    const { fromUid, requestId } = request.data;
+    if (!fromUid ||!requestId) {
       throw new HttpsError("invalid-argument", "Thiếu fromUid hoặc requestId");
     }
 
@@ -99,13 +99,14 @@ export const acceptFriendRequest = onCall(
     if (!requestDoc.exists) {
       throw new HttpsError("not-found", "Lời mời không tồn tại");
     }
-    if (requestDoc.data().toUserId !== uid) {
+
+    const requestData = requestDoc.data(); // GÁN RA BIẾN
+    if (!requestData || requestData.toUserId!== uid) {
       throw new HttpsError("permission-denied", "Không có quyền");
     }
 
     const batch = db.batch();
 
-    // 1. Tạo bạn bè 2 chiều
     batch.set(db.doc(`users/${uid}/friends/${fromUid}`), {
       createdAt: FieldValue.serverTimestamp(),
       status: "active",
@@ -115,7 +116,6 @@ export const acceptFriendRequest = onCall(
       status: "active",
     });
 
-    // 2. Tạo chat
     const chatId = [uid, fromUid].sort().join("_");
     const [currentUserDoc, fromUserDoc] = await Promise.all([
       db.doc(`users/${uid}`).get(),
@@ -151,12 +151,7 @@ export const acceptFriendRequest = onCall(
       { merge: true }
     );
 
-    // 3. XÓA LỜI MỜI - ĐÚNG COLLECTION
     batch.delete(requestRef);
-    
-    // 4. XÓA NOTIF NẾU CÓ - OPTIONAL
-    // batch.delete(db.doc(`notifications/${uid}/items/${requestId}`));
-
     await batch.commit();
     return { chatId };
   }
