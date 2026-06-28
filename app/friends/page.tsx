@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp, query, limit, getDocs, where } from "firebase/firestore";
+import { collection, onSnapshot, doc, orderBy, getDoc, setDoc, serverTimestamp, query, limit, getDocs, where } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { FiUsers, FiShare2, FiShield, FiSearch, FiMessageCircle, FiUserPlus, FiUserX, FiMapPin, FiRefreshCw, FiX, FiZap } from "react-icons/fi";
 import { RiVipCrownLine } from "react-icons/ri";
