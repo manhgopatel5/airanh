@@ -60,7 +60,7 @@ export default function ChatRoomPage() {
   const emojiRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasSetOnline = useRef(false);
-  const hasSentNotice = useRef(false);
+
 const [isFriend, setIsFriend] = useState(false);
 
 useEffect(() => {
