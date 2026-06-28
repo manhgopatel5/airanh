@@ -277,40 +277,68 @@ export default function FriendsPage() {
 
   // FIX 3: LISTENER FRIEND REQUESTS - Thêm guard + error handler
   useEffect(() => {
-    if (!user?.uid) {
-      setRequests([]);
-      return;
+  if (!user?.uid) {
+    setRequests([]);
+    return;
+  }
+
+  const q = query(
+    collection(db, "friendRequests"),
+    where("toUserId", "==", user.uid),
+    where("status", "==", "pending"),
+    orderBy("createdAt", "desc"),
+    limit(100)
+  );
+  
+  const unsub = onSnapshot(q, 
+    async (snapshot) => {
+      console.log('REQUESTS SNAPSHOT:', snapshot.size, 'UID:', user.uid);
+      
+      try {
+        const reqs = await Promise.all(
+          snapshot.docs.map(async (d) => {
+            const data = d.data();
+            
+            // FIX: Bọc getDoc trong try-catch để không crash listener
+            let userData;
+            try {
+              userData = await getDoc(doc(db, "users", data.fromUserId));
+            } catch (e) {
+              console.warn('Không lấy được user:', data.fromUserId, e);
+              return null;
+            }
+            
+            if (!userData.exists()) return null;
+            
+            const u = userData.data();
+            return {
+              uid: data.fromUserId,
+              name: u.name || u.displayName || "User",
+              avatar: u.avatar || u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || "U")}`,
+              mutualFriends: 0, // TODO: tính sau
+              time: data.createdAt,
+              requestId: d.id
+            };
+          })
+        );
+        
+        setRequests(reqs.filter(r => r !== null) as RequestItem[]);
+      } catch (e) {
+        console.error('Lỗi xử lý requests:', e);
+        setRequests([]);
+      }
+    }, 
+    (error) => {
+      console.error("REQUESTS LISTENER ERROR:", error.code, error.message, 'UID:', user?.uid);
+      if (error.code === 'permission-denied') {
+        setRequests([]);
+        toast.error("Không có quyền xem lời mời");
+      }
     }
-    const q = query(
-      collection(db, "friendRequests"),
-      where("toUserId", "==", user.uid),
-      where("status", "==", "pending"),
-      orderBy("createdAt", "desc"),
-      limit(100)
-    );
-    const unsub = onSnapshot(q, async (snapshot) => {
-      const reqs = await Promise.all(
-        snapshot.docs.map(async (d) => {
-          const data = d.data();
-          const userData = await getDoc(doc(db, "users", data.fromUserId));
-          if (!userData.exists()) return null;
-          return {
-            uid: data.fromUserId,
-            name: userData.data().name,
-            avatar: userData.data().avatar,
-            mutualFriends: 0,
-            time: data.createdAt,
-            requestId: d.id
-          };
-        })
-      );
-      setRequests(reqs.filter(r => r!== null) as RequestItem[]);
-    }, (error) => {
-      console.error("REQUESTS LISTENER ERROR:", error.code, error.message);
-      if (error.code === 'permission-denied') setRequests([]);
-    });
-    return () => unsub();
-  }, [user?.uid, db]);
+  );
+  
+  return () => unsub();
+}, [user?.uid, db]);
 
   useEffect(() => {
     if ("geolocation" in navigator) {
