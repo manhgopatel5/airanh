@@ -50,7 +50,7 @@ export default function ChatRoomPage() {
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [showInviteNotice, setShowInviteNotice] = useState(false);
+
   const [isExpired, setIsExpired] = useState(false);
   const [isEndedLocal, setIsEndedLocal] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -61,7 +61,14 @@ export default function ChatRoomPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const hasSetOnline = useRef(false);
   const hasSentNotice = useRef(false);
+const [isFriend, setIsFriend] = useState(false);
 
+useEffect(() => {
+  if (!user?.uid ||!partnerId) return;
+  getDoc(doc(db, "friends", `${user.uid}_${partnerId}`)).then(snap => {
+    setIsFriend(snap.exists());
+  });
+}, [user?.uid, partnerId]);
   const partnerId = chatData?.members?.find(m => m!== user?.uid) || "";
   const hasSentRequest = chatData?.friendRequests?.[user?.uid || ""] || false;
   const partnerSentRequest = chatData?.friendRequests?.[partnerId] || false;
@@ -87,10 +94,7 @@ export default function ChatRoomPage() {
       const now = Date.now();
       const diff = Math.max(0, Math.floor((expires - now) / 1000));
       setTimeLeft(diff);
-      if (diff === 120 &&!hasSentNotice.current) {
-        hasSentNotice.current = true;
-        setShowInviteNotice(true);
-      }
+
       if (diff === 0) {
         setIsExpired(true);
         clearInterval(interval);
@@ -411,39 +415,45 @@ export default function ChatRoomPage() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-        {showInviteNotice && timeLeft <= 120 && timeLeft > 0 &&!chatEnded && (
-          <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-2 border-amber-500 rounded-2xl p-4 mb-3">
-            <div className="flex items-start gap-3">
-              <FiAlertCircle className="text-amber-500 flex-shrink-0 mt-0.5" size={20} />
-              <div className="flex-1">
-                <p className="text-sm font-[700] text-amber-600 dark:text-amber-400 mb-2 text-center">
-                  Sắp hết giờ! Gửi lời mời để giữ liên lạc
-                </p>
-                <button
-                  onClick={handleSendFriendRequest}
-                  disabled={hasSentRequest || isSending}
-                  className="w-full h-10 bg-gradient-to-r from-amber-500 to-orange-500 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-700 dark:disabled:to-zinc-700 text-white rounded-xl text-sm font-[700] active:scale-95 flex items-center justify-center gap-2 disabled:active:scale-100 disabled:cursor-not-allowed"
-                >
-                  {isSending? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                      </svg>
-                      Đang gửi...
-                    </>
-                  ) : (
-                    <>
-                      <FiUserPlus size={16} />
-                      {hasSentRequest? "Đã gửi lời mời" : "Gửi lời mời kết bạn"}
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+   <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+  {/* GHIM LUÔN - KHÔNG ĐỢI 3 PHÚT */}
+  {chatData?.status === "active" &&!isEndedLocal &&!isFriend && (
+    <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-2 border-orange-500 rounded-2xl p-4 mb-3 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0">
+          <FiUserPlus className="text-white" size={20} />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-[700] text-orange-600 dark:text-orange-400 mb-2">
+            Kết bạn để không mất liên lạc
+          </p>
+          <p className="text-xs text-[#8e8e93] dark:text-zinc-500 mb-3">
+            Chat này tự động xóa sau 5 phút
+          </p>
+          <button
+            onClick={handleSendFriendRequest}
+            disabled={hasSentRequest || isSending}
+            className="w-full h-10 bg-gradient-to-r from-orange-500 to-pink-500 disabled:from-zinc-300 disabled:to-zinc-300 dark:disabled:from-zinc-700 dark:disabled:to-zinc-700 text-white rounded-xl text-sm font-[700] active:scale-95 flex items-center justify-center gap-2 disabled:active:scale-100 disabled:cursor-not-allowed shadow-md shadow-orange-500/30"
+          >
+            {isSending? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+                Đang gửi...
+              </>
+            ) : (
+              <>
+                <FiUserPlus size={16} />
+                {hasSentRequest? "Đã gửi lời mời" : "Gửi lời mời kết bạn"}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
         {chatEnded &&!isEndedLocal &&!isExpired && (
           <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-2 border-rose-500 rounded-2xl p-4 mb-3">
             <div className="flex items-start gap-3">
