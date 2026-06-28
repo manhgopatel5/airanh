@@ -253,26 +253,37 @@ useEffect(() => {
   return () => unsub();
 }, [user?.uid, db, friends]);
   useEffect(() => {
-    if (!user?.uid) return;
-    const reqRef = collection(db, "users", user.uid, "friendRequests");
-    const unsub = onSnapshot(reqRef, async (snapshot) => {
-      const reqs = await Promise.all(
-        snapshot.docs.map(async (d) => {
-          const userData = await getDoc(doc(db, "users", d.id));
-          if (!userData.exists()) return null;
-          return {
-            uid: d.id,
-            name: userData.data().name,
-            avatar: userData.data().avatar,
-            mutualFriends: 0,
-            time: d.data().createdAt
-          };
-        })
-      );
-      setRequests(reqs.filter(r => r!== null) as RequestItem[]);
-    });
-    return () => unsub();
-  }, [user?.uid, db]);
+  if (!user?.uid) return;
+
+  // ĐỔI: Query collection gốc thay vì subcollection
+  const reqRef = query(
+    collection(db, "friendRequests"),
+    where("toUserId", "==", user.uid),
+    where("status", "==", "pending")
+  );
+
+  const unsub = onSnapshot(reqRef, async (snapshot) => {
+    const reqs = await Promise.all(
+      snapshot.docs.map(async (d) => {
+        const data = d.data();
+        const fromUserId = data.fromUserId; // LẤY fromUserId từ data
+        const userData = await getDoc(doc(db, "users", fromUserId));
+        if (!userData.exists()) return null;
+
+        return {
+          uid: fromUserId,
+          requestId: d.id, // THÊM requestId để accept
+          name: userData.data().name || userData.data().displayName,
+          avatar: userData.data().avatar || userData.data().photoURL,
+          mutualFriends: 0,
+          time: data.createdAt
+        };
+      })
+    );
+    setRequests(reqs.filter(r => r!== null) as RequestItem[]);
+  });
+  return () => unsub();
+}, [user?.uid, db]);
 
   useEffect(() => {
     if ("geolocation" in navigator) {
