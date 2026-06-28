@@ -100,23 +100,13 @@ export const acceptFriendRequest = onCall(
       throw new HttpsError("not-found", "Lời mời không tồn tại");
     }
 
-    const requestData = requestDoc.data(); // GÁN RA BIẾN
+    const requestData = requestDoc.data();
     if (!requestData || requestData.toUserId!== uid) {
       throw new HttpsError("permission-denied", "Không có quyền");
     }
 
     const batch = db.batch();
 
-    batch.set(db.doc(`users/${uid}/friends/${fromUid}`), {
-      createdAt: FieldValue.serverTimestamp(),
-      status: "active",
-    });
-    batch.set(db.doc(`users/${fromUid}/friends/${uid}`), {
-      createdAt: FieldValue.serverTimestamp(),
-      status: "active",
-    });
-
-    const chatId = [uid, fromUid].sort().join("_");
     const [currentUserDoc, fromUserDoc] = await Promise.all([
       db.doc(`users/${uid}`).get(),
       db.doc(`users/${fromUid}`).get(),
@@ -124,6 +114,26 @@ export const acceptFriendRequest = onCall(
 
     const currentData = currentUserDoc.data();
     const fromData = fromUserDoc.data();
+
+    // SỬA: LƯU ĐỦ DATA VÀO FRIENDS
+    batch.set(db.doc(`users/${uid}/friends/${fromUid}`), {
+      uid: fromUid,
+      name: fromData?.displayName || fromData?.name || "User",
+      avatar: fromData?.photoURL || fromData?.avatar || "",
+      username: fromData?.username || "",
+      createdAt: FieldValue.serverTimestamp(),
+      status: "active",
+    });
+    batch.set(db.doc(`users/${fromUid}/friends/${uid}`), {
+      uid: uid,
+      name: currentData?.displayName || currentData?.name || "User",
+      avatar: currentData?.photoURL || currentData?.avatar || "",
+      username: currentData?.username || "",
+      createdAt: FieldValue.serverTimestamp(),
+      status: "active",
+    });
+
+    const chatId = [uid, fromUid].sort().join("_");
 
     batch.set(
       db.doc(`chats/${chatId}`),
