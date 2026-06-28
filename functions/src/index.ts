@@ -95,10 +95,7 @@ export const acceptFriendRequest = onCall(
 
     const requestRef = db.doc(`friendRequests/${requestId}`);
     const requestDoc = await requestRef.get();
-
-    if (!requestDoc.exists) {
-      throw new HttpsError("not-found", "Lời mời không tồn tại");
-    }
+    if (!requestDoc.exists) throw new HttpsError("not-found", "Lời mời không tồn tại");
 
     const requestData = requestDoc.data();
     if (!requestData || requestData.toUserId!== uid) {
@@ -107,47 +104,32 @@ export const acceptFriendRequest = onCall(
 
     const batch = db.batch();
 
-    const [currentUserDoc, fromUserDoc] = await Promise.all([
-      db.doc(`users/${uid}`).get(),
-      db.doc(`users/${fromUid}`).get(),
-    ]);
+    // LẤY LUÔN TỪ requestData VÌ users RỖNG
+    const fromName = requestData?.fromUserName || "User";
+    const fromAvatar = requestData?.fromUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fromName)}&background=random`;
+    const fromUsername = requestData?.fromUsername || "";
 
-    const currentData = currentUserDoc.data();
-    const fromData = fromUserDoc.data();
+    const currentName = requestData?.toUserName || request.auth?.token?.email?.split('@')[0] || "User";
+    const currentAvatar = requestData?.toUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentName)}&background=random`;
+    const currentUsername = requestData?.toUsername || "";
 
-    console.log("currentData:", currentData);
-    console.log("fromData:", fromData);
-    console.log("requestData:", requestData);
+    console.log("Final data:", { fromName, fromAvatar, currentName, currentAvatar });
 
-    // SỬA: ƯU TIÊN requestData TRƯỚC VÌ users THƯỜNG RỖNG
-    const fromName = requestData?.fromUserName || fromData?.displayName || fromData?.name || "User";
-    const fromAvatar = requestData?.fromUserAvatar || fromData?.photoURL || fromData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(requestData?.fromUserName || "User")}&background=random`;
-    const fromUsername = requestData?.fromUsername || fromData?.username || "";
-
-    // Thằng được accept thì lấy từ users, fallback về email
-    const currentName = currentData?.displayName || currentData?.name || requestData?.toUserName || request.auth?.token?.email?.split('@')[0] || "User";
-    const currentAvatar = currentData?.photoURL || currentData?.avatar || requestData?.toUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentName)}&background=random`;
-    const currentUsername = currentData?.username || requestData?.toUsername || "";
-
-    // 1. Lưu friends 2 chiều
+    // 1. Lưu friends
     batch.set(db.doc(`users/${uid}/friends/${fromUid}`), {
-      uid: fromUid,
-      name: fromName,
-      avatar: fromAvatar,
-      username: fromUsername,
-      createdAt: FieldValue.serverTimestamp(),
-      status: "active",
+      uid: fromUid, name: fromName, avatar: fromAvatar, username: fromUsername,
+      createdAt: FieldValue.serverTimestamp(), status: "active",
     });
     batch.set(db.doc(`users/${fromUid}/friends/${uid}`), {
-      uid: uid,
-      name: currentName,
-      avatar: currentAvatar,
-      username: currentUsername,
-      createdAt: FieldValue.serverTimestamp(),
-      status: "active",
+      uid: uid, name: currentName, avatar: currentAvatar, username: currentUsername,
+      createdAt: FieldValue.serverTimestamp(), status: "active",
     });
 
-    // 2. Tạo chat - KHÔNG DÙNG merge để ghi đè membersInfo
+    // 2. XÓA CHAT NGƯỜI LẠ CŨ
+    const strangerChatId = `str_${[uid, fromUid].sort().join("_")}`;
+    batch.delete(db.doc(`chats/${strangerChatId}`));
+
+    // 3. Tạo chat mới
     const chatId = [uid, fromUid].sort().join("_");
     batch.set(db.doc(`chats/${chatId}`), {
       members: [uid, fromUid],
@@ -158,26 +140,13 @@ export const acceptFriendRequest = onCall(
       lastMessage: "Các bạn đã là bạn bè",
       lastSenderName: "Hệ thống",
       membersInfo: {
-        [uid]: {
-          name: currentName,
-          avatar: currentAvatar,
-          username: currentUsername,
-        },
-        [fromUid]: {
-          name: fromName,
-          avatar: fromAvatar,
-          username: fromUsername,
-        },
+        [uid]: { name: currentName, avatar: currentAvatar, username: currentUsername },
+        [fromUid]: { name: fromName, avatar: fromAvatar, username: fromUsername },
       },
     });
 
     batch.delete(requestRef);
     await batch.commit();
-    
-    console.log("Saved membersInfo:", {
-      [uid]: { name: currentName, avatar: currentAvatar },
-      [fromUid]: { name: fromName, avatar: fromAvatar }
-    });
     
     return { chatId };
   }
@@ -847,31 +816,55 @@ export const sendFriendRequest = onCall(
       throw new HttpsError("invalid-argument", "Không thể tự kết bạn");
     }
 
-    // 1. Check đã là bạn chưa - subcollection users/{uid}/friends/{friendUid}
+    // 1. Check đã là bạn chưa
     const friendSnap = await db.doc(`users/${fromUserId}/friends/${toUid}`).get();
-    if (friendSnap.exists && friendSnap.data()?.status !== "removed") {
+    if (friendSnap.exists && friendSnap.data()?.status!== "removed") {
       throw new HttpsError("already-exists", "Đã là bạn bè");
     }
 
     // 2. Check đã gửi lời mời pending chưa
     const reqSnap = await db
-      .collection("friendRequests")
-      .where("fromUserId", "==", fromUserId)
-      .where("toUserId", "==", toUid)
-      .where("status", "==", "pending")
-      .limit(1)
-      .get();
+     .collection("friendRequests")
+     .where("fromUserId", "==", fromUserId)
+     .where("toUserId", "==", toUid)
+     .where("status", "==", "pending")
+     .limit(1)
+     .get();
 
     if (!reqSnap.empty) {
       throw new HttpsError("already-exists", "Đã gửi lời mời rồi");
     }
 
-    // 3. Tạo lời mời
+    // 3. LẤY INFO 2 USER ĐỂ LƯU VÀO REQUEST
+    const [fromUserDoc, toUserDoc] = await Promise.all([
+      db.doc(`users/${fromUserId}`).get(),
+      db.doc(`users/${toUid}`).get(),
+    ]);
+
+    const fromData = fromUserDoc.data();
+    const toData = toUserDoc.data();
+
+    const fromName = fromData?.displayName || fromData?.name || request.auth?.token?.email?.split('@')[0] || "User";
+    const fromAvatar = fromData?.photoURL || fromData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fromName)}&background=random`;
+    const fromUsername = fromData?.username || "";
+
+    const toName = toData?.displayName || toData?.name || "User";
+    const toAvatar = toData?.photoURL || toData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(toName)}&background=random`;
+    const toUsername = toData?.username || "";
+
+    // 4. Tạo lời mời - LƯU ĐỦ 6 FIELD
     await db.collection("friendRequests").add({
       fromUserId,
       toUserId: toUid,
       status: "pending",
       createdAt: FieldValue.serverTimestamp(),
+      // BẮT BUỘC PHẢI CÓ 6 FIELD NÀY
+      fromUserName: fromName,
+      fromUserAvatar: fromAvatar,
+      fromUsername: fromUsername,
+      toUserName: toName,
+      toUserAvatar: toAvatar,
+      toUsername: toUsername,
     });
 
     return { success: true, message: "Đã gửi lời mời" };
