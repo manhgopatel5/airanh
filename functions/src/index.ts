@@ -802,3 +802,51 @@ export const addHuhaScore = onCall(
     return { success: true, scoreAdded: score };
   }
 );
+// 17. GỬI LỜI MỜI KẾT BẠN - CHUẨN V2
+export const sendFriendRequest = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    const fromUserId = request.auth?.uid;
+    if (!fromUserId) {
+      throw new HttpsError("unauthenticated", "Chưa đăng nhập");
+    }
+
+    const { toUid } = request.data;
+    if (!toUid) {
+      throw new HttpsError("invalid-argument", "Thiếu toUid");
+    }
+
+    if (fromUserId === toUid) {
+      throw new HttpsError("invalid-argument", "Không thể tự kết bạn");
+    }
+
+    // 1. Check đã là bạn chưa - subcollection users/{uid}/friends/{friendUid}
+    const friendSnap = await db.doc(`users/${fromUserId}/friends/${toUid}`).get();
+    if (friendSnap.exists && friendSnap.data()?.status !== "removed") {
+      throw new HttpsError("already-exists", "Đã là bạn bè");
+    }
+
+    // 2. Check đã gửi lời mời pending chưa
+    const reqSnap = await db
+      .collection("friendRequests")
+      .where("fromUserId", "==", fromUserId)
+      .where("toUserId", "==", toUid)
+      .where("status", "==", "pending")
+      .limit(1)
+      .get();
+
+    if (!reqSnap.empty) {
+      throw new HttpsError("already-exists", "Đã gửi lời mời rồi");
+    }
+
+    // 3. Tạo lời mời
+    await db.collection("friendRequests").add({
+      fromUserId,
+      toUserId: toUid,
+      status: "pending",
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    return { success: true, message: "Đã gửi lời mời" };
+  }
+);
