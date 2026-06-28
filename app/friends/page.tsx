@@ -50,6 +50,7 @@ type StrangerChatItem = {
 type RequestItem = {
   uid: string;
   name: string;
+  requestId: string;
   avatar: string;
   mutualFriends: number;
   time: any;
@@ -202,14 +203,15 @@ const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions' | 'strange
 useEffect(() => {
   if (!user?.uid) return;
 
-  // BỎ where("isGroup") - lấy tất cả chat của user rồi lọc tay
+  // ĐỔI TỪ "chats" SANG "stranger_chats"
   const q = query(
-    collection(db, "chats"),
-    where("members", "array-contains", user.uid)
+    collection(db, "stranger_chats"), // ĐỔI CHỖ NÀY
+    where("members", "array-contains", user.uid),
+    where("status", "==", "active") // THÊM: chỉ lấy chat active
   );
 
   const unsub = onSnapshot(q, async (snap) => {
-    console.log('Total chats found:', snap.size);
+    console.log('Total stranger chats found:', snap.size);
     
     const friendIds = new Set(friends.map(f => f.uid));
     const list: StrangerChatItem[] = [];
@@ -217,11 +219,8 @@ useEffect(() => {
     for (const d of snap.docs) {
       const data = d.data();
       
-      // Chỉ lấy chat 1-1: không phải group, có đúng 2 members
-      if (data.isGroup === true || data.members?.length !== 2) continue;
-      
-      // Bỏ qua nếu set isStranger: false
-      if (data.isStranger === false) continue;
+      // Bỏ qua nếu đã hết hạn
+      if (data.expiresAt?.toMillis() < Date.now()) continue;
       
       const otherUid = data.members?.find((m: string) => m !== user.uid);
       if (!otherUid || friendIds.has(otherUid)) continue;
@@ -243,7 +242,7 @@ useEffect(() => {
         isStranger: true,
         lastMessage: data.lastMessage || "Bắt đầu trò chuyện",
         updatedAt: data.updatedAt,
-        unreadCount: data.unread?.[user.uid] || 0
+        unreadCount: data.unreadCounts?.[user.uid] || 0 // SỬA: unreadCounts thay vì unread
       });
     }
     
@@ -477,10 +476,10 @@ const handleStartChat = async (friendId: string) => {
   router.push(`/chat/${chatId}`);
 };
 
-const handleAccept = async (uid: string) => {
+const handleAccept = async (requestId: string, fromUid: string) => {
   const functions = getFunctions(getApp(), "asia-southeast1");
   const accept = httpsCallable(functions, 'acceptFriendRequest');
-  await accept({ fromUid: uid });
+  await accept({ fromUid, notifId: requestId });
   toast.success("Đã chấp nhận");
 };
 
@@ -749,12 +748,12 @@ const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => handleAccept(req.uid)}
-                    className="flex-1 h-11 bg-[#007AFF] text-white rounded-xl text-base font-[600] active:scale-95 shadow-md shadow-[#007AFF]/30"
-                  >
-                    Chấp nhận
-                  </button>
+            <button
+  onClick={() => handleAccept(req.requestId, req.uid)} // TRUYỀN requestId
+  className="flex-1 h-11 bg-[#007AFF] text-white rounded-xl text-base font-[600] active:scale-95 shadow-md shadow-[#007AFF]/30"
+>
+  Chấp nhận
+</button>
                   <button className="flex-1 h-11 bg-[#F2F2F7] dark:bg-zinc-800 text-[#8e8e93] rounded-xl text-base font-[600]">
                     Xóa
                   </button>
