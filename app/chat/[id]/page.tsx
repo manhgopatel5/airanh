@@ -741,7 +741,7 @@ export default function ChatDetailPage() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-0.5">
+<div className="flex-1 min-h-0 overflow-y-auto px-4 pt-[68px] pb-[100px] space-y-0.5">
         {filteredMessages.map((m, i) => {
           const isMe = m.senderId === user.uid;
           const prev = filteredMessages[i - 1];
@@ -953,10 +953,10 @@ export default function ChatDetailPage() {
                     )}
                   </div>
 
-                  {isLastInGroup && (
-                    <div className={`flex items-center gap-1 mt-1 px-1 ${isMe? "flex-row-reverse" : ""}`}>
-                      <p className="text-xs text-gray-400 dark:text-zinc-500 font-medium">{formatTime(m.createdAt)}</p>
-                      {isMe && seenAvatars.length > 0 && (
+             {isLastInGroup && (
+  <div className={`flex items-center gap-1 mt-1 ${isMe? "justify-end" : "justify-start"}`}>
+    <p className="text-[11px] text-gray-400 dark:text-zinc-500">{formatTime(m.createdAt)}</p>
+    {isMe && seenAvatars.length > 0 && (
                         <div className="flex -space-x-2">
                           {seenAvatars.slice(0, 3).map((u, idx) => (
                             <img
@@ -1035,7 +1035,7 @@ export default function ChatDetailPage() {
       )}
 
       {/* INPUT */}
-      <div className="p-4 border-t border-gray-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl">
+<div className="fixed bottom-0 left-0 right-0 z-40 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
         <div className="flex items-end gap-2">
           <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])} />
           <button
