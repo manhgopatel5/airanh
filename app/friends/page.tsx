@@ -1300,15 +1300,15 @@ export default function FriendsPage() {
                   onClick={() => { handleRemoveFriend(selectedFriend as FriendItem); }}
                   className="w-full h-12 flex items-center gap-3 px-5 bg-red-50 dark:bg-red-950/30 text-red-500 rounded-xl active:scale-98 shadow-sm"
                 >
-                  <FiUserX size={22} />
+                <FiUserX size={22} />
                   <span className="text-base font-[500]">Hủy kết bạn</span>
                 </button>
               </div>
-            </motion.div>
+            </div> {/* THÊM: Đóng div flex items-center gap-3 mb-6 */}
+          </motion.div> {/* THÊM: Đóng motion.div */}
           </>
         )}
       </AnimatePresence>
-
       {showScanQR && (
         <div className="fixed inset-0 bg-black z-[70]">
           <div id="qr-reader-add" className={scanMode === "camera"? "w-full h-full" : "hidden"} />
