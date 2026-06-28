@@ -115,58 +115,62 @@ export const acceptFriendRequest = onCall(
     const currentData = currentUserDoc.data();
     const fromData = fromUserDoc.data();
 
-    // SỬA: LƯU ĐỦ DATA VÀO FRIENDS
+    // SỬA: Ưu tiên displayName/photoURL trước, fallback từ friendRequests
+    const fromName = fromData?.displayName || fromData?.name || requestData?.fromUserName || "User";
+    const fromAvatar = fromData?.photoURL || fromData?.avatar || requestData?.fromUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fromName)}&background=random`;
+    const fromUsername = fromData?.username || requestData?.fromUsername || "";
+
+    const currentName = currentData?.displayName || currentData?.name || "User";
+    const currentAvatar = currentData?.photoURL || currentData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentName)}&background=random`;
+    const currentUsername = currentData?.username || "";
+
+    // 1. Lưu friends 2 chiều với data chuẩn
     batch.set(db.doc(`users/${uid}/friends/${fromUid}`), {
       uid: fromUid,
-      name: fromData?.displayName || fromData?.name || "User",
-      avatar: fromData?.photoURL || fromData?.avatar || "",
-      username: fromData?.username || "",
+      name: fromName,
+      avatar: fromAvatar,
+      username: fromUsername,
       createdAt: FieldValue.serverTimestamp(),
       status: "active",
     });
     batch.set(db.doc(`users/${fromUid}/friends/${uid}`), {
       uid: uid,
-      name: currentData?.displayName || currentData?.name || "User",
-      avatar: currentData?.photoURL || currentData?.avatar || "",
-      username: currentData?.username || "",
+      name: currentName,
+      avatar: currentAvatar,
+      username: currentUsername,
       createdAt: FieldValue.serverTimestamp(),
       status: "active",
     });
 
+    // 2. Tạo/update chat - BỎ { merge: true } để ép ghi đè membersInfo
     const chatId = [uid, fromUid].sort().join("_");
-
-    batch.set(
-      db.doc(`chats/${chatId}`),
-      {
-        members: [uid, fromUid],
-        isGroup: false,
-        status: "active",
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-        lastMessage: "Các bạn đã là bạn bè",
-        lastSenderName: "Hệ thống",
-        membersInfo: {
-          [uid]: {
-            name: currentData?.displayName || currentData?.name || "User",
-            avatar: currentData?.photoURL || currentData?.avatar || "",
-            username: currentData?.username || "",
-          },
-          [fromUid]: {
-            name: fromData?.displayName || fromData?.name || "User",
-            avatar: fromData?.photoURL || fromData?.avatar || "",
-            username: fromData?.username || "",
-          },
+    batch.set(db.doc(`chats/${chatId}`), {
+      members: [uid, fromUid],
+      isGroup: false,
+      status: "active",
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      lastMessage: "Các bạn đã là bạn bè",
+      lastSenderName: "Hệ thống",
+      membersInfo: {
+        [uid]: {
+          name: currentName,
+          avatar: currentAvatar,
+          username: currentUsername,
+        },
+        [fromUid]: {
+          name: fromName,
+          avatar: fromAvatar,
+          username: fromUsername,
         },
       },
-      { merge: true }
-    );
+    }); // ĐÃ BỎ { merge: true }
 
     batch.delete(requestRef);
     await batch.commit();
     return { chatId };
   }
 );
-
 // 4. Function hủy kết bạn: A xóa B → B còn A nhưng status = "removed"
 export const unfriend = onCall(
   { region: "asia-southeast1" },
