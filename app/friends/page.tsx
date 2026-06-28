@@ -490,8 +490,14 @@ const handleStartChat = async (friendId: string) => {
 const handleAccept = async (requestId: string, fromUid: string) => {
   const functions = getFunctions(getApp(), "asia-southeast1");
   const accept = httpsCallable(functions, 'acceptFriendRequest');
-  await accept({ fromUid, notifId: requestId });
-  toast.success("Đã chấp nhận");
+  try {
+    await accept({ fromUid, requestId }); // ĐỔI notifId -> requestId
+    toast.success("Đã chấp nhận");
+    if ("vibrate" in navigator) navigator.vibrate(10);
+  } catch (e: any) {
+    console.error(e);
+    toast.error(e.message || "Lỗi chấp nhận lời mời");
+  }
 };
 
 const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
@@ -517,7 +523,6 @@ const handleAddFriend = async (toUid: string, username?: string) => {
     toast.error(e.message || "Lỗi gửi lời mời");
   }
 };
-
 const copyMyLink = () => {
   if (!myUsername) {
     toast.error("Chưa có username");
