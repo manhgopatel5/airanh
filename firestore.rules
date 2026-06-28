@@ -262,11 +262,8 @@ match /friends/{friendId} {
 
    // ========== FRIEND REQUESTS - FIX LỖI PERMISSION ==========
 match /friendRequests/{reqId} {
-  allow list: if isSignedIn() &&
-    request.query.where.size() == 2 &&
-    request.query.where[0][0] == 'toUserId' &&
-    request.auth.uid == request.query.where[0][2] &&
-    request.query.where[1][0] == 'status';
+  // QUAN TRỌNG: Bỏ check where, chỉ cần login là cho list
+  allow list: if isSignedIn();
 
   allow get: if isSignedIn() &&
     (request.auth.uid == resource.data.fromUserId ||
