@@ -62,16 +62,16 @@ export default function ChatRoomPage() {
   const hasSetOnline = useRef(false);
 
 const [isFriend, setIsFriend] = useState(false);
-
+  const partnerId = chatData?.members?.find(m => m!== user?.uid) || "";
+  const hasSentRequest = chatData?.friendRequests?.[user?.uid || ""] || false;
+  const partnerSentRequest = chatData?.friendRequests?.[partnerId] || false;
 useEffect(() => {
   if (!user?.uid ||!partnerId) return;
   getDoc(doc(db, "friends", `${user.uid}_${partnerId}`)).then(snap => {
     setIsFriend(snap.exists());
   });
 }, [user?.uid, partnerId]);
-  const partnerId = chatData?.members?.find(m => m!== user?.uid) || "";
-  const hasSentRequest = chatData?.friendRequests?.[user?.uid || ""] || false;
-  const partnerSentRequest = chatData?.friendRequests?.[partnerId] || false;
+
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
