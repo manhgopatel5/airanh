@@ -659,7 +659,7 @@ useEffect(() => {
         </div>
       )}
 
-      <div className="px-4 py-3 border-b border-gray-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl flex items-center gap-3 sticky top-0 z-20">
+      <div className="px-4 py-3 border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex items-center gap-3 sticky top-0 z-30">
         <button onClick={() => router.back()} className="md:hidden p-2 -ml-2 active:scale-90 transition-transform rounded-full hover:bg-gray-100 dark:hover:bg-zinc-900">
           <ArrowLeft size={24} className="text-gray-900 dark:text-white" />
         </button>
@@ -708,7 +708,7 @@ useEffect(() => {
         </div>
       )}
 
-<div className="flex-1 min-h-0 overflow-y-auto px-4 pt-[68px] pb-[100px] space-y-0.5">
+<div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-[100px] space-y-0.5">
         {filteredMessages.map((m, i) => {
           const isMe = m.senderId === user.uid;
           const prev = filteredMessages[i - 1];
@@ -916,13 +916,22 @@ useEffect(() => {
 
 
               {/* GIỜ Ở GIỮA */}
-              {isLastInGroup && (
-                <div className="flex w-full justify-center items-center gap-1.5 mt-1.5">
-                  <p className="text-[11px] text-gray-400 dark:text-zinc-500">{formatTime(m.createdAt)}</p>
-                  {isMe && seenAvatars.length > 0 && (
-                    <div className="flex -space-x-1">
-                      {seenAvatars.slice(0,3).map((u,i)=>(
-                        <img key={i} src={u.avatar} className="w-3 h-3 rounded-full ring-1 ring-white dark:ring-zinc-950" alt={u.name}/>
+{isLastInGroup && (
+  <div className="flex w-full justify-center items-center gap-1.5 my-2">
+    <span className="text-[11px] text-gray-400 dark:text-zinc-500 tabular-nums">
+      {formatTime(m.createdAt)}
+    </span>
+    {isMe && (
+      <>
+        {seenAvatars.length > 0? (
+          <div className="flex -space-x-1">
+            {seenAvatars.slice(0, 3).map((u, i) => (
+              <img
+                key={i}
+                src={u.avatar}
+                className="w-3.5 h-3.5 rounded-full ring-1 ring-white dark:ring-zinc-950"
+                alt={u.name}
+              />
                       ))}
                     </div>
                   )}
