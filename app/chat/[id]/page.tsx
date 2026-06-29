@@ -1101,17 +1101,17 @@ useEffect(() => {
     onClick={() => setShowBgPicker(false)}
   >
     <div
-className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:rounded-[28px] rounded-t-[28px] overflow-hidden flex flex-col"
+      className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:rounded-[28px] rounded-t-[28px] overflow-hidden flex flex-col"
       onClick={e => e.stopPropagation()}
     >
-      {/* Header + Preview */}
+      {/* Header */}
       <div className="px-5 pt-5 pb-3 sticky top-0 bg-[#101012]/90 backdrop-blur-2xl z-10 border-b border-white/5">
         <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4 sm:hidden" />
         <div className="flex items-center gap-3">
           <div className="w-14 h-14 rounded-2xl overflow-hidden ring-1 ring-white/10 shrink-0">
             <div className="w-full h-full" style={{
               background: (chatData as any)?.background
-               ? `url(${(chatData as any).background})`
+              ? `url(${(chatData as any).background})`
                 : 'linear-gradient(135deg, #1e1e22 0%, #0a0a0b 100%)',
               backgroundSize: 'cover', backgroundPosition: 'center'
             }}/>
@@ -1152,7 +1152,7 @@ className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:
               'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800',
               'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800',
               'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800',
-              'https://images.unsplash.com/photo-1433086966358-8b5ebb002013?w=800',
+              'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800', // FIX: thay link lỗi
               'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=800',
               'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?w=800',
               'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800',
@@ -1172,7 +1172,7 @@ className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:
               'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800',
               'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=800',
               'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800',
-              'https://images.unsplash.com/photo-1417577097439-8b8b6c0c3b25?w=800',
+              'https://images.unsplash.com/photo-1531306728370-e2ebd9d7bb99?w=800', // FIX: thay link lỗi
               'https://images.unsplash.com/photo-1464802686167-b939a6910659?w=800',
             ]
           },
@@ -1199,7 +1199,7 @@ className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:
             title: 'Màu trơn',
             items: [
               { url: '', name: 'Đen', type: 'color', bg: '#000000' },
-              { url: '', name: 'Than', type: 'color', bg: '#1c1e' },
+              { url: '', name: 'Than', type: 'color', bg: '#1c1c1e' }, // FIX: sửa #1c1e
               { url: '', name: 'Navy', type: 'color', bg: '#0a192f' },
               { url: '', name: 'Tím', type: 'color', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
               { url: '', name: 'Xanh', type: 'color', bg: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)' },
@@ -1216,58 +1216,63 @@ className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:
               'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800',
               'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800',
               'https://images.unsplash.com/photo-1550859492-d5da9d8e45f3?w=800',
-              'https://images.unsplash.com/photo-1515405295579-ba7b454ae16c?w=800',
+              'https://images.unsplash.com/photo-1515405295579-ba7b454ad212?w=800', // FIX: thay link lỗi
               'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800',
               'https://images.unsplash.com/photo-1499781350541-7783f6c6a0c8?w=800',
-              'https://images.unsplash.com/photo-1501084817091-a4f3d1d19e07?w=800',
-              'https://images.unsplash.com/photo-1518893063132-36e46dbe2428?w=800',
+              'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800', // FIX: thay link lỗi
+              'https://images.unsplash.com/photo-1552083375-1447ce886485?w=800', // FIX: thay link lỗi
               'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=800',
             ]
           },
         ].map((group) => (
           <div key={group.id} className="mb-7">
             <h4 className="text-white/60 text-[12px] font-semibold mb-3 uppercase tracking-widest">{group.title}</h4>
-           {/* THAY TOÀN BỘ phần grid bên trong */}
-<div className="grid grid-cols-3 gap-3">
-  {group.items.map((item: any, i) => {
-    const url = typeof item === 'string'? item : item.url;
-    const name = typeof item === 'string'? '' : item.name;
-    const isColor = item?.type === 'color';
-    const isSelected = (chatData as any)?.background === url;
+            <div className="grid grid-cols-3 gap-3">
+              {group.items.map((item: any, i) => {
+                const url = typeof item === 'string'? item : item.url;
+                const name = typeof item === 'string'? '' : item.name;
+                const isColor = item?.type === 'color';
+                const isSelected = (chatData as any)?.background === url;
 
-    return (
-      <button
-        key={i}
-        onClick={async () => {
-          await updateDoc(doc(db, "chats", chatId), { background: url });
-          setShowBgPicker(false);
-          toast.success('Đã đổi hình nền');
-        }}
-        className="relative w-full h-28 rounded-2xl overflow-hidden bg-zinc-900 ring-1 ring-white/10 active:scale-95 transition"
-      >
-        {isColor? (
-          <div className="w-full h-full" style={{ background: item.bg }} />
-        ) : (
-          <img
-            src={url}
-            alt={name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            referrerPolicy="no-referrer"
-          />
-        )}
-        {name && (
-          <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white drop-shadow text-center truncate">
-            {name}
-          </span>
-        )}
-        {isSelected && (
-          <div className="absolute inset-0 ring-2 ring-[#0A84FF] ring-inset rounded-2xl" />
-        )}
-      </button>
-    );
-  })}
-</div>
+                return (
+                  <button
+                    key={i}
+                    onClick={async () => {
+                      await updateDoc(doc(db, "chats", chatId), { background: url });
+                      setShowBgPicker(false);
+                      toast.success('Đã đổi hình nền');
+                    }}
+                    className="relative w-full h-28 rounded-2xl overflow-hidden bg-zinc-900 ring-1 ring-white/10 active:scale-95 transition"
+                  >
+                    {isColor? (
+                      <div className="w-full h-full" style={{ background: item.bg }} />
+                    ) : (
+                      <img
+                        src={url}
+                        alt={name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        // CHỐNG LỖI VĨNH VIỄN
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          img.onerror = null;
+                          img.src = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800'; // fallback mặc định
+                        }}
+                      />
+                    )}
+                    {name && (
+                      <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white drop-shadow text-center truncate">
+                        {name}
+                      </span>
+                    )}
+                    {isSelected && (
+                      <div className="absolute inset-0 ring-2 ring-[#0A84FF] ring-inset rounded-2xl" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         ))}
       </div>
