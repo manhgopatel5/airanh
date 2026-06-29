@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
-
+import { uploadBytes } from "firebase/storage";
 import {
   collection, query, onSnapshot, doc,
   orderBy, addDoc, serverTimestamp, Timestamp, updateDoc, deleteDoc, arrayUnion, arrayRemove
@@ -14,7 +14,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   Image as ImageIcon, MapPin, Paperclip, Phone, Send,
   ArrowLeft, Loader2, X, Video, CheckCheck,
-  Smile, Reply, Trash2, Pencil, Shield, Pin, Copy, Mic, Square, Search
+  Smile, Reply, Play, Pause, Trash2, Pencil, Shield, Pin, Copy, Mic, Square, Search
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import imageCompression from "browser-image-compression";
@@ -458,36 +458,56 @@ export default function ChatDetailPage() {
   };
 
   const sendVoice = async () => {
-    if (!audioBlob ||!user ||!chatId ||!friendId ||!chatData) {
-      if (!chatData) toast.error("Đang tải dữ liệu chat...");
-      return;
+  if (!audioBlob || !user || !chatId || !friendId || !chatData) {
+    if (!chatData) toast.error("Đang tải dữ liệu chat...");
+    return;
+  }
+  
+  setUploading(true);
+
+  try {
+    const fileName = `${Date.now()}.webm`;
+    const storageRef = ref(storage, `chat-voice/${chatId}/${fileName}`);
+
+    // 1. Thêm metadata để Rules nhận đúng loại file
+    const metadata = {
+      contentType: audioBlob.type || 'audio/webm',
+      customMetadata: { uid: user.uid }
+    };
+
+    // 2. Dùng uploadBytes (đơn giản hơn uploadBytesResumable) và await
+    await uploadBytes(storageRef, audioBlob, metadata);
+    
+    const url = await getDownloadURL(storageRef);
+
+    await addDoc(collection(db, "chats", chatId, "messages"), {
+      senderId: user.uid,
+      voice: url,
+      duration: recordingTime,
+      type: "voice",
+      createdAt: serverTimestamp(),
+      seenBy: [user.uid],
+      members: chatData.members,
+    });
+
+    setAudioBlob(null);
+    setRecordingTime(0);
+    toast.success("Đã gửi voice");
+    
+  } catch (err: any) {
+    console.error("Voice error:", err);
+    // báo lỗi rõ hơn
+    if (err.code === 'storage/unauthorized') {
+      toast.error("Storage chặn ghi - kiểm tra Rules Firebase");
+    } else if (err.code === 'storage/retry-limit-exceeded') {
+      toast.error("Mạng yếu, thử lại");
+    } else {
+      toast.error(`Lỗi gửi voice: ${err.code || err.message}`);
     }
-    setUploading(true);
-
-    try {
-      const storageRef = ref(storage, `chat-voice/${chatId}/${Date.now()}.webm`);
-      await uploadBytesResumable(storageRef, audioBlob);
-      const url = await getDownloadURL(storageRef);
-
-      await addDoc(collection(db, "chats", chatId, "messages"), {
-        senderId: user.uid,
-        voice: url,
-        duration: recordingTime,
-        type: "voice",
-        createdAt: serverTimestamp(),
-        seenBy: [user.uid],
-        members: chatData.members,
-      });
-
-      setAudioBlob(null);
-      setRecordingTime(0);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(`Lỗi gửi voice: ${err.code}`);
-    } finally {
-      setUploading(false);
-    }
-  };
+  } finally {
+    setUploading(false);
+  }
+};
 
   const sendLocation = async () => {
     if (!canSendMessage || isBlocked || isDeleted) {
@@ -860,17 +880,98 @@ export default function ChatDetailPage() {
                             <span className="text-sm truncate">{m.fileName}</span>
                           </a>
                         )}
-                        {m.voice && (
-                          <div className="flex items-center gap-2">
-                            <button className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                              <Mic size={16} />
-                            </button>
-                            <div className="flex-1 h-1 bg-white/30 rounded-full">
-                              <div className="h-full bg-white rounded-full" style={{ width: "30%" }} />
-                            </div>
-                            <span className="text-xs">{m.duration}s</span>
-                          </div>
-                        )}
+                    {m.voice && (
+  <div className="flex items-center gap-2.5 w-[210px] py-1">
+    {/* Nút Play/Pause */}
+    <button
+      onClick={(e) => {
+        const container = e.currentTarget.closest('.voice-player') as HTMLElement;
+        const audio = container.querySelector('audio') as HTMLAudioElement;
+        const icon = e.currentTarget.querySelector('svg');
+
+        // dừng tất cả audio khác
+        document.querySelectorAll('audio.voice-audio').forEach(a => {
+          if (a!== audio) (a as HTMLAudioElement).pause();
+        });
+
+        if (audio.paused) {
+          audio.play();
+          e.currentTarget.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+        } else {
+          audio.pause();
+          e.currentTarget.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
+        }
+      }}
+      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition active:scale-90 ${
+        isMe
+         ? 'bg-white/25 hover:bg-white/35 text-white'
+          : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'
+      }`}
+    >
+      <Play size={14} fill="currentColor" className="ml-0.5" />
+    </button>
+
+    <div className="voice-player flex-1 relative">
+      <audio
+        src={m.voice}
+        className="voice-audio hidden"
+        preload="metadata"
+        onTimeUpdate={(e) => {
+          const audio = e.target as HTMLAudioElement;
+          const progress = (audio.currentTime / audio.duration) * 100 || 0;
+          const bar = (e.target as HTMLElement).parentElement?.querySelector('.voice-progress') as HTMLElement;
+          const time = (e.target as HTMLElement).parentElement?.parentElement?.querySelector('.voice-time') as HTMLElement;
+          if (bar) bar.style.width = `${progress}%`;
+          if (time && audio.duration) {
+            const remain = Math.floor(audio.duration - audio.currentTime);
+            time.textContent = `${Math.floor(remain/60)}:${String(remain%60).padStart(2,'0')}`;
+          }
+        }}
+        onLoadedMetadata={(e) => {
+          const audio = e.target as HTMLAudioElement;
+          const time = (e.target as HTMLElement).parentElement?.parentElement?.querySelector('.voice-time') as HTMLElement;
+          if (time && audio.duration) {
+            time.textContent = `${Math.floor(audio.duration/60)}:${String(Math.floor(audio.duration%60)).padStart(2,'0')}`;
+          }
+        }}
+        onEnded={(e) => {
+          const container = (e.target as HTMLElement).closest('.voice-player') as HTMLElement;
+          const btn = container.previousElementSibling as HTMLButtonElement;
+          const bar = container.querySelector('.voice-progress') as HTMLElement;
+          if (btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
+          if (bar) bar.style.width = '0%';
+        }}
+      />
+
+      {/* Waveform nền */}
+      <div className="flex items-end gap-[1.8px] h-6 absolute inset-0 pointer-events-none">
+        {Array.from({ length: 22 }).map((_, i) => (
+          <div
+            key={i}
+            className={`w-[2px] rounded-full transition-all ${
+              isMe? 'bg-white/40' : 'bg-gray-400/50 dark:bg-zinc-500/60'
+            }`}
+            style={{ height: `${4 + Math.sin(i * 0.8) * 3 + Math.random() * 5 + 6}px` }}
+          />
+        ))}
+      </div>
+
+      {/* Thanh progress */}
+      <div className="relative h-6 flex items-center">
+        <div className={`w-full h-[2px] rounded-full overflow-hidden ${isMe? 'bg-white/25' : 'bg-gray-300/60 dark:bg-zinc-600'}`}>
+          <div className={`voice-progress h-full rounded-full transition-[width] duration-100 ${isMe? 'bg-white' : 'bg-blue-500'}`} style={{ width: '0%' }} />
+        </div>
+      </div>
+    </div>
+
+    {/* Thời gian */}
+    <span className={`voice-time text-[11px] font-mono min-w-[32px] text-right tabular-nums ${
+      isMe? 'text-white/80' : 'text-gray-500 dark:text-zinc-400'
+    }`}>
+      {m.duration? `${Math.floor(m.duration/60)}:${String(m.duration%60).padStart(2,'0')}` : '0:00'}
+    </span>
+  </div>
+)}
                         {m.location && (
                           <a
                             href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
@@ -1009,21 +1110,79 @@ export default function ChatDetailPage() {
         </div>
       )}
 
-      {/* AUDIO PREVIEW */}
-      {audioBlob &&!recording && (
-        <div className="px-4 py-2 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl border-t border-gray-200/50 dark:border-zinc-800/50">
-          <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950/30 rounded-2xl">
-            <Mic size={20} className="text-green-600" />
-            <span className="flex-1 text-sm">Tin nhắn thoại {recordingTime}s</span>
-            <button onClick={() => setAudioBlob(null)} className="p-1.5 hover:bg-green-100 dark:hover:bg-green-900/50 rounded-full">
-              <X size={18} />
-            </button>
-            <button onClick={sendVoice} className="px-4 py-1.5 bg-green-600 text-white rounded-full text-sm font-medium">
-              Gửi
-            </button>
-          </div>
+{/* AUDIO PREVIEW - UI MỚI */}
+{audioBlob &&!recording && (
+  <div className="fixed bottom-[84px] left-0 right-0 z-40 px-4 pointer-events-none">
+    <div className="pointer-events-auto flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border-gray-200 dark:border-zinc-800">
+      {/* Nút xóa */}
+      <button
+        onClick={() => setAudioBlob(null)}
+        className="w-9 h-9 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-full active:scale-90 transition"
+      >
+        <Trash2 size={20} />
+      </button>
+
+      {/* Nút Play/Pause */}
+      <button
+        onClick={() => {
+          const audio = document.getElementById('preview-voice') as HTMLAudioElement;
+          if (!audio) return;
+          if (audio.paused) {
+            document.querySelectorAll('audio').forEach(a => a.pause());
+            audio.play();
+          } else {
+            audio.pause();
+          }
+        }}
+        className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/25 active:scale-95 transition"
+      >
+        <Play size={20} fill="white" className="ml-0.5" />
+      </button>
+
+      {/* Waveform + time */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-end gap-[2px] h-8">
+          {Array.from({ length: 32 }).map((_, i) => (
+            <div
+              key={i}
+              className="w-[2.5px] bg-blue-500/70 dark:bg-blue-400/70 rounded-full"
+              style={{
+                height: `${10 + Math.abs(Math.sin(i * 0.6)) * 16}px`,
+                animation: `pulse 1.2s ease-in-out ${i * 0.05}s infinite alternate`
+              }}
+            />
+          ))}
         </div>
-      )}
+        <div className="flex items-center justify-between mt-1">
+          <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Xem trước</span>
+          <span className="text-xs font-mono text-gray-600 dark:text-zinc-300">
+            {String(Math.floor(recordingTime / 60)).padStart(2, '0')}:
+            {String(recordingTime % 60).padStart(2, '0')}
+          </span>
+        </div>
+      </div>
+
+      {/* Nút Gửi */}
+      <button
+        onClick={sendVoice}
+        disabled={uploading}
+        className="px-5 h-9 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-full text-sm font-semibold active:scale-95 transition"
+      >
+        {uploading? <Loader2 size={16} className="animate-spin" /> : 'Gửi'}
+      </button>
+
+      {/* Audio ẩn để play */}
+      <audio
+        id="preview-voice"
+        src={audioBlob? URL.createObjectURL(audioBlob) : ''}
+        className="hidden"
+        onEnded={() => {
+          const btn = document.querySelector('#preview-voice')?.previousElementSibling?.previousElementSibling?.previousElementSibling as HTMLElement;
+        }}
+      />
+    </div>
+  </div>
+)}
 
       {/* BANNER CẢNH BÁO */}
       {!isFriend &&!isBlocked &&!isDeleted && (
