@@ -695,7 +695,7 @@ useEffect(() => {
         </div>
       )}
 
-<div className="px-4 py-3 bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl border-b border-black/5 dark:border-white/5 flex items-center justify-between sticky top-0 z-40">
+<div className="px-4 py-3 bg-transparent flex items-center justify-between sticky top-0 z-40">
         <button onClick={() => router.back()} className="md:hidden p-2 -ml-2 active:scale-90 transition-transform rounded-full hover:bg-gray-100 dark:hover:bg-zinc-900">
           <ArrowLeft size={24} className="text-gray-900 dark:text-white" />
         </button>
@@ -1050,92 +1050,120 @@ useEffect(() => {
         </div>
       )}
 {showBgPicker && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center p-0 sm:p-4 sm:items-center" onClick={() => setShowBgPicker(false)}>
-    <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-t-[32px] sm:rounded-[28px] w-full max-w-md p-6 pb-8 shadow-2xl animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
-      <div className="w-12 h-1.5 bg-gray-300 dark:bg-zinc-700 rounded-full mx-auto mb-5 sm:hidden" />
-      <h3 className="font-semibold text-lg mb-5">Chủ đề đoạn chat</h3>
-
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        {[
-          { url: '', name: 'Mặc định' },
-          { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600', name: 'Núi' },
-          { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=600', name: 'Sao' },
-          { url: 'https://images.unsplash.com/photo-1470071459604-3b5b0a5c2cdb?w=600', name: 'Rừng' },
-          { url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600', name: 'Hồ' },
-          { url: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=600', name: 'Hoa' }
-        ].map((bg, i) => {
-          const isSelected = (chatData as any)?.background === bg.url || (!(chatData as any)?.background &&!bg.url);
-          return (
-            <button
-              key={i}
-              onClick={async () => {
-                await updateDoc(doc(db, "chats", chatId), { background: bg.url });
-                setShowBgPicker(false);
-              }}
-              className={`aspect-[3/4] rounded-2xl overflow-hidden relative group ring-2 transition-all ${isSelected? 'ring-blue-500 scale-95' : 'ring-transparent hover:ring-gray-300 dark:hover:ring-zinc-700'}`}
-            >
-              <div
-                className="w-full h-full"
-                style={{
-                  backgroundImage: bg.url? `url(${bg.url})` : 'linear-gradient(180deg, #fff 0%, #f3f4f6 100%)',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}
-              />
-              {isSelected && (
-                <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
-                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                  </div>
-                </div>
-              )}
-              <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
-                <p className="text-[11px] text-white font-medium text-center truncate">{bg.name}</p>
-              </div>
-            </button>
-          );
-        })}
+  <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowBgPicker(false)}>
+    <div className="bg-[#1c1c1e]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:rounded-[32px] rounded-t-[32px] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+      {/* Header */}
+      <div className="px-6 pt-6 pb-4 sticky top-0 bg-[#1c1c1e]/80 backdrop-blur-xl z-10">
+        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4 sm:hidden" />
+        <h3 className="text-white text-[22px] font-semibold">Hình nền</h3>
+        <p className="text-white/50 text-sm mt-1">Chọn hình nền cho đoạn chat này</p>
       </div>
 
-      <input
-        type="file"
-        accept="image/*"
-        className="hidden"
-        id="bg-upload"
-        onChange={async (e) => {
-  const file = e.target.files?.[0];
-  if (!file ||!chatId) return;
-  try {
-    const storage = getFirebaseStorage(); // THÊM DÒNG NÀY
-    const storageRef = ref(storage, `chat-backgrounds/${chatId}/${Date.now()}_${file.name}`);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    await updateDoc(doc(db, "chats", chatId), { background: url });
-    setShowBgPicker(false);
-  } catch (err) {
-    console.error(err);
-    alert('Tải ảnh thất bại');
-  }
-}}
-      />
-      <label htmlFor="bg-upload" className="w-full py-3.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-2xl text-center block font-medium transition-colors active:scale-[0.98]">
-        <div className="flex items-center justify-center gap-2">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-          Tải ảnh từ máy
+      <div className="overflow-y-auto px-6 pb-6 flex-1">
+        {/* Nổi bật */}
+        <div className="mb-6">
+          <h4 className="text-white/70 text-[13px] font-medium mb-3 uppercase tracking-wider">Phổ biến</h4>
+          <div className="grid grid-cols-3 gap-2.5">
+            {[
+              { url: '', name: 'Mặc định', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+              { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800', name: 'Dãy núi', color: '' },
+              { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800', name: 'Ngân hà', color: '' },
+              { url: 'https://images.unsplash.com/photo-1531306728370-e2ebd9d7bb99?w=800', name: 'Bắc cực', color: '' },
+              { url: 'https://images.unsplash.com/photo-1470071459604-3b5b0a5c2cdb?w=800', name: 'Rừng sương', color: '' },
+              { url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800', name: 'Hồ gương', color: '' },
+            ].map((bg, i) => {
+              const isSelected = (chatData as any)?.background === bg.url || (!(chatData as any)?.background &&!bg.url);
+              return (
+                <button key={i} onClick={async () => { await updateDoc(doc(db, "chats", chatId), { background: bg.url }); setShowBgPicker(false); }}
+                  className={`relative aspect-[4/5] rounded-2xl overflow-hidden group ${isSelected? 'ring-[3px] ring-[#0A84FF] ring-offset-2 ring-offset-[#1c1c1e]' : ''}`}>
+                  <div className="absolute inset-0" style={{ background: bg.color || `url(${bg.url})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="absolute bottom-2 left-2 right-2 text-white text-[12px] font-medium drop-shadow-lg">{bg.name}</span>
+                  {isSelected && <div className="absolute top-2 right-2 w-5 h-5 bg-[#0A84FF] rounded-full flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg></div>}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </label>
+
+        {/* Thiên nhiên */}
+        <div className="mb-6">
+          <h4 className="text-white/70 text-[13px] font-medium mb-3 uppercase tracking-wider">Thiên nhiên</h4>
+          <div className="grid grid-cols-3 gap-2.5">
+            {[
+              'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800',
+              'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800',
+              'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800',
+              'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800',
+              'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800',
+              'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800',
+            ].map((url, i) => (
+              <button key={i} onClick={async () => { await updateDoc(doc(db, "chats", chatId), { background: url }); setShowBgPicker(false); }}
+                className="aspect-square rounded-2xl overflow-hidden relative group hover:scale-[0.97] transition-transform">
+                <div className="absolute inset-0" style={{ backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                {(chatData as any)?.background === url && <div className="absolute inset-0 ring-[3px] ring-[#0A84FF] ring-inset rounded-2xl" />}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Không gian & Abstract */}
+        <div className="mb-6">
+          <h4 className="text-white/70 text-[13px] font-medium mb-3 uppercase tracking-wider">Vũ trụ</h4>
+          <div className="grid grid-cols-3 gap-2.5">
+            {[
+              'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800',
+              'https://images.unsplash.com/photo-1465101162946-4377e57745c3?w=800',
+              'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800',
+              'https://images.unsplash.com/photo-1505506874110-6a7a69069a08?w=800',
+              'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=800',
+              'https://images.unsplash.com/photo-1610296669228-602fa827fc1f?w=800',
+            ].map((url, i) => (
+              <button key={i} onClick={async () => { await updateDoc(doc(db, "chats", chatId), { background: url }); setShowBgPicker(false); }}
+                className="aspect-square rounded-2xl overflow-hidden">
+                <div className="w-full h-full" style={{ backgroundImage: `url(${url})`, backgroundSize: 'cover' }} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Upload */}
+        <div className="mt-2">
+          <input type="file" accept="image/*" id="bg-upload" className="hidden"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file ||!chatId) return;
+              try {
+                const storage = getFirebaseStorage();
+                const storageRef = ref(storage, `chat-backgrounds/${chatId}/${Date.now()}_${file.name}`);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
+                await updateDoc(doc(db, "chats", chatId), { background: url });
+                setShowBgPicker(false);
+              } catch (err) { alert('Lỗi tải ảnh'); }
+            }} />
+          <label htmlFor="bg-upload" className="flex items-center justify-center gap-3 w-full py-4 bg-white/10 hover:bg-white/15 active:bg-white/5 rounded-2xl border border-white/10 transition-all group cursor-pointer">
+            <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            </div>
+            <div className="text-left">
+              <div className="text-white font-medium text-[15px]">Tải ảnh lên</div>
+              <div className="text-white/50 text-[12px]">Chọn từ thư viện</div>
+            </div>
+          </label>
+        </div>
+      </div>
     </div>
   </div>
 )}
-      {/* UPLOAD PROGRESS */}
-      {uploading && (
-        <div className="bg-white dark:bg-zinc-900 px-4 py-2 border-t border-gray-200 dark:border-zinc-800">
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-400">
-            <Loader2 size={16} className="animate-spin" />
-            Đang tải lên... {uploadProgress}%
-          </div>
-        </div>
-      )}
+
+{/* UPLOAD PROGRESS */}
+{uploading && (
+  <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-xl px-4 py-2.5 rounded-full flex items-center gap-2.5 z-[60]">
+    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+    <span className="text-white text-sm font-medium">Đang tải {uploadProgress}%</span>
+  </div>
+)}
 
 
 
@@ -1150,7 +1178,7 @@ useEffect(() => {
       )}
 
 {/* INPUT */}
-<div className="fixed bottom-0 left-0 right-0 bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl border-t border-black/5 dark:border-white/5 px-3 py-3 z-30 pb-[env(safe-area-inset-bottom)]">
+<div className="fixed bottom-0 left-0 right-0 bg-transparent px-3 py-3 z-30 pb-[env(safe-area-inset-bottom)]">
   <div className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
     <div className="flex items-end gap-2">
       <input
