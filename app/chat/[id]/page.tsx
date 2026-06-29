@@ -1268,7 +1268,7 @@ useEffect(() => {
                       </button>
                       {isMe && (
                         <>
-                          <button onClick={() => { setEditingMsg(m); setText(m.text); inputRef.current?.focus(); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+<button onClick={() => { setEditingMsg(m); setText(m.text ?? ''); inputRef.current?.focus(); }}
                             <Pencil size={16} />
                           </button>
                           <button onClick={() => deleteMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded text-red-500">
