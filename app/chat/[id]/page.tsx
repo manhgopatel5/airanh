@@ -777,7 +777,7 @@ useEffect(() => {
 )}
 
 <div
-  className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-[100px] space-y-0.5 relative z-10 bg-transparent"
+className="flex-1 min-h-0 overflow-y-auto px-0 pt-2 pb-2 space-y-0.5 relative z-10 bg-transparent"
   onTouchStart={(e) => {
     if (e.target === e.currentTarget) {
       const timer = setTimeout(() => setShowBgPicker(true), 800);
@@ -1016,17 +1016,17 @@ useEffect(() => {
               </div>
 
 
-              {/* GIỜ Ở GIỮA */}
-{isLastInGroup && (
+         {/* GIỜ Ở GIỮA */}
+{isLastInGroup && filteredMessages.length > 0 && i === filteredMessages.length - 1 && m.createdAt && (
   <div className="flex w-full justify-center items-center gap-1.5 my-2">
     <span className="text-[11px] text-gray-400 dark:text-zinc-500">
       {formatTime(m.createdAt)}
     </span>
     {isMe && seenAvatars.length > 0 && (
       <div className="flex -space-x-1">
-        {seenAvatars.slice(0, 3).map((u, i) => (
+        {seenAvatars.slice(0, 3).map((u, idx) => (
           <img
-            key={i}
+            key={idx}
             src={u.avatar}
             className="w-3 h-3 rounded-full ring-1 ring-white dark:ring-zinc-950"
             alt={u.name}
