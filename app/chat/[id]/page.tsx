@@ -1297,71 +1297,57 @@ className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:
 
 {/* INPUT */}
 <div
-  className="shrink-0 z-30 px-3 pt-2"
-  style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}
+  className="shrink-0 z-30 px-3"
+  style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
 >
-  <div className="flex items-end gap-2 px-2.5 py-2 bg-white/90 backdrop-blur-2xl rounded-[28px] shadow-[0_10px_40px_-12px_rgba(0,0,0,0.2)] border border-black/5">
-    <input
-      type="file"
-      hidden
-      ref={imageInputRef}
-      accept="image/*"
-      onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])}
-    />
+  <div className="flex items-center gap-1 h-[48px] px-2 bg-white/95 dark:bg-zinc-900/90 backdrop-blur-2xl rounded-full shadow-[0_8px_24px_-8px_rgba(0,0,0,0.18)] border border-zinc-200/70 dark:border-zinc-800">
+
+    {/* 1. Ảnh */}
+    <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])} />
     <button
       onClick={() => imageInputRef.current?.click()}
       disabled={isBlocked || isDeleted}
-      className={`w-10 h-10 flex items-center justify-center rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
+      className={`w-8 h-8 flex items-center justify-center rounded-full active:scale-90 shrink-0 ${isBlocked || isDeleted? 'opacity-40' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
     >
-      <ImageIcon size={22} className="text-[#0084FF]" />
+      <ImageIcon size={20} className="text-[#0084FF]" strokeWidth={2.2} />
     </button>
 
-    <input
-      type="file"
-      hidden
-      ref={fileInputRef}
-      onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])}
-    />
-    <button
-      onClick={() => fileInputRef.current?.click()}
-      disabled={isBlocked || isDeleted}
-      className={`w-10 h-10 hidden sm:flex items-center justify-center rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
-    >
-      <Paperclip size={20} className="text-zinc-600" />
-    </button>
-
+    {/* 2. VỊ TRÍ - THÊM MỚI BÊN TRÁI */}
     <button
       onClick={sendLocation}
       disabled={isBlocked || isDeleted}
-      className={`w-10 h-10 hidden sm:flex items-center justify-center rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
+      className={`w-8 h-8 flex items-center justify-center rounded-full active:scale-90 shrink-0 ${isBlocked || isDeleted? 'opacity-40' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
     >
-      <MapPin size={20} className="text-zinc-600" />
+      <MapPin size={20} className="text-[#0084FF]" strokeWidth={2.2} />
     </button>
 
-    <div className="flex-1 relative">
+    {/* 3. File (chỉ desktop) */}
+    <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
+    <button
+      onClick={() => fileInputRef.current?.click()}
+      disabled={isBlocked || isDeleted}
+      className={`w-8 h-8 hidden sm:flex items-center justify-center rounded-full active:scale-90 shrink-0 ${isBlocked || isDeleted? 'opacity-40' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
+    >
+      <Paperclip size={18} className="text-zinc-500 dark:text-zinc-400" />
+    </button>
+
+    {/* Ô nhập */}
+    <div className="flex-1 relative h-full flex items-center">
       <input
         ref={inputRef}
         value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          handleTyping();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' &&!e.shiftKey) {
-            e.preventDefault();
-            if (!isBlocked &&!isDeleted && text.trim()) sendMessage();
-          }
-        }}
+        onChange={(e) => { setText(e.target.value); handleTyping(); }}
+        onKeyDown={(e) => { if (e.key === 'Enter' &&!e.shiftKey) { e.preventDefault(); if (!isBlocked &&!isDeleted && text.trim()) sendMessage(); } }}
         disabled={isBlocked || isDeleted}
         placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa' : 'Nhắn tin...'}
-        className="w-full h-10 pl-4 pr-11 bg-transparent outline-none text-[15px] text-zinc-900 placeholder:text-zinc-400"
+        className="w-full h-full bg-transparent outline-none border-0 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 pr-9"
       />
       <button
         onClick={sendMessage}
         disabled={sending || isBlocked || isDeleted ||!text.trim()}
-        className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#0084FF] hover:bg-[#0073e6] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40 shadow-md shadow-blue-500/20"
+        className="absolute right-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-[#0084FF] hover:bg-[#0073e6] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40"
       >
-        {sending? <Loader2 size={16} className="animate-spin" /> : <Send size={16} strokeWidth={2.5} />}
+        {sending? <Loader2 size={14} className="animate-spin" /> : <Send size={14} strokeWidth={2.5} />}
       </button>
     </div>
   </div>
