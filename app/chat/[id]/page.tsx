@@ -438,60 +438,69 @@ const startRecording = async () => {
       }
     });
 
-    // FIX: dùng webm đơn giản, không codecs
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm')
-      ? 'audio/webm'
-      : 'audio/mp4';
-
+    // Ưu tiên: webm > mp4 > wav
+    let mimeType = 'audio/webm';
     if (!MediaRecorder.isTypeSupported(mimeType)) {
-      toast.error("Trình duyệt không hỗ trợ ghi âm");
-      stream.getTracks().forEach(t => t.stop());
-      return;
+      mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
     }
 
-    console.log('[VOICE] Device:', /iPhone|iPad|iPod/.test(navigator.userAgent)? 'iOS' : 'Android');
-    console.log('[VOICE] Using mime:', mimeType);
+    console.log('[VOICE] Using:', mimeType, 'iOS:', /iPhone|iPad/.test(navigator.userAgent));
 
     const mediaRecorder = new MediaRecorder(stream, {
       mimeType,
-      audioBitsPerSecond: 64000
+      audioBitsPerSecond: 128000
     });
 
     mediaRecorderRef.current = mediaRecorder;
     audioChunksRef.current = [];
 
     mediaRecorder.ondataavailable = (e) => {
-      if (e.data?.size > 0) {
-        audioChunksRef.current.push(e.data);
-        console.log('[VOICE] Chunk:', e.data.size);
-      }
+      if (e.data?.size > 0) audioChunksRef.current.push(e.data);
     };
 
     mediaRecorder.onstop = async () => {
-      // Đợi chunk cuối
-      await new Promise(r => setTimeout(r, 150));
+      await new Promise(r => setTimeout(r, 200));
       
+      if (audioChunksRef.current.length === 0) {
+        toast.error("Không ghi được âm thanh");
+        return;
+      }
+
       const blob = new Blob(audioChunksRef.current, { type: mimeType });
-      console.log('[VOICE] Blob created:', blob.type, Math.round(blob.size/1024)+'KB', 'chunks:', audioChunksRef.current.length);
+      console.log('[VOICE] Blob:', blob.size, 'bytes');
 
-      // TEST LOCAL
+      if (blob.size < 1000) {
+        toast.error("File quá nhỏ, thử ghi lâu hơn");
+        return;
+      }
+
+      // Test local
       const testUrl = URL.createObjectURL(blob);
-      const testAudio = new Audio(testUrl);
-      testAudio.oncanplay = () => console.log('[VOICE] ✓ Local playable');
-      testAudio.onerror = () => console.error('[VOICE] ✗ Local FAILED – file lỗi');
+      const testAudio = new Audio();
+      testAudio.src = testUrl;
+      
+      testAudio.oncanplay = () => {
+        console.log('[VOICE] ✓ Local OK');
+        URL.revokeObjectURL(testUrl);
+      };
+      testAudio.onerror = () => {
+        console.error('[VOICE] ✗ Local FAIL');
+        URL.revokeObjectURL(testUrl);
+        toast.error("File ghi lỗi, thử lại");
+      };
+      
       testAudio.load();
-
       setAudioBlob(blob);
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach(t => t.stop());
       audioChunksRef.current = [];
     };
 
     mediaRecorder.onerror = (e) => {
-      console.error('[VOICE] Recorder error:', e);
+      console.error('[VOICE] Error:', e);
       toast.error("Lỗi ghi âm");
     };
 
-    mediaRecorder.start(); // BỎ 250
+    mediaRecorder.start();
     setRecording(true);
     setRecordingTime(0);
 
@@ -501,63 +510,44 @@ const startRecording = async () => {
     }, 1000);
 
   } catch (err: any) {
-    console.error('[VOICE] getUserMedia failed:', err);
-    toast.error(err.name === 'NotAllowedError'
-     ? "Chưa cấp quyền micro"
-      : "Không thể truy cập microphone");
+    console.error('[VOICE] Failed:', err);
+    toast.error(err.name === 'NotAllowedError' ? "Chưa cấp quyền micro" : "Không thể ghi âm");
   }
 };
+
 const stopRecording = () => {
-  if (mediaRecorderRef.current && recording) {
-    try {
-      if (mediaRecorderRef.current.state!== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-    } catch (e) {
-      console.error('stop error', e);
-    }
-    setRecording(false);
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-      recordingIntervalRef.current = null;
-    }
+  if (mediaRecorderRef.current?.state === 'recording') {
+    mediaRecorderRef.current.stop();
+  }
+  setRecording(false);
+  if (recordingIntervalRef.current) {
+    clearInterval(recordingIntervalRef.current);
+    recordingIntervalRef.current = null;
   }
 };
 
 const sendVoice = async () => {
-  if (!audioBlob ||!user ||!chatId ||!chatData) {
-    if (!chatData) toast.error("Đang tải dữ liệu chat...");
-    return;
-  }
+  if (!audioBlob || !user || !chatId) return;
 
   setUploading(true);
   try {
-    // Lấy đúng ext từ blob
-    const isWebm = audioBlob.type.includes('webm');
-    const ext = isWebm? 'webm' : 'm4a';
-    const contentType = isWebm? 'audio/webm' : 'audio/mp4';
-    
+    const ext = audioBlob.type.includes('webm') ? 'webm' : audioBlob.type.includes('mp4') ? 'm4a' : 'wav';
     const fileName = `voice_${Date.now()}.${ext}`;
     const storageRef = ref(storage, `chat-voice/${chatId}/${fileName}`);
 
-    const metadata = {
-      contentType,
-      cacheControl: 'public, max-age=31536000',
-      customMetadata: {
-        uid: user.uid,
-        duration: String(recordingTime)
-      }
-    };
-
-    await uploadBytes(storageRef, audioBlob, metadata);
+    await uploadBytes(storageRef, audioBlob, {
+      contentType: audioBlob.type,
+      cacheControl: 'public, max-age=31536000'
+    });
+    
     const url = await getDownloadURL(storageRef);
 
     await addDoc(collection(db, "chats", chatId, "messages"), {
       senderId: user.uid,
       voice: url,
-      duration: Math.round(recordingTime),
+      duration: recordingTime,
       type: "voice",
-      mimeType: contentType,
+      mimeType: audioBlob.type,
       createdAt: serverTimestamp(),
       seenBy: [user.uid],
       members: chatData.members,
@@ -565,15 +555,10 @@ const sendVoice = async () => {
 
     setAudioBlob(null);
     setRecordingTime(0);
-    setIsPreviewPlaying(false);
-    toast.success("Đã gửi voice");
+    toast.success("Đã gửi");
   } catch (err: any) {
-    console.error("Voice error:", err);
-    if (err.code === 'storage/unauthorized') {
-      toast.error("Storage chặn ghi - kiểm tra Rules Firebase");
-    } else {
-      toast.error(`Lỗi gửi voice: ${err.code || err.message}`);
-    }
+    console.error(err);
+    toast.error("Lỗi gửi voice");
   } finally {
     setUploading(false);
   }
