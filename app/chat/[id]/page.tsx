@@ -922,29 +922,31 @@ const sendVoice = async () => {
   <div className="flex items-center gap-2.5 w-[210px] py-1">
     <button
       onClick={async (e) => {
-        const wrapper = e.currentTarget.parentElement as HTMLElement;
-        const audio = wrapper.querySelector('audio') as HTMLAudioElement;
-        if (!audio) return;
+  const wrapper = e.currentTarget.parentElement as HTMLElement;
+  const audio = wrapper.querySelector('audio') as HTMLAudioElement;
+  if (!audio) return;
 
-        // dừng tất cả audio khác
-        document.querySelectorAll('audio.voice-audio').forEach(a => {
-          if (a!== audio) { a.pause(); (a as HTMLAudioElement).currentTime = 0; }
-        });
+  // THÊM PAUSE: dừng tất cả audio khác
+  document.querySelectorAll('audio.voice-audio').forEach(a => {
+    const audioEl = a as HTMLAudioElement;
+    if (audioEl !== audio) {
+      audioEl.pause();
+      audioEl.currentTime = 0;
+    }
+  });
 
-        try {
-          if (audio.paused) {
-            await audio.play(); // <-- quan trọng: await để bắt lỗi
-            e.currentTarget.innerHTML = '<svg width="14" height="14" viewBox="0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
-          } else {
-            audio.pause();
-            e.currentTarget.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
-          }
-        } catch (err) {
-          console.error('Play failed:', err);
-          // iOS sẽ vào đây nếu file là webm
-          alert('Không phát được voice. File có thể là.webm (iOS không hỗ trợ).');
-        }
-      }}
+  try {
+    if (audio.paused) {
+      await audio.play();
+      e.currentTarget.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+    } else {
+      audio.pause();
+      e.currentTarget.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
+    }
+  } catch (err) {
+    console.error('Play failed:', err);
+  }
+}}
       className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition active:scale-90 ${isMe? 'bg-white/25 hover:bg-white/35 text-white' : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'}`}
     >
       <Play size={14} fill="currentColor" className="ml-0.5" />
