@@ -434,21 +434,26 @@ const startRecording = async () => {
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
+        autoGainControl: true,
         sampleRate: 44100
       }
     });
 
-    // Ưu tiên: webm > mp4 > wav
-    let mimeType = 'audio/webm';
-    if (!MediaRecorder.isTypeSupported(mimeType)) {
-      mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
-    }
+    // FIX: Ưu tiên MP4 (Safari) > WebM (Android)
+    const mimeTypes = [
+      'audio/mp4',
+      'audio/mp4;codecs=mp4a.40.2',
+      'audio/webm;codecs=opus',
+      'audio/webm',
+    ];
+    const mimeType = mimeTypes.find(t => MediaRecorder.isTypeSupported(t)) || 'audio/webm';
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
 
-    console.log('[VOICE] Using:', mimeType, 'iOS:', /iPhone|iPad/.test(navigator.userAgent));
+    console.log('[VOICE] Using:', mimeType, 'iOS:', isIOS);
 
     const mediaRecorder = new MediaRecorder(stream, {
       mimeType,
-      audioBitsPerSecond: 128000
+      audioBitsPerSecond: isIOS ? 64000 : 128000
     });
 
     mediaRecorderRef.current = mediaRecorder;
@@ -463,14 +468,16 @@ const startRecording = async () => {
       
       if (audioChunksRef.current.length === 0) {
         toast.error("Không ghi được âm thanh");
+        stream.getTracks().forEach(t => t.stop());
         return;
       }
 
       const blob = new Blob(audioChunksRef.current, { type: mimeType });
-      console.log('[VOICE] Blob:', blob.size, 'bytes');
+      console.log('[VOICE] Blob:', blob.size, 'bytes', 'type:', blob.type);
 
-      if (blob.size < 1000) {
-        toast.error("File quá nhỏ, thử ghi lâu hơn");
+      if (blob.size < 2000) {
+        toast.error("File quá nhỏ, thử ghi lâu hơn (giữ 2s+)");
+        stream.getTracks().forEach(t => t.stop());
         return;
       }
 
@@ -478,29 +485,33 @@ const startRecording = async () => {
       const testUrl = URL.createObjectURL(blob);
       const testAudio = new Audio();
       testAudio.src = testUrl;
+      testAudio.crossOrigin = 'anonymous';
       
       testAudio.oncanplay = () => {
         console.log('[VOICE] ✓ Local OK');
         URL.revokeObjectURL(testUrl);
+        setAudioBlob(blob);
       };
+      
       testAudio.onerror = () => {
-        console.error('[VOICE] ✗ Local FAIL');
+        console.error('[VOICE] ✗ Local FAIL – codec không hỗ trợ');
         URL.revokeObjectURL(testUrl);
         toast.error("File ghi lỗi, thử lại");
+        stream.getTracks().forEach(t => t.stop());
       };
       
       testAudio.load();
-      setAudioBlob(blob);
       stream.getTracks().forEach(t => t.stop());
       audioChunksRef.current = [];
     };
 
     mediaRecorder.onerror = (e) => {
-      console.error('[VOICE] Error:', e);
+      console.error('[VOICE] Recorder error:', e);
       toast.error("Lỗi ghi âm");
+      stream.getTracks().forEach(t => t.stop());
     };
 
-    mediaRecorder.start();
+    mediaRecorder.start(100); // timeslice 100ms
     setRecording(true);
     setRecordingTime(0);
 
@@ -510,14 +521,20 @@ const startRecording = async () => {
     }, 1000);
 
   } catch (err: any) {
-    console.error('[VOICE] Failed:', err);
-    toast.error(err.name === 'NotAllowedError' ? "Chưa cấp quyền micro" : "Không thể ghi âm");
+    console.error('[VOICE] getUserMedia failed:', err);
+    toast.error(err.name === 'NotAllowedError' 
+      ? "Chưa cấp quyền micro" 
+      : "Không thể truy cập microphone");
   }
 };
 
 const stopRecording = () => {
   if (mediaRecorderRef.current?.state === 'recording') {
-    mediaRecorderRef.current.stop();
+    try {
+      mediaRecorderRef.current.stop();
+    } catch (e) {
+      console.error('Stop error:', e);
+    }
   }
   setRecording(false);
   if (recordingIntervalRef.current) {
@@ -527,17 +544,27 @@ const stopRecording = () => {
 };
 
 const sendVoice = async () => {
-  if (!audioBlob || !user || !chatId) return;
+  if (!audioBlob || !user || !chatId || !chatData) {
+    if (!chatData) toast.error("Đang tải dữ liệu chat...");
+    return;
+  }
 
   setUploading(true);
   try {
-    const ext = audioBlob.type.includes('webm') ? 'webm' : audioBlob.type.includes('mp4') ? 'm4a' : 'wav';
+    const isMp4 = audioBlob.type.includes('mp4');
+    const ext = isMp4 ? 'm4a' : 'webm';
+    const contentType = isMp4 ? 'audio/mp4' : 'audio/webm';
+    
     const fileName = `voice_${Date.now()}.${ext}`;
     const storageRef = ref(storage, `chat-voice/${chatId}/${fileName}`);
 
     await uploadBytes(storageRef, audioBlob, {
-      contentType: audioBlob.type,
-      cacheControl: 'public, max-age=31536000'
+      contentType,
+      cacheControl: 'public, max-age=31536000',
+      customMetadata: {
+        duration: String(recordingTime),
+        originalType: audioBlob.type
+      }
     });
     
     const url = await getDownloadURL(storageRef);
@@ -547,18 +574,21 @@ const sendVoice = async () => {
       voice: url,
       duration: recordingTime,
       type: "voice",
-      mimeType: audioBlob.type,
+      mimeType: contentType,
       createdAt: serverTimestamp(),
       seenBy: [user.uid],
-members: chatData?.members || [],
+      members: chatData.members,
     });
 
     setAudioBlob(null);
     setRecordingTime(0);
+    setIsPreviewPlaying(false);
     toast.success("Đã gửi");
   } catch (err: any) {
-    console.error(err);
-    toast.error("Lỗi gửi voice");
+    console.error("Voice send error:", err);
+    toast.error(err.code === 'storage/unauthorized' 
+      ? "Lỗi quyền Storage" 
+      : "Lỗi gửi voice");
   } finally {
     setUploading(false);
   }
