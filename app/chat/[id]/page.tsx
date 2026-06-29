@@ -1222,11 +1222,16 @@ const sendVoice = async () => {
 {/* INPUT - 3 trạng thái */}
 <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-zinc-800">
   <div className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-
-    {/* --- 1. PREVIEW VOICE --- */}
     {audioBlob &&!recording? (
+      // 1. PREVIEW VOICE
       <div className="flex items-center gap-2.5">
-        <button onClick={() => { setAudioBlob(null); setIsPreviewPlaying(false); }} className="w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-full active:scale-90">
+        <button
+          onClick={() => {
+            setAudioBlob(null);
+            setIsPreviewPlaying(false);
+          }}
+          className="w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-full active:scale-90"
+        >
           <Trash2 size={20} />
         </button>
 
@@ -1234,8 +1239,13 @@ const sendVoice = async () => {
           onClick={() => {
             const audio = previewAudioRef.current;
             if (!audio) return;
-            if (audio.paused) { audio.play(); setIsPreviewPlaying(true); }
-            else { audio.pause(); setIsPreviewPlaying(false); }
+            if (audio.paused) {
+              audio.play();
+              setIsPreviewPlaying(true);
+            } else {
+              audio.pause();
+              setIsPreviewPlaying(false);
+            }
           }}
           className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center active:scale-90"
         >
@@ -1244,53 +1254,89 @@ const sendVoice = async () => {
 
         <div className="flex-1 flex items-center gap-[2px] h-8 px-2 bg-gray-100 dark:bg-zinc-900 rounded-full overflow-hidden">
           {Array.from({ length: 28 }).map((_, i) => (
-            <div key={i} className={`w-0.5 rounded-full ${isPreviewPlaying? 'bg-blue-500' : 'bg-gray-400 dark:bg-zinc-600'}`} style={{ height: `${6 + Math.random()*16}px` }} />
+            <div
+              key={i}
+              className={`w-0.5 rounded-full ${isPreviewPlaying? 'bg-blue-500' : 'bg-gray-400 dark:bg-zinc-600'}`}
+              style={{ height: `${6 + Math.random() * 16}px` }}
+            />
           ))}
         </div>
 
         <span className="text-xs font-mono w-11 text-center">
-          {String(Math.floor(recordingTime/60)).padStart(2,'0')}:{String(recordingTime%60).padStart(2,'0')}
+          {String(Math.floor(recordingTime / 60)).padStart(2, '0')}:{String(recordingTime % 60).padStart(2, '0')}
         </span>
 
-        <button onClick={sendVoice} disabled={uploading} className="px-4 h-10 bg-blue-600 text-white rounded-full text-sm font-medium active:scale-95 disabled:opacity-50">
+        <button
+          onClick={sendVoice}
+          disabled={uploading}
+          className="px-4 h-10 bg-blue-600 text-white rounded-full text-sm font-medium active:scale-95 disabled:opacity-50"
+        >
           {uploading? <Loader2 size={16} className="animate-spin" /> : 'Gửi'}
         </button>
-        <audio ref={previewAudioRef} src={audioBlob? URL.createObjectURL(audioBlob) : ''} onEnded={() => setIsPreviewPlaying(false)} className="hidden" />
-      </div>
-    ) :
 
-    /* --- 2. ĐANG GHI ÂM --- */
-    recording? (
+        <audio
+          ref={previewAudioRef}
+          src={audioBlob? URL.createObjectURL(audioBlob) : ''}
+          onEnded={() => setIsPreviewPlaying(false)}
+          className="hidden"
+        />
+      </div>
+    ) : recording? (
+      // 2. ĐANG GHI ÂM
       <div className="flex items-center gap-3">
         <div className="flex-1 flex items-center gap-3 h-11 px-4 bg-red-50 dark:bg-red-950/30 rounded-full">
           <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
           <div className="flex-1 flex items-center gap-[2px]">
             {Array.from({ length: 22 }).map((_, i) => (
-              <div key={i} className="w-0.5 h-4 bg-red-500/70 rounded-full animate-pulse" style={{ animationDelay: `${i*50}ms` }} />
+              <div
+                key={i}
+                className="w-0.5 h-4 bg-red-500/70 rounded-full animate-pulse"
+                style={{ animationDelay: `${i * 50}ms` }}
+              />
             ))}
           </div>
           <span className="text-sm font-mono text-red-600">{recordingTime}s</span>
         </div>
-        <button onMouseUp={stopRecording} onTouchEnd={stopRecording} className="w-11 h-11 bg-red-600 text-white rounded-full flex items-center justify-center active:scale-90">
+        <button
+          onMouseUp={stopRecording}
+          onTouchEnd={stopRecording}
+          className="w-11 h-11 bg-red-600 text-white rounded-full flex items-center justify-center active:scale-90"
+        >
           <Square size={18} fill="white" />
         </button>
       </div>
-    ) :
-
-    /* --- 3. NHẬP BÌNH THƯỜNG --- */
-    (
+    ) : (
+      // 3. NHẬP BÌNH THƯỜNG
       <div className="flex items-end gap-2">
-        <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={e => e.target.files?.[0] && sendImage(e.target.files[0])} />
-        <button onClick={() => imageInputRef.current?.click()} disabled={isBlocked || isDeleted} className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked||isDeleted?'opacity-50':''}`}>
+        <input
+          type="file"
+          hidden
+          ref={imageInputRef}
+          accept="image/*"
+          onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])}
+        />
+        <button
+          onClick={() => imageInputRef.current?.click()}
+          disabled={isBlocked || isDeleted}
+          className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
+        >
           <ImageIcon size={22} className="text-gray-600 dark:text-zinc-400" />
         </button>
 
-        <input type="file" hidden ref={fileInputRef} onChange={e => e.target.files?.[0] && sendFile(e.target.files[0])} />
-        <button onClick={() => fileInputRef.current?.click()} disabled={isBlocked || isDeleted} className={`w-10 h-10 hidden sm:flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked||isDeleted?'opacity-50':''}`}>
+        <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isBlocked || isDeleted}
+          className={`w-10 h-10 hidden sm:flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
+        >
           <Paperclip size={20} className="text-gray-600 dark:text-zinc-400" />
         </button>
 
-        <button onClick={sendLocation} disabled={isBlocked || isDeleted} className={`w-10 h-10 hidden sm:flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked||isDeleted?'opacity-50':''}`}>
+        <button
+          onClick={sendLocation}
+          disabled={isBlocked || isDeleted}
+          className={`w-10 h-10 hidden sm:flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
+        >
           <MapPin size={20} className="text-gray-600 dark:text-zinc-400" />
         </button>
 
@@ -1298,16 +1344,28 @@ const sendVoice = async () => {
           <input
             ref={inputRef}
             value={text}
-            onChange={e => { setText(e.target.value); handleTyping(); }}
-            onKeyDown={e => { if (e.key==='Enter' &&!e.shiftKey) { e.preventDefault(); if (!isBlocked &&!isDeleted && text.trim()) sendMessage(); }}}
+            onChange={(e) => {
+              setText(e.target.value);
+              handleTyping();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' &&!e.shiftKey) {
+                e.preventDefault();
+                if (!isBlocked &&!isDeleted && text.trim()) sendMessage();
+              }
+            }}
             disabled={isBlocked || isDeleted}
-            placeholder={isBlocked? "Bạn không thể nhắn tin" : isDeleted? "Đã xóa cuộc trò chuyện" : "Nhắn tin..."}
+            placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa cuộc trò chuyện' : 'Nhắn tin...'}
             className="w-full px-4 py-2.5 bg-gray-100 dark:bg-zinc-900 rounded-full outline-none focus:ring-2 focus:ring-blue-500/20 text-[15px]"
           />
         </div>
 
         {text.trim()? (
-          <button onClick={sendMessage} disabled={sending || isBlocked || isDeleted} className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-50">
+          <button
+            onClick={sendMessage}
+            disabled={sending || isBlocked || isDeleted}
+            className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-50"
+          >
             {sending? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
           </button>
         ) : (
@@ -1326,5 +1384,3 @@ const sendVoice = async () => {
     )}
   </div>
 </div>
-  );
-}
