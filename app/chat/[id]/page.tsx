@@ -515,7 +515,7 @@ useEffect(() => {
     toast.error("Không thể nhắn tin");
     return;
   }
-  if (!user || !chatId || !friendId || !chatData) {
+  if (!user ||!chatId ||!friendId ||!chatData) {
     if (!chatData) toast.error("Đang tải dữ liệu chat...");
     return;
   }
@@ -531,7 +531,7 @@ useEffect(() => {
     async (pos) => {
       const { latitude, longitude, accuracy } = pos.coords;
       try {
-        // Reverse geocode miễn phí (OSM)
+        // Reverse geocode OSM
         let address = '';
         try {
           const res = await fetch(
@@ -539,18 +539,19 @@ useEffect(() => {
             { headers: { 'Accept-Language': 'vi' } }
           );
           const data = await res.json();
-          // Lấy địa chỉ ngắn gọn
-          address = data.address?.road 
-            ? `${data.address.road}, ${data.address.city || data.address.town || data.address.village || ''}`
+          address = data.address?.road
+           ? `${data.address.road}, ${data.address.city || data.address.town || data.address.village || ''}`
             : data.display_name?.split(',').slice(0,2).join(', ');
         } catch {}
 
         await addDoc(collection(db, "chats", chatId, "messages"), {
           senderId: user.uid,
-          senderName: user.displayName || '',
+          senderName: user.displayName || user.email?.split('@')[0] || 'Bạn',
           type: "location",
+          text: '', // <-- thêm để tránh lỗi text undefined
           lat: latitude,
           lng: longitude,
+          location: { lat: latitude, lng: longitude }, // <-- thêm để tương thích UI cũ
           address: address || 'Vị trí đã chia sẻ',
           accuracy,
           createdAt: serverTimestamp(),
@@ -558,7 +559,6 @@ useEffect(() => {
           members: chatData.members,
         });
 
-        // Cập nhật chat preview
         await updateDoc(doc(db, "chats", chatId), {
           lastMessage: '📍 Vị trí',
           lastMessageAt: serverTimestamp(),
@@ -583,7 +583,6 @@ useEffect(() => {
     { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
   );
 };
-
   const toggleReaction = async (msgId: string, emoji: string) => {
     if (!user ||!chatId) return;
 
