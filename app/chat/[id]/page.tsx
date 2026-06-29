@@ -438,27 +438,32 @@ const startRecording = async () => {
       } 
     });
     
-    // 1. ƯU TIÊN MP4 - log ra để kiểm tra trên iPhone
-    const canMp4 = MediaRecorder.isTypeSupported('audio/mp4');
-    const canWebmOpus = MediaRecorder.isTypeSupported('audio/webm;codecs=opus');
+    // FIX: thử từng codec iOS ăn được
+    const mimeOpts = [
+      'audio/mp4;codecs=mp4a.40.2', // <— iPhone cần cái này
+      'audio/mp4',
+      'audio/aac',
+      'audio/webm;codecs=opus',
+      'audio/webm'
+    ];
+    const mimeType = mimeOpts.find(t => MediaRecorder.isTypeSupported(t)) || '';
     
-    const mimeType = canMp4
-      ? 'audio/mp4'
-      : canWebmOpus
-      ? 'audio/webm;codecs=opus'
-      : 'audio/webm';
+    if (!mimeType) {
+      toast.error("Trình duyệt không hỗ trợ ghi âm");
+      stream.getTracks().forEach(t => t.stop());
+      return;
+    }
 
     console.log('[VOICE] Device:', navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android');
     console.log('[VOICE] Selected mime:', mimeType);
 
     const mediaRecorder = new MediaRecorder(stream, { 
       mimeType,
-      audioBitsPerSecond: 64000 // giảm size, đủ cho voice
+      audioBitsPerSecond: 64000
     });
     
     mediaRecorderRef.current = mediaRecorder;
     audioChunksRef.current = [];
-    // lưu mime để onstop dùng
     (mediaRecorderRef.current as any)._mime = mimeType;
 
     mediaRecorder.ondataavailable = (e) => {
@@ -467,7 +472,6 @@ const startRecording = async () => {
 
     mediaRecorder.onstop = () => {
       const finalMime = (mediaRecorderRef.current as any)._mime || mimeType;
-      // QUAN TRỌNG: dùng đúng mime MediaRecorder đã ghi
       const blob = new Blob(audioChunksRef.current, { type: finalMime });
       
       console.log('[VOICE] Blob created:', blob.type, Math.round(blob.size/1024)+'KB');
@@ -502,7 +506,7 @@ const startRecording = async () => {
 const stopRecording = () => {
   if (mediaRecorderRef.current && recording) {
     try {
-      if (mediaRecorderRef.current.state !== 'inactive') {
+      if (mediaRecorderRef.current.state!== 'inactive') {
         mediaRecorderRef.current.stop();
       }
     } catch (e) {
@@ -517,36 +521,36 @@ const stopRecording = () => {
 };
 
 const sendVoice = async () => {
-  if (!audioBlob || !user || !chatId || !chatData) {
+  if (!audioBlob ||!user ||!chatId ||!chatData) {
     if (!chatData) toast.error("Đang tải dữ liệu chat...");
     return;
   }
-  
+
   setUploading(true);
   try {
-    // 1. ƯU TIÊN mp4/m4a cho iOS – webm sẽ không play được
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    let mimeType = audioBlob.type || 'audio/webm';
-    
-    // Nếu đang ghi bằng webm, đổi đuôi cho đúng (không transcode, nhưng báo đúng type)
-    const ext = mimeType.includes('mp4') || mimeType.includes('m4a') || mimeType.includes('aac')
-      ? 'm4a'
-      : mimeType.includes('webm')
-      ? 'webm'
+    const fullMime = audioBlob.type || 'audio/webm';
+    const cleanMime = fullMime.split(';')[0]; // 'audio/mp4' không kèm codecs
+
+    const ext = cleanMime.includes('mp4') || cleanMime.includes('aac')
+     ? 'm4a'
+      : cleanMime.includes('webm')
+     ? 'webm'
       : 'ogg';
 
-    // Cảnh báo sớm nếu iOS + webm
     if (isIOS && ext === 'webm') {
-      toast.error("Voice webm không chạy trên iPhone - cần ghi lại");
+      toast.error("File webm không chạy trên iPhone - hãy ghi lại");
+      setUploading(false);
+      return;
     }
 
     const fileName = `voice_${Date.now()}.${ext}`;
     const storageRef = ref(storage, `chat-voice/${chatId}/${fileName}`);
 
     const metadata = {
-      contentType: mimeType,
+      contentType: cleanMime, // <— QUAN TRỌNG: không có ;codecs
       cacheControl: 'public, max-age=31536000',
-      customMetadata: { 
+      customMetadata: {
         uid: user.uid,
         duration: String(recordingTime)
       }
@@ -558,9 +562,9 @@ const sendVoice = async () => {
     await addDoc(collection(db, "chats", chatId, "messages"), {
       senderId: user.uid,
       voice: url,
-      duration: Math.round(recordingTime), // làm tròn
+      duration: Math.round(recordingTime),
       type: "voice",
-      mimeType, // <-- lưu để client biết
+      mimeType: cleanMime,
       createdAt: serverTimestamp(),
       seenBy: [user.uid],
       members: chatData.members,
