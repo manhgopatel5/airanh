@@ -918,35 +918,35 @@ const sendVoice = async () => {
                             <span className="text-sm truncate">{m.fileName}</span>
                           </a>
                         )}
-           {m.voice && (
+      {m.voice && (
   <div className="flex items-center gap-2.5 w-[210px] py-1">
     <button
       onClick={async (e) => {
-  const wrapper = e.currentTarget.parentElement as HTMLElement;
-  const audio = wrapper.querySelector('audio') as HTMLAudioElement;
-  if (!audio) return;
+        const btn = e.currentTarget as HTMLButtonElement;
+        const wrapper = btn.parentElement as HTMLElement;
+        const audio = wrapper.querySelector('audio.voice-audio') as HTMLAudioElement;
+        if (!audio?.src) return;
 
-  // THÊM PAUSE: dừng tất cả audio khác
-  document.querySelectorAll('audio.voice-audio').forEach(a => {
-    const audioEl = a as HTMLAudioElement;
-    if (audioEl !== audio) {
-      audioEl.pause();
-      audioEl.currentTime = 0;
-    }
-  });
+        // Pause tất cả audio khác
+        document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach((a) => {
+          if (a!== audio) {
+            a.pause();
+            a.currentTime = 0;
+          }
+        });
 
-  try {
-    if (audio.paused) {
-      await audio.play();
-      e.currentTarget.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
-    } else {
-      audio.pause();
-      e.currentTarget.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
-    }
-  } catch (err) {
-    console.error('Play failed:', err);
-  }
-}}
+        try {
+          if (audio.paused) {
+            await audio.play();
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+          } else {
+            audio.pause();
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
+          }
+        } catch (err) {
+          console.error('Play failed:', err);
+        }
+      }}
       className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition active:scale-90 ${isMe? 'bg-white/25 hover:bg-white/35 text-white' : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'}`}
     >
       <Play size={14} fill="currentColor" className="ml-0.5" />
@@ -955,40 +955,47 @@ const sendVoice = async () => {
     <div className="voice-player flex-1 relative">
       <audio
         src={m.voice}
-        className="voice-audio hidden"
+        className="voice-audio"
         preload="metadata"
-        playsInline // <-- thêm cho iOS
+        playsInline
+        style={{ display: 'none' }}
         onTimeUpdate={(e) => {
           const audio = e.target as HTMLAudioElement;
-          const progress = (audio.currentTime / audio.duration) * 100 || 0;
-          const bar = (e.target as HTMLElement).parentElement?.querySelector('.voice-progress') as HTMLElement;
-          const time = (e.target as HTMLElement).parentElement?.querySelector('.voice-time') as HTMLElement;
+          const progress = audio.duration? (audio.currentTime / audio.duration) * 100 : 0;
+          const bar = (e.currentTarget.parentElement?.querySelector('.voice-progress')) as HTMLElement;
+          const timeEl = (e.currentTarget.closest('.flex')?.querySelector('.voice-time')) as HTMLElement;
           if (bar) bar.style.width = `${progress}%`;
-          if (time && audio.duration) {
+          if (timeEl && audio.duration) {
             const remain = Math.floor(audio.duration - audio.currentTime);
-            time.textContent = `${Math.floor(remain/60)}:${String(remain%60).padStart(2,'0')}`;
+            timeEl.textContent = `${Math.floor(remain/60)}:${String(remain%60).padStart(2,'0')}`;
           }
         }}
         onLoadedMetadata={(e) => {
           const audio = e.target as HTMLAudioElement;
-          const time = (e.target as HTMLElement).parentElement?.querySelector('.voice-time') as HTMLElement;
-          if (time && audio.duration) {
-            time.textContent = `${Math.floor(audio.duration/60)}:${String(Math.floor(audio.duration%60)).padStart(2,'0')}`;
+          const timeEl = (e.currentTarget.closest('.flex')?.querySelector('.voice-time')) as HTMLElement;
+          if (timeEl && audio.duration) {
+            timeEl.textContent = `${Math.floor(audio.duration/60)}:${String(Math.floor(audio.duration%60)).padStart(2,'0')}`;
           }
         }}
         onEnded={(e) => {
-          const container = (e.target as HTMLElement).closest('.voice-player') as HTMLElement;
-          const btn = container.previousElementSibling as HTMLButtonElement;
-          const bar = container.querySelector('.voice-progress') as HTMLElement;
-          if (btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
+          const audio = e.target as HTMLAudioElement;
+          const wrapper = audio.closest('.flex') as HTMLElement;
+          const btn = wrapper?.querySelector('button') as HTMLButtonElement;
+          const bar = wrapper?.querySelector('.voice-progress') as HTMLElement;
+          if (btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
           if (bar) bar.style.width = '0%';
+          audio.currentTime = 0;
         }}
         onError={(e) => console.error('Audio error:', (e.target as HTMLAudioElement).error)}
       />
-      {/* waveform giữ nguyên */}
+      {/* waveform */}
       <div className="flex items-end gap-[1.8px] h-6 absolute inset-0 pointer-events-none">
         {Array.from({ length: 22 }).map((_, i) => (
-          <div key={i} className={`w-[2px] rounded-full transition-all ${isMe? 'bg-white/40' : 'bg-gray-400/50 dark:bg-zinc-500/60'}`} style={{ height: `${4 + Math.sin(i * 0.8) * 3 + Math.random() * 5 + 6}px` }} />
+          <div
+            key={i}
+            className={`w-[2px] rounded-full transition-all ${isMe? 'bg-white/40' : 'bg-gray-400/50 dark:bg-zinc-500/60'}`}
+            style={{ height: `${4 + Math.sin(i * 0.8) * 3 + Math.random() * 5 + 6}px` }}
+          />
         ))}
       </div>
       <div className="relative h-6 flex items-center">
