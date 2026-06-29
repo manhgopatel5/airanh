@@ -733,19 +733,25 @@ useEffect(() => {
       </div>
     </div>
 
-   {/* Right: actions */}
-<div className="flex items-center gap-1.5">
+ {/* Right: actions */}
+<div className="flex items-center gap-2">
   <button
     onClick={() => setShowSettings(true)}
-    className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg"
+    className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-90 shadow-md shadow-blue-500/25 transition"
   >
-    <Settings size={20} className="text-white" strokeWidth={2.25} />
+    <Settings size={19} className="text-white" strokeWidth={2.3} />
   </button>
-  <button className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
-    <Phone size={20} className="text-white" strokeWidth={2.25} />
+  <button 
+    onClick={() => toast.info('Gọi thoại')}
+    className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-90 shadow-md shadow-blue-500/25 transition"
+  >
+    <Phone size={19} className="text-white" strokeWidth={2.3} />
   </button>
-  <button className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
-    <Video size={20} className="text-white" strokeWidth={2.25} />
+  <button 
+    onClick={() => toast.info('Gọi video')}
+    className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-90 shadow-md shadow-blue-500/25 transition"
+  >
+    <Video size={19} className="text-white" strokeWidth={2.3} />
   </button>
 </div>
   </div>
