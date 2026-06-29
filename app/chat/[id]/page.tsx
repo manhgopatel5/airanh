@@ -743,7 +743,7 @@ useEffect(() => {
 <div
   className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-[100px] space-y-0.5 relative z-0"
   style={{
-    backgroundImage: chatData?.background? `url(${chatData.background})` : undefined,
+backgroundImage: (chatData as any)?.background? `url(${(chatData as any).background})` : undefined,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundAttachment: 'fixed'
