@@ -752,27 +752,24 @@ useEffect(() => {
 
   return (
 <div className="fixed inset-0 flex flex-col bg-black">
-{/* NỀN ẢNH - KHÔNG BỂ MÀU */}
+{/* NỀN ẢNH CHUẨN RETINA - KHÔNG MỜ */}
 {(chatData as any)?.background ? (
   <>
-    {/* 1 lớp duy nhất, đẩy xuống -z-10 */}
-    <div
-      className="fixed inset-0 -z-10"
-      style={{
-        backgroundImage: `url(${(chatData as any).background}${(chatData as any).background.includes('?') ? '&' : '?'}q=80&auto=format&fit=crop&w=1280)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        // bỏ transform: translateZ(0) - chính nó gây banding trên iOS
-      }}
+    <img
+      src={`${(chatData as any).background}?w=1600&q=80&auto=format&fit=crop`}
+      srcSet={`
+        ${(chatData as any).background}?w=1600&q=80&auto=format&fit=crop 1x,
+        ${(chatData as any).background}?w=2400&q=90&auto=format&fit=crop 2x,
+        ${(chatData as any).background}?w=3200&q=90&auto=format&fit=crop 3x
+      `}
+      className="fixed inset-0 -z-10 w-full h-full object-cover select-none pointer-events-none"
+      alt=""
+      draggable={false}
     />
-    {/* overlay siêu nhẹ, dùng gradient thay vì đen đặc */}
-    <div className="fixed inset-0 -z-10 pointer-events-none
-      bg-gradient-to-b from-transparent via-black/[0.03] to-black/[0.06]
-      dark:from-black/10 dark:via-black/10 dark:to-black/20" />
+    {/* overlay cực mỏng thôi */}
+    <div className="fixed inset-0 -z-10 bg-black/[0.02] dark:bg-black/15 pointer-events-none" />
   </>
 ) : (
-  /* Nền mặc định */
   <div className="fixed inset-0 -z-10 bg-white dark:bg-zinc-950" />
 )}
 
