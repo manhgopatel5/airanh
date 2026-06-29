@@ -777,7 +777,7 @@ useEffect(() => {
 )}
 
 <div
-className="flex-1 min-h-0 overflow-y-auto px-0 pt-2 pb-2 space-y-0.5 relative z-10 bg-transparent"
+  className="flex-1 min-h-0 overflow-y-auto px-0 pt-2 pb-2 space-y-0.5 relative z-10 bg-transparent"
   onTouchStart={(e) => {
     if (e.target === e.currentTarget) {
       const timer = setTimeout(() => setShowBgPicker(true), 800);
@@ -821,106 +821,74 @@ className="flex-1 min-h-0 overflow-y-auto px-0 pt-2 pb-2 space-y-0.5 relative z-
         )}
 
         <div 
-          className={`flex items-end gap-2 group px-3 ${isMe? "justify-end" : "justify-start"} ${isFirstInGroup? "mt-1" : ""}`}
+          className={`flex items-end gap-1 group ${isMe? "justify-end pl-12 pr-1" : "justify-start pr-12 pl-1"} ${isFirstInGroup? "mt-1.5" : "mt-0.5"}`}
           onTouchStart={() => {
-    const timer = setTimeout(() => setLongPressMsg(m), 500);
-    setPressTimer(timer);
-  }}
-  onTouchEnd={() => pressTimer && clearTimeout(pressTimer)}
-  onMouseDown={() => {
-    const timer = setTimeout(() => setLongPressMsg(m), 500);
-    setPressTimer(timer);
-  }}
-  onMouseUp={() => pressTimer && clearTimeout(pressTimer)}
-  onMouseLeave={() => pressTimer && clearTimeout(pressTimer)}
-  onContextMenu={(e) => {
-    e.preventDefault();
-    setLongPressMsg(m);
-  }}
->
-                {!isMe && (
-                  <div className="w-7 flex-shrink-0">
-                    {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
-                  </div>
-                )}
-                <div className={`max-w-[75%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
-                  {m.replyTo && (
-                    <button
-                      onClick={() => scrollToMessage(m.replyTo!.id)}
-                      className={`px-3 py-1.5 mb-1 rounded-2xl text-xs ${
-                        isMe? "bg-blue-400/30 text-white/80" : "bg-gray-200/60 dark:bg-zinc-700/60 text-gray-600 dark:text-zinc-300"
-                      }`}
-                    >
-                      <p className="font-bold text-xs">{m.replyTo.senderName}</p>
-                      <p className="truncate">{m.replyTo.text}</p>
-                    </button>
-                  )}
+            const timer = setTimeout(() => setLongPressMsg(m), 500);
+            setPressTimer(timer);
+          }}
+          onTouchEnd={() => pressTimer && clearTimeout(pressTimer)}
+          onMouseDown={() => {
+            const timer = setTimeout(() => setLongPressMsg(m), 500);
+            setPressTimer(timer);
+          }}
+          onMouseUp={() => pressTimer && clearTimeout(pressTimer)}
+          onMouseLeave={() => pressTimer && clearTimeout(pressTimer)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setLongPressMsg(m);
+          }}
+        >
+          {!isMe && (
+            <div className="w-7 flex-shrink-0">
+              {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
+            </div>
+          )}
+          <div className={`max-w-[75%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
+            {m.replyTo && (
+              <button
+                onClick={() => scrollToMessage(m.replyTo!.id)}
+                className={`px-3 py-1.5 mb-1 rounded-2xl text-xs ${
+                  isMe? "bg-blue-400/30 text-white/80" : "bg-gray-200/60 dark:bg-zinc-700/60 text-gray-600 dark:text-zinc-300"
+                }`}
+              >
+                <p className="font-bold text-xs">{m.replyTo.senderName}</p>
+                <p className="truncate">{m.replyTo.text}</p>
+              </button>
+            )}
 
-                  <div className="relative">
-                    {m.type === "task_share"? (
-                      <div
-                        onClick={() => router.push(`/task/${m.taskId}`)}
-                        className={`px-4 py-3 shadow-sm cursor-pointer active:scale-95 transition ${
-                          isMe
-                           ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
-                                isFirstInGroup && isLastInGroup
-                                 ? "rounded-3xl"
-                                  : isFirstInGroup
-                                 ? "rounded-3xl rounded-br-lg"
-                                  : isLastInGroup
-                                 ? "rounded-3xl rounded-tr-lg"
-                                  : "rounded-r-lg rounded-l-3xl"
-                              }`
-                            : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-2 border-blue-200 dark:border-blue-900 ${
-                                isFirstInGroup && isLastInGroup
-                                 ? "rounded-3xl"
-                                  : isFirstInGroup
-                                 ? "rounded-3xl rounded-bl-lg"
-                                  : isLastInGroup
-                                 ? "rounded-3xl rounded-tl-lg"
-                                  : "rounded-l-lg rounded-r-3xl"
-                              }`
-                        }`}
-                      >
-                        <p className="text-xs font-bold mb-1 opacity-80">
-                          📋 Đã chia sẻ {m.taskPrice && m.taskPrice > 0? 'công việc' : 'kế hoạch'}
-                        </p>
-                        <p className="font-semibold leading-snug">{m.taskTitle}</p>
-                        <p className={`text-sm font-bold mt-1 ${isMe? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>
-                          {m.taskPrice && m.taskPrice > 0? `${m.taskPrice.toLocaleString()}đ` : 'Miễn phí'}
-                        </p>
-                        <p className={`text-xs mt-2 opacity-70`}>
-                          Nhấn để xem chi tiết →
-                        </p>
-                      </div>
-                    ) : (
-<div
-  className={`px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer ${
-                          isMe
-                           ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
-                                isFirstInGroup && isLastInGroup
-                                 ? "rounded-3xl"
-                                  : isFirstInGroup
-                                 ? "rounded-3xl rounded-br-lg"
-                                  : isLastInGroup
-                                 ? "rounded-3xl rounded-tr-lg"
-                                  : "rounded-r-lg rounded-l-3xl"
-                              }`
-                            : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white ${
-                                isFirstInGroup && isLastInGroup
-                                 ? "rounded-3xl"
-                                  : isFirstInGroup
-                                 ? "rounded-3xl rounded-bl-lg"
-                                  : isLastInGroup
-                                 ? "rounded-3xl rounded-tl-lg"
-                                  : "rounded-l-lg rounded-r-3xl"
-                              }`
-                        }`}
-                        onContextMenu={(e) => {
-                          e.preventDefault();
-                          setShowEmojiPicker(m.id);
-                        }}
-                      >
+            <div className="relative">
+              {m.type === "task_share"? (
+                <div
+                  onClick={() => router.push(`/task/${m.taskId}`)}
+                  className={`px-4 py-3 shadow-sm cursor-pointer active:scale-95 transition rounded-2xl ${
+                    isMe
+                      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+                      : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border border-gray-200 dark:border-zinc-700"
+                  }`}
+                >
+                  <p className="text-xs font-bold mb-1 opacity-80">
+                    📋 Đã chia sẻ {m.taskPrice && m.taskPrice > 0? 'công việc' : 'kế hoạch'}
+                  </p>
+                  <p className="font-semibold leading-snug">{m.taskTitle}</p>
+                  <p className={`text-sm font-bold mt-1 ${isMe? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>
+                    {m.taskPrice && m.taskPrice > 0? `${m.taskPrice.toLocaleString()}đ` : 'Miễn phí'}
+                  </p>
+                  <p className={`text-xs mt-2 opacity-70`}>
+                    Nhấn để xem chi tiết →
+                  </p>
+                </div>
+              ) : (
+                <div
+                  className={`px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer rounded-2xl ${
+                    isMe
+                      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+                      : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                  }`}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setShowEmojiPicker(m.id);
+                  }}
+                >
                         {m.image && <img src={m.image} className="rounded-2xl max-w-full mb-1" alt="sent" />}
                         {m.file && (
                           <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
