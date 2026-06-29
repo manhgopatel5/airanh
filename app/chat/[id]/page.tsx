@@ -121,8 +121,8 @@ const handlePinMessage = async (msg: any) => {
   if (!chatId ||!msg?.id) return;
 
   try {
-    // Nếu đã ghim tin này rồi thì bỏ ghim
-    const isAlreadyPinned = chatData?.pinnedMessage?.id === msg.id;
+    const pinned = (chatData as any)?.pinnedMessage;
+    const isAlreadyPinned = pinned && typeof pinned === 'object' && pinned.id === msg.id;
 
     if (isAlreadyPinned) {
       await updateDoc(doc(db, "chats", chatId), {
@@ -140,7 +140,7 @@ const handlePinMessage = async (msg: any) => {
           sender: msg.senderId,
           senderName: msg.senderName || currentUser?.displayName || 'Bạn',
           by: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Bạn',
-          createdAt: msg.createdAt || serverTimestamp(),
+          createdAt: msg.createdAt || null,
           pinnedAt: serverTimestamp()
         }
       });
@@ -148,8 +148,6 @@ const handlePinMessage = async (msg: any) => {
     }
 
     setLongPressMsg(null);
-
-    // Rung nhẹ
     if (navigator.vibrate) navigator.vibrate(10);
 
   } catch (error) {
