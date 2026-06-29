@@ -1008,6 +1008,6 @@ export default function ChatDetailPage() {
       </button>
     </div>
   </div>
-</div>
+
   );
 }
