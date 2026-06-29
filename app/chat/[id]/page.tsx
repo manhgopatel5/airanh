@@ -37,8 +37,9 @@ type Reaction = {
 
 type Message = {
   id: string;
-  text: string;
+  text?: string; // <-- sửa: cho phép rỗng với location
   senderId: string;
+  senderName?: string; // <-- thêm
   createdAt: Timestamp | null;
   seenBy?: string[];
   replyTo?: {
@@ -49,8 +50,17 @@ type Message = {
   image?: string;
   file?: string;
   fileName?: string;
+  
+  // location cũ (giữ để tương thích)
   location?: { lat: number; lng: number };
- type: "text" | "image" | "file" | "location" | "task_share";
+  
+  // location mới (cho UI map đẹp)
+  lat?: number;
+  lng?: number;
+  address?: string;
+  accuracy?: number;
+
+  type: "text" | "image" | "file" | "location" | "task_share";
   reactions?: Reaction[];
   edited?: boolean;
   editedAt?: Timestamp;
