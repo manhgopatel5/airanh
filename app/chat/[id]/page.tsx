@@ -655,44 +655,98 @@ useEffect(() => {
   
 
 
+// --- SEARCH STATE ---
 const [currentResultIndex, setCurrentResultIndex] = useState(0);
 
-const filteredMessages = useMemo(() =>
-  messages.filter(m => m.text?.toLowerCase().includes(searchQuery.toLowerCase())),
-  [searchQuery, messages]
-);
+// Lọc đầy đủ: text, file, địa chỉ, vị trí
+const filteredMessages = useMemo(() => {
+  const q = searchQuery.trim().toLowerCase();
+  if (!q) return [];
 
-const goToNextResult = () => {
-  if (filteredMessages.length === 0) return;
+  return messages.filter(m =>
+    m.text?.toLowerCase().includes(q) ||
+    m.fileName?.toLowerCase().includes(q) ||
+    m.address?.toLowerCase().includes(q) ||
+    (m.type === 'location' && ('vị trí location map').includes(q))
+  );
+}, [searchQuery, messages]);
+
+// Reset về 0 mỗi khi gõ mới
+useEffect(() => {
+  setCurrentResultIndex(0);
+}, [searchQuery]);
+
+// Hàm scroll + highlight chuẩn
+const scrollToMessage = useCallback((msgId: string) => {
+  const el = document.getElementById(`msg-${msgId}`);
+  if (!el) return;
+
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // highlight đẹp 1.5s
+  el.classList.add('!ring-2', '!ring-[#0A84FF]', '!ring-offset-2', '!ring-offset-[#0a0a0a]', 'transition-all', 'duration-300');
+  setTimeout(() => {
+    el.classList.remove('!ring-2', '!ring-[#0A84FF]', '!ring-offset-2', '!ring-offset-[#0a0a0a]');
+  }, 1500);
+}, []);
+
+const goToNextResult = useCallback(() => {
+  if (!filteredMessages.length) return;
+
   const nextIndex = (currentResultIndex + 1) % filteredMessages.length;
   setCurrentResultIndex(nextIndex);
-  const nextId = filteredMessages[nextIndex]?.id;
-  if (nextId) {
-    document.getElementById(nextId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-};
 
-const goToPrevResult = () => {
-  if (filteredMessages.length === 0) return;
+  const nextMsg = filteredMessages[nextIndex];
+  if (nextMsg?.id) {
+    // đóng sheet nếu đang mở để thấy tin nhắn
+    if (showSearchSheet) setShowSearchSheet(false);
+    setTimeout(() => scrollToMessage(nextMsg.id), 100);
+  }
+}, [filteredMessages, currentResultIndex, showSearchSheet, scrollToMessage]);
+
+const goToPrevResult = useCallback(() => {
+  if (!filteredMessages.length) return;
+
   const prevIndex = (currentResultIndex - 1 + filteredMessages.length) % filteredMessages.length;
   setCurrentResultIndex(prevIndex);
-  const prevId = filteredMessages[prevIndex]?.id;
-  if (prevId) {
-    document.getElementById(prevId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-};
 
-// Phím tắt Cmd+K
+  const prevMsg = filteredMessages[prevIndex];
+  if (prevMsg?.id) {
+    if (showSearchSheet) setShowSearchSheet(false);
+    setTimeout(() => scrollToMessage(prevMsg.id), 100);
+  }
+}, [filteredMessages, currentResultIndex, showSearchSheet, scrollToMessage]);
+
+// Phím tắt Cmd+K + điều hướng
 useEffect(() => {
   const handleKey = (e: KeyboardEvent) => {
+    // Cmd+K / Ctrl+K mở search
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       setShowSearchSheet(true);
+      return;
+    }
+
+    // Chỉ hoạt động khi có kết quả
+    if (!searchQuery ||!filteredMessages.length) return;
+
+    if (e.key === 'Enter' &&!e.shiftKey) {
+      e.preventDefault();
+      goToNextResult();
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      goToNextResult();
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      goToPrevResult();
     }
   };
+
   window.addEventListener('keydown', handleKey);
   return () => window.removeEventListener('keydown', handleKey);
-}, []);
+}, [searchQuery, filteredMessages.length, goToNextResult, goToPrevResult]);
 
   const getSeenAvatars = (msg: Message) => {
     if (!chatData || msg.senderId!== user?.uid) return [];
@@ -776,93 +830,148 @@ useEffect(() => {
 
   <Toaster richColors position="top-center" />
 {showSearchSheet && (
-  <div
-    className="fixed inset-0 z-[100] flex items-end justify-center"
-    onClick={() => setShowSearchSheet(false)}
-  >
-    {/* nền mờ */}
-    <div className="absolute inset-0 bg-black/70 backdrop-blur-2xl" />
+  <div className="fixed inset-0 z-[100]" onClick={() => setShowSearchSheet(false)}>
+    {/* Backdrop */}
+    <div className="absolute inset-0 bg-black/80 backdrop-blur-2xl opacity-0 animate-in fade-in duration-300 fill-mode-forwards" />
 
-    {/* SHEET */}
+    {/* Sheet */}
     <div
       onClick={(e) => e.stopPropagation()}
-      className="relative w-full max-w-[560px] bg-[#0a0a0a] rounded-t- border-t border-white/10 shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300"
-      style={{
-        maxHeight: 'calc(85dvh)', // dùng dvh tránh tràn trên iOS
-        paddingBottom: 'env(safe-area-inset-bottom)'
-      }}
+      className="absolute bottom-0 inset-x-0 mx-auto w-full max-w-[560px] bg-[#0B0B0F]/95 backdrop-blur-3xl rounded-t-[32px] border-t border-white/10 shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.8)] flex flex-col animate-in slide-in-from-bottom duration-400"
+      style={{ maxHeight: '88dvh', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
     >
-      {/* Handle bar */}
-      <div className="w-10 h-1 bg-zinc-700 rounded-full mx-auto mt-3 mb-2 shrink-0" />
-
-      {/* Header search - cố định */}
-      <div className="px-4 pb-3 flex items-center gap-3 shrink-0 border-b border-white/5">
-        <div className="flex-1 relative">
-          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-          <input
-            autoFocus
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm kiếm"
-            className="w-full h-11 pl-10 pr-4 bg-zinc-800/80 rounded-xl text-white placeholder-zinc-500 outline-none focus:ring-2 focus:ring-[#4F7DFF]/50 border border-white/5"
-          />
-        </div>
-        <button
-          onClick={() => { setShowSearchSheet(false); setSearchQuery(''); }}
-          className="text-[#4F7DFF] font-medium active:opacity-70 shrink-0"
-        >
-          Hủy
-        </button>
+      {/* Drag handle */}
+      <div className="pt-3 pb-2 flex justify-center shrink-0">
+        <div className="w-10 h-1.5 bg-white/20 rounded-full" />
       </div>
 
-      {/* Kết quả - phần này mới là scroll */}
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 pt-2 pb-4">
-        {searchQuery? (
-          messages
-           .filter(m =>
-              m.text?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              m.fileName?.toLowerCase().includes(searchQuery.toLowerCase())
-            )
-           .map(m => (
+      {/* Search Bar */}
+      <div className="px-4 pb-3 shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex-1 group">
+            <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-[#0A84FF] transition-colors" />
+            <input
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentResultIndex(0); }}
+              onKeyDown={(e) => e.key === 'Enter' && searchQuery && goToNextResult()}
+              placeholder="Tìm trong cuộc trò chuyện"
+              className="w-full h-[44px] pl-11 pr-10 bg-[#1C1C1E] hover:bg-[#222226] focus:bg-[#222226] text-[16px] text-white placeholder-zinc-500 rounded-2xl outline-none border border-white/5 focus:border-[#0A84FF]/50 focus:ring-4 focus:ring-[#0A84FF]/10 transition-all"
+            />
+            {searchQuery && (
               <button
-                key={m.id}
-                onClick={() => {
-                  setShowSearchSheet(false);
-                  document.getElementById(`msg-${m.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  setTimeout(() => {
-                    const el = document.getElementById(`msg-${m.id}`);
-                    el?.classList.add('ring-2','ring-[#4F7DFF]','ring-offset-2','ring-offset-[#0a0a0a]');
-                    setTimeout(() => el?.classList.remove('ring-2','ring-[#4F7DFF]','ring-offset-2','ring-offset-[#0a0a0a]'), 2000);
-                  }, 300);
-                }}
-                className="w-full text-left px-3 py-3 hover:bg-zinc-800/60 active:bg-zinc-800 rounded-xl flex gap-3 transition"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition"
               >
-                <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center shrink-0">
-                  {m.type === 'image'? <Image size={16} className="text-zinc-400" /> : <MessageCircle size={16} className="text-zinc-400" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white truncate leading-snug">{m.text || m.fileName || '📍 Vị trí'}</p>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    {m.senderId === user?.uid? 'Bạn' : friendName} • {formatTime(m.createdAt)}
-                  </p>
-                </div>
+                <X size={14} className="text-white/80" />
               </button>
-            ))
-        ) : (
-          <div className="flex flex-col items-center justify-center h-[40vh] text-zinc-600">
-            <Search size={32} className="mb-3 opacity-40" />
-            <p className="text-sm">Nhập từ khóa để tìm</p>
-            <p className="text-xs mt-1 opacity-70">Tin nhắn, file, vị trí...</p>
+            )}
+          </div>
+          <button
+            onClick={() => { setShowSearchSheet(false); setSearchQuery(''); }}
+            className="text-[#0A84FF] text-[17px] font-medium px-1 active:scale-95 transition"
+          >
+            Hủy
+          </button>
+        </div>
+
+        {/* Counter + Nav */}
+        {searchQuery && (
+          <div className="flex items-center justify-between mt-3 px-1">
+            <div className="flex items-center gap-2">
+              <span className={`text-[13px] px-2.5 py-1 rounded-full ${filteredMessages.length? 'bg-[#0A84FF]/15 text-[#0A84FF]' : 'bg-white/5 text-zinc-500'}`}>
+                {filteredMessages.length? `${currentResultIndex + 1} / ${filteredMessages.length}` : '0 kết quả'}
+              </span>
+              {filteredMessages.length > 0 && (
+                <span className="text-[12px] text-zinc-500">Nhấn Enter để tiếp</span>
+              )}
+            </div>
+            <div className="flex gap-1">
+              <button onClick={goToPrevResult} disabled={!filteredMessages.length} className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 flex items-center justify-center transition active:scale-95">
+                <ChevronUp size={18} />
+              </button>
+              <button onClick={goToNextResult} disabled={!filteredMessages.length} className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 flex items-center justify-center transition active:scale-95">
+                <ChevronDown size={18} />
+              </button>
+            </div>
           </div>
         )}
+      </div>
 
-        {/* spacer cuối để không bị home bar che */}
-        <div className="h-4" />
+      {/* Results */}
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none]">
+        <div className="px-3 pb-6">
+          {!searchQuery? (
+            /* EMPTY STATE */
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#0A84FF]/20 to-violet-500/20 flex items-center justify-center mb-4">
+                <Search size={32} className="text-[#0A84FF]" />
+              </div>
+              <h3 className="text-white font-semibold mb-1.5">Tìm kiếm tin nhắn</h3>
+              <p className="text-sm text-zinc-500 max-w-[260px] leading-relaxed">Tìm theo nội dung, tên file, hoặc vị trí đã chia sẻ</p>
+            </div>
+          ) : filteredMessages.length? (
+            /* RESULTS */
+            <div className="space-y-1">
+              {filteredMessages.map((m, idx) => {
+                const text = m.text || m.fileName || (m.type === 'location'? '📍 Vị trí' : '');
+                const isActive = idx === currentResultIndex;
+                const highlight = text.replace(new RegExp(`(${searchQuery})`, 'gi'), '⟪$1⟫').split('⟪');
+
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => {
+                      setCurrentResultIndex(idx);
+                      setShowSearchSheet(false);
+                      const el = document.getElementById(`msg-${m.id}`);
+                      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      el?.classList.add('animate-pulse');
+                      setTimeout(() => el?.classList.remove('animate-pulse'), 1000);
+                    }}
+                    className={`group w-full text-left p-3 rounded-2xl flex gap-3 transition-all ${isActive? 'bg-[#0A84FF]/15 ring-1 ring-[#0A84FF]/30' : 'hover:bg-white/[0.04] active:bg-white/[0.06]'}`}
+                  >
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition ${isActive? 'bg-[#0A84FF]/20' : 'bg-white/5 group-hover:bg-white/10'}`}>
+                      {m.type === 'image'? <Image size={18} className={isActive? 'text-[#0A84FF]' : 'text-zinc-400'} />
+                       : m.type === 'location'? <MapPin size={18} className={isActive? 'text-[#0A84FF]' : 'text-zinc-400'} />
+                       : <MessageCircle size={18} className={isActive? 'text-[#0A84FF]' : 'text-zinc-400'} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[15px] text-white/90 leading-snug line-clamp-2">
+                        {highlight.map((part, i) =>
+                          part.toLowerCase() === searchQuery.toLowerCase()
+                           ? <mark key={i} className="bg-[#0A84FF]/30 text-[#0A84FF] px-0.5 rounded">{part}</mark>
+                            : part
+                        )}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className={`text-[12px] px-2 py-0.5 rounded-full ${m.senderId === user?.uid? 'bg-[#0A84FF]/15 text-[#0A84FF]' : 'bg-white/5 text-zinc-500'}`}>
+                          {m.senderId === user?.uid? 'Bạn' : friendName}
+                        </span>
+                        <span className="text-[12px] text-zinc-600">•</span>
+                        <span className="text-[12px] text-zinc-500">{formatTime(m.createdAt)}</span>
+                      </div>
+                    </div>
+                    {isActive && <div className="w-1 h-8 bg-[#0A84FF] rounded-full self-center" />}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            /* NO RESULTS */
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-3">
+                <SearchX size={28} className="text-zinc-600" />
+              </div>
+              <p className="text-white/70 font-medium">Không tìm thấy</p>
+              <p className="text-sm text-zinc-600 mt-1">Thử từ khóa khác</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   </div>
 )}
-
 {/* HEADER - nền trắng chữ đen */}
 <div
   className="shrink-0 z-40 border-b border-zinc-200/70 bg-white/85 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/70"
