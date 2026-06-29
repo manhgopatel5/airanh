@@ -495,7 +495,7 @@ export default function ChatDetailPage() {
     const endBuf = mp3encoder.flush();
     if (endBuf.length > 0) mp3Data.push(new Uint8Array(endBuf));
 
-    const blob = new Blob(mp3Data, { type: 'audio/mpeg' });
+const blob = new Blob(mp3Data as any, { type: 'audio/mpeg' });
     setAudioBlob(blob);
     pcmChunksRef.current = [];
   } catch (e: any) {
