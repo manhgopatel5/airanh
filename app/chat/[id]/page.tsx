@@ -10,7 +10,7 @@ import {
   orderBy, addDoc, serverTimestamp, Timestamp, updateDoc, deleteDoc, arrayUnion, arrayRemove
 } from "firebase/firestore";
 import { getDoc } from "firebase/firestore";
-import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   Image as ImageIcon, MapPin, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
   Smile, Reply, Trash2, Pencil, Settings, Shield, Pin, Copy, Search, Image as ImageBg
