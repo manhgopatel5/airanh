@@ -13,7 +13,7 @@ import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   Image as ImageIcon, MapPin, Paperclip, Phone, Send,
-  ArrowLeft, Loader2, X, Video, CheckCheck,
+  ArrowLeft, Loader2, X, Pause, Video, CheckCheck,
   Smile, Reply, Play, Trash2, Pencil, Shield, Pin, Copy, Mic, Square, Search
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
