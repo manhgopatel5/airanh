@@ -588,12 +588,37 @@ useEffect(() => {
 
   
 
-  const filteredMessages = useMemo(() => {
-    if (!searchQuery.trim()) return messages;
-    return messages.filter(m =>
-      m.text?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [messages, searchQuery]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+const [currentResultIndex, setCurrentResultIndex] = useState(0);
+
+const filteredMessages = useMemo(() =>
+  messages.filter(m => m.text?.toLowerCase().includes(searchQuery.toLowerCase())),
+  [searchQuery, messages]
+);
+
+const goToNextResult = () => {
+  if (filteredMessages.length === 0) return;
+  setCurrentResultIndex((i) => (i + 1) % filteredMessages.length);
+  // scroll to message
+  document.getElementById(filteredMessages[(currentResultIndex + 1) % filteredMessages.length]?.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+const goToPrevResult = () => {
+  if (filteredMessages.length === 0) return;
+  setCurrentResultIndex((i) => (i - 1 + filteredMessages.length) % filteredMessages.length);
+};
+
+// Phím tắt Cmd+K
+useEffect(() => {
+  const handleKey = (e: KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      setShowSearch(true);
+    }
+  };
+  window.addEventListener('keydown', handleKey);
+  return () => window.removeEventListener('keydown', handleKey);
+}, []);
 
   const getSeenAvatars = (msg: Message) => {
     if (!chatData || msg.senderId!== user?.uid) return [];
@@ -676,23 +701,77 @@ useEffect(() => {
   )}
 
   <Toaster richColors position="top-center" />
-      {showSearch && (
-<div className="shrink-0 z-30 px-4 py-2 border-b border-white/10 bg-black/80 backdrop-blur-xl">
-          <div className="flex items-center gap-2">
-            <Search size={18} className="text-gray-400" />
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm tin nhắn..."
-              className="flex-1 bg-transparent outline-none text-sm"
-              autoFocus
-            />
-            <button onClick={() => { setShowSearch(false); setSearchQuery(""); }}>
-              <X size={18} />
+    {showSearch && (
+  <div className="sticky top-0 z-40 animate-in slide-in-from-top">
+    <div className="px-3 pt-2.5 pb-3 bg-[#0a0a0b]/85 backdrop-blur-2xl border-b border-white/[0.06]">
+      {/* Ô tìm */}
+      <div className="flex items-center gap-2.5">
+        <div className="relative flex-1">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none" />
+
+          <input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { setShowSearch(false); setSearchQuery(''); }
+              if (e.key === 'Enter' && searchQuery) { goToNextResult(); }
+            }}
+            placeholder="Tìm trong cuộc trò chuyện"
+            className="w-full h-[36px] pl-[30px] pr-8 bg-white/[0.08] hover:bg-white/[0.12] focus:bg-white/[0.12] text-[14px] text-white placeholder:text-white/40 rounded-full outline-none border border-white/10 focus:border-[#0A84FF]/50 transition-all"
+            autoFocus
+          />
+
+          {/* Nút xóa */}
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition"
+            >
+              <X size={12} className="text-white/80" strokeWidth={2.5} />
+            </button>
+          )}
+        </div>
+
+        {/* Nút Hủy */}
+        <button
+          onClick={() => { setShowSearch(false); setSearchQuery(''); }}
+          className="text-[#0A84FF] text-[15px] font-[450] px-1 active:opacity-60 transition"
+        >
+          Hủy
+        </button>
+      </div>
+
+      {/* Thanh kết quả */}
+      {searchQuery && (
+        <div className="flex items-center justify-between mt-2.5 px-1">
+          <span className="text-[12px] text-white/50">
+            {filteredMessages.length > 0
+             ? `${currentResultIndex + 1} / ${filteredMessages.length} kết quả`
+              : 'Không tìm thấy'}
+          </span>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={goToPrevResult}
+              disabled={filteredMessages.length === 0}
+              className="w-6 h-6 rounded-md hover:bg-white/10 disabled:opacity-30 flex items-center justify-center transition"
+            >
+              <ChevronUp size={14} className="text-white/70" />
+            </button>
+            <button
+              onClick={goToNextResult}
+              disabled={filteredMessages.length === 0}
+              className="w-6 h-6 rounded-md hover:bg-white/10 disabled:opacity-30 flex items-center justify-center transition"
+            >
+              <ChevronDown size={14} className="text-white/70" />
             </button>
           </div>
         </div>
       )}
+    </div>
+  </div>
+)}
 
 {/* HEADER - nền trắng chữ đen */}
 <div
