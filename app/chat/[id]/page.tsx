@@ -472,7 +472,15 @@ export default function ChatDetailPage() {
       audioContextRef.current?.close();
       streamRef.current?.getTracks().forEach(t => t.stop());
 
-      const samples = pcmChunksRef.current.flat();
+      const chunks = pcmChunksRef.current;
+      const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
+      const samples = new Float32Array(totalLength);
+      let pos = 0;
+      for (const c of chunks) {
+        samples.set(c, pos);
+        pos += c.length;
+      }
+
       const sampleRate = 44100;
       const buffer = new ArrayBuffer(44 + samples.length * 2);
       const view = new DataView(buffer);
