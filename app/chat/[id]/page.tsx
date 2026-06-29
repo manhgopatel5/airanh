@@ -1222,33 +1222,33 @@ useEffect(() => {
         <MapPin size={20} className="text-gray-600 dark:text-zinc-400" />
       </button>
 
-<div className="flex-1 relative">
-  <input
-    ref={inputRef}
-    value={text}
-    onChange={(e) => {
-      setText(e.target.value);
-      handleTyping();
-    }}
-    onKeyDown={(e) => {
-      if (e.key === 'Enter' &&!e.shiftKey) {
-        e.preventDefault();
-        if (!isBlocked &&!isDeleted && text.trim()) sendMessage();
-      }
-    }}
-    disabled={isBlocked || isDeleted}
-    placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa' : 'Nhắn tin...'}
-    className="w-full h-11 pl-4 pr-12 bg-white/95 backdrop-blur-2xl rounded-full outline-none text- shadow-[0_4px_24px_rgba(0,0,0,0.18)] border border-white/30 placeholder:text-gray-500 font-[450]"
-  />
-  <button
-    onClick={sendMessage}
-    disabled={sending || isBlocked || isDeleted ||!text.trim()}
-    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-[#0084ff] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40 shadow-md transition-all"
-  >
-    {sending? <Loader2 size={17} className="animate-spin" /> : <Send size={17} strokeWidth={2.5} />}
-  </button>
-</div>
-  </div>
+      <div className="flex-1 relative">
+        <input
+          ref={inputRef}
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            handleTyping();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' &&!e.shiftKey) {
+              e.preventDefault();
+              if (!isBlocked &&!isDeleted && text.trim()) sendMessage();
+            }
+          }}
+          disabled={isBlocked || isDeleted}
+          placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa' : 'Nhắn tin...'}
+          className="w-full h-11 pl-4 pr-12 bg-white/95 backdrop-blur-2xl rounded-full outline-none text-[15px] shadow-[0_4px_24px_rgba(0,0,0,0.18)] border border-white/30 placeholder:text-gray-500"
+        />
+        <button
+          onClick={sendMessage}
+          disabled={sending || isBlocked || isDeleted ||!text.trim()}
+          className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-[#0084ff] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40 shadow-md transition-all"
+        >
+          {sending? <Loader2 size={17} className="animate-spin" /> : <Send size={17} strokeWidth={2.5} />}
+        </button>
+      </div>
+    </div>
   </div>
 </div>
   );
