@@ -944,7 +944,7 @@ useEffect(() => {
                       </p>
                       <div className="flex items-center gap-2 mt-1.5">
                         <span className={`text-[12px] px-2 py-0.5 rounded-full ${m.senderId === user?.uid? 'bg-[#0A84FF]/15 text-[#0A84FF]' : 'bg-white/5 text-zinc-500'}`}>
-                          {m.senderId === user?.uid? 'Bạn' : friendName}
+{m.senderId === user?.uid? 'Bạn' : friend?.name || 'Người lạ'}
                         </span>
                         <span className="text-[12px] text-zinc-600">•</span>
                         <span className="text-[12px] text-zinc-500">{formatTime(m.createdAt)}</span>
