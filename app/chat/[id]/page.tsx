@@ -1282,7 +1282,7 @@ useEffect(() => {
                       <button onClick={() => pinMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
                         <Pin size={16} />
                       </button>
-                      <button onClick={() => { navigator.clipboard.writeText(m.text); toast.success("Đã copy"); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                      <button onClick={() => { navigator.clipboard.writeText(m.text ?? ''); toast.success("Đã copy"); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
                         <Copy size={16} />
                       </button>
                     </div>
