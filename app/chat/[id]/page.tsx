@@ -956,35 +956,27 @@ const sendVoice = async () => {
   <div className="flex items-center gap-2.5 w-[210px] py-1">
     <button
       onClick={async (e) => {
-        const btn = e.currentTarget as HTMLButtonElement;
-        const wrapper = btn.parentElement as HTMLElement;
-        const audio = wrapper.querySelector('audio.voice-audio') as HTMLAudioElement;
-        if (!audio?.src) return;
+        const btn = e.currentTarget;
+        const audio = btn.parentElement?.querySelector('audio') as HTMLAudioElement;
+        if (!audio) return;
 
-        document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach((a) => {
-          if (a!== audio) {
-            a.pause();
-            a.currentTime = 0;
-            const otherWrapper = a.closest('.flex') as HTMLElement;
-            const otherBtn = otherWrapper?.querySelector('button');
-            const otherBar = otherWrapper?.querySelector('.voice-progress') as HTMLElement;
-            if (otherBtn) otherBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
-            if (otherBar) otherBar.style.width = '0%';
-          }
+        // Pause tất cả
+        document.querySelectorAll('audio.voice-audio').forEach(a => {
+          if (a!== audio) { a.pause(); a.currentTime = 0; }
         });
 
         try {
           if (audio.paused) {
-            audio.load();
+            // BỎ audio.load() — để play tự load
             await audio.play();
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
           } else {
             audio.pause();
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
           }
-        } catch (err) {
-          console.error('Play failed:', err);
-          window.open(audio.src, '_blank');
+        } catch (err: any) {
+          alert('Play lỗi: ' + err.message + '\n' + audio.src.substring(0, 80));
+          console.error(err);
         }
       }}
       className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition active:scale-90 ${isMe? 'bg-white/25 hover:bg-white/35 text-white' : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'}`}
@@ -993,54 +985,26 @@ const sendVoice = async () => {
     </button>
 
     <div className="voice-player flex-1 relative">
-   <audio
-  src={m.voice}
-  className="voice-audio"
-  crossOrigin="anonymous"
-  preload="none"
-  playsInline
-  style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}
-        onTimeUpdate={(e) => {
-          const audio = e.target as HTMLAudioElement;
-          const progress = audio.duration? (audio.currentTime / audio.duration) * 100 : 0;
-          const bar = e.currentTarget.parentElement?.querySelector('.voice-progress') as HTMLElement;
-          const timeEl = e.currentTarget.closest('.flex')?.querySelector('.voice-time') as HTMLElement;
-          if (bar) bar.style.width = `${progress}%`;
-          if (timeEl && audio.duration) {
-            const remain = Math.floor(audio.duration - audio.currentTime);
-            timeEl.textContent = `${Math.floor(remain/60)}:${String(remain%60).padStart(2,'0')}`;
-          }
-        }}
-        onLoadedMetadata={(e) => {
-          const audio = e.target as HTMLAudioElement;
-          const timeEl = e.currentTarget.closest('.flex')?.querySelector('.voice-time') as HTMLElement;
-          if (timeEl && audio.duration) {
-            timeEl.textContent = `${Math.floor(audio.duration/60)}:${String(Math.floor(audio.duration%60)).padStart(2,'0')}`;
-          }
-        }}
+      <audio
+        src={m.voice}
+        className="voice-audio"
+        crossOrigin="anonymous"
+        preload="metadata" // <-- ĐỔI từ none → metadata
+        playsInline
+        style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}
         onEnded={(e) => {
-          const audio = e.target as HTMLAudioElement;
-          const wrapper = audio.closest('.flex') as HTMLElement;
-          const btn = wrapper?.querySelector('button') as HTMLButtonElement;
-          const bar = wrapper?.querySelector('.voice-progress') as HTMLElement;
+          const btn = (e.target as HTMLAudioElement).parentElement?.parentElement?.querySelector('button');
           if (btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
-          if (bar) bar.style.width = '0%';
-          audio.currentTime = 0;
         }}
       />
-      <div className="flex items-end gap-[1.8px] h-6 absolute inset-0 pointer-events-none">
+      <div className="flex items-end gap-[1.8px] h-6">
         {Array.from({ length: 22 }).map((_, i) => (
-          <div
-            key={i}
-            className={`w-[2px] rounded-full transition-all ${isMe? 'bg-white/40' : 'bg-gray-400/50 dark:bg-zinc-500/60'}`}
-            style={{ height: `${4 + Math.sin(i * 0.8) * 3 + Math.random() * 5 + 6}px` }}
-          />
+          <div key={i} className={`w-[2px] rounded-full ${isMe? 'bg-white/40' : 'bg-gray-400/50'}`} style={{ height: `${8 + Math.random()*12}px` }} />
         ))}
       </div>
-      <div className="voice-progress absolute bottom-0 left-0 h-1 bg-current opacity-30" style={{ width: '0%' }} />
     </div>
 
-    <span className={`voice-time text-[11px] font-mono min-w-[32px] text-right tabular-nums ${isMe? 'text-white/80' : 'text-gray-500 dark:text-zinc-400'}`}>
+    <span className={`text-[11px] font-mono min-w-[32px] text-right ${isMe? 'text-white/80' : 'text-gray-500'}`}>
       {m.duration? `${Math.floor(m.duration/60)}:${String(m.duration%60).padStart(2,'0')}` : '0:00'}
     </span>
   </div>
