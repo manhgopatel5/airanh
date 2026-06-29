@@ -106,7 +106,8 @@ export default function ChatDetailPage() {
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
 
   const [loadingFriend, setLoadingFriend] = useState(true);
-
+const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
+const [longPressMsg, setLongPressMsg] = useState<any>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
