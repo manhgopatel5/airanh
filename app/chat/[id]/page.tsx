@@ -80,11 +80,24 @@ type Message = {
 type ChatData = {
   members: string[];
   membersInfo: Record<string, { name: string; avatar: string; username: string }>;
-  pinnedMessage?: string;
+  pinnedMessage?: {
+    id: string;
+    text?: string;
+    image?: string | null;
+    file?: string | null;
+    fileName?: string | null;
+    sender?: string;
+    senderName?: string;
+    by?: string;
+    createdAt?: any;
+    pinnedAt?: any;
+  } | null;
   typing?: Record<string, boolean>;
   blockedUsers?: string[];
   deletedFor?: string[];
-  type?: string; // THÊM FIELD NÀY
+  type?: string;
+  backgroundId?: string; // <-- dùng cho nền mới, chỉ lưu id
+  background?: string; // <-- giữ lại để đọc dữ liệu cũ
 };
 
 const EMOJI_LIST = ["❤️", "😂", "😮", "😢", "😡", "👍"];
@@ -102,7 +115,7 @@ export default function ChatDetailPage() {
   const [friendId, setFriendId] = useState<string | null>(null);
   const [isFriend, setIsFriend] = useState(true);
   const [chatData, setChatData] = useState<ChatData | null>(null);
-  const bgId = (chatData?.backgroundId || 'default') as BgId;
+const bgId = (chatData?.backgroundId || 'default') as BgId;
 const bg = BACKGROUNDS[bgId];
 
 {bg.url? (
