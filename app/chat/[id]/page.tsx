@@ -716,7 +716,7 @@ useEffect(() => {
 {chatData?.pinnedMessage && (
   <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900 flex items-center gap-2 sticky top- z-40">
     <Pin size={14} className="text-amber-600" />
-    <p className="text-xs flex-1 truncate">{chatData.pinnedMessage.text}</p>
+    <p className="text-xs flex-1 truncate">{(chatData as any)?.pinnedMessage?.text}</p>
     <button onClick={() => updateDoc(doc(db, "chats", chatId), { pinnedMessage: null })}>
       <X size={14} />
     </button>
