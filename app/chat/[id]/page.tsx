@@ -12,9 +12,10 @@ import {
 import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
-  Image as ImageIcon, ChevronUp, ChevronDown, Navigation, Flag, Plus, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
+  Image as ImageIcon, ChevronUp, Image as ImageIcon, ChevronDown, Navigation, Flag, Plus, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
   Smile, Reply, Trash2, Pencil, Shield, Pin, Copy, Search
 } from "lucide-react";
+import Image from 'next/image';
 import { toast, Toaster } from "sonner";
 import imageCompression from "browser-image-compression";
 import { formatDistanceToNow, format } from "date-fns";
@@ -929,7 +930,7 @@ useEffect(() => {
                     className={`group w-full text-left p-3 rounded-2xl flex gap-3 transition-all ${isActive? 'bg-[#0A84FF]/15 ring-1 ring-[#0A84FF]/30' : 'hover:bg-white/[0.04] active:bg-white/[0.06]'}`}
                   >
                     <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition ${isActive? 'bg-[#0A84FF]/20' : 'bg-white/5 group-hover:bg-white/10'}`}>
-                      {m.type === 'image'? <Image size={18} className={isActive? 'text-[#0A84FF]' : 'text-zinc-400'} />
+                      {m.type === 'image'? <ImageIcon size={18} className={isActive? 'text-[#0A84FF]' : 'text-zinc-400'} />
                        : m.type === 'location'? <MapPin size={18} className={isActive? 'text-[#0A84FF]' : 'text-zinc-400'} />
                        : <MessageCircle size={18} className={isActive? 'text-[#0A84FF]' : 'text-zinc-400'} />}
                     </div>
