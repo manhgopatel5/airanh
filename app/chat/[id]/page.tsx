@@ -485,7 +485,7 @@ for (let i = 0; i < samples.length; i++) {
   if (!sample) continue;
   const int16 = new Int16Array(sample.length);
   for (let j = 0; j < sample.length; j++) {
-    int16[j] = Math.max(-1, Math.min(1, sample[j])) * 0x7FFF;
+int16[j] = Math.max(-1, Math.min(1, sample[j] || 0)) * 0x7FFF;
         }
         for (let j = 0; j < int16.length; j += sampleBlockSize) {
           const chunk = int16.subarray(j, j + sampleBlockSize);
