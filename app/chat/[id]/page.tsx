@@ -110,7 +110,8 @@ export default function ChatDetailPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
+const [showBgPicker, setShowBgPicker] = useState(false);
+const [bgTimer, setBgTimer] = useState<NodeJS.Timeout | null>(null);
   
 const handlePinMessage = async (msg: any) => {
   if (!chatId) return;
@@ -581,9 +582,7 @@ useEffect(() => {
     toast.info("Tính năng ghim sẽ cập nhật sau");
   };
 
-  const unpinMessage = async () => {
-    toast.info("Tính năng ghim sẽ cập nhật sau");
-  };
+  
 
   const filteredMessages = useMemo(() => {
     if (!searchQuery.trim()) return messages;
@@ -737,7 +736,29 @@ useEffect(() => {
   </div>
 )}
 
-<div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-[100px] space-y-0.5 relative z-0">
+<div
+  className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-[100px] space-y-0.5 relative z-0"
+  style={{
+    backgroundImage: chatData?.background? `url(${chatData.background})` : undefined,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed'
+  }}
+  onTouchStart={(e) => {
+    if (e.target === e.currentTarget) {
+      const timer = setTimeout(() => setShowBgPicker(true), 800);
+      setBgTimer(timer);
+    }
+  }}
+  onTouchEnd={() => bgTimer && clearTimeout(bgTimer)}
+  onMouseDown={(e) => {
+    if (e.target === e.currentTarget) {
+      const timer = setTimeout(() => setShowBgPicker(true), 800);
+      setBgTimer(timer);
+    }
+  }}
+  onMouseUp={() => bgTimer && clearTimeout(bgTimer)}
+>
         {filteredMessages.map((m, i) => {
           const isMe = m.senderId === user.uid;
           const prev = filteredMessages[i - 1];
@@ -1008,7 +1029,52 @@ useEffect(() => {
           </div>
         </div>
       )}
-
+{showBgPicker && (
+  <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-4" onClick={() => setShowBgPicker(false)}>
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-5" onClick={e => e.stopPropagation()}>
+      <h3 className="font-semibold mb-4">Chọn nền chat</h3>
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {[
+          '',
+          'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
+          'https://images.unsplash.com/photo-1519681393784-d120267933ba',
+          'https://images.unsplash.com/photo-1470071459604-3b5b0a5c2cdb',
+          'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
+          'https://images.unsplash.com/photo-1490750967868-88aa4486c946'
+        ].map((bg, i) => (
+          <button
+            key={i}
+            onClick={async () => {
+              await updateDoc(doc(db, "chats", chatId), { background: bg });
+              setShowBgPicker(false);
+            }}
+            className="aspect-square rounded-2xl overflow-hidden border-2 border-transparent hover:border-blue-500"
+            style={{ backgroundImage: bg? `url(${bg})` : 'linear-gradient(to bottom, white, #f3f4f6)', backgroundSize: 'cover' }}
+          >
+            {!bg && <div className="w-full h-full flex items-center justify-center text-xs">Mặc định</div>}
+          </button>
+        ))}
+      </div>
+      <input
+        type="file"
+        accept="image/*"
+        className="hidden"
+        id="bg-upload"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          // upload lên storage rồi save url
+          const url = URL.createObjectURL(file); // tạm, thay bằng upload Firebase
+          await updateDoc(doc(db, "chats", chatId), { background: url });
+          setShowBgPicker(false);
+        }}
+      />
+      <label htmlFor="bg-upload" className="w-full py-3 bg-gray-100 dark:bg-zinc-800 rounded-xl text-center block font-medium">
+        Tải ảnh lên
+      </label>
+    </div>
+  </div>
+)}
       {/* UPLOAD PROGRESS */}
       {uploading && (
         <div className="bg-white dark:bg-zinc-900 px-4 py-2 border-t border-gray-200 dark:border-zinc-800">
