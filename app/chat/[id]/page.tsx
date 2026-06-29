@@ -124,6 +124,11 @@ const handlePinMessage = async (msg: any) => {
     const pinned = (chatData as any)?.pinnedMessage;
     const isAlreadyPinned = pinned && typeof pinned === 'object' && pinned.id === msg.id;
 
+    // Lấy user từ Firebase Auth (không cần currentUser)
+    const auth = getAuth();
+    const me = auth.currentUser;
+    const myName = me?.displayName || me?.email?.split('@')[0] || 'Bạn';
+
     if (isAlreadyPinned) {
       await updateDoc(doc(db, "chats", chatId), {
         pinnedMessage: null
@@ -138,8 +143,8 @@ const handlePinMessage = async (msg: any) => {
           file: msg.file || null,
           fileName: msg.fileName || null,
           sender: msg.senderId,
-          senderName: msg.senderName || currentUser?.displayName || 'Bạn',
-          by: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Bạn',
+          senderName: msg.senderName || myName,
+          by: myName,
           createdAt: msg.createdAt || null,
           pinnedAt: serverTimestamp()
         }
