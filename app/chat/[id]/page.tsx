@@ -1297,10 +1297,10 @@ className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:
 
 {/* INPUT */}
 <div
-  className="shrink-0 z-30 border-t border-zinc-200 bg-white/95 backdrop-blur-2xl"
-  style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}
+  className="shrink-0 z-30 px-3 pt-2"
+  style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}
 >
-  <div className="flex items-end gap-2 px-3 py-2.5">
+  <div className="flex items-end gap-2 px-2.5 py-2 bg-white/90 backdrop-blur-2xl rounded-[28px] shadow-[0_10px_40px_-12px_rgba(0,0,0,0.2)] border border-black/5">
     <input
       type="file"
       hidden
@@ -1313,7 +1313,7 @@ className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:
       disabled={isBlocked || isDeleted}
       className={`w-10 h-10 flex items-center justify-center rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
     >
-      <ImageIcon size={22} className="text-zinc-600" />
+      <ImageIcon size={22} className="text-[#0084FF]" />
     </button>
 
     <input
@@ -1354,12 +1354,12 @@ className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:
         }}
         disabled={isBlocked || isDeleted}
         placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa' : 'Nhắn tin...'}
-        className="w-full h-10 pl-4 pr-11 bg-zinc-100 rounded-full outline-none text- text-zinc-900 border-zinc-200 placeholder:text-zinc-400"
+        className="w-full h-10 pl-4 pr-11 bg-transparent outline-none text-[15px] text-zinc-900 placeholder:text-zinc-400"
       />
       <button
         onClick={sendMessage}
         disabled={sending || isBlocked || isDeleted ||!text.trim()}
-        className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#A9D0FF] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40"
+        className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#0084FF] hover:bg-[#0073e6] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40 shadow-md shadow-blue-500/20"
       >
         {sending? <Loader2 size={16} className="animate-spin" /> : <Send size={16} strokeWidth={2.5} />}
       </button>
