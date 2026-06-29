@@ -695,13 +695,13 @@ useEffect(() => {
         </div>
       )}
 
-<div className="absolute top-0 left-0 right-0 z-40 pt-[max(env(safe-area-inset-top),0.5rem)]">
+<div className="absolute top-0 left-0 right-0 z-40 pt-[max(env(safe-area-inset-top),12px)]">
   <div className="px-4 pb-3 flex items-center justify-between">
     <div className="flex items-center gap-3">
-      <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg shadow-black/20">
+      <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
         <ArrowLeft size={22} className="text-white" strokeWidth={2.5} />
       </button>
-
+      
       <div className="flex items-center gap-2.5">
         <div className="relative">
           <img src={friend.avatar} className="w-10 h-10 rounded-full object-cover ring-2 ring-white/30 shadow-xl" alt={friend.name} />
@@ -711,15 +711,15 @@ useEffect(() => {
             </div>
           )}
         </div>
-
+        
         <div className="min-w-0">
-          <p className="font-semibold text-white text-[17px] leading-tight truncate drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.9)]">{friend.name}</p>
-          <p className="text-[13px] leading-tight font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-            {chatData?.typing?.[friendId || ""]? (
+          <p className="font-semibold text-white text- leading-tight truncate drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.9)]">{friend.name}</p>
+          <p className="text- leading-tight font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+            {chatData?.typing?.[friendId || ""] ? (
               <span className="text-[#6ab7ff]">Đang nhập...</span>
-            ) : friend.isOnline? (
+            ) : friend.isOnline ? (
               <span className="text-white/85">Đang hoạt động</span>
-            ) : friend.lastSeen? (
+            ) : friend.lastSeen ? (
               <span className="text-white/70">{formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })}</span>
             ) : (
               <span className="text-white/60">Offline</span>
@@ -728,15 +728,15 @@ useEffect(() => {
         </div>
       </div>
     </div>
-
+    
     <div className="flex items-center gap-1.5">
-      <button onClick={() => setShowSearch(true)} className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg shadow-black/20">
+      <button onClick={() => setShowSearch(true)} className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
         <Search size={20} className="text-white" strokeWidth={2.25} />
       </button>
-      <button className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg shadow-black/20">
+      <button className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
         <Phone size={20} className="text-white" strokeWidth={2.25} />
       </button>
-      <button className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg shadow-black/20">
+      <button className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
         <Video size={20} className="text-white" strokeWidth={2.25} />
       </button>
     </div>
@@ -1222,14 +1222,14 @@ useEffect(() => {
         <MapPin size={20} className="text-gray-600 dark:text-zinc-400" />
       </button>
 
-      <div className="flex-1 relative">
+      <div className="flex-1">
         <input
           ref={inputRef}
           value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            handleTyping();
-          }}
+onChange={(e) => {
+  setText(e.target.value);
+  handleTyping();
+}}
           onKeyDown={(e) => {
             if (e.key === 'Enter' &&!e.shiftKey) {
               e.preventDefault();
@@ -1238,17 +1238,19 @@ useEffect(() => {
           }}
           disabled={isBlocked || isDeleted}
           placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa' : 'Nhắn tin...'}
-          className="w-full h-11 pl-4 pr-12 bg-white/95 backdrop-blur-2xl rounded-full outline-none text-[15px] shadow-[0_4px_24px_rgba(0,0,0,0.18)] border border-white/30 placeholder:text-gray-500"
+          className="w-full px-4 py-2.5 bg-gray-100 dark:bg-zinc-900 rounded-full outline-none focus:ring-2 focus:ring-blue-500/20 text-[15px]"
         />
-        <button
-          onClick={sendMessage}
-          disabled={sending || isBlocked || isDeleted ||!text.trim()}
-          className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-[#0084ff] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40 shadow-md transition-all"
-        >
-          {sending? <Loader2 size={17} className="animate-spin" /> : <Send size={17} strokeWidth={2.5} />}
-        </button>
       </div>
+
+      <button
+        onClick={sendMessage}
+        disabled={sending || isBlocked || isDeleted ||!text.trim()}
+        className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-50"
+      >
+        {sending? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+      </button>
     </div>
+  </div>
   </div>
 </div>
   );
