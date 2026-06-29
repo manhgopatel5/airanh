@@ -124,10 +124,8 @@ const handlePinMessage = async (msg: any) => {
     const pinned = (chatData as any)?.pinnedMessage;
     const isAlreadyPinned = pinned && typeof pinned === 'object' && pinned.id === msg.id;
 
-    // Lấy user từ Firebase Auth (không cần currentUser)
-    const auth = getAuth();
-    const me = auth.currentUser;
-    const myName = me?.displayName || me?.email?.split('@')[0] || 'Bạn';
+    // DÙNG USER CÓ SẴN - không cần getAuth
+    const myName = user?.displayName || user?.email?.split('@')[0] || 'Bạn';
 
     if (isAlreadyPinned) {
       await updateDoc(doc(db, "chats", chatId), {
