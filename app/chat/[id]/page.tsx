@@ -968,50 +968,20 @@ const sendVoice = async () => {
         try {
           if (audio.paused) {
             btn.dataset.playing = 'loading';
-            console.log('[VOICE] Step 1: Fetching...');
+            console.log('[VOICE] Step 1: Setting src...', voiceUrl);
 
-            // FETCH
-            const res = await fetch(voiceUrl, {
-              mode: 'cors',
-              cache: 'no-cache'
-            });
-
-            console.log('[VOICE] Step 2: Response', {
-              status: res.status,
-              ok: res.ok,
-              type: res.type,
-              contentType: res.headers.get('content-type'),
-              contentLength: res.headers.get('content-length')
-            });
-
-            if (!res.ok) {
-              throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
+            // BỎ FETCH – GÁN TRỰC TIẾP
+            if (audio.src!== voiceUrl) {
+              audio.src = voiceUrl;
+              audio.crossOrigin = 'anonymous';
             }
 
-            // BLOB
-            const blob = await res.blob();
-            console.log('[VOICE] Step 3: Blob created', {
-              size: blob.size,
-              type: blob.type
-            });
-
-            if (blob.size < 100) {
-              throw new Error(`Blob too small: ${blob.size} bytes`);
-            }
-
-            const url = URL.createObjectURL(blob);
-            console.log('[VOICE] Step 4: Blob URL', url);
-
-            if (audio.src.startsWith('blob:')) {
-              URL.revokeObjectURL(audio.src);
-            }
-            audio.src = url;
+            console.log('[VOICE] Step 2: Waiting for load...');
 
             // WAIT FOR LOAD
-            console.log('[VOICE] Step 5: Waiting for canplay...');
             await new Promise<void>((resolve, reject) => {
               const timeout = setTimeout(() => {
-                console.error('[VOICE] Timeout after 8s');
+                console.error('[VOICE] Timeout after 8s, readyState:', audio.readyState);
                 reject(new Error('Timeout: audio not loaded in 8s'));
               }, 8000);
 
@@ -1021,45 +991,49 @@ const sendVoice = async () => {
                 audio.oncanplaythrough = null;
                 audio.onerror = null;
                 audio.onloadedmetadata = null;
+                audio.onloadstart = null;
+              };
+
+              audio.onloadstart = () => {
+                console.log('[VOICE] Load start');
               };
 
               audio.onloadedmetadata = () => {
-                console.log('[VOICE] Metadata loaded', {
+                console.log('[VOICE] Step 3: Metadata loaded', {
                   duration: audio.duration,
                   readyState: audio.readyState
                 });
               };
 
               audio.oncanplay = () => {
-                console.log('[VOICE] Can play event fired');
+                console.log('[VOICE] Step 4: Can play');
                 cleanup();
                 resolve();
               };
 
               audio.oncanplaythrough = () => {
-                console.log('[VOICE] Can play through');
+                console.log('[VOICE] Step 4b: Can play through');
                 cleanup();
                 resolve();
               };
 
               audio.onerror = () => {
                 const err = audio.error;
-                console.error('[VOICE] Audio error', {
+                console.error('[VOICE] Step X: Audio error', {
                   code: err?.code,
-                  message: err?.message
+                  message: err?.message,
+                  src: audio.currentSrc
                 });
                 cleanup();
-                reject(new Error(`Audio decode error: ${err?.message || 'unknown'} (code ${err?.code})`));
+                reject(new Error(`Audio error code ${err?.code}: ${err?.message || 'decode failed'}`));
               };
 
-              // Trigger load
               audio.load();
             });
 
-            // PLAY
-            console.log('[VOICE] Step 6: Playing...');
+            console.log('[VOICE] Step 5: Playing...');
             await audio.play();
-            console.log('[VOICE] Step 7: Playing success');
+            console.log('[VOICE] Step 6: Playing success');
 
             btn.dataset.playing = 'true';
           } else {
@@ -1068,15 +1042,8 @@ const sendVoice = async () => {
             btn.dataset.playing = 'false';
           }
         } catch (err: any) {
-          console.error('[VOICE] FAILED at:', err.message, err);
+          console.error('[VOICE] FAILED:', err.message, err);
           btn.dataset.playing = 'false';
-
-          if (audio.src.startsWith('blob:')) {
-            URL.revokeObjectURL(audio.src);
-            audio.removeAttribute('src');
-          }
-
-          // Hiện lỗi chi tiết
           toast.error(`Lỗi: ${err.message}`);
         }
       }}
@@ -1102,19 +1069,16 @@ const sendVoice = async () => {
         className="voice-audio"
         preload="none"
         playsInline
+        crossOrigin="anonymous"
         onEnded={(e) => {
           const a = e.target as HTMLAudioElement;
           console.log('[VOICE] Ended');
           const b = a.closest('[data-voice]')?.querySelector('button');
           if (b) b.dataset.playing = 'false';
-          if (a.src.startsWith('blob:')) {
-            URL.revokeObjectURL(a.src);
-            a.removeAttribute('src');
-          }
         }}
         onError={(e) => {
           const a = e.target as HTMLAudioElement;
-          console.error('[VOICE] onError event', a.error);
+          console.error('[VOICE] onError', a.error);
           const b = a.closest('[data-voice]')?.querySelector('button');
           if (b) b.dataset.playing = 'false';
         }}
