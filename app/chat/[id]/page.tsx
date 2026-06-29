@@ -694,37 +694,40 @@ useEffect(() => {
         </div>
       )}
 
-{/* HEADER - fixed sát màn hình, bỏ nút back */}
-<div className="shrink-0 z-40 border-b border-white/10 bg-black/60 backdrop-blur-2xl" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
- <div className="px-4 py-2.5 flex items-center justify-between">
+{/* HEADER - nền trắng chữ đen */}
+<div
+  className="shrink-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur-2xl"
+  style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}
+>
+  <div className="px-4 py-2.5 flex items-center justify-between">
     {/* Left: avatar + name */}
     <div className="flex items-center gap-2.5 min-w-0 flex-1">
       <div className="relative flex-shrink-0">
         <img
           src={friend.avatar}
-          className="w-10 h-10 rounded-full object-cover ring-2 ring-white/30 shadow-xl"
+          className="w-10 h-10 rounded-full object-cover ring-2 ring-zinc-200"
           alt={friend.name}
         />
         {friend.isOnline && (
-          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#31d158] rounded-full ring-[2.5px] ring-black/20 shadow-lg">
+          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#31d158] rounded-full ring-2 ring-white">
             <div className="absolute inset-0 bg-[#31d158] rounded-full animate-ping opacity-60" />
           </div>
         )}
       </div>
 
       <div className="min-w-0">
-        <p className="font-semibold text-white text-[15px] leading-tight truncate drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.9)]">
+        <p className="font-semibold text-zinc-900 text- leading-tight truncate">
           {friend.name}
         </p>
-        <p className="text-xs leading-tight font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+        <p className="text-xs leading-tight font-medium text-zinc-500">
           {chatData?.typing?.[friendId || ""]? (
-            <span className="text-[#6ab7ff]">Đang nhập...</span>
+            <span className="text-blue-600">Đang nhập...</span>
           ) : friend.isOnline? (
-            <span className="text-white/85">Đang hoạt động</span>
+            <span>Đang hoạt động</span>
           ) : friend.lastSeen? (
-            <span className="text-white/70">{formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })}</span>
+            <span>{formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })}</span>
           ) : (
-            <span className="text-white/60">Offline</span>
+            <span>Offline</span>
           )}
         </p>
       </div>
@@ -1189,70 +1192,54 @@ useEffect(() => {
       )}
 
 {/* INPUT */}
-<div className="shrink-0 z-30 border-t border-white/10 bg-black/80 backdrop-blur-2xl px-3 py-2.5" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
- <div className="flex items-end gap-2">
-    <div className="flex items-end gap-2">
+<div
+  className="shrink-0 z-30 border-t border-black/10 bg-black/5 backdrop-blur-xl"
+  style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}
+>
+  <div className="flex items-end gap-2 px-3 py-2.5">
+    <input
+      type="file"
+      hidden
+      ref={imageInputRef}
+      accept="image/*"
+      onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])}
+    />
+    <button
+      onClick={() => imageInputRef.current?.click()}
+      disabled={isBlocked || isDeleted}
+      className={`w-10 h-10 flex items-center justify-center rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
+    >
+      <ImageIcon size={22} className="text-white/90" />
+    </button>
+
+    <div className="flex-1 relative">
       <input
-        type="file"
-        hidden
-        ref={imageInputRef}
-        accept="image/*"
-        onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])}
+        ref={inputRef}
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          handleTyping();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' &&!e.shiftKey) {
+            e.preventDefault();
+            if (!isBlocked &&!isDeleted && text.trim()) sendMessage();
+          }
+        }}
+        disabled={isBlocked || isDeleted}
+        placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa' : 'Nhắn tin...'}
+        className="w-full h-11 pl-4 pr-12 bg-white/90 rounded-full outline-none text- text-zinc-900 border border-white/30 placeholder:text-zinc-500"
       />
       <button
-        onClick={() => imageInputRef.current?.click()}
-        disabled={isBlocked || isDeleted}
-        className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
+        onClick={sendMessage}
+        disabled={sending || isBlocked || isDeleted ||!text.trim()}
+        className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-[#0084ff] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40"
       >
-        <ImageIcon size={22} className="text-gray-600 dark:text-zinc-400" />
+        {sending? <Loader2 size={17} className="animate-spin" /> : <Send size={17} strokeWidth={2.5} />}
       </button>
-
-      <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
-      <button
-        onClick={() => fileInputRef.current?.click()}
-        disabled={isBlocked || isDeleted}
-        className={`w-10 h-10 hidden sm:flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
-      >
-        <Paperclip size={20} className="text-gray-600 dark:text-zinc-400" />
-      </button>
-
-      <button
-        onClick={sendLocation}
-        disabled={isBlocked || isDeleted}
-        className={`w-10 h-10 hidden sm:flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
-      >
-        <MapPin size={20} className="text-gray-600 dark:text-zinc-400" />
-      </button>
-
-<div className="flex-1 relative">
-     <input
-  ref={inputRef}
-  value={text}
-  onChange={(e) => {
-    setText(e.target.value);
-    handleTyping();
-  }}
-  onKeyDown={(e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (!isBlocked && !isDeleted && text.trim()) sendMessage();
-    }
-  }}
-  disabled={isBlocked || isDeleted}
-  placeholder={isBlocked ? 'Bạn không thể nhắn tin' : isDeleted ? 'Đã xóa' : 'Nhắn tin...'}
-  className="w-full h-11 pl-4 pr-12 bg-white/95 backdrop-blur-2xl rounded-full outline-none text- shadow-[0_4px_24px_rgba(0,0,0,0.18)] border border-white/30 placeholder:text-gray-500"
-/>
-
-<button
-  onClick={sendMessage}
-  disabled={sending || isBlocked || isDeleted || !text.trim()}
-  className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-[#0084ff] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40 shadow-md"
->
-  {sending ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} strokeWidth={2.5} />}
-</button>
     </div>
   </div>
-    </div>
+</div>
   </div>
 </div>
   );
