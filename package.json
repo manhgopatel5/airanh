@@ -50,6 +50,7 @@
     "isomorphic-dompurify": "^3.9.0",
     "linkify-react": "^4.3.2",
     "linkifyjs": "^4.3.3",
+    "lamejs": "^1.2.1",
     "lucide-react": "^0.453.0",
     "nanoid": "^5.1.9",
     "next": "^15.5.15",
