@@ -438,11 +438,15 @@ const startRecording = async () => {
       }
     });
 
-    // FIX: CHỈ dùng mp4, không fallback webm
-    const mimeType = 'audio/mp4';
+    // FIX: Ưu tiên webm, fallback mp4
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/webm')
+      ? 'audio/webm'
+      : 'audio/mp4';
 
     if (!MediaRecorder.isTypeSupported(mimeType)) {
-      toast.error("Trình duyệt không hỗ trợ ghi âm m4a (cần iOS 14.1+ / Chrome 49+)");
+      toast.error("Trình duyệt không hỗ trợ ghi âm");
       stream.getTracks().forEach(t => t.stop());
       return;
     }
@@ -463,8 +467,8 @@ const startRecording = async () => {
     };
 
     mediaRecorder.onstop = () => {
-      // KHÔNG tạo Blob mới, dùng trực tiếp chunks
-      const blob = new Blob(audioChunksRef.current, { type: 'audio/mp4' });
+      // Dùng đúng mimeType đã chọn
+      const blob = new Blob(audioChunksRef.current, { type: mimeType });
 
       console.log('[VOICE] Blob created:', blob.type, Math.round(blob.size/1024)+'KB');
 
@@ -520,12 +524,16 @@ const sendVoice = async () => {
 
   setUploading(true);
   try {
-    // LUÔN dùng m4a, không check webm nữa
-    const fileName = `voice_${Date.now()}.m4a`;
+    // Lấy đúng ext từ blob
+    const isWebm = audioBlob.type.includes('webm');
+    const ext = isWebm? 'webm' : 'm4a';
+    const contentType = isWebm? 'audio/webm' : 'audio/mp4';
+    
+    const fileName = `voice_${Date.now()}.${ext}`;
     const storageRef = ref(storage, `chat-voice/${chatId}/${fileName}`);
 
     const metadata = {
-      contentType: 'audio/mp4', // Firebase hiểu m4a = audio/mp4
+      contentType,
       cacheControl: 'public, max-age=31536000',
       customMetadata: {
         uid: user.uid,
@@ -533,7 +541,6 @@ const sendVoice = async () => {
       }
     };
 
-    // Upload trực tiếp blob gốc
     await uploadBytes(storageRef, audioBlob, metadata);
     const url = await getDownloadURL(storageRef);
 
@@ -542,7 +549,7 @@ const sendVoice = async () => {
       voice: url,
       duration: Math.round(recordingTime),
       type: "voice",
-      mimeType: 'audio/mp4',
+      mimeType: contentType,
       createdAt: serverTimestamp(),
       seenBy: [user.uid],
       members: chatData.members,
