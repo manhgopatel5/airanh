@@ -116,15 +116,7 @@ export default function ChatDetailPage() {
   const [isFriend, setIsFriend] = useState(true);
   const [chatData, setChatData] = useState<ChatData | null>(null);
 const bgId = (chatData?.backgroundId || 'default') as BgId;
-const bg = BACKGROUNDS[bgId];
 
-{bg.url? (
-  isGradient(bgId)? (
-    <div className="fixed inset-0 -z-10" style={{background: bg.url.replace('gradient:','')}} />
-  ) : (
-    <img src={getBgUrl(bgId)} srcSet={getBgSrcSet(bgId)} className="fixed inset-0 -z-10 w-full h-full object-cover" alt="" />
-  )
-) : null}
   const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
   const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
   const canSendMessage =!!friendId && isFriend &&!isBlocked &&!isDeleted;
@@ -293,7 +285,30 @@ const handlePinMessage = async (msg: any) => {
 
     return () => unsub();
   }, [chatId, user, authLoading, router, db]);
+{(() => {
+  const bgId = (chatData?.backgroundId || 'default') as BgId;
+  const bg = BACKGROUNDS[bgId];
+  if (!bg ||!bg.url) return null;
 
+  return isGradient(bgId)? (
+    <div
+      className="fixed inset-0 -z-10"
+      style={{ background: bg.url.replace('gradient:', '') }}
+    />
+  ) : (
+    <>
+      <img
+        src={getBgUrl(bgId, 1600)}
+        srcSet={getBgSrcSet(bgId)}
+        className="fixed inset-0 -z-10 w-full h-full object-cover"
+        alt=""
+        fetchPriority="high"
+      />
+      {/* lớp mờ nhẹ như Messenger */}
+      <div className="fixed inset-0 -z-10 bg-black/5 dark:bg-black/20 pointer-events-none" />
+    </>
+  );
+})()}
   /* ================= REALTIME FRIEND STATUS ================= */
   useEffect(() => {
     if (!friendId) return;
