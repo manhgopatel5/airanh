@@ -472,7 +472,7 @@ export default function ChatDetailPage() {
     audioContextRef.current?.close();
     streamRef.current?.getTracks().forEach(t => t.stop());
 
-    const lamejsMod: any = await import('lamejs');
+const lamejsMod: any = await import('@breezystack/lamejs');
     const Mp3Encoder = lamejsMod.Mp3Encoder || lamejsMod.default?.Mp3Encoder;
     if (!Mp3Encoder) throw new Error('Không load được Mp3Encoder');
 
