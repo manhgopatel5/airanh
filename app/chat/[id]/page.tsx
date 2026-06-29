@@ -695,44 +695,53 @@ useEffect(() => {
         </div>
       )}
 
-<div className="px-4 py-3 bg-transparent flex items-center justify-between sticky top-0 z-40">
-        <button onClick={() => router.back()} className="md:hidden p-2 -ml-2 active:scale-90 transition-transform rounded-full hover:bg-gray-100 dark:hover:bg-zinc-900">
-          <ArrowLeft size={24} className="text-gray-900 dark:text-white" />
-        </button>
+<div className="absolute top-0 left-0 right-0 z-40 pt-[max(env(safe-area-inset-top),0.5rem)]">
+  <div className="px-4 pb-3 flex items-center justify-between">
+    <div className="flex items-center gap-3">
+      <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg shadow-black/20">
+        <ArrowLeft size={22} className="text-white" strokeWidth={2.5} />
+      </button>
+
+      <div className="flex items-center gap-2.5">
         <div className="relative">
-          <img src={friend.avatar} className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-zinc-950 shadow-lg" alt={friend.name} />
+          <img src={friend.avatar} className="w-10 h-10 rounded-full object-cover ring-2 ring-white/30 shadow-xl" alt={friend.name} />
           {friend.isOnline && (
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-zinc-950">
-              <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#31d158] rounded-full ring-[2.5px] ring-black/20 shadow-lg">
+              <div className="absolute inset-0 bg-[#31d158] rounded-full animate-ping opacity-60" />
             </div>
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-gray-900 dark:text-white truncate">{friend.name}</p>
-       <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
-  {chatData?.typing?.[friendId || ""] ? (
-    <span className="text-blue-500 animate-pulse">Đang nhập...</span>
-  ) : friend.isOnline ? (
-    "Đang hoạt động"
-  ) : friend.lastSeen ? (
-    formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })
-  ) : (
-    "Offline"
-  )}
-</p>
-        </div>
-        <div className="flex items-center gap-1">
-          <button onClick={() => setShowSearch(true)} className="p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
-            <Search size={20} className="text-gray-700 dark:text-zinc-300" />
-          </button>
-          <button className="p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
-            <Phone size={20} className="text-gray-700 dark:text-zinc-300" />
-          </button>
-          <button className="p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
-            <Video size={20} className="text-gray-700 dark:text-zinc-300" />
-          </button>
+
+        <div className="min-w-0">
+          <p className="font-semibold text-white text-[17px] leading-tight truncate drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.9)]">{friend.name}</p>
+          <p className="text-[13px] leading-tight font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+            {chatData?.typing?.[friendId || ""]? (
+              <span className="text-[#6ab7ff]">Đang nhập...</span>
+            ) : friend.isOnline? (
+              <span className="text-white/85">Đang hoạt động</span>
+            ) : friend.lastSeen? (
+              <span className="text-white/70">{formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })}</span>
+            ) : (
+              <span className="text-white/60">Offline</span>
+            )}
+          </p>
         </div>
       </div>
+    </div>
+
+    <div className="flex items-center gap-1.5">
+      <button onClick={() => setShowSearch(true)} className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg shadow-black/20">
+        <Search size={20} className="text-white" strokeWidth={2.25} />
+      </button>
+      <button className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg shadow-black/20">
+        <Phone size={20} className="text-white" strokeWidth={2.25} />
+      </button>
+      <button className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg shadow-black/20">
+        <Video size={20} className="text-white" strokeWidth={2.25} />
+      </button>
+    </div>
+  </div>
+</div>
 
 {/* Pinned */}
 {chatData?.pinnedMessage && (
@@ -1213,34 +1222,32 @@ useEffect(() => {
         <MapPin size={20} className="text-gray-600 dark:text-zinc-400" />
       </button>
 
-      <div className="flex-1">
-        <input
-          ref={inputRef}
-          value={text}
-onChange={(e) => {
-  setText(e.target.value);
-  handleTyping();
-}}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' &&!e.shiftKey) {
-              e.preventDefault();
-              if (!isBlocked &&!isDeleted && text.trim()) sendMessage();
-            }
-          }}
-          disabled={isBlocked || isDeleted}
-          placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa' : 'Nhắn tin...'}
-          className="w-full px-4 py-2.5 bg-gray-100 dark:bg-zinc-900 rounded-full outline-none focus:ring-2 focus:ring-blue-500/20 text-[15px]"
-        />
-      </div>
-
-      <button
-        onClick={sendMessage}
-        disabled={sending || isBlocked || isDeleted ||!text.trim()}
-        className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-50"
-      >
-        {sending? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-      </button>
-    </div>
+<div className="flex-1 relative">
+  <input
+    ref={inputRef}
+    value={text}
+    onChange={(e) => {
+      setText(e.target.value);
+      handleTyping();
+    }}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' &&!e.shiftKey) {
+        e.preventDefault();
+        if (!isBlocked &&!isDeleted && text.trim()) sendMessage();
+      }
+    }}
+    disabled={isBlocked || isDeleted}
+    placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa' : 'Nhắn tin...'}
+    className="w-full h-11 pl-4 pr-12 bg-white/95 backdrop-blur-2xl rounded-full outline-none text- shadow-[0_4px_24px_rgba(0,0,0,0.18)] border border-white/30 placeholder:text-gray-500 font-[450]"
+  />
+  <button
+    onClick={sendMessage}
+    disabled={sending || isBlocked || isDeleted ||!text.trim()}
+    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-[#0084ff] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40 shadow-md transition-all"
+  >
+    {sending? <Loader2 size={17} className="animate-spin" /> : <Send size={17} strokeWidth={2.5} />}
+  </button>
+</div>
   </div>
   </div>
 </div>
