@@ -13,7 +13,7 @@ import { getDoc } from "firebase/firestore";
 import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   Image as ImageIcon, MapPin, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
-  Smile, Reply, Trash2, Pencil, Shield, Pin, Copy, Search
+  Smile, Reply, Trash2, Pencil, Settings, Shield, Pin, Copy, Search, Image as ImageBg
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import imageCompression from "browser-image-compression";
@@ -87,7 +87,7 @@ export default function ChatDetailPage() {
   const db = useMemo(() => getFirebaseDB(), []);
   const storage = useMemo(() => getFirebaseStorage(), []);
   const { user, loading: authLoading } = useAuth();
-
+  const [showSettings, setShowSettings] = useState(false);
   const [friend, setFriend] = useState<UserData | null>(null);
   const [friendId, setFriendId] = useState<string | null>(null);
   const [isFriend, setIsFriend] = useState(true);
@@ -111,7 +111,7 @@ const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 const [showBgPicker, setShowBgPicker] = useState(false);
-const [bgTimer, setBgTimer] = useState<NodeJS.Timeout | null>(null);
+
   const handleDeleteMessage = async (msgId: string) => {
   if (!chatId) return;
   await deleteDoc(doc(db, "chats", chatId, "messages", msgId));
@@ -733,18 +733,21 @@ useEffect(() => {
       </div>
     </div>
 
-    {/* Right: actions */}
-    <div className="flex items-center gap-1.5">
-      <button onClick={() => setShowSearch(true)} className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
-        <Search size={20} className="text-white" strokeWidth={2.25} />
-      </button>
-      <button className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
-        <Phone size={20} className="text-white" strokeWidth={2.25} />
-      </button>
-      <button className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
-        <Video size={20} className="text-white" strokeWidth={2.25} />
-      </button>
-    </div>
+   {/* Right: actions */}
+<div className="flex items-center gap-1.5">
+  <button
+    onClick={() => setShowSettings(true)}
+    className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg"
+  >
+    <Settings size={20} className="text-white" strokeWidth={2.25} />
+  </button>
+  <button className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
+    <Phone size={20} className="text-white" strokeWidth={2.25} />
+  </button>
+  <button className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
+    <Video size={20} className="text-white" strokeWidth={2.25} />
+  </button>
+</div>
   </div>
 </div>
 
@@ -778,20 +781,7 @@ useEffect(() => {
 
 <div
   className="flex-1 min-h-0 overflow-y-auto px-0 pt-2 pb-2 space-y-0.5 relative z-10 bg-transparent"
-  onTouchStart={(e) => {
-    if (e.target === e.currentTarget) {
-      const timer = setTimeout(() => setShowBgPicker(true), 800);
-      setBgTimer(timer);
-    }
-  }}
-  onTouchEnd={() => bgTimer && clearTimeout(bgTimer)}
-  onMouseDown={(e) => {
-    if (e.target === e.currentTarget) {
-      const timer = setTimeout(() => setShowBgPicker(true), 800);
-      setBgTimer(timer);
-    }
-  }}
-  onMouseUp={() => bgTimer && clearTimeout(bgTimer)}
+
 >
   {filteredMessages.map((m, i) => {
     const isMe = m.senderId === user.uid;
@@ -1230,6 +1220,74 @@ useEffect(() => {
     </div>
   </div>
 </div>
+{/* SETTINGS SHEET */}
+{showSettings && (
+  <div
+    className="fixed inset-0 bg-black/70 backdrop-blur-md z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4"
+    onClick={() => setShowSettings(false)}
+  >
+    <div
+      className="bg-[#1c1c1e]/95 backdrop-blur-2xl w-full sm:max-w-md rounded-t-[28px] sm:rounded-[28px] overflow-hidden"
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-2 sm:hidden" />
+      <div className="px-5 py-4 border-b border-white/10">
+        <h3 className="text-white text-[18px] font-semibold">Cài đặt đoạn chat</h3>
+        <p className="text-white/50 text-sm">{friend.name}</p>
+      </div>
+
+      <div className="p-2">
+        <button
+          onClick={() => { setShowSettings(false); setShowSearch(true); }}
+          className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/10 active:bg-white/5 rounded-xl transition-colors"
+        >
+          <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
+            <Search size={18} className="text-white" />
+          </div>
+          <div className="text-left">
+            <p className="text-white font-medium">Tìm tin nhắn</p>
+            <p className="text-white/50 text-xs">Tìm kiếm trong cuộc trò chuyện</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => { setShowSettings(false); setShowBgPicker(true); }}
+          className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/10 active:bg-white/5 rounded-xl transition-colors"
+        >
+          <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
+            <ImageBg size={18} className="text-white" />
+          </div>
+          <div className="text-left">
+            <p className="text-white font-medium">Đổi hình nền</p>
+            <p className="text-white/50 text-xs">Chọn ảnh nền cho chat</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => { setShowSettings(false); /* thêm action khác nếu cần */ }}
+          className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/10 active:bg-white/5 rounded-xl transition-colors"
+        >
+          <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
+            <Pin size={18} className="text-white" />
+          </div>
+          <div className="text-left">
+            <p className="text-white font-medium">Tin nhắn đã ghim</p>
+            <p className="text-white/50 text-xs">{chatData?.pinnedMessage? 'Đang có 1 tin' : 'Chưa có'}</p>
+          </div>
+        </button>
+      </div>
+
+      <div className="p-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
+        <button
+          onClick={() => setShowSettings(false)}
+          className="w-full py-3 bg-white/10 hover:bg-white/15 text-white font-medium rounded-xl"
+        >
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+)}
   </div>
 
   );
