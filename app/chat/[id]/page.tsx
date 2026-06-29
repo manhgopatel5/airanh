@@ -84,7 +84,7 @@ export default function ChatDetailPage() {
   const params = useParams();
   const idFromUrl = Array.isArray(params?.id)? params.id[0] : params?.id || null;
   const router = useRouter();
-
+  const [longPressMsg, setLongPressMsg] = useState<any>(null);
   const db = useMemo(() => getFirebaseDB(), []);
   const storage = useMemo(() => getFirebaseStorage(), []);
   const { user, loading: authLoading } = useAuth();
@@ -111,8 +111,19 @@ export default function ChatDetailPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-
-
+  
+const handlePinMessage = async (msg: any) => {
+  if (!chatId) return;
+  await updateDoc(doc(db, "chats", chatId), {
+    pinnedMessage: {
+      id: msg.id,
+      text: msg.text || "Ảnh",
+      sender: msg.senderId,
+      createdAt: msg.createdAt
+    }
+  });
+  setLongPressMsg(null);
+};
 
 
 
@@ -638,7 +649,7 @@ useEffect(() => {
   const pinnedMsg = messages.find(m => m.id === chatData?.pinnedMessage);
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-b from-white via-gray-50 to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-black">
+<div className="flex flex-col h-screen bg-gradient-to-b from-white via-gray-50 to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-black overflow-hidden">
       <Toaster richColors position="top-center" />
 
       {showSearch && (
@@ -659,7 +670,7 @@ useEffect(() => {
         </div>
       )}
 
-      <div className="px-4 py-3 border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex items-center gap-3 sticky top-0 z-30">
+      <div className="px-4 py-3 border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex items-center gap-3 sticky top-0 z-50">
         <button onClick={() => router.back()} className="md:hidden p-2 -ml-2 active:scale-90 transition-transform rounded-full hover:bg-gray-100 dark:hover:bg-zinc-900">
           <ArrowLeft size={24} className="text-gray-900 dark:text-white" />
         </button>
@@ -698,17 +709,35 @@ useEffect(() => {
         </div>
       </div>
 
-      {pinnedMsg && (
-        <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/20 border-b border-amber-200/50 dark:border-amber-900/50 flex items-center gap-2">
-          <Pin size={16} className="text-amber-600 flex-shrink-0" />
-          <p className="flex-1 text-sm text-amber-900 dark:text-amber-200 truncate">{pinnedMsg.text}</p>
-          <button onClick={unpinMessage} className="p-1 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded">
-            <X size={14} />
-          </button>
-        </div>
-      )}
+{/* Pinned */}
+{chatData?.pinnedMessage && (
+  <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900 flex items-center gap-2 sticky top- z-40">
+    <Pin size={14} className="text-amber-600" />
+    <p className="text-xs flex-1 truncate">{chatData.pinnedMessage.text}</p>
+    <button onClick={() => updateDoc(doc(db, "chats", chatId), { pinnedMessage: null })}>
+      <X size={14} />
+    </button>
+  </div>
+)}
 
-<div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-[100px] space-y-0.5">
+{/* Action Menu */}
+{longPressMsg && (
+  <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-700 p-2 flex gap-2">
+    <button onClick={() => handlePinMessage(longPressMsg)} className="px-4 py-2.5 bg-gray-100 dark:bg-zinc-700 rounded-xl flex items-center gap-2 text-sm font-medium">
+      <Pin size={16} /> Ghim
+    </button>
+    {longPressMsg.senderId === user?.uid && (
+      <button onClick={() => handleDeleteMessage(longPressMsg.id)} className="px-4 py-2.5 bg-red-500 text-white rounded-xl flex items-center gap-2 text-sm font-medium">
+        <Trash2 size={16} /> Xóa
+      </button>
+    )}
+    <button onClick={() => setLongPressMsg(null)} className="px-3 py-2.5">
+      <X size={16} />
+    </button>
+  </div>
+)}
+
+<div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-[100px] space-y-0.5 relative z-0">
         {filteredMessages.map((m, i) => {
           const isMe = m.senderId === user.uid;
           const prev = filteredMessages[i - 1];
@@ -736,7 +765,24 @@ useEffect(() => {
                 </div>
               )}
 
-              <div className={`flex items-end gap-2 group ${isMe? "justify-end" : "justify-start"} ${isFirstInGroup? "mt-3" : ""}`}>
+              <div 
+  className={`flex items-end gap-2 group ${isMe? "justify-end" : "justify-start"} ${isFirstInGroup? "mt-3" : ""}`}
+  onTouchStart={() => {
+    const timer = setTimeout(() => setLongPressMsg(m), 500);
+    setPressTimer(timer);
+  }}
+  onTouchEnd={() => pressTimer && clearTimeout(pressTimer)}
+  onMouseDown={() => {
+    const timer = setTimeout(() => setLongPressMsg(m), 500);
+    setPressTimer(timer);
+  }}
+  onMouseUp={() => pressTimer && clearTimeout(pressTimer)}
+  onMouseLeave={() => pressTimer && clearTimeout(pressTimer)}
+  onContextMenu={(e) => {
+    e.preventDefault();
+    setLongPressMsg(m);
+  }}
+>
                 {!isMe && (
                   <div className="w-7 flex-shrink-0">
                     {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
