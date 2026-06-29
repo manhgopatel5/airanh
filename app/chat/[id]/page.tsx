@@ -993,13 +993,13 @@ const sendVoice = async () => {
     </button>
 
     <div className="voice-player flex-1 relative">
-      <audio
-        src={m.voice}
-        className="voice-audio"
-        crossOrigin="anonymous"
-        preload="none"
-        playsInline
-        style={{ display: 'none' }}
+   <audio
+  src={m.voice}
+  className="voice-audio"
+  crossOrigin="anonymous"
+  preload="none"
+  playsInline
+  style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}
         onTimeUpdate={(e) => {
           const audio = e.target as HTMLAudioElement;
           const progress = audio.duration? (audio.currentTime / audio.duration) * 100 : 0;
