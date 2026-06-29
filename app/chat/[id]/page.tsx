@@ -118,16 +118,45 @@ const [showBgPicker, setShowBgPicker] = useState(false);
   setLongPressMsg(null);
 };
 const handlePinMessage = async (msg: any) => {
-  if (!chatId) return;
-  await updateDoc(doc(db, "chats", chatId), {
-    pinnedMessage: {
-      id: msg.id,
-      text: msg.text || "Ảnh",
-      sender: msg.senderId,
-      createdAt: msg.createdAt
+  if (!chatId ||!msg?.id) return;
+
+  try {
+    // Nếu đã ghim tin này rồi thì bỏ ghim
+    const isAlreadyPinned = chatData?.pinnedMessage?.id === msg.id;
+
+    if (isAlreadyPinned) {
+      await updateDoc(doc(db, "chats", chatId), {
+        pinnedMessage: null
+      });
+      toast.success('Đã bỏ ghim');
+    } else {
+      await updateDoc(doc(db, "chats", chatId), {
+        pinnedMessage: {
+          id: msg.id,
+          text: msg.text || '',
+          image: msg.image || null,
+          file: msg.file || null,
+          fileName: msg.fileName || null,
+          sender: msg.senderId,
+          senderName: msg.senderName || currentUser?.displayName || 'Bạn',
+          by: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Bạn',
+          createdAt: msg.createdAt || serverTimestamp(),
+          pinnedAt: serverTimestamp()
+        }
+      });
+      toast.success('Đã ghim tin nhắn');
     }
-  });
-  setLongPressMsg(null);
+
+    setLongPressMsg(null);
+
+    // Rung nhẹ
+    if (navigator.vibrate) navigator.vibrate(10);
+
+  } catch (error) {
+    console.error('Lỗi ghim:', error);
+    toast.error('Không thể ghim tin nhắn');
+    setLongPressMsg(null);
+  }
 };
 
 
@@ -598,14 +627,22 @@ const filteredMessages = useMemo(() =>
 
 const goToNextResult = () => {
   if (filteredMessages.length === 0) return;
-  setCurrentResultIndex((i) => (i + 1) % filteredMessages.length);
-  // scroll to message
-  document.getElementById(filteredMessages[(currentResultIndex + 1) % filteredMessages.length]?.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const nextIndex = (currentResultIndex + 1) % filteredMessages.length;
+  setCurrentResultIndex(nextIndex);
+  const nextId = filteredMessages[nextIndex]?.id;
+  if (nextId) {
+    document.getElementById(nextId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 };
 
 const goToPrevResult = () => {
   if (filteredMessages.length === 0) return;
-  setCurrentResultIndex((i) => (i - 1 + filteredMessages.length) % filteredMessages.length);
+  const prevIndex = (currentResultIndex - 1 + filteredMessages.length) % filteredMessages.length;
+  setCurrentResultIndex(prevIndex);
+  const prevId = filteredMessages[prevIndex]?.id;
+  if (prevId) {
+    document.getElementById(prevId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 };
 
 // Phím tắt Cmd+K
@@ -775,21 +812,25 @@ useEffect(() => {
 
 {/* HEADER - nền trắng chữ đen */}
 <div
-  className="shrink-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur-2xl"
+  className="shrink-0 z-40 border-b border-zinc-200/70 bg-white/85 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/70"
   style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}
 >
-  <div className="px-4 py-2.5 flex items-center justify-between">
-    {/* Left: avatar + name */}
-    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+  <div className="px-3 sm:px-4 h- flex items-center justify-between">
+    {/* Left: avatar + name - BẤM LÀ MỞ SETTING */}
+    <button
+      onClick={() => setShowSettings(true)}
+      className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70 transition text-left"
+    >
       <div className="relative flex-shrink-0">
         <img
           src={friend.avatar}
-          className="w-10 h-10 rounded-full object-cover ring-2 ring-zinc-200"
+          className="w-10 h-10 rounded-full object-cover ring-2 ring-zinc-200/80"
           alt={friend.name}
         />
         {friend.isOnline && (
-          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#31d158] rounded-full ring-2 ring-white">
-            <div className="absolute inset-0 bg-[#31d158] rounded-full animate-ping opacity-60" />
+          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#31d158] rounded-full ring-2 ring-white grid place-items-center">
+            <div className="absolute inset-0 bg-[#31d158] rounded-full animate-ping opacity-75" />
+            <div className="w-1.5 h-1.5 bg-white rounded-full relative z-10" />
           </div>
         )}
       </div>
@@ -798,52 +839,107 @@ useEffect(() => {
         <p className="font-semibold text-zinc-900 text- leading-tight truncate">
           {friend.name}
         </p>
-        <p className="text-xs leading-tight font-medium text-zinc-500">
-          {chatData?.typing?.[friendId || ""]? (
-            <span className="text-blue-600">Đang nhập...</span>
-          ) : friend.isOnline? (
+        <p className="text- leading-snug font-medium text-zinc-500">
+          {chatData?.typing?.[friendId || ""] ? (
+            <span className="text-[#0084FF] flex items-center gap-1">
+              <span className="flex gap-0.5">
+                <span className="w-1 h-1 bg-[#0084FF] rounded-full animate-bounce" style={{animationDelay:'0ms'}}/>
+                <span className="w-1 h-1 bg-[#0084FF] rounded-full animate-bounce" style={{animationDelay:'150ms'}}/>
+                <span className="w-1 h-1 bg-[#0084FF] rounded-full animate-bounce" style={{animationDelay:'300ms'}}/>
+              </span>
+              Đang nhập...
+            </span>
+          ) : friend.isOnline ? (
             <span>Đang hoạt động</span>
-          ) : friend.lastSeen? (
+          ) : friend.lastSeen ? (
             <span>{formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })}</span>
           ) : (
             <span>Offline</span>
           )}
         </p>
       </div>
-    </div>
+    </button>
 
- {/* Right: actions */}
-<div className="flex items-center gap-2">
-  <button
-    onClick={() => setShowSettings(true)}
-    className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-90 shadow-md shadow-blue-500/25 transition"
-  >
-    <Settings size={19} className="text-white" strokeWidth={2.3} />
-  </button>
-  <button 
-    onClick={() => toast.info('Gọi thoại')}
-    className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-90 shadow-md shadow-blue-500/25 transition"
-  >
-    <Phone size={19} className="text-white" strokeWidth={2.3} />
-  </button>
-  <button 
-    onClick={() => toast.info('Gọi video')}
-    className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-90 shadow-md shadow-blue-500/25 transition"
-  >
-    <Video size={19} className="text-white" strokeWidth={2.3} />
-  </button>
-</div>
+    {/* Right: chỉ còn Call & Video */}
+    <div className="flex items-center gap-1.5 pl-2">
+      <button 
+        onClick={() => toast.info('Gọi thoại')}
+        className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-90 shadow-md shadow-blue-500/20 transition"
+      >
+        <Phone size={18} className="text-white" strokeWidth={2.3} />
+      </button>
+      <button 
+        onClick={() => toast.info('Gọi video')}
+        className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-90 shadow-md shadow-blue-500/20 transition"
+      >
+        <Video size={18} className="text-white" strokeWidth={2.3} />
+      </button>
+    </div>
   </div>
 </div>
 
-{/* Pinned */}
+{/* PINNED - Pro UI */}
 {chatData?.pinnedMessage && (
-  <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900 flex items-center gap-2 sticky top- z-40">
-    <Pin size={14} className="text-amber-600" />
-    <p className="text-xs flex-1 truncate">{(chatData as any)?.pinnedMessage?.text}</p>
-    <button onClick={() => updateDoc(doc(db, "chats", chatId), { pinnedMessage: null })}>
-      <X size={14} />
-    </button>
+  <div className="sticky top- z-30 px-3 pt-2">
+    <div className="group relative overflow-hidden rounded-2xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/85 dark:bg-[#1c1405]/70 backdrop-blur-2xl shadow-[0_4px_12px_-4px_rgba(245,158,11,0.2)]">
+      {/* viền trái gradient */}
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-400 via-amber-500 to-orange-500" />
+
+      <div className="flex items-center gap-2.5 pl-3.5 pr-2 py-2.5">
+        <div className="w-8 h-8 rounded-xl bg-amber-500/15 dark:bg-amber-500/20 flex items-center justify-center shrink-0">
+          <Pin size={15} className="text-amber-600 dark:text-amber-400" strokeWidth={2.5} />
+        </div>
+
+        {/* Bấm để nhảy tới tin nhắn */}
+        <button
+          onClick={() => {
+            const el = document.getElementById(`msg-${(chatData as any).pinnedMessage.id}`);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el?.classList.add('ring-2','ring-amber-400','transition');
+            setTimeout(() => el?.classList.remove('ring-2','ring-amber-400'), 1500);
+          }}
+          className="flex-1 min-w-0 text-left"
+        >
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="text- font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider">Đã ghim</span>
+            {(chatData as any).pinnedMessage?.by && (
+              <span className="text- text-zinc-500 dark:text-zinc-400">• {(chatData as any).pinnedMessage.by}</span>
+            )}
+          </div>
+
+          <p className="text- text-zinc-800 dark:text-zinc-100 truncate leading-snug group-hover:underline decoration-dotted underline-offset-2">
+            {(chatData as any).pinnedMessage?.text ||
+             (chatData as any).pinnedMessage?.image? '📷 Hình ảnh' :
+             (chatData as any).pinnedMessage?.file? '📎 Tệp đính kèm' : 'Tin nhắn'}
+          </p>
+        </button>
+
+        {/* Actions */}
+        <div className="flex items-center">
+          <button
+            onClick={() => {
+              const el = document.getElementById(`msg-${(chatData as any).pinnedMessage.id}`);
+              el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }}
+            className="w-7 h-7 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center active:scale-90 transition"
+            title="Đi đến tin nhắn"
+          >
+            <ChevronDown size={16} className="text-zinc-500 rotate-[-90deg]" />
+          </button>
+
+          <button
+            onClick={async () => {
+              await updateDoc(doc(db, "chats", chatId), { pinnedMessage: null });
+              toast.success('Đã bỏ ghim');
+            }}
+            className="w-7 h-7 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center active:scale-90 transition"
+            title="Bỏ ghim"
+          >
+            <X size={15} className="text-zinc-500" />
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 )}
 
