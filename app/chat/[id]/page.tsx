@@ -793,36 +793,36 @@ useEffect(() => {
   }}
   onMouseUp={() => bgTimer && clearTimeout(bgTimer)}
 >
-        {filteredMessages.map((m, i) => {
-          const isMe = m.senderId === user.uid;
-          const prev = filteredMessages[i - 1];
-          const next = filteredMessages[i + 1];
-          const showAvatar =!isMe && (!next || next.senderId!== m.senderId);
-          const isFirstInGroup =!prev || prev.senderId!== m.senderId;
-          const isLastInGroup =!next || next.senderId!== m.senderId;
-          const showDate =
-           !prev ||
-            (m.createdAt &&
-              prev.createdAt &&
-              m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString());
+  {filteredMessages.map((m, i) => {
+    const isMe = m.senderId === user.uid;
+    const prev = filteredMessages[i - 1];
+    const next = filteredMessages[i + 1];
+    const showAvatar =!isMe && (!next || next.senderId!== m.senderId);
+    const isFirstInGroup =!prev || prev.senderId!== m.senderId;
+    const isLastInGroup =!next || next.senderId!== m.senderId;
+    const showDate =
+      prev &&
+      m.createdAt &&
+      prev.createdAt &&
+      m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString();
 
-          const seenAvatars = getSeenAvatars(m);
+    const seenAvatars = getSeenAvatars(m);
 
-          return (
-            <div key={m.id} id={`msg-${m.id}`}>
-              {showDate && m.createdAt && (
-                <div className="flex items-center justify-center my-6">
-                  <div className="px-4 py-1.5 bg-gray-200/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-full">
-                    <p className="text-xs font-bold text-gray-600 dark:text-zinc-400">
-                      {formatDateDivider(m.createdAt)}
-                    </p>
-                  </div>
-                </div>
-              )}
+    return (
+      <div key={m.id} id={`msg-${m.id}`}>
+        {showDate && m.createdAt && (
+          <div className="flex items-center justify-center my-6">
+            <div className="px-4 py-1.5 bg-gray-200/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-full">
+              <p className="text-xs font-bold text-gray-600 dark:text-zinc-400">
+                {formatDateDivider(m.createdAt)}
+              </p>
+            </div>
+          </div>
+        )}
 
-              <div 
-  className={`flex items-end gap-2 group ${isMe? "justify-end" : "justify-start"} ${isFirstInGroup? "mt-3" : ""}`}
-  onTouchStart={() => {
+        <div 
+          className={`flex items-end gap-2 group px-3 ${isMe? "justify-end" : "justify-start"} ${isFirstInGroup? "mt-1" : ""}`}
+          onTouchStart={() => {
     const timer = setTimeout(() => setLongPressMsg(m), 500);
     setPressTimer(timer);
   }}
@@ -1193,7 +1193,7 @@ useEffect(() => {
 
 {/* INPUT */}
 <div
-  className="shrink-0 z-30 border-t border-black/10 bg-black/5 backdrop-blur-xl"
+  className="shrink-0 z-30 border-t border-zinc-200 bg-white/95 backdrop-blur-2xl"
   style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}
 >
   <div className="flex items-end gap-2 px-3 py-2.5">
@@ -1209,7 +1209,7 @@ useEffect(() => {
       disabled={isBlocked || isDeleted}
       className={`w-10 h-10 flex items-center justify-center rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
     >
-      <ImageIcon size={22} className="text-white/90" />
+      <ImageIcon size={22} className="text-zinc-600" />
     </button>
 
     <input
@@ -1223,7 +1223,7 @@ useEffect(() => {
       disabled={isBlocked || isDeleted}
       className={`w-10 h-10 hidden sm:flex items-center justify-center rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
     >
-      <Paperclip size={20} className="text-white/90" />
+      <Paperclip size={20} className="text-zinc-600" />
     </button>
 
     <button
@@ -1231,7 +1231,7 @@ useEffect(() => {
       disabled={isBlocked || isDeleted}
       className={`w-10 h-10 hidden sm:flex items-center justify-center rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
     >
-      <MapPin size={20} className="text-white/90" />
+      <MapPin size={20} className="text-zinc-600" />
     </button>
 
     <div className="flex-1 relative">
@@ -1250,14 +1250,14 @@ useEffect(() => {
         }}
         disabled={isBlocked || isDeleted}
         placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa' : 'Nhắn tin...'}
-        className="w-full h-11 pl-4 pr-12 bg-white/90 rounded-full outline-none text- text-zinc-900 border border-white/30 placeholder:text-zinc-500"
+        className="w-full h-10 pl-4 pr-11 bg-zinc-100 rounded-full outline-none text- text-zinc-900 border-zinc-200 placeholder:text-zinc-400"
       />
       <button
         onClick={sendMessage}
         disabled={sending || isBlocked || isDeleted ||!text.trim()}
-        className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-[#0084ff] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40"
+        className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#A9D0FF] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40"
       >
-        {sending? <Loader2 size={17} className="animate-spin" /> : <Send size={17} strokeWidth={2.5} />}
+        {sending? <Loader2 size={16} className="animate-spin" /> : <Send size={16} strokeWidth={2.5} />}
       </button>
     </div>
   </div>
