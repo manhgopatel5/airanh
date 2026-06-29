@@ -14,7 +14,6 @@
       "x-goog-storage-class",
       "x-goog-hash",
       "x-goog-meta-*",
-      "Authorization",
       "Content-Range",
       "Accept-Ranges"
     ],
