@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
-import { BACKGROUNDS, BACKGROUND_GROUPS, getBgUrl, isGradient, type BgId } from '@/lib/backgrounds';
+import { BACKGROUNDS, BACKGROUND_GROUPS, getBgUrl, getBgSrcSet, isGradient, type BgId } from '@/lib/backgrounds';
 import {
   collection, query, onSnapshot, doc,
   orderBy, addDoc, deleteField, serverTimestamp, Timestamp, updateDoc, deleteDoc, arrayUnion, arrayRemove
