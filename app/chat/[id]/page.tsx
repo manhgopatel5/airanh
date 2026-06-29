@@ -653,21 +653,30 @@ useEffect(() => {
 
 
   return (
-<div
-  className="flex flex-col h-screen overflow-hidden relative"
-  style={{
-    backgroundImage: (chatData as any)?.background? `url(${(chatData as any).background})` : undefined,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundAttachment: 'fixed'
-  }}
->
-  {/* Overlay mờ để chữ đọc được */}
+<div className="flex flex-col h-[100dvh] overflow-hidden relative">
+  {/* NỀN FIX TOÀN MÀN - không cuộn */}
   {(chatData as any)?.background && (
-    <div className="absolute inset-0 bg-black/20 dark:bg-black/40 pointer-events-none" />
+    <>
+      <div
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: `url(${(chatData as any).background})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center',
+          backgroundRepeat: 'no-repeat',
+          transform: 'translateZ(0)'
+        }}
+      />
+      <div className="fixed inset-0 z-0 bg-black/15 dark:bg-black/35 pointer-events-none" />
+    </>
   )}
-      <Toaster richColors position="top-center" />
 
+  {/* Nền mặc định khi chưa có ảnh */}
+  {!(chatData as any)?.background && (
+    <div className="fixed inset-0 z-0 bg-gradient-to-b from-white via-gray-50 to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-black" />
+  )}
+
+  <Toaster richColors position="top-center" />
       {showSearch && (
         <div className="px-4 py-2 border-b border-gray-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl">
           <div className="flex items-center gap-2">
@@ -686,7 +695,7 @@ useEffect(() => {
         </div>
       )}
 
-<div className="px-4 py-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-white/20 dark:border-zinc-800/50 flex items-center justify-between sticky top-0 z-50">
+<div className="px-4 py-3 bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl border-b border-black/5 dark:border-white/5 flex items-center justify-between sticky top-0 z-40">
         <button onClick={() => router.back()} className="md:hidden p-2 -ml-2 active:scale-90 transition-transform rounded-full hover:bg-gray-100 dark:hover:bg-zinc-900">
           <ArrowLeft size={24} className="text-gray-900 dark:text-white" />
         </button>
@@ -1041,31 +1050,53 @@ useEffect(() => {
         </div>
       )}
 {showBgPicker && (
-  <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-4" onClick={() => setShowBgPicker(false)}>
-    <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-5" onClick={e => e.stopPropagation()}>
-      <h3 className="font-semibold mb-4">Chọn nền chat</h3>
-      <div className="grid grid-cols-3 gap-3 mb-4">
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center p-0 sm:p-4 sm:items-center" onClick={() => setShowBgPicker(false)}>
+    <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-t-[32px] sm:rounded-[28px] w-full max-w-md p-6 pb-8 shadow-2xl animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+      <div className="w-12 h-1.5 bg-gray-300 dark:bg-zinc-700 rounded-full mx-auto mb-5 sm:hidden" />
+      <h3 className="font-semibold text-lg mb-5">Chủ đề đoạn chat</h3>
+
+      <div className="grid grid-cols-3 gap-3 mb-5">
         {[
-          '',
-          'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
-          'https://images.unsplash.com/photo-1519681393784-d120267933ba',
-          'https://images.unsplash.com/photo-1470071459604-3b5b0a5c2cdb',
-          'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
-          'https://images.unsplash.com/photo-1490750967868-88aa4486c946'
-        ].map((bg, i) => (
-          <button
-            key={i}
-            onClick={async () => {
-              await updateDoc(doc(db, "chats", chatId), { background: bg });
-              setShowBgPicker(false);
-            }}
-            className="aspect-square rounded-2xl overflow-hidden border-2 border-transparent hover:border-blue-500"
-            style={{ backgroundImage: bg? `url(${bg})` : 'linear-gradient(to bottom, white, #f3f4f6)', backgroundSize: 'cover' }}
-          >
-            {!bg && <div className="w-full h-full flex items-center justify-center text-xs">Mặc định</div>}
-          </button>
-        ))}
+          { url: '', name: 'Mặc định' },
+          { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600', name: 'Núi' },
+          { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=600', name: 'Sao' },
+          { url: 'https://images.unsplash.com/photo-1470071459604-3b5b0a5c2cdb?w=600', name: 'Rừng' },
+          { url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600', name: 'Hồ' },
+          { url: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=600', name: 'Hoa' }
+        ].map((bg, i) => {
+          const isSelected = (chatData as any)?.background === bg.url || (!(chatData as any)?.background &&!bg.url);
+          return (
+            <button
+              key={i}
+              onClick={async () => {
+                await updateDoc(doc(db, "chats", chatId), { background: bg.url });
+                setShowBgPicker(false);
+              }}
+              className={`aspect-[3/4] rounded-2xl overflow-hidden relative group ring-2 transition-all ${isSelected? 'ring-blue-500 scale-95' : 'ring-transparent hover:ring-gray-300 dark:hover:ring-zinc-700'}`}
+            >
+              <div
+                className="w-full h-full"
+                style={{
+                  backgroundImage: bg.url? `url(${bg.url})` : 'linear-gradient(180deg, #fff 0%, #f3f4f6 100%)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              />
+              {isSelected && (
+                <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                </div>
+              )}
+              <div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
+                <p className="text-[11px] text-white font-medium text-center truncate">{bg.name}</p>
+              </div>
+            </button>
+          );
+        })}
       </div>
+
       <input
         type="file"
         accept="image/*"
@@ -1073,15 +1104,24 @@ useEffect(() => {
         id="bg-upload"
         onChange={async (e) => {
           const file = e.target.files?.[0];
-          if (!file) return;
-          // upload lên storage rồi save url
-          const url = URL.createObjectURL(file); // tạm, thay bằng upload Firebase
-          await updateDoc(doc(db, "chats", chatId), { background: url });
-          setShowBgPicker(false);
+          if (!file ||!chatId) return;
+          try {
+            const storageRef = ref(storage, `chat-backgrounds/${chatId}/${Date.now()}_${file.name}`);
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
+            await updateDoc(doc(db, "chats", chatId), { background: url });
+            setShowBgPicker(false);
+          } catch (err) {
+            console.error(err);
+            alert('Tải ảnh thất bại');
+          }
         }}
       />
-      <label htmlFor="bg-upload" className="w-full py-3 bg-gray-100 dark:bg-zinc-800 rounded-xl text-center block font-medium">
-        Tải ảnh lên
+      <label htmlFor="bg-upload" className="w-full py-3.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-2xl text-center block font-medium transition-colors active:scale-[0.98]">
+        <div className="flex items-center justify-center gap-2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          Tải ảnh từ máy
+        </div>
       </label>
     </div>
   </div>
@@ -1109,7 +1149,7 @@ useEffect(() => {
       )}
 
 {/* INPUT */}
-<div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-zinc-800">
+<div className="fixed bottom-0 left-0 right-0 bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl border-t border-black/5 dark:border-white/5 px-3 py-3 z-30 pb-[env(safe-area-inset-bottom)]">
   <div className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
     <div className="flex items-end gap-2">
       <input
