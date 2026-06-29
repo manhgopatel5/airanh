@@ -1212,6 +1212,28 @@ useEffect(() => {
       <ImageIcon size={22} className="text-white/90" />
     </button>
 
+    <input
+      type="file"
+      hidden
+      ref={fileInputRef}
+      onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])}
+    />
+    <button
+      onClick={() => fileInputRef.current?.click()}
+      disabled={isBlocked || isDeleted}
+      className={`w-10 h-10 hidden sm:flex items-center justify-center rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
+    >
+      <Paperclip size={20} className="text-white/90" />
+    </button>
+
+    <button
+      onClick={sendLocation}
+      disabled={isBlocked || isDeleted}
+      className={`w-10 h-10 hidden sm:flex items-center justify-center rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
+    >
+      <MapPin size={20} className="text-white/90" />
+    </button>
+
     <div className="flex-1 relative">
       <input
         ref={inputRef}
