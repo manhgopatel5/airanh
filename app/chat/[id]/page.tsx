@@ -432,14 +432,16 @@ const startRecording = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     
-    // 1. Chọn mime phù hợp iOS/Android
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : MediaRecorder.isTypeSupported('audio/mp4')
-      ? 'audio/mp4'
-      : 'audio/webm';
+    // 1. ƯU TIÊN mp4 cho iOS, webm cho Android/Chrome
+    const mimeType = MediaRecorder.isTypeSupported('audio/mp4')
+      ? 'audio/mp4'  // iPhone, Safari
+      : MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'  // Chrome, Android
+      : MediaRecorder.isTypeSupported('audio/webm')
+      ? 'audio/webm'
+      : ''; // fallback để browser tự chọn
 
-    const mediaRecorder = new MediaRecorder(stream, { mimeType });
+    const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     mediaRecorderRef.current = mediaRecorder;
     audioChunksRef.current = [];
 
@@ -448,13 +450,14 @@ const startRecording = async () => {
     };
 
     mediaRecorder.onstop = () => {
-      const blob = new Blob(audioChunksRef.current, { type: mimeType });
+      // dùng đúng mime đã chọn
+      const blob = new Blob(audioChunksRef.current, { type: mimeType || 'audio/mp4' });
       setAudioBlob(blob);
       stream.getTracks().forEach(track => track.stop());
       audioChunksRef.current = [];
     };
 
-    mediaRecorder.start(250); // lấy chunk mỗi 250ms cho mượt
+    mediaRecorder.start(250);
     setRecording(true);
     setRecordingTime(0);
     
@@ -487,14 +490,32 @@ const sendVoice = async () => {
   
   setUploading(true);
   try {
-    // 2. Đuôi file theo đúng loại blob
-    const ext = audioBlob.type.includes('mp4') ? 'm4a' : 'webm';
-    const fileName = `${Date.now()}.${ext}`;
+    // 1. ƯU TIÊN mp4/m4a cho iOS – webm sẽ không play được
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    let mimeType = audioBlob.type || 'audio/webm';
+    
+    // Nếu đang ghi bằng webm, đổi đuôi cho đúng (không transcode, nhưng báo đúng type)
+    const ext = mimeType.includes('mp4') || mimeType.includes('m4a') || mimeType.includes('aac')
+      ? 'm4a'
+      : mimeType.includes('webm')
+      ? 'webm'
+      : 'ogg';
+
+    // Cảnh báo sớm nếu iOS + webm
+    if (isIOS && ext === 'webm') {
+      toast.error("Voice webm không chạy trên iPhone - cần ghi lại");
+    }
+
+    const fileName = `voice_${Date.now()}.${ext}`;
     const storageRef = ref(storage, `chat-voice/${chatId}/${fileName}`);
 
     const metadata = {
-      contentType: audioBlob.type || 'audio/webm',
-      customMetadata: { uid: user.uid }
+      contentType: mimeType,
+      cacheControl: 'public, max-age=31536000',
+      customMetadata: { 
+        uid: user.uid,
+        duration: String(recordingTime)
+      }
     };
 
     await uploadBytes(storageRef, audioBlob, metadata);
@@ -503,8 +524,9 @@ const sendVoice = async () => {
     await addDoc(collection(db, "chats", chatId, "messages"), {
       senderId: user.uid,
       voice: url,
-      duration: recordingTime,
+      duration: Math.round(recordingTime), // làm tròn
       type: "voice",
+      mimeType, // <-- lưu để client biết
       createdAt: serverTimestamp(),
       seenBy: [user.uid],
       members: chatData.members,
@@ -525,7 +547,6 @@ const sendVoice = async () => {
     setUploading(false);
   }
 };
-
   const sendLocation = async () => {
     if (!canSendMessage || isBlocked || isDeleted) {
       toast.error("Không thể nhắn tin");
@@ -897,32 +918,34 @@ const sendVoice = async () => {
                             <span className="text-sm truncate">{m.fileName}</span>
                           </a>
                         )}
-              {m.voice && (
+           {m.voice && (
   <div className="flex items-center gap-2.5 w-[210px] py-1">
     <button
-      onClick={(e) => {
-        // SỬA: lấy đúng wrapper, không dùng closest
+      onClick={async (e) => {
         const wrapper = e.currentTarget.parentElement as HTMLElement;
-        const container = wrapper.querySelector('.voice-player') as HTMLElement;
-        const audio = container?.querySelector('audio') as HTMLAudioElement;
+        const audio = wrapper.querySelector('audio') as HTMLAudioElement;
         if (!audio) return;
 
         // dừng tất cả audio khác
         document.querySelectorAll('audio.voice-audio').forEach(a => {
-          if (a!== audio) (a as HTMLAudioElement).pause();
+          if (a!== audio) { a.pause(); (a as HTMLAudioElement).currentTime = 0; }
         });
 
-        if (audio.paused) {
-          audio.play();
-          e.currentTarget.innerHTML = '<svg width="14" height="14" viewBox="0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
-        } else {
-          audio.pause();
-          e.currentTarget.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
+        try {
+          if (audio.paused) {
+            await audio.play(); // <-- quan trọng: await để bắt lỗi
+            e.currentTarget.innerHTML = '<svg width="14" height="14" viewBox="0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+          } else {
+            audio.pause();
+            e.currentTarget.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
+          }
+        } catch (err) {
+          console.error('Play failed:', err);
+          // iOS sẽ vào đây nếu file là webm
+          alert('Không phát được voice. File có thể là.webm (iOS không hỗ trợ).');
         }
       }}
-      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition active:scale-90 ${
-        isMe? 'bg-white/25 hover:bg-white/35 text-white' : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'
-      }`}
+      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition active:scale-90 ${isMe? 'bg-white/25 hover:bg-white/35 text-white' : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'}`}
     >
       <Play size={14} fill="currentColor" className="ml-0.5" />
     </button>
@@ -932,11 +955,12 @@ const sendVoice = async () => {
         src={m.voice}
         className="voice-audio hidden"
         preload="metadata"
+        playsInline // <-- thêm cho iOS
         onTimeUpdate={(e) => {
           const audio = e.target as HTMLAudioElement;
           const progress = (audio.currentTime / audio.duration) * 100 || 0;
           const bar = (e.target as HTMLElement).parentElement?.querySelector('.voice-progress') as HTMLElement;
-          const time = (e.target as HTMLElement).parentElement?.parentElement?.querySelector('.voice-time') as HTMLElement;
+          const time = (e.target as HTMLElement).parentElement?.querySelector('.voice-time') as HTMLElement;
           if (bar) bar.style.width = `${progress}%`;
           if (time && audio.duration) {
             const remain = Math.floor(audio.duration - audio.currentTime);
@@ -945,7 +969,7 @@ const sendVoice = async () => {
         }}
         onLoadedMetadata={(e) => {
           const audio = e.target as HTMLAudioElement;
-          const time = (e.target as HTMLElement).parentElement?.parentElement?.querySelector('.voice-time') as HTMLElement;
+          const time = (e.target as HTMLElement).parentElement?.querySelector('.voice-time') as HTMLElement;
           if (time && audio.duration) {
             time.textContent = `${Math.floor(audio.duration/60)}:${String(Math.floor(audio.duration%60)).padStart(2,'0')}`;
           }
@@ -957,7 +981,9 @@ const sendVoice = async () => {
           if (btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
           if (bar) bar.style.width = '0%';
         }}
+        onError={(e) => console.error('Audio error:', (e.target as HTMLAudioElement).error)}
       />
+      {/* waveform giữ nguyên */}
       <div className="flex items-end gap-[1.8px] h-6 absolute inset-0 pointer-events-none">
         {Array.from({ length: 22 }).map((_, i) => (
           <div key={i} className={`w-[2px] rounded-full transition-all ${isMe? 'bg-white/40' : 'bg-gray-400/50 dark:bg-zinc-500/60'}`} style={{ height: `${4 + Math.sin(i * 0.8) * 3 + Math.random() * 5 + 6}px` }} />
