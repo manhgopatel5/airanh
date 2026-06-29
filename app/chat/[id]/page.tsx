@@ -550,7 +550,7 @@ const sendVoice = async () => {
       mimeType: audioBlob.type,
       createdAt: serverTimestamp(),
       seenBy: [user.uid],
-      members: chatData.members,
+members: chatData?.members || [],
     });
 
     setAudioBlob(null);
