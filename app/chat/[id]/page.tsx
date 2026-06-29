@@ -12,10 +12,9 @@ import {
 import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
-  Image as ImageIcon, SearchX, MessageCircle, ChevronUp, ChevronDown, Navigation, Flag, Plus, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
+  Image as ImageIcon, Navigation, ChevronDown, ChevronUp, Flag, Plus, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
   Smile, Reply, Trash2, Pencil, Shield, Pin, Copy, Search
 } from "lucide-react";
-import NextImage from 'next/image';
 import { toast, Toaster } from "sonner";
 import imageCompression from "browser-image-compression";
 import { formatDistanceToNow, format } from "date-fns";
@@ -103,7 +102,7 @@ export default function ChatDetailPage() {
   const [friendId, setFriendId] = useState<string | null>(null);
   const [isFriend, setIsFriend] = useState(true);
   const [chatData, setChatData] = useState<ChatData | null>(null);
- const [showSearchSheet, setShowSearchSheet] = useState(false);
+
   const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
   const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
   const canSendMessage =!!friendId && isFriend &&!isBlocked &&!isDeleted;
@@ -119,7 +118,7 @@ export default function ChatDetailPage() {
 const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
 
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
-
+  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 const [showBgPicker, setShowBgPicker] = useState(false);
 
@@ -655,99 +654,45 @@ useEffect(() => {
 
   
 
-
-// --- SEARCH STATE ---
+  const searchInputRef = useRef<HTMLInputElement>(null);
 const [currentResultIndex, setCurrentResultIndex] = useState(0);
 
-// Lọc đầy đủ: text, file, địa chỉ, vị trí
-const filteredMessages = useMemo(() => {
-  const q = searchQuery.trim().toLowerCase();
-  if (!q) return [];
+const filteredMessages = useMemo(() =>
+  messages.filter(m => m.text?.toLowerCase().includes(searchQuery.toLowerCase())),
+  [searchQuery, messages]
+);
 
-  return messages.filter(m =>
-    m.text?.toLowerCase().includes(q) ||
-    m.fileName?.toLowerCase().includes(q) ||
-    m.address?.toLowerCase().includes(q) ||
-    (m.type === 'location' && ('vị trí location map').includes(q))
-  );
-}, [searchQuery, messages]);
-
-// Reset về 0 mỗi khi gõ mới
-useEffect(() => {
-  setCurrentResultIndex(0);
-}, [searchQuery]);
-
-// Hàm scroll + highlight chuẩn
-const scrollToMessage = useCallback((msgId: string) => {
-  const el = document.getElementById(`msg-${msgId}`);
-  if (!el) return;
-
-  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-  // highlight đẹp 1.5s
-  el.classList.add('!ring-2', '!ring-[#0A84FF]', '!ring-offset-2', '!ring-offset-[#0a0a0a]', 'transition-all', 'duration-300');
-  setTimeout(() => {
-    el.classList.remove('!ring-2', '!ring-[#0A84FF]', '!ring-offset-2', '!ring-offset-[#0a0a0a]');
-  }, 1500);
-}, []);
-
-const goToNextResult = useCallback(() => {
-  if (!filteredMessages.length) return;
-
+const goToNextResult = () => {
+  if (filteredMessages.length === 0) return;
   const nextIndex = (currentResultIndex + 1) % filteredMessages.length;
   setCurrentResultIndex(nextIndex);
-
-  const nextMsg = filteredMessages[nextIndex];
-  if (nextMsg?.id) {
-    // đóng sheet nếu đang mở để thấy tin nhắn
-    if (showSearchSheet) setShowSearchSheet(false);
-    setTimeout(() => scrollToMessage(nextMsg.id), 100);
+  const nextId = filteredMessages[nextIndex]?.id;
+  if (nextId) {
+    document.getElementById(nextId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
-}, [filteredMessages, currentResultIndex, showSearchSheet, scrollToMessage]);
+};
 
-const goToPrevResult = useCallback(() => {
-  if (!filteredMessages.length) return;
-
+const goToPrevResult = () => {
+  if (filteredMessages.length === 0) return;
   const prevIndex = (currentResultIndex - 1 + filteredMessages.length) % filteredMessages.length;
   setCurrentResultIndex(prevIndex);
-
-  const prevMsg = filteredMessages[prevIndex];
-  if (prevMsg?.id) {
-    if (showSearchSheet) setShowSearchSheet(false);
-    setTimeout(() => scrollToMessage(prevMsg.id), 100);
+  const prevId = filteredMessages[prevIndex]?.id;
+  if (prevId) {
+    document.getElementById(prevId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
-}, [filteredMessages, currentResultIndex, showSearchSheet, scrollToMessage]);
+};
 
-// Phím tắt Cmd+K + điều hướng
+// Phím tắt Cmd+K
 useEffect(() => {
   const handleKey = (e: KeyboardEvent) => {
-    // Cmd+K / Ctrl+K mở search
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
-      setShowSearchSheet(true);
-      return;
-    }
-
-    // Chỉ hoạt động khi có kết quả
-    if (!searchQuery ||!filteredMessages.length) return;
-
-    if (e.key === 'Enter' &&!e.shiftKey) {
-      e.preventDefault();
-      goToNextResult();
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      goToNextResult();
-    }
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      goToPrevResult();
+      setShowSearch(true);
     }
   };
-
   window.addEventListener('keydown', handleKey);
   return () => window.removeEventListener('keydown', handleKey);
-}, [searchQuery, filteredMessages.length, goToNextResult, goToPrevResult]);
+}, []);
 
   const getSeenAvatars = (msg: Message) => {
     if (!chatData || msg.senderId!== user?.uid) return [];
@@ -776,7 +721,10 @@ useEffect(() => {
     return format(date, "dd/MM/yyyy", { locale: vi });
   };
 
-  
+  const scrollToMessage = (msgId: string) => {
+    const el = document.getElementById(`msg-${msgId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
 
   if (authLoading || loadingFriend ||!user) {
     return (
@@ -827,149 +775,78 @@ useEffect(() => {
   )}
 
   <Toaster richColors position="top-center" />
-{showSearchSheet && (
-  <div className="fixed inset-0 z-[100]" onClick={() => setShowSearchSheet(false)}>
-    {/* Backdrop */}
-    <div className="absolute inset-0 bg-black/80 backdrop-blur-2xl opacity-0 animate-in fade-in duration-300 fill-mode-forwards" />
+    {showSearch && (
+  <div className="sticky top-0 z-40 animate-in slide-in-from-top">
+    <div className="px-3 pt-2.5 pb-3 bg-[#0a0a0b]/85 backdrop-blur-2xl border-b border-white/[0.06]">
+      {/* Ô tìm */}
+      <div className="flex items-center gap-2.5">
+        <div className="relative flex-1">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none" />
 
-    {/* Sheet */}
-    <div
-      onClick={(e) => e.stopPropagation()}
-      className="absolute bottom-0 inset-x-0 mx-auto w-full max-w-[560px] bg-[#0B0B0F]/95 backdrop-blur-3xl rounded-t-[32px] border-t border-white/10 shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.8)] flex flex-col animate-in slide-in-from-bottom duration-400"
-      style={{ maxHeight: '88dvh', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
-    >
-      {/* Drag handle */}
-      <div className="pt-3 pb-2 flex justify-center shrink-0">
-        <div className="w-10 h-1.5 bg-white/20 rounded-full" />
-      </div>
+          <input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { setShowSearch(false); setSearchQuery(''); }
+              if (e.key === 'Enter' && searchQuery) { goToNextResult(); }
+            }}
+            placeholder="Tìm trong cuộc trò chuyện"
+            className="w-full h-[36px] pl-[30px] pr-8 bg-white/[0.08] hover:bg-white/[0.12] focus:bg-white/[0.12] text-[14px] text-white placeholder:text-white/40 rounded-full outline-none border border-white/10 focus:border-[#0A84FF]/50 transition-all"
+            autoFocus
+          />
 
-      {/* Search Bar */}
-      <div className="px-4 pb-3 shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="relative flex-1 group">
-            <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-[#0A84FF] transition-colors" />
-            <input
-              autoFocus
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentResultIndex(0); }}
-              onKeyDown={(e) => e.key === 'Enter' && searchQuery && goToNextResult()}
-              placeholder="Tìm trong cuộc trò chuyện"
-              className="w-full h-[44px] pl-11 pr-10 bg-[#1C1C1E] hover:bg-[#222226] focus:bg-[#222226] text-[16px] text-white placeholder-zinc-500 rounded-2xl outline-none border border-white/5 focus:border-[#0A84FF]/50 focus:ring-4 focus:ring-[#0A84FF]/10 transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition"
-              >
-                <X size={14} className="text-white/80" />
-              </button>
-            )}
-          </div>
-          <button
-            onClick={() => { setShowSearchSheet(false); setSearchQuery(''); }}
-            className="text-[#0A84FF] text-[17px] font-medium px-1 active:scale-95 transition"
-          >
-            Hủy
-          </button>
-        </div>
-
-        {/* Counter + Nav */}
-        {searchQuery && (
-          <div className="flex items-center justify-between mt-3 px-1">
-            <div className="flex items-center gap-2">
-              <span className={`text-[13px] px-2.5 py-1 rounded-full ${filteredMessages.length? 'bg-[#0A84FF]/15 text-[#0A84FF]' : 'bg-white/5 text-zinc-500'}`}>
-                {filteredMessages.length? `${currentResultIndex + 1} / ${filteredMessages.length}` : '0 kết quả'}
-              </span>
-              {filteredMessages.length > 0 && (
-                <span className="text-[12px] text-zinc-500">Nhấn Enter để tiếp</span>
-              )}
-            </div>
-            <div className="flex gap-1">
-              <button onClick={goToPrevResult} disabled={!filteredMessages.length} className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 flex items-center justify-center transition active:scale-95">
-                <ChevronUp size={18} />
-              </button>
-              <button onClick={goToNextResult} disabled={!filteredMessages.length} className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 flex items-center justify-center transition active:scale-95">
-                <ChevronDown size={18} />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Results */}
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none]">
-        <div className="px-3 pb-6">
-          {!searchQuery? (
-            /* EMPTY STATE */
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#0A84FF]/20 to-violet-500/20 flex items-center justify-center mb-4">
-                <Search size={32} className="text-[#0A84FF]" />
-              </div>
-              <h3 className="text-white font-semibold mb-1.5">Tìm kiếm tin nhắn</h3>
-              <p className="text-sm text-zinc-500 max-w-[260px] leading-relaxed">Tìm theo nội dung, tên file, hoặc vị trí đã chia sẻ</p>
-            </div>
-          ) : filteredMessages.length? (
-            /* RESULTS */
-            <div className="space-y-1">
-              {filteredMessages.map((m, idx) => {
-                const text = m.text || m.fileName || (m.type === 'location'? '📍 Vị trí' : '');
-                const isActive = idx === currentResultIndex;
-                const highlight = text.replace(new RegExp(`(${searchQuery})`, 'gi'), '⟪$1⟫').split('⟪');
-
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => {
-                      setCurrentResultIndex(idx);
-                      setShowSearchSheet(false);
-                      const el = document.getElementById(`msg-${m.id}`);
-                      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      el?.classList.add('animate-pulse');
-                      setTimeout(() => el?.classList.remove('animate-pulse'), 1000);
-                    }}
-                    className={`group w-full text-left p-3 rounded-2xl flex gap-3 transition-all ${isActive? 'bg-[#0A84FF]/15 ring-1 ring-[#0A84FF]/30' : 'hover:bg-white/[0.04] active:bg-white/[0.06]'}`}
-                  >
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition ${isActive? 'bg-[#0A84FF]/20' : 'bg-white/5 group-hover:bg-white/10'}`}>
-                      {m.type === 'image'? <ImageIcon size={18} className={isActive? 'text-[#0A84FF]' : 'text-zinc-400'} />
-                       : m.type === 'location'? <MapPin size={18} className={isActive? 'text-[#0A84FF]' : 'text-zinc-400'} />
-                       : <MessageCircle size={18} className={isActive? 'text-[#0A84FF]' : 'text-zinc-400'} />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[15px] text-white/90 leading-snug line-clamp-2">
-                        {highlight.map((part, i) =>
-                          part.toLowerCase() === searchQuery.toLowerCase()
-                           ? <mark key={i} className="bg-[#0A84FF]/30 text-[#0A84FF] px-0.5 rounded">{part}</mark>
-                            : part
-                        )}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <span className={`text-[12px] px-2 py-0.5 rounded-full ${m.senderId === user?.uid? 'bg-[#0A84FF]/15 text-[#0A84FF]' : 'bg-white/5 text-zinc-500'}`}>
-{m.senderId === user?.uid? 'Bạn' : friend?.name || 'Người lạ'}
-                        </span>
-                        <span className="text-[12px] text-zinc-600">•</span>
-                        <span className="text-[12px] text-zinc-500">{formatTime(m.createdAt)}</span>
-                      </div>
-                    </div>
-                    {isActive && <div className="w-1 h-8 bg-[#0A84FF] rounded-full self-center" />}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            /* NO RESULTS */
-            <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-3">
-                <SearchX size={28} className="text-zinc-600" />
-              </div>
-              <p className="text-white/70 font-medium">Không tìm thấy</p>
-              <p className="text-sm text-zinc-600 mt-1">Thử từ khóa khác</p>
-            </div>
+          {/* Nút xóa */}
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition"
+            >
+              <X size={12} className="text-white/80" strokeWidth={2.5} />
+            </button>
           )}
         </div>
+
+        {/* Nút Hủy */}
+        <button
+          onClick={() => { setShowSearch(false); setSearchQuery(''); }}
+          className="text-[#0A84FF] text-[15px] font-[450] px-1 active:opacity-60 transition"
+        >
+          Hủy
+        </button>
       </div>
+
+      {/* Thanh kết quả */}
+      {searchQuery && (
+        <div className="flex items-center justify-between mt-2.5 px-1">
+          <span className="text-[12px] text-white/50">
+            {filteredMessages.length > 0
+             ? `${currentResultIndex + 1} / ${filteredMessages.length} kết quả`
+              : 'Không tìm thấy'}
+          </span>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={goToPrevResult}
+              disabled={filteredMessages.length === 0}
+              className="w-6 h-6 rounded-md hover:bg-white/10 disabled:opacity-30 flex items-center justify-center transition"
+            >
+              <ChevronUp size={14} className="text-white/70" />
+            </button>
+            <button
+              onClick={goToNextResult}
+              disabled={filteredMessages.length === 0}
+              className="w-6 h-6 rounded-md hover:bg-white/10 disabled:opacity-30 flex items-center justify-center transition"
+            >
+              <ChevronDown size={14} className="text-white/70" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   </div>
 )}
+
 {/* HEADER - nền trắng chữ đen */}
 <div
   className="shrink-0 z-40 border-b border-zinc-200/70 bg-white/85 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/70"
@@ -982,14 +859,11 @@ useEffect(() => {
       className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70 transition text-left"
     >
       <div className="relative flex-shrink-0">
- <NextImage
-  src={friend.avatar}
-  width={40}
-  height={40}
-  alt={friend.name}
-  className="rounded-full object-cover ring-2 ring-zinc-200/80"
-  unoptimized
-/>
+        <img
+          src={friend.avatar}
+          className="w-10 h-10 rounded-full object-cover ring-2 ring-zinc-200/80"
+          alt={friend.name}
+        />
         {friend.isOnline && (
           <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#31d158] rounded-full ring-2 ring-white grid place-items-center">
             <div className="absolute inset-0 bg-[#31d158] rounded-full animate-ping opacity-75" />
@@ -1242,16 +1116,7 @@ useEffect(() => {
         >
           {!isMe && (
             <div className="w-7 flex-shrink-0">
-{showAvatar && (
-  <NextImage
-    src={friend.avatar}
-    width={28}
-    height={28}
-    alt={friend.name}
-    className="rounded-full shadow-sm"
-    unoptimized
-  />
-)}
+              {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
             </div>
           )}
           <div className={`max-w-[75%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
@@ -1767,14 +1632,7 @@ useEffect(() => {
       {/* PROFILE HEADER */}
       <div className="px-5 pt-2 pb-5 flex flex-col items-center text-center border-b border-white/5">
         <div className="relative">
-<NextImage
-  src={friend.avatar}
-  width={80}
-  height={80}
-  alt={friend.name}
-  className="rounded-full object-cover ring-2 ring-white/10"
-  unoptimized
-/>
+          <img src={friend.avatar} className="w-20 h-20 rounded-full object-cover ring-2 ring-white/10" />
           {friend.isOnline && <div className="absolute bottom-1 right-1 w-4 h-4 bg-[#31d158] rounded-full ring-2 ring-[#0b0b0d]" />}
         </div>
         <h2 className="text-white text-[22px] font-semibold mt-3">{friend.name}</h2>
@@ -1791,7 +1649,7 @@ useEffect(() => {
         {/* TÙY CHỈNH */}
         <div className="bg-white/[0.04] rounded-2xl overflow-hidden border border-white/5">
           {[
-            { icon: Search, label: 'Tìm trong cuộc trò chuyện', action: () => { setShowSettings(false); setShowSearchSheet(true); } },
+            { icon: Search, label: 'Tìm trong cuộc trò chuyện', action: () => { setShowSettings(false); setShowSearch(true); } },
             { icon: ImageIcon, label: 'Đổi hình nền', value: (chatData as any)?.background? 'Đã đặt' : 'Mặc định', action: () => { setShowSettings(false); setShowBgPicker(true); } },
             { icon: Pin, label: 'Tin nhắn đã ghim', value: chatData?.pinnedMessage? '1 tin' : 'Không có', action: () => toast.info('Xem tin ghim') },
           ].map((item,i) => (
