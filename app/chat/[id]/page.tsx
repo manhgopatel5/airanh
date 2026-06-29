@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { getFirebaseDB, storage, getFirebaseStorage } from "@/lib/firebase";
+import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
 
 import {
   collection, query, onSnapshot, doc,
@@ -1103,19 +1103,20 @@ useEffect(() => {
         className="hidden"
         id="bg-upload"
         onChange={async (e) => {
-          const file = e.target.files?.[0];
-          if (!file ||!chatId) return;
-          try {
-            const storageRef = ref(storage, `chat-backgrounds/${chatId}/${Date.now()}_${file.name}`);
-            await uploadBytes(storageRef, file);
-            const url = await getDownloadURL(storageRef);
-            await updateDoc(doc(db, "chats", chatId), { background: url });
-            setShowBgPicker(false);
-          } catch (err) {
-            console.error(err);
-            alert('Tải ảnh thất bại');
-          }
-        }}
+  const file = e.target.files?.[0];
+  if (!file ||!chatId) return;
+  try {
+    const storage = getFirebaseStorage(); // THÊM DÒNG NÀY
+    const storageRef = ref(storage, `chat-backgrounds/${chatId}/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+    await updateDoc(doc(db, "chats", chatId), { background: url });
+    setShowBgPicker(false);
+  } catch (err) {
+    console.error(err);
+    alert('Tải ảnh thất bại');
+  }
+}}
       />
       <label htmlFor="bg-upload" className="w-full py-3.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-2xl text-center block font-medium transition-colors active:scale-[0.98]">
         <div className="flex items-center justify-center gap-2">
