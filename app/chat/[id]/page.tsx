@@ -77,7 +77,7 @@ type ChatData = {
   typing?: Record<string, boolean>;
   blockedUsers?: string[];
   deletedFor?: string[];
-  type?: string; // THÊM FIELD NÀY
+  type?: string;
 };
 
 const EMOJI_LIST = ["❤️", "😂", "😮", "😢", "😡", "👍"];
@@ -116,18 +116,23 @@ export default function ChatDetailPage() {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
-const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // MP3 refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const pcmChunksRef = useRef<Float32Array[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const chatId = idFromUrl as string;
 
-  /* ================= LOAD CHAT + FRIEND - ĐÃ FIX ================= */
+  /* ================= LOAD CHAT + FRIEND ================= */
   useEffect(() => {
     if (!chatId) return;
     if (authLoading) return;
@@ -141,9 +146,7 @@ const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
     const unsub = onSnapshot(
       doc(db, "chats", chatId),
       async (snap) => {
-        if (!snap.exists()) {
-          return;
-        }
+        if (!snap.exists()) return;
 
         const data = snap.data() as ChatData;
 
@@ -172,7 +175,6 @@ const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
           return;
         }
 
-        // FIX: Load từ users collection trước, fallback về membersInfo
         const [friendSnap, friendDoc] = await Promise.all([
           getDoc(doc(db, "users", otherUid)),
           getDoc(doc(db, "users", user.uid, "friends", otherUid))
@@ -182,7 +184,6 @@ const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
         const isFriend = friendDoc.exists() && friendDoc.data()?.status!== "removed";
         const membersInfo = data.membersInfo?.[otherUid];
 
-        // Ưu tiên lấy từ users, nếu không có mới lấy từ membersInfo
         const realName = friendData?.displayName || friendData?.name || membersInfo?.name || "User";
         const realAvatar = friendData?.photoURL || friendData?.avatar || membersInfo?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(realName)}&background=random`;
         const realUsername = friendData?.username || membersInfo?.username || "";
@@ -224,7 +225,7 @@ const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
       if (snap.exists()) {
         const data = snap.data();
         setFriend(prev => prev? {
-        ...prev,
+       ...prev,
           isOnline: data.isOnline || false,
           lastSeen: data.lastSeen
         } : null);
@@ -233,7 +234,7 @@ const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
     return () => unsub();
   }, [friendId, db]);
 
-  /* ================= REALTIME MESSAGES - DUY NHẤT ================= */
+  /* ================= REALTIME MESSAGES ================= */
   useEffect(() => {
     if (!chatId ||!user) return;
 
@@ -251,7 +252,7 @@ const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
         if (
           friendId &&
           msg.senderId === friendId &&
-         !msg.seenBy?.includes(user.uid)
+        !msg.seenBy?.includes(user.uid)
         ) {
           updateDoc(doc(db, "chats", chatId, "messages", docSnap.id), {
             seenBy: arrayUnion(user.uid)
@@ -306,7 +307,7 @@ const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
           seenBy: [user.uid],
           type: "text",
           members: chatData.members,
-        ...(tempReply && {
+       ...(tempReply && {
             replyTo: {
               id: tempReply.id,
               text: tempReply.text,
@@ -421,170 +422,129 @@ const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
     }
   };
 
-  // thêm ở trên cùng với các ref
-const audioChunksRef = useRef<Blob[]>([]);
-
-const startRecording = async () => {
-  if (isBlocked || isDeleted) {
-    toast.error("Không thể nhắn tin");
-    return;
-  }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        sampleRate: 44100
-      } 
-    });
-    
-    // FIX: thử từng codec iOS ăn được
-    const mimeOpts = [
-      'audio/mp4;codecs=mp4a.40.2', // <— iPhone cần cái này
-      'audio/mp4',
-      'audio/aac',
-      'audio/webm;codecs=opus',
-      'audio/webm'
-    ];
-    const mimeType = mimeOpts.find(t => MediaRecorder.isTypeSupported(t)) || '';
-    
-    if (!mimeType) {
-      toast.error("Trình duyệt không hỗ trợ ghi âm");
-      stream.getTracks().forEach(t => t.stop());
+  // ============ MP3 RECORDING ============
+  const startRecording = async () => {
+    if (isBlocked || isDeleted) {
+      toast.error("Không thể nhắn tin");
       return;
     }
-
-    console.log('[VOICE] Device:', navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android');
-    console.log('[VOICE] Selected mime:', mimeType);
-
-    const mediaRecorder = new MediaRecorder(stream, { 
-      mimeType,
-      audioBitsPerSecond: 64000
-    });
-    
-    mediaRecorderRef.current = mediaRecorder;
-    audioChunksRef.current = [];
-    (mediaRecorderRef.current as any)._mime = mimeType;
-
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data?.size > 0) audioChunksRef.current.push(e.data);
-    };
-
-    mediaRecorder.onstop = () => {
-      const finalMime = (mediaRecorderRef.current as any)._mime || mimeType;
-      const blob = new Blob(audioChunksRef.current, { type: finalMime });
-      
-      console.log('[VOICE] Blob created:', blob.type, Math.round(blob.size/1024)+'KB');
-      
-      setAudioBlob(blob);
-      stream.getTracks().forEach(track => track.stop());
-      audioChunksRef.current = [];
-    };
-
-    mediaRecorder.onerror = (e) => {
-      console.error('[VOICE] Recorder error:', e);
-      toast.error("Lỗi ghi âm");
-    };
-
-    mediaRecorder.start(250);
-    setRecording(true);
-    setRecordingTime(0);
-    
-    if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
-    recordingIntervalRef.current = setInterval(() => {
-      setRecordingTime(prev => prev + 1);
-    }, 1000);
-    
-  } catch (err: any) {
-    console.error('[VOICE] getUserMedia failed:', err);
-    toast.error(err.name === 'NotAllowedError' 
-      ? "Chưa cấp quyền micro" 
-      : "Không thể truy cập microphone");
-  }
-};
-
-const stopRecording = () => {
-  if (mediaRecorderRef.current && recording) {
     try {
-      if (mediaRecorderRef.current.state!== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-    } catch (e) {
-      console.error('stop error', e);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 }
+      });
+      streamRef.current = stream;
+
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 44100 });
+      audioContextRef.current = audioContext;
+
+      const source = audioContext.createMediaStreamSource(stream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      processorRef.current = processor;
+      pcmChunksRef.current = [];
+
+      processor.onaudioprocess = (e) => {
+        const input = e.inputBuffer.getChannelData(0);
+        pcmChunksRef.current.push(new Float32Array(input));
+      };
+
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+
+      setRecording(true);
+      setRecordingTime(0);
+      if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = setInterval(() => setRecordingTime(p => p + 1), 1000);
+
+    } catch (err: any) {
+      toast.error(err.name === 'NotAllowedError'? "Chưa cấp quyền micro" : "Không thể ghi âm");
     }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+
     setRecording(false);
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);
       recordingIntervalRef.current = null;
     }
-  }
-};
 
-const sendVoice = async () => {
-  if (!audioBlob ||!user ||!chatId ||!chatData) {
-    if (!chatData) toast.error("Đang tải dữ liệu chat...");
-    return;
-  }
+    try {
+      processorRef.current?.disconnect();
+      audioContextRef.current?.close();
+      streamRef.current?.getTracks().forEach(t => t.stop());
 
-  setUploading(true);
-  try {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const fullMime = audioBlob.type || 'audio/webm';
-const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
+      const { default: lamejs } = await import('lamejs');
+      const mp3encoder = new lamejs.Mp3Encoder(1, 44100, 64);
+      const mp3Data: Uint8Array[] = [];
+      const samples = pcmChunksRef.current;
+      const sampleBlockSize = 1152;
 
-    const ext = cleanMime.includes('mp4') || cleanMime.includes('aac')
-     ? 'm4a'
-      : cleanMime.includes('webm')
-     ? 'webm'
-      : 'ogg';
+      for (let i = 0; i < samples.length; i++) {
+        const int16 = new Int16Array(samples[i].length);
+        for (let j = 0; j < samples[i].length; j++) {
+          int16[j] = Math.max(-1, Math.min(1, samples[i][j])) * 0x7FFF;
+        }
+        for (let j = 0; j < int16.length; j += sampleBlockSize) {
+          const chunk = int16.subarray(j, j + sampleBlockSize);
+          const mp3buf = mp3encoder.encodeBuffer(chunk);
+          if (mp3buf.length > 0) mp3Data.push(mp3buf);
+        }
+      }
+      const endBuf = mp3encoder.flush();
+      if (endBuf.length > 0) mp3Data.push(endBuf);
 
-    if (isIOS && ext === 'webm') {
-      toast.error("File webm không chạy trên iPhone - hãy ghi lại");
-      setUploading(false);
+      const blob = new Blob(mp3Data, { type: 'audio/mp3' });
+      setAudioBlob(blob);
+      pcmChunksRef.current = [];
+    } catch (e) {
+      console.error('Encode error', e);
+      toast.error("Lỗi mã hóa audio");
+    }
+  };
+
+  const sendVoice = async () => {
+    if (!audioBlob ||!user ||!chatId ||!chatData) {
+      if (!chatData) toast.error("Đang tải dữ liệu chat...");
       return;
     }
 
-    const fileName = `voice_${Date.now()}.${ext}`;
-    const storageRef = ref(storage, `chat-voice/${chatId}/${fileName}`);
+    setUploading(true);
+    try {
+      const fileName = `voice_${Date.now()}.mp3`;
+      const storageRef = ref(storage, `chat-voice/${chatId}/${fileName}`);
 
-    const metadata = {
-      contentType: cleanMime, // <— QUAN TRỌNG: không có ;codecs
-      cacheControl: 'public, max-age=31536000',
-      customMetadata: {
-        uid: user.uid,
-        duration: String(recordingTime)
-      }
-    };
+      await uploadBytes(storageRef, audioBlob, {
+        contentType: 'audio/mp3',
+        cacheControl: 'public, max-age=31536000',
+        customMetadata: { uid: user.uid, duration: String(recordingTime) }
+      });
 
-    await uploadBytes(storageRef, audioBlob, metadata);
-    const url = await getDownloadURL(storageRef);
+      const url = await getDownloadURL(storageRef);
 
-    await addDoc(collection(db, "chats", chatId, "messages"), {
-      senderId: user.uid,
-      voice: url,
-      duration: Math.round(recordingTime),
-      type: "voice",
-      mimeType: cleanMime,
-      createdAt: serverTimestamp(),
-      seenBy: [user.uid],
-      members: chatData.members,
-    });
+      await addDoc(collection(db, "chats", chatId, "messages"), {
+        senderId: user.uid,
+        voice: url,
+        duration: Math.round(recordingTime),
+        type: "voice",
+        mimeType: 'audio/mp3',
+        createdAt: serverTimestamp(),
+        seenBy: [user.uid],
+        members: chatData.members,
+      });
 
-    setAudioBlob(null);
-    setRecordingTime(0);
-    setIsPreviewPlaying(false);
-    toast.success("Đã gửi voice");
-  } catch (err: any) {
-    console.error("Voice error:", err);
-    if (err.code === 'storage/unauthorized') {
-      toast.error("Storage chặn ghi - kiểm tra Rules Firebase");
-    } else {
-      toast.error(`Lỗi gửi voice: ${err.code || err.message}`);
+      setAudioBlob(null);
+      setRecordingTime(0);
+      setIsPreviewPlaying(false);
+      toast.success("Đã gửi voice");
+    } catch (err: any) {
+      console.error("Voice error:", err);
+      toast.error(`Lỗi gửi voice: ${err.message}`);
+    } finally {
+      setUploading(false);
     }
-  } finally {
-    setUploading(false);
-  }
-};
+  };
+
   const sendLocation = async () => {
     if (!canSendMessage || isBlocked || isDeleted) {
       toast.error("Không thể nhắn tin");
@@ -614,7 +574,6 @@ const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
             seenBy: [user.uid],
             members: chatData.members,
           });
-
           toast.success("Đã gửi vị trí");
         } catch (err: any) {
           console.error(err);
@@ -634,13 +593,10 @@ const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
 
   const toggleReaction = async (msgId: string, emoji: string) => {
     if (!user ||!chatId) return;
-
     const msg = messages.find(m => m.id === msgId);
     if (!msg) return;
-
     const reactions = msg.reactions || [];
     const existing = reactions.find(r => r.emoji === emoji);
-
     try {
       if (existing?.users.includes(user.uid)) {
         const newUsers = existing.users.filter(u => u!== user.uid);
@@ -683,7 +639,6 @@ const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
       return;
     }
     if (!confirm("Xoá tin nhắn này?")) return;
-
     try {
       await deleteDoc(doc(db, "chats", chatId, "messages", msgId));
       toast.success("Đã xoá");
@@ -715,9 +670,9 @@ const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
   const getSeenAvatars = (msg: Message) => {
     if (!chatData || msg.senderId!== user?.uid) return [];
     return (msg.seenBy || [])
-   .filter(uid => uid!== user?.uid)
-   .map(uid => chatData.membersInfo[uid])
-   .filter((u): u is { name: string; avatar: string; username: string } => Boolean(u));
+  .filter(uid => uid!== user?.uid)
+  .map(uid => chatData.membersInfo[uid])
+  .filter((u): u is { name: string; avatar: string; username: string } => Boolean(u));
   };
 
   const formatTime = (time?: Timestamp | null) => {
@@ -846,7 +801,7 @@ const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
           const isFirstInGroup =!prev || prev.senderId!== m.senderId;
           const isLastInGroup =!next || next.senderId!== m.senderId;
           const showDate =
-           !prev ||
+          !prev ||
             (m.createdAt &&
               prev.createdAt &&
               m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString());
@@ -890,22 +845,22 @@ const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
                         onClick={() => router.push(`/task/${m.taskId}`)}
                         className={`px-4 py-3 shadow-sm cursor-pointer active:scale-95 transition ${
                           isMe
-                           ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
+                          ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
                                 isFirstInGroup && isLastInGroup
-                                 ? "rounded-3xl"
+                                ? "rounded-3xl"
                                   : isFirstInGroup
-                                 ? "rounded-3xl rounded-br-lg"
+                                ? "rounded-3xl rounded-br-lg"
                                   : isLastInGroup
-                                 ? "rounded-3xl rounded-tr-lg"
+                                ? "rounded-3xl rounded-tr-lg"
                                   : "rounded-r-lg rounded-l-3xl"
                               }`
                             : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-2 border-blue-200 dark:border-blue-900 ${
                                 isFirstInGroup && isLastInGroup
-                                 ? "rounded-3xl"
+                                ? "rounded-3xl"
                                   : isFirstInGroup
-                                 ? "rounded-3xl rounded-bl-lg"
+                                ? "rounded-3xl rounded-bl-lg"
                                   : isLastInGroup
-                                 ? "rounded-3xl rounded-tl-lg"
+                                ? "rounded-3xl rounded-tl-lg"
                                   : "rounded-l-lg rounded-r-3xl"
                               }`
                         }`}
@@ -925,22 +880,22 @@ const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
 <div
   className={`px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer ${
                           isMe
-                           ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
+                          ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
                                 isFirstInGroup && isLastInGroup
-                                 ? "rounded-3xl"
+                                ? "rounded-3xl"
                                   : isFirstInGroup
-                                 ? "rounded-3xl rounded-br-lg"
+                                ? "rounded-3xl rounded-br-lg"
                                   : isLastInGroup
-                                 ? "rounded-3xl rounded-tr-lg"
+                                ? "rounded-3xl rounded-tr-lg"
                                   : "rounded-r-lg rounded-l-3xl"
                               }`
                             : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white ${
                                 isFirstInGroup && isLastInGroup
-                                 ? "rounded-3xl"
+                                ? "rounded-3xl"
                                   : isFirstInGroup
-                                 ? "rounded-3xl rounded-bl-lg"
+                                ? "rounded-3xl rounded-bl-lg"
                                   : isLastInGroup
-                                 ? "rounded-3xl rounded-tl-lg"
+                                ? "rounded-3xl rounded-tl-lg"
                                   : "rounded-l-lg rounded-r-3xl"
                               }`
                         }`}
@@ -963,15 +918,11 @@ const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
         const btn = e.currentTarget;
         const audio = btn.parentElement?.querySelector('audio') as HTMLAudioElement;
         if (!audio) return;
-
-        // Pause tất cả
 document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
           if (a!== audio) { a.pause(); a.currentTime = 0; }
         });
-
         try {
           if (audio.paused) {
-            // BỎ audio.load() — để play tự load
             await audio.play();
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
           } else {
@@ -979,21 +930,19 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
           }
         } catch (err: any) {
-          alert('Play lỗi: ' + err.message + '\n' + audio.src.substring(0, 80));
-          console.error(err);
+          alert('Play lỗi: ' + err.message);
         }
       }}
       className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition active:scale-90 ${isMe? 'bg-white/25 hover:bg-white/35 text-white' : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'}`}
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5"><polygon points="5,3 19,12 5,21"/></svg>
     </button>
-
     <div className="voice-player flex-1 relative">
       <audio
         src={m.voice}
         className="voice-audio"
         crossOrigin="anonymous"
-        preload="metadata" // <-- ĐỔI từ none → metadata
+        preload="metadata"
         playsInline
         style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}
         onEnded={(e) => {
@@ -1007,7 +956,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
         ))}
       </div>
     </div>
-
     <span className={`text-[11px] font-mono min-w-[32px] text-right ${isMe? 'text-white/80' : 'text-gray-500'}`}>
       {m.duration? `${Math.floor(m.duration/60)}:${String(m.duration%60).padStart(2,'0')}` : '0:00'}
     </span>
@@ -1026,7 +974,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
                             </div>
                           </a>
                         )}
-
                         {m.text && (
 <p className="text-[15px] leading-none whitespace-pre-wrap break-words text-center">
                             {m.text}
@@ -1035,7 +982,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
                         )}
                       </div>
                     )}
-
                     {m.reactions && m.reactions.length > 0 && (
                       <div className="flex gap-1 mt-1 px-1">
                         {m.reactions.map((r) => (
@@ -1044,7 +990,7 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
                             onClick={() => toggleReaction(m.id, r.emoji)}
                             className={`px-2 py-0.5 rounded-full text-xs ${
                               r.users.includes(user.uid)
-                               ? "bg-blue-100 dark:bg-blue-900/50"
+                              ? "bg-blue-100 dark:bg-blue-900/50"
                                 : "bg-gray-100 dark:bg-zinc-800"
                             }`}
                           >
@@ -1053,7 +999,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
                         ))}
                       </div>
                     )}
-
                     <div className={`absolute ${isMe? "right-0" : "left-0"} top-0 hidden group-hover:flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1`}>
                       <button onClick={() => setShowEmojiPicker(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
                         <Smile size={16} />
@@ -1078,8 +1023,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
                         <Copy size={16} />
                       </button>
                     </div>
-
-                    {/* Emoji Picker */}
                     {showEmojiPicker === m.id && (
                       <div className="absolute bottom-full mb-2 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-2 flex gap-1 z-10">
                         {EMOJI_LIST.map(emoji => (
@@ -1094,13 +1037,8 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
                       </div>
                     )}
                   </div>
-
-        
                 </div>
               </div>
-
-
-              {/* GIỜ Ở GIỮA */}
               {isLastInGroup && (
                 <div className="flex w-full justify-center items-center gap-1.5 mt-1.5">
                   <p className="text-[11px] text-gray-400 dark:text-zinc-500">{formatTime(m.createdAt)}</p>
@@ -1114,15 +1052,12 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
                   {isMe && seenAvatars.length===0 && m.seenBy && m.seenBy.length>1 && <CheckCheck className="text-blue-500" size={12} />}
                 </div>
               )}
-
-            </div> 
-
+            </div>
           );
         })}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* REPLY/EDIT BAR */}
       {(replyTo || editingMsg) && (
         <div className="px-4 pt-2 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl border-t border-gray-200/50 dark:border-zinc-800/50">
           <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl">
@@ -1141,7 +1076,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
         </div>
       )}
 
-      {/* UPLOAD PROGRESS */}
       {uploading && (
         <div className="bg-white dark:bg-zinc-900 px-4 py-2 border-t border-gray-200 dark:border-zinc-800">
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-zinc-400">
@@ -1151,9 +1085,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
         </div>
       )}
 
-
-
-      {/* BANNER CẢNH BÁO */}
       {!isFriend &&!isBlocked &&!isDeleted && (
         <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border-t border-amber-200/50 dark:border-amber-900/50">
           <div className="flex items-center justify-center gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium">
@@ -1163,11 +1094,9 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
         </div>
       )}
 
-{/* INPUT - 3 trạng thái */}
 <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-zinc-800">
   <div className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
     {audioBlob &&!recording? (
-      // 1. PREVIEW VOICE
       <div className="flex items-center gap-2.5">
         <button
           onClick={() => {
@@ -1178,7 +1107,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
         >
           <Trash2 size={20} />
         </button>
-
         <button
           onClick={() => {
             const audio = previewAudioRef.current;
@@ -1195,7 +1123,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
         >
           {isPreviewPlaying? <Pause size={18} fill="white" /> : <Play size={18} fill="white" className="ml-0.5" />}
         </button>
-
         <div className="flex-1 flex items-center gap-[2px] h-8 px-2 bg-gray-100 dark:bg-zinc-900 rounded-full overflow-hidden">
           {Array.from({ length: 28 }).map((_, i) => (
             <div
@@ -1205,11 +1132,9 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
             />
           ))}
         </div>
-
         <span className="text-xs font-mono w-11 text-center">
           {String(Math.floor(recordingTime / 60)).padStart(2, '0')}:{String(recordingTime % 60).padStart(2, '0')}
         </span>
-
         <button
           onClick={sendVoice}
           disabled={uploading}
@@ -1217,10 +1142,9 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
         >
           {uploading? <Loader2 size={16} className="animate-spin" /> : 'Gửi'}
         </button>
-
       <audio
   ref={previewAudioRef}
-  src={audioBlob ? URL.createObjectURL(audioBlob) : ''}
+  src={audioBlob? URL.createObjectURL(audioBlob) : ''}
   onEnded={() => setIsPreviewPlaying(false)}
   className="hidden"
   crossOrigin="anonymous"
@@ -1229,7 +1153,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
 />
       </div>
     ) : recording? (
-      // 2. ĐANG GHI ÂM
       <div className="flex items-center gap-3">
         <div className="flex-1 flex items-center gap-3 h-11 px-4 bg-red-50 dark:bg-red-950/30 rounded-full">
           <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
@@ -1253,7 +1176,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
         </button>
       </div>
     ) : (
-      // 3. NHẬP BÌNH THƯỜNG
       <div className="flex items-end gap-2">
         <input
           type="file"
@@ -1269,7 +1191,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
         >
           <ImageIcon size={22} className="text-gray-600 dark:text-zinc-400" />
         </button>
-
         <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
         <button
           onClick={() => fileInputRef.current?.click()}
@@ -1278,7 +1199,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
         >
           <Paperclip size={20} className="text-gray-600 dark:text-zinc-400" />
         </button>
-
         <button
           onClick={sendLocation}
           disabled={isBlocked || isDeleted}
@@ -1286,7 +1206,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
         >
           <MapPin size={20} className="text-gray-600 dark:text-zinc-400" />
         </button>
-
         <div className="flex-1 relative">
           <input
             ref={inputRef}
@@ -1306,7 +1225,6 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
             className="w-full px-4 py-2.5 bg-gray-100 dark:bg-zinc-900 rounded-full outline-none focus:ring-2 focus:ring-blue-500/20 text-[15px]"
           />
         </div>
-
         {text.trim()? (
           <button
             onClick={sendMessage}
@@ -1330,7 +1248,7 @@ document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
       </div>
     )}
   </div>
-</div>   
+</div>
 </div>
   );
 }
