@@ -15,7 +15,7 @@ import {
   Image as ImageIcon, ChevronUp, ChevronDown, Navigation, Flag, Plus, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
   Smile, Reply, Trash2, Pencil, Shield, Pin, Copy, Search
 } from "lucide-react";
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { toast, Toaster } from "sonner";
 import imageCompression from "browser-image-compression";
 import { formatDistanceToNow, format } from "date-fns";
