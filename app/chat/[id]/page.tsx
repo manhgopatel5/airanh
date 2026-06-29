@@ -115,7 +115,7 @@ export default function ChatDetailPage() {
   const [friendId, setFriendId] = useState<string | null>(null);
   const [isFriend, setIsFriend] = useState(true);
   const [chatData, setChatData] = useState<ChatData | null>(null);
-const bgId = (chatData?.backgroundId || 'default') as BgId;
+
 
   const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
   const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
