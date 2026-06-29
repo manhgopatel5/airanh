@@ -1101,7 +1101,7 @@ useEffect(() => {
     onClick={() => setShowBgPicker(false)}
   >
     <div
-      className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg h-[92vh] sm:h-[85vh] sm:rounded-[32px] rounded-t-[28px] overflow-hidden flex flex-col border border-white/10 shadow-2xl"
+className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:rounded-[28px] rounded-t-[28px] overflow-hidden flex flex-col"
       onClick={e => e.stopPropagation()}
     >
       {/* Header + Preview */}
@@ -1227,41 +1227,47 @@ useEffect(() => {
         ].map((group) => (
           <div key={group.id} className="mb-7">
             <h4 className="text-white/60 text-[12px] font-semibold mb-3 uppercase tracking-widest">{group.title}</h4>
-            <div className="grid grid-cols-3 gap-2.5">
-              {group.items.map((item: any, i) => {
-                const url = typeof item === 'string'? item : item.url;
-                const name = typeof item === 'string'? '' : item.name;
-                const isColor = item?.type === 'color';
-                const bgStyle = isColor? item.bg : `url(${url})`;
-                const isSelected = (chatData as any)?.background === url || (!(chatData as any)?.background &&!url && group.id === 'popular' && i === 0);
+           {/* THAY TOÀN BỘ phần grid bên trong */}
+<div className="grid grid-cols-3 gap-3">
+  {group.items.map((item: any, i) => {
+    const url = typeof item === 'string'? item : item.url;
+    const name = typeof item === 'string'? '' : item.name;
+    const isColor = item?.type === 'color';
+    const isSelected = (chatData as any)?.background === url;
 
-                return (
-                  <button
-                    key={i}
-                    onClick={async () => {
-                      await updateDoc(doc(db, "chats", chatId), { background: url });
-                      setShowBgPicker(false);
-                      toast.success('Đã đổi hình nền');
-                    }}
-                    className="group relative aspect-[3/4] rounded-2xl overflow-hidden bg-zinc-900 ring-1 ring-white/5 hover:ring-white/20 transition-all duration-200 active:scale-95"
-                  >
-                    <div className="absolute inset-0 transition-transform duration-300 group-hover:scale-105"
-                      style={{ background: bgStyle, backgroundSize: 'cover', backgroundPosition: 'center' }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    {name && <span className="absolute bottom-2 left-2 right-2 text-[11px] font-medium text-white drop-shadow-lg truncate">{name}</span>}
-                    {isSelected && (
-                      <div className="absolute inset-0 ring-[2.5px] ring-[#0A84FF] ring-offset-2 ring-offset-[#101012] rounded-2xl" />
-                    )}
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-[#0A84FF] rounded-full flex items-center justify-center shadow-lg">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+    return (
+      <button
+        key={i}
+        onClick={async () => {
+          await updateDoc(doc(db, "chats", chatId), { background: url });
+          setShowBgPicker(false);
+          toast.success('Đã đổi hình nền');
+        }}
+        className="relative w-full h-28 rounded-2xl overflow-hidden bg-zinc-900 ring-1 ring-white/10 active:scale-95 transition"
+      >
+        {isColor? (
+          <div className="w-full h-full" style={{ background: item.bg }} />
+        ) : (
+          <img
+            src={url}
+            alt={name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        )}
+        {name && (
+          <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white drop-shadow text-center truncate">
+            {name}
+          </span>
+        )}
+        {isSelected && (
+          <div className="absolute inset-0 ring-2 ring-[#0A84FF] ring-inset rounded-2xl" />
+        )}
+      </button>
+    );
+  })}
+</div>
           </div>
         ))}
       </div>
