@@ -430,31 +430,56 @@ const startRecording = async () => {
     return;
   }
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        sampleRate: 44100
+      } 
+    });
     
-    // 1. ƯU TIÊN mp4 cho iOS, webm cho Android/Chrome
-    const mimeType = MediaRecorder.isTypeSupported('audio/mp4')
-      ? 'audio/mp4'  // iPhone, Safari
-      : MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'  // Chrome, Android
-      : MediaRecorder.isTypeSupported('audio/webm')
-      ? 'audio/webm'
-      : ''; // fallback để browser tự chọn
+    // 1. ƯU TIÊN MP4 - log ra để kiểm tra trên iPhone
+    const canMp4 = MediaRecorder.isTypeSupported('audio/mp4');
+    const canWebmOpus = MediaRecorder.isTypeSupported('audio/webm;codecs=opus');
+    
+    const mimeType = canMp4
+      ? 'audio/mp4'
+      : canWebmOpus
+      ? 'audio/webm;codecs=opus'
+      : 'audio/webm';
 
-    const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    console.log('[VOICE] Device:', navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android');
+    console.log('[VOICE] Selected mime:', mimeType);
+
+    const mediaRecorder = new MediaRecorder(stream, { 
+      mimeType,
+      audioBitsPerSecond: 64000 // giảm size, đủ cho voice
+    });
+    
     mediaRecorderRef.current = mediaRecorder;
     audioChunksRef.current = [];
+    // lưu mime để onstop dùng
+    (mediaRecorderRef.current as any)._mime = mimeType;
 
     mediaRecorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data);
+      if (e.data?.size > 0) audioChunksRef.current.push(e.data);
     };
 
     mediaRecorder.onstop = () => {
-      // dùng đúng mime đã chọn
-      const blob = new Blob(audioChunksRef.current, { type: mimeType || 'audio/mp4' });
+      const finalMime = (mediaRecorderRef.current as any)._mime || mimeType;
+      // QUAN TRỌNG: dùng đúng mime MediaRecorder đã ghi
+      const blob = new Blob(audioChunksRef.current, { type: finalMime });
+      
+      console.log('[VOICE] Blob created:', blob.type, Math.round(blob.size/1024)+'KB');
+      
       setAudioBlob(blob);
       stream.getTracks().forEach(track => track.stop());
       audioChunksRef.current = [];
+    };
+
+    mediaRecorder.onerror = (e) => {
+      console.error('[VOICE] Recorder error:', e);
+      toast.error("Lỗi ghi âm");
     };
 
     mediaRecorder.start(250);
@@ -465,15 +490,24 @@ const startRecording = async () => {
     recordingIntervalRef.current = setInterval(() => {
       setRecordingTime(prev => prev + 1);
     }, 1000);
-  } catch (err) {
-    console.error(err);
-    toast.error("Không thể truy cập microphone");
+    
+  } catch (err: any) {
+    console.error('[VOICE] getUserMedia failed:', err);
+    toast.error(err.name === 'NotAllowedError' 
+      ? "Chưa cấp quyền micro" 
+      : "Không thể truy cập microphone");
   }
 };
 
 const stopRecording = () => {
   if (mediaRecorderRef.current && recording) {
-    mediaRecorderRef.current.stop();
+    try {
+      if (mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+    } catch (e) {
+      console.error('stop error', e);
+    }
     setRecording(false);
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);
