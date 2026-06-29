@@ -973,7 +973,7 @@ export default function ChatDetailPage() {
                 </div>
               )}
 
-            </div> {/* đóng msg-${m.id} */}
+            </div> 
             </div>
           );
         })}
