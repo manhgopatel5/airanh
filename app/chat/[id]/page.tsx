@@ -530,7 +530,7 @@ const sendVoice = async () => {
   try {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const fullMime = audioBlob.type || 'audio/webm';
-    const cleanMime = fullMime.split(';')[0]; // 'audio/mp4' không kèm codecs
+const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
 
     const ext = cleanMime.includes('mp4') || cleanMime.includes('aac')
      ? 'm4a'
