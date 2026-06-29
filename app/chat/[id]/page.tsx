@@ -4,10 +4,10 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
-
+import { BACKGROUNDS, BACKGROUND_GROUPS, getBgUrl, isGradient, type BgId } from '@/lib/backgrounds';
 import {
   collection, query, onSnapshot, doc,
-  orderBy, addDoc, serverTimestamp, Timestamp, updateDoc, deleteDoc, arrayUnion, arrayRemove
+  orderBy, addDoc, deleteField, serverTimestamp, Timestamp, updateDoc, deleteDoc, arrayUnion, arrayRemove
 } from "firebase/firestore";
 import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -102,7 +102,16 @@ export default function ChatDetailPage() {
   const [friendId, setFriendId] = useState<string | null>(null);
   const [isFriend, setIsFriend] = useState(true);
   const [chatData, setChatData] = useState<ChatData | null>(null);
+  const bgId = (chatData?.backgroundId || 'default') as BgId;
+const bg = BACKGROUNDS[bgId];
 
+{bg.url? (
+  isGradient(bgId)? (
+    <div className="fixed inset-0 -z-10" style={{background: bg.url.replace('gradient:','')}} />
+  ) : (
+    <img src={getBgUrl(bgId)} srcSet={getBgSrcSet(bgId)} className="fixed inset-0 -z-10 w-full h-full object-cover" alt="" />
+  )
+) : null}
   const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
   const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
   const canSendMessage =!!friendId && isFriend &&!isBlocked &&!isDeleted;
@@ -1353,7 +1362,9 @@ useEffect(() => {
           </div>
         </div>
       )}
-  {showBgPicker && (
+
+
+{showBgPicker && (
   <div
     className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4"
     onClick={() => setShowBgPicker(false)}
@@ -1367,16 +1378,23 @@ useEffect(() => {
         <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4 sm:hidden" />
         <div className="flex items-center gap-3">
           <div className="w-14 h-14 rounded-2xl overflow-hidden ring-1 ring-white/10 shrink-0">
-            <div className="w-full h-full" style={{
-              background: (chatData as any)?.background
-               ? `url(${(chatData as any).background}?w=200&q=60&auto=format)`
-                : 'linear-gradient(135deg, #1e1e22 0%, #0a0a0b 100%)',
-              backgroundSize: 'cover', backgroundPosition: 'center'
-            }}/>
+            {(() => {
+              const currentId = (chatData as any)?.backgroundId as BgId || 'default';
+              const current = BACKGROUNDS[currentId];
+              return isGradient(currentId)? (
+                <div className="w-full h-full" style={{ background: current.url.replace('gradient:','') }} />
+              ) : current.url? (
+                <img src={getBgUrl(currentId, 200)} className="w-full h-full object-cover" alt="" />
+              ) : (
+                <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, #1e1e22 0%, #0a0a0b 100%)' }} />
+              );
+            })()}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-white text-[22px] font-semibold leading-tight">Hình nền</h3>
-            <p className="text-white/55 text-[13px]">Chọn cho đoạn chat này • {(chatData as any)?.background? 'Đã tùy chỉnh' : 'Mặc định'}</p>
+            <p className="text-white/55 text-[13px]">
+              Chọn cho đoạn chat này • {((chatData as any)?.backgroundId && (chatData as any)?.backgroundId!== 'default')? BACKGROUNDS[(chatData as any).backgroundId as BgId]?.name : 'Mặc định'}
+            </p>
           </div>
           <button onClick={() => setShowBgPicker(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center active:scale-90">
             <X size={16} className="text-white/80"/>
@@ -1385,131 +1403,61 @@ useEffect(() => {
       </div>
 
       <div className="overflow-y-auto px-5 pb-6 flex-1">
-        {[
-          {
-            id: 'popular',
-            title: 'Phổ biến',
-            items: [
-              { url: '', name: 'Mặc định', type: 'color', bg: 'linear-gradient(135deg, #1e1e22 0%, #0a0a0b 100%)' },
-              { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4', name: 'Núi tuyết' },
-              { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba', name: 'Hoàng hôn' },
-              { url: 'https://images.unsplash.com/photo-1531306728370-e2ebd9d7bb99', name: 'Cực quang' },
-              { url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb', name: 'Hồ gương' },
-              { url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05', name: 'Rừng sương' },
-            ]
-          },
-          {
-            id: 'nature',
-            title: 'Thiên nhiên',
-            items: [
-              'https://images.unsplash.com/photo-1490750967868-88aa4486c946',
-              'https://images.unsplash.com/photo-1469474968028-56623f02e42e',
-              'https://images.unsplash.com/photo-1441974231531-c6227db76b6e',
-              'https://images.unsplash.com/photo-1502082553048-f009c37129b9',
-              'https://images.unsplash.com/photo-1518837695005-2083093ee35b',
-              'https://images.unsplash.com/photo-1426604966848-d7adac402bff',
-              'https://images.unsplash.com/photo-1472214103451-9374bd1c798e',
-              'https://images.unsplash.com/photo-1501785888041-af3ef285b470',
-              'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07',
-              'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1',
-            ]
-          },
-          {
-            id: 'space',
-            title: 'Vũ trụ',
-            items: [
-              'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a',
-              'https://images.unsplash.com/photo-1465101162946-4377e57745c3',
-              'https://images.unsplash.com/photo-1534447677768-be436bb09401',
-              'https://images.unsplash.com/photo-1505506874110-6a7a69069a08',
-              'https://images.unsplash.com/photo-1614732414444-096e5f1122d5',
-              'https://images.unsplash.com/photo-1610296669228-602fa827fc1f',
-              'https://images.unsplash.com/photo-1451187580459-43490279c0fa',
-              'https://images.unsplash.com/photo-1462331940025-496dfbfc7564',
-              'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0',
-              'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa',
-              'https://images.unsplash.com/photo-1464802686167-b939a6910659',
-            ]
-          },
-          {
-            id: 'city',
-            title: 'Thành phố',
-            items: [
-              'https://images.unsplash.com/photo-1514565131-fce0801e5785',
-              'https://images.unsplash.com/photo-1449824913935-59a10b8d2000',
-              'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9',
-              'https://images.unsplash.com/photo-1519501025264-65ba15a82390',
-              'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b',
-              'https://images.unsplash.com/photo-1494783367193-149034c05e8f',
-              'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df',
-              'https://images.unsplash.com/photo-1444723121867-7a241cacace9',
-              'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad',
-              'https://images.unsplash.com/photo-1496568816309-51d7c20e3b21',
-              'https://images.unsplash.com/photo-1502602898657-3e91760cbb34',
-              'https://images.unsplash.com/photo-1534351590666-13e3e96b5017',
-            ]
-          },
-          {
-            id: 'minimal',
-            title: 'Màu trơn',
-            items: [
-              { url: '', name: 'Đen', type: 'color', bg: '#000000' },
-              { url: '', name: 'Than', type: 'color', bg: '#1c1c1e' },
-              { url: '', name: 'Navy', type: 'color', bg: '#0a192f' },
-              { url: '', name: 'Tím', type: 'color', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-              { url: '', name: 'Xanh', type: 'color', bg: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)' },
-              { url: '', name: 'Hồng', type: 'color', bg: 'linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%)' },
-              { url: '', name: 'Cam', type: 'color', bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-              { url: '', name: 'Xanh lá', type: 'color', bg: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
-              { url: '', name: 'Vàng', type: 'color', bg: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
-            ]
-          },
-        ].map((group) => (
+        {BACKGROUND_GROUPS.map((group) => (
           <div key={group.id} className="mb-7">
             <h4 className="text-white/60 text-[12px] font-semibold mb-3 uppercase tracking-widest">{group.title}</h4>
             <div className="grid grid-cols-3 gap-3">
-              {group.items.map((item: any, i) => {
-                const baseUrl = typeof item === 'string'? item : item.url;
-                const name = typeof item === 'string'? '' : item.name;
-                const isColor = item?.type === 'color';
-                const currentBg = (chatData as any)?.background || '';
-                const isSelected = baseUrl === currentBg;
-
-                // thumbnail nhỏ cho picker
-                const thumbUrl =!isColor && baseUrl? `${baseUrl}?w=400&q=60&auto=format&fit=crop` : '';
+              {group.ids.map((id) => {
+                const bg = BACKGROUNDS[id];
+                const currentId = (chatData as any)?.backgroundId as BgId || 'default';
+                const isSelected = id === currentId;
+                const isGrad = isGradient(id);
 
                 return (
                   <button
-                    key={i}
+                    key={id}
                     onClick={async () => {
-                      // LƯU URL GỐC, không lưu w=800
-                      await updateDoc(doc(db, "chats", chatId), { background: baseUrl });
+                      // CHỈ LƯU ID - 5 byte, không tốn Firestore
+                      await updateDoc(doc(db, "chats", chatId), {
+                        backgroundId: id === 'default'? '' : id,
+                        // xóa field cũ nếu còn
+                        background: deleteField()
+                      });
                       setShowBgPicker(false);
-                      toast.success('Đã đổi hình nền');
+                      toast.success(`Đã đổi: ${bg.name}`);
                     }}
-                    className="relative w-full h-28 rounded-2xl overflow-hidden bg-zinc-900 ring-1 ring-white/10 active:scale-95 transition"
+                    className="relative w-full h-28 rounded-2xl overflow-hidden bg-zinc-900 ring-1 ring-white/10 active:scale-95 transition group"
                   >
-                    {isColor? (
-                      <div className="w-full h-full" style={{ background: item.bg }} />
-                    ) : (
+                    {isGrad? (
+                      <div className="w-full h-full" style={{ background: bg.url.replace('gradient:','') }} />
+                    ) : bg.url? (
                       <img
-                        src={thumbUrl}
-                        alt={name}
-                        className="w-full h-full object-cover"
+                        src={getBgUrl(id, 400)}
+                        alt={bg.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400';
-                        }}
                       />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full border-2 border-white/20" />
+                      </div>
                     )}
-                    {name && (
-                      <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white drop-shadow text-center truncate">
-                        {name}
-                      </span>
-                    )}
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                    <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white font-medium drop-shadow-lg text-center truncate">
+                      {bg.name}
+                    </span>
+
                     {isSelected && (
-                      <div className="absolute inset-0 ring-2 ring-[#0A84FF] ring-inset rounded-2xl pointer-events-none" />
+                      <>
+                        <div className="absolute inset-0 ring-2 ring-[#0A84FF] ring-inset rounded-2xl pointer-events-none" />
+                        <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#0A84FF] rounded-full flex items-center justify-center">
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M3 6l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                        </div>
+                      </>
                     )}
                   </button>
                 );
@@ -1521,14 +1469,14 @@ useEffect(() => {
     </div>
   </div>
 )}
-  
-  {/* UPLOAD PROGRESS */}
-  {uploading && (
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-xl px-4 py-2.5 rounded-full flex items-center gap-2.5 z-[60]">
-      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-      <span className="text-white text-sm font-medium">Đang tải {uploadProgress}%</span>
-    </div>
-  )}
+
+{/* UPLOAD PROGRESS - giữ nguyên */}
+{uploading && (
+  <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-xl px-4 py-2.5 rounded-full flex items-center gap-2.5 z-[60]">
+    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+    <span className="text-white text-sm font-medium">Đang tải {uploadProgress}%</span>
+  </div>
+)}
 
 
 
