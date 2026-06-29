@@ -51,9 +51,7 @@ type Message = {
   file?: string;
   fileName?: string;
   location?: { lat: number; lng: number };
-  type: "text" | "image" | "file" | "location" | "voice" | "task_share";
-  voice?: string;
-  duration?: number;
+ type: "text" | "image" | "file" | "location" | "task_share";
   reactions?: Reaction[];
   edited?: boolean;
   editedAt?: Timestamp;
@@ -1008,6 +1006,7 @@ export default function ChatDetailPage() {
       </button>
     </div>
   </div>
-
+  </div>
+</div>
   );
 }
