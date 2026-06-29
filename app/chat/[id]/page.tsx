@@ -695,40 +695,46 @@ useEffect(() => {
         </div>
       )}
 
-<div className="absolute top-0 left-0 right-0 z-40 pt-[max(env(safe-area-inset-top),12px)]">
-  <div className="px-4 pb-3 flex items-center justify-between">
-    <div className="flex items-center gap-3">
-      <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
-        <ArrowLeft size={22} className="text-white" strokeWidth={2.5} />
-      </button>
-      
-      <div className="flex items-center gap-2.5">
-        <div className="relative">
-          <img src={friend.avatar} className="w-10 h-10 rounded-full object-cover ring-2 ring-white/30 shadow-xl" alt={friend.name} />
-          {friend.isOnline && (
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#31d158] rounded-full ring-[2.5px] ring-black/20 shadow-lg">
-              <div className="absolute inset-0 bg-[#31d158] rounded-full animate-ping opacity-60" />
-            </div>
+{/* HEADER - fixed sát màn hình, bỏ nút back */}
+<div
+  className="fixed top-0 inset-x-0 z-40"
+  style={{ paddingTop: 'env(safe-area-inset-top)' }}
+>
+  <div className="px-4 pt-2.5 pb-3 flex items-center justify-between bg-black/20 backdrop-blur-2xl">
+    {/* Left: avatar + name */}
+    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+      <div className="relative flex-shrink-0">
+        <img
+          src={friend.avatar}
+          className="w-10 h-10 rounded-full object-cover ring-2 ring-white/30 shadow-xl"
+          alt={friend.name}
+        />
+        {friend.isOnline && (
+          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#31d158] rounded-full ring-[2.5px] ring-black/20 shadow-lg">
+            <div className="absolute inset-0 bg-[#31d158] rounded-full animate-ping opacity-60" />
+          </div>
+        )}
+      </div>
+
+      <div className="min-w-0">
+        <p className="font-semibold text-white text-[15px] leading-tight truncate drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.9)]">
+          {friend.name}
+        </p>
+        <p className="text-xs leading-tight font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          {chatData?.typing?.[friendId || ""]? (
+            <span className="text-[#6ab7ff]">Đang nhập...</span>
+          ) : friend.isOnline? (
+            <span className="text-white/85">Đang hoạt động</span>
+          ) : friend.lastSeen? (
+            <span className="text-white/70">{formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })}</span>
+          ) : (
+            <span className="text-white/60">Offline</span>
           )}
-        </div>
-        
-        <div className="min-w-0">
-          <p className="font-semibold text-white text- leading-tight truncate drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.9)]">{friend.name}</p>
-          <p className="text- leading-tight font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-            {chatData?.typing?.[friendId || ""] ? (
-              <span className="text-[#6ab7ff]">Đang nhập...</span>
-            ) : friend.isOnline ? (
-              <span className="text-white/85">Đang hoạt động</span>
-            ) : friend.lastSeen ? (
-              <span className="text-white/70">{formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })}</span>
-            ) : (
-              <span className="text-white/60">Offline</span>
-            )}
-          </p>
-        </div>
+        </p>
       </div>
     </div>
-    
+
+    {/* Right: actions */}
     <div className="flex items-center gap-1.5">
       <button onClick={() => setShowSearch(true)} className="w-9 h-9 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-2xl active:scale-90 shadow-lg">
         <Search size={20} className="text-white" strokeWidth={2.25} />
