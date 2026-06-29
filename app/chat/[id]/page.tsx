@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
-import { uploadBytes } from "firebase/storage";
+
 import {
   collection, query, onSnapshot, doc,
   orderBy, addDoc, serverTimestamp, Timestamp, updateDoc, deleteDoc, arrayUnion, arrayRemove
@@ -13,8 +13,8 @@ import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   Image as ImageIcon, MapPin, Paperclip, Phone, Send,
-  ArrowLeft, Loader2, X, Pause, Video, CheckCheck,
-  Smile, Reply, Play, Trash2, Pencil, Shield, Pin, Copy, Mic, Square, Search
+  ArrowLeft, Loader2, X, Video, CheckCheck,
+  Smile, Reply, Trash2, Pencil, Shield, Pin, Copy, Search
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import imageCompression from "browser-image-compression";
@@ -112,18 +112,19 @@ export default function ChatDetailPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [recording, setRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const previewAudioRef = useRef<HTMLAudioElement>(null);
-const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+
+
+
+
+
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+
 
   const chatId = idFromUrl as string;
 
@@ -421,178 +422,8 @@ const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
     }
   };
 
-// thêm ở trên cùng với các ref
-const audioChunksRef = useRef<Blob[]>([]);
 
-const startRecording = async () => {
-  if (isBlocked || isDeleted) {
-    toast.error("Không thể nhắn tin");
-    return;
-  }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-        sampleRate: 44100
-      }
-    });
 
-    // FIX: Ưu tiên MP4 (Safari) > WebM (Android)
-    const mimeTypes = [
-      'audio/mp4',
-      'audio/mp4;codecs=mp4a.40.2',
-      'audio/webm;codecs=opus',
-      'audio/webm',
-    ];
-    const mimeType = mimeTypes.find(t => MediaRecorder.isTypeSupported(t)) || 'audio/webm';
-    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-
-    console.log('[VOICE] Using:', mimeType, 'iOS:', isIOS);
-
-    const mediaRecorder = new MediaRecorder(stream, {
-      mimeType,
-      audioBitsPerSecond: isIOS ? 64000 : 128000
-    });
-
-    mediaRecorderRef.current = mediaRecorder;
-    audioChunksRef.current = [];
-
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data?.size > 0) audioChunksRef.current.push(e.data);
-    };
-
-    mediaRecorder.onstop = async () => {
-      await new Promise(r => setTimeout(r, 200));
-      
-      if (audioChunksRef.current.length === 0) {
-        toast.error("Không ghi được âm thanh");
-        stream.getTracks().forEach(t => t.stop());
-        return;
-      }
-
-      const blob = new Blob(audioChunksRef.current, { type: mimeType });
-      console.log('[VOICE] Blob:', blob.size, 'bytes', 'type:', blob.type);
-
-      if (blob.size < 2000) {
-        toast.error("File quá nhỏ, thử ghi lâu hơn (giữ 2s+)");
-        stream.getTracks().forEach(t => t.stop());
-        return;
-      }
-
-      // Test local
-      const testUrl = URL.createObjectURL(blob);
-      const testAudio = new Audio();
-      testAudio.src = testUrl;
-      testAudio.crossOrigin = 'anonymous';
-      
-      testAudio.oncanplay = () => {
-        console.log('[VOICE] ✓ Local OK');
-        URL.revokeObjectURL(testUrl);
-        setAudioBlob(blob);
-      };
-      
-      testAudio.onerror = () => {
-        console.error('[VOICE] ✗ Local FAIL – codec không hỗ trợ');
-        URL.revokeObjectURL(testUrl);
-        toast.error("File ghi lỗi, thử lại");
-        stream.getTracks().forEach(t => t.stop());
-      };
-      
-      testAudio.load();
-      stream.getTracks().forEach(t => t.stop());
-      audioChunksRef.current = [];
-    };
-
-    mediaRecorder.onerror = (e) => {
-      console.error('[VOICE] Recorder error:', e);
-      toast.error("Lỗi ghi âm");
-      stream.getTracks().forEach(t => t.stop());
-    };
-
-    mediaRecorder.start(100); // timeslice 100ms
-    setRecording(true);
-    setRecordingTime(0);
-
-    if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
-    recordingIntervalRef.current = setInterval(() => {
-      setRecordingTime(prev => prev + 1);
-    }, 1000);
-
-  } catch (err: any) {
-    console.error('[VOICE] getUserMedia failed:', err);
-    toast.error(err.name === 'NotAllowedError' 
-      ? "Chưa cấp quyền micro" 
-      : "Không thể truy cập microphone");
-  }
-};
-
-const stopRecording = () => {
-  if (mediaRecorderRef.current?.state === 'recording') {
-    try {
-      mediaRecorderRef.current.stop();
-    } catch (e) {
-      console.error('Stop error:', e);
-    }
-  }
-  setRecording(false);
-  if (recordingIntervalRef.current) {
-    clearInterval(recordingIntervalRef.current);
-    recordingIntervalRef.current = null;
-  }
-};
-
-const sendVoice = async () => {
-  if (!audioBlob || !user || !chatId || !chatData) {
-    if (!chatData) toast.error("Đang tải dữ liệu chat...");
-    return;
-  }
-
-  setUploading(true);
-  try {
-    const isMp4 = audioBlob.type.includes('mp4');
-    const ext = isMp4 ? 'm4a' : 'webm';
-    const contentType = isMp4 ? 'audio/mp4' : 'audio/webm';
-    
-    const fileName = `voice_${Date.now()}.${ext}`;
-    const storageRef = ref(storage, `chat-voice/${chatId}/${fileName}`);
-
-    await uploadBytes(storageRef, audioBlob, {
-      contentType,
-      cacheControl: 'public, max-age=31536000',
-      customMetadata: {
-        duration: String(recordingTime),
-        originalType: audioBlob.type
-      }
-    });
-    
-    const url = await getDownloadURL(storageRef);
-
-    await addDoc(collection(db, "chats", chatId, "messages"), {
-      senderId: user.uid,
-      voice: url,
-      duration: recordingTime,
-      type: "voice",
-      mimeType: contentType,
-      createdAt: serverTimestamp(),
-      seenBy: [user.uid],
-      members: chatData.members,
-    });
-
-    setAudioBlob(null);
-    setRecordingTime(0);
-    setIsPreviewPlaying(false);
-    toast.success("Đã gửi");
-  } catch (err: any) {
-    console.error("Voice send error:", err);
-    toast.error(err.code === 'storage/unauthorized' 
-      ? "Lỗi quyền Storage" 
-      : "Lỗi gửi voice");
-  } finally {
-    setUploading(false);
-  }
-};
   const sendLocation = async () => {
     if (!canSendMessage || isBlocked || isDeleted) {
       toast.error("Không thể nhắn tin");
@@ -964,167 +795,8 @@ const sendVoice = async () => {
                             <span className="text-sm truncate">{m.fileName}</span>
                           </a>
                         )}
-{m.voice && (
-  <div className="flex items-center gap-2.5 w-[210px] py-1" data-voice={m.voice}>
-    <button
-      onClick={async (e) => {
-        const btn = e.currentTarget;
-        const wrap = btn.closest('[data-voice]') as HTMLElement;
-        const audio = wrap?.querySelector('audio') as HTMLAudioElement;
-        const voiceUrl = wrap?.dataset.voice;
 
-        console.log('[VOICE] Click', { voiceUrl, audio:!!audio });
-
-        if (!audio ||!voiceUrl) {
-          console.error('[VOICE] Missing audio or URL');
-          return;
-        }
-
-        // Pause tất cả
-        document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
-          if (a!== audio) {
-            a.pause();
-            if (a.src.startsWith('blob:')) {
-              console.log('[VOICE] Cleanup blob', a.src);
-              URL.revokeObjectURL(a.src);
-            }
-            a.removeAttribute('src');
-            a.load();
-            const b = a.closest('[data-voice]')?.querySelector('button');
-            if (b) b.dataset.playing = 'false';
-          }
-        });
-
-        try {
-          if (audio.paused) {
-            btn.dataset.playing = 'loading';
-            console.log('[VOICE] Step 1: Setting src...', voiceUrl);
-
-            // BỎ FETCH – GÁN TRỰC TIẾP
-            if (audio.src!== voiceUrl) {
-              audio.src = voiceUrl;
-              audio.crossOrigin = 'anonymous';
-            }
-
-            console.log('[VOICE] Step 2: Waiting for load...');
-
-            // WAIT FOR LOAD
-            await new Promise<void>((resolve, reject) => {
-              const timeout = setTimeout(() => {
-                console.error('[VOICE] Timeout after 8s, readyState:', audio.readyState);
-                reject(new Error('Timeout: audio not loaded in 8s'));
-              }, 8000);
-
-              const cleanup = () => {
-                clearTimeout(timeout);
-                audio.oncanplay = null;
-                audio.oncanplaythrough = null;
-                audio.onerror = null;
-                audio.onloadedmetadata = null;
-                audio.onloadstart = null;
-              };
-
-              audio.onloadstart = () => {
-                console.log('[VOICE] Load start');
-              };
-
-              audio.onloadedmetadata = () => {
-                console.log('[VOICE] Step 3: Metadata loaded', {
-                  duration: audio.duration,
-                  readyState: audio.readyState
-                });
-              };
-
-              audio.oncanplay = () => {
-                console.log('[VOICE] Step 4: Can play');
-                cleanup();
-                resolve();
-              };
-
-              audio.oncanplaythrough = () => {
-                console.log('[VOICE] Step 4b: Can play through');
-                cleanup();
-                resolve();
-              };
-
-              audio.onerror = () => {
-                const err = audio.error;
-                console.error('[VOICE] Step X: Audio error', {
-                  code: err?.code,
-                  message: err?.message,
-                  src: audio.currentSrc
-                });
-                cleanup();
-                reject(new Error(`Audio error code ${err?.code}: ${err?.message || 'decode failed'}`));
-              };
-
-              audio.load();
-            });
-
-            console.log('[VOICE] Step 5: Playing...');
-            await audio.play();
-            console.log('[VOICE] Step 6: Playing success');
-
-            btn.dataset.playing = 'true';
-          } else {
-            console.log('[VOICE] Pausing');
-            audio.pause();
-            btn.dataset.playing = 'false';
-          }
-        } catch (err: any) {
-          console.error('[VOICE] FAILED:', err.message, err);
-          btn.dataset.playing = 'false';
-          toast.error(`Lỗi: ${err.message}`);
-        }
-      }}
-      data-playing="false"
-      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition active:scale-90 group ${
-        isMe? 'bg-white/25 hover:bg-white/35 text-white' : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'
-      }`}
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" className="animate-spin hidden group-[[data-playing='loading']]:block" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-        <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
-      </svg>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5 group-[[data-playing='true']]:hidden group-[[data-playing='loading']]:hidden">
-        <polygon points="5,3 19,12 5,21"/>
-      </svg>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="hidden group-[[data-playing='true']]:block">
-        <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
-      </svg>
-    </button>
-
-    <div className="voice-player flex-1 relative">
-      <audio
-        className="voice-audio"
-        preload="none"
-        playsInline
-        crossOrigin="anonymous"
-        onEnded={(e) => {
-          const a = e.target as HTMLAudioElement;
-          console.log('[VOICE] Ended');
-          const b = a.closest('[data-voice]')?.querySelector('button');
-          if (b) b.dataset.playing = 'false';
-        }}
-        onError={(e) => {
-          const a = e.target as HTMLAudioElement;
-          console.error('[VOICE] onError', a.error);
-          const b = a.closest('[data-voice]')?.querySelector('button');
-          if (b) b.dataset.playing = 'false';
-        }}
-      />
-      <div className="flex items-end gap-[1.8px] h-6 pointer-events-none">
-        {Array.from({ length: 22 }).map((_, i) => (
-          <div key={i} className={`w-[2px] rounded-full ${isMe? 'bg-white/40' : 'bg-gray-400/50'}`} style={{ height: `${10 + Math.sin(i * 0.9) * 5}px` }} />
-        ))}
-      </div>
-    </div>
-
-    <span className={`text-[11px] font-mono min-w-[32px] text-right ${isMe? 'text-white/80' : 'text-gray-500'}`}>
-      {m.duration? `${Math.floor(m.duration/60)}:${String(m.duration%60).padStart(2,'0')}` : '0:00'}
-    </span>
-  </div>
-)}          {m.location && (
+          {m.location && (
                           <a
                             href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
                             target="_blank"
@@ -1274,174 +946,68 @@ const sendVoice = async () => {
         </div>
       )}
 
-{/* INPUT - 3 trạng thái */}
+{/* INPUT */}
 <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-zinc-800">
   <div className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-    {audioBlob &&!recording? (
-      // 1. PREVIEW VOICE
-      <div className="flex items-center gap-2.5">
-        <button
-          onClick={() => {
-            setAudioBlob(null);
-            setIsPreviewPlaying(false);
-          }}
-          className="w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-full active:scale-90"
-        >
-          <Trash2 size={20} />
-        </button>
+    <div className="flex items-end gap-2">
+      <input
+        type="file"
+        hidden
+        ref={imageInputRef}
+        accept="image/*"
+        onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])}
+      />
+      <button
+        onClick={() => imageInputRef.current?.click()}
+        disabled={isBlocked || isDeleted}
+        className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
+      >
+        <ImageIcon size={22} className="text-gray-600 dark:text-zinc-400" />
+      </button>
 
-        <button
-          onClick={() => {
-            const audio = previewAudioRef.current;
-            if (!audio) return;
-            if (audio.paused) {
-              audio.play();
-              setIsPreviewPlaying(true);
-            } else {
-              audio.pause();
-              setIsPreviewPlaying(false);
+      <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
+      <button
+        onClick={() => fileInputRef.current?.click()}
+        disabled={isBlocked || isDeleted}
+        className={`w-10 h-10 hidden sm:flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
+      >
+        <Paperclip size={20} className="text-gray-600 dark:text-zinc-400" />
+      </button>
+
+      <button
+        onClick={sendLocation}
+        disabled={isBlocked || isDeleted}
+        className={`w-10 h-10 hidden sm:flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
+      >
+        <MapPin size={20} className="text-gray-600 dark:text-zinc-400" />
+      </button>
+
+      <div className="flex-1">
+        <input
+          ref={inputRef}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' &&!e.shiftKey) {
+              e.preventDefault();
+              if (!isBlocked &&!isDeleted && text.trim()) sendMessage();
             }
           }}
-          className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center active:scale-90"
-        >
-          {isPreviewPlaying? <Pause size={18} fill="white" /> : <Play size={18} fill="white" className="ml-0.5" />}
-        </button>
-
-        <div className="flex-1 flex items-center gap-[2px] h-8 px-2 bg-gray-100 dark:bg-zinc-900 rounded-full overflow-hidden">
-          {Array.from({ length: 28 }).map((_, i) => (
-            <div
-              key={i}
-              className={`w-0.5 rounded-full ${isPreviewPlaying? 'bg-blue-500' : 'bg-gray-400 dark:bg-zinc-600'}`}
-              style={{ height: `${6 + Math.random() * 16}px` }}
-            />
-          ))}
-        </div>
-
-        <span className="text-xs font-mono w-11 text-center">
-          {String(Math.floor(recordingTime / 60)).padStart(2, '0')}:{String(recordingTime % 60).padStart(2, '0')}
-        </span>
-
-        <button
-          onClick={sendVoice}
-          disabled={uploading}
-          className="px-4 h-10 bg-blue-600 text-white rounded-full text-sm font-medium active:scale-95 disabled:opacity-50"
-        >
-          {uploading? <Loader2 size={16} className="animate-spin" /> : 'Gửi'}
-        </button>
-
-      <audio
-  ref={previewAudioRef}
-  src={audioBlob ? URL.createObjectURL(audioBlob) : ''}
-  onEnded={() => setIsPreviewPlaying(false)}
-  className="hidden"
-  crossOrigin="anonymous"
-  preload="metadata"
-  playsInline
-/>
-      </div>
-    ) : recording? (
-      // 2. ĐANG GHI ÂM
-      <div className="flex items-center gap-3">
-        <div className="flex-1 flex items-center gap-3 h-11 px-4 bg-red-50 dark:bg-red-950/30 rounded-full">
-          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-          <div className="flex-1 flex items-center gap-[2px]">
-            {Array.from({ length: 22 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-0.5 h-4 bg-red-500/70 rounded-full animate-pulse"
-                style={{ animationDelay: `${i * 50}ms` }}
-              />
-            ))}
-          </div>
-          <span className="text-sm font-mono text-red-600">{recordingTime}s</span>
-        </div>
-        <button
-          onMouseUp={stopRecording}
-          onTouchEnd={stopRecording}
-          className="w-11 h-11 bg-red-600 text-white rounded-full flex items-center justify-center active:scale-90"
-        >
-          <Square size={18} fill="white" />
-        </button>
-      </div>
-    ) : (
-      // 3. NHẬP BÌNH THƯỜNG
-      <div className="flex items-end gap-2">
-        <input
-          type="file"
-          hidden
-          ref={imageInputRef}
-          accept="image/*"
-          onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])}
+          disabled={isBlocked || isDeleted}
+          placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa' : 'Nhắn tin...'}
+          className="w-full px-4 py-2.5 bg-gray-100 dark:bg-zinc-900 rounded-full outline-none focus:ring-2 focus:ring-blue-500/20 text-[15px]"
         />
-        <button
-          onClick={() => imageInputRef.current?.click()}
-          disabled={isBlocked || isDeleted}
-          className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
-        >
-          <ImageIcon size={22} className="text-gray-600 dark:text-zinc-400" />
-        </button>
-
-        <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isBlocked || isDeleted}
-          className={`w-10 h-10 hidden sm:flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
-        >
-          <Paperclip size={20} className="text-gray-600 dark:text-zinc-400" />
-        </button>
-
-        <button
-          onClick={sendLocation}
-          disabled={isBlocked || isDeleted}
-          className={`w-10 h-10 hidden sm:flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full active:scale-90 ${isBlocked || isDeleted? 'opacity-50' : ''}`}
-        >
-          <MapPin size={20} className="text-gray-600 dark:text-zinc-400" />
-        </button>
-
-        <div className="flex-1 relative">
-          <input
-            ref={inputRef}
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              handleTyping();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' &&!e.shiftKey) {
-                e.preventDefault();
-                if (!isBlocked &&!isDeleted && text.trim()) sendMessage();
-              }
-            }}
-            disabled={isBlocked || isDeleted}
-            placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa cuộc trò chuyện' : 'Nhắn tin...'}
-            className="w-full px-4 py-2.5 bg-gray-100 dark:bg-zinc-900 rounded-full outline-none focus:ring-2 focus:ring-blue-500/20 text-[15px]"
-          />
-        </div>
-
-        {text.trim()? (
-          <button
-            onClick={sendMessage}
-            disabled={sending || isBlocked || isDeleted}
-            className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-50"
-          >
-            {sending? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-          </button>
-        ) : (
-          <button
-            onMouseDown={startRecording}
-            onMouseUp={stopRecording}
-            onTouchStart={startRecording}
-            onTouchEnd={stopRecording}
-            disabled={isBlocked || isDeleted}
-            className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-50"
-          >
-            <Mic size={18} />
-          </button>
-        )}
       </div>
-    )}
+
+      <button
+        onClick={sendMessage}
+        disabled={sending || isBlocked || isDeleted ||!text.trim()}
+        className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-50"
+      >
+        {sending? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+      </button>
+    </div>
   </div>
-</div>   
 </div>
   );
 }
