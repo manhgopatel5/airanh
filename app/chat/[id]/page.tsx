@@ -1222,7 +1222,7 @@ useEffect(() => {
         <MapPin size={20} className="text-gray-600 dark:text-zinc-400" />
       </button>
 
-      <div className="flex-1">
+<div className="flex-1 relative">
      <input
   ref={inputRef}
   value={text}
@@ -1250,6 +1250,7 @@ useEffect(() => {
 </button>
     </div>
   </div>
+    </div>
   </div>
 </div>
   );
