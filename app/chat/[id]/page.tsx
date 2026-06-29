@@ -974,7 +974,7 @@ export default function ChatDetailPage() {
               )}
 
             </div> 
-            </div>
+
           );
         })}
         <div ref={messagesEndRef} />
