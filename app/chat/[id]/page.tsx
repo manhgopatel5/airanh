@@ -946,30 +946,47 @@ const sendVoice = async () => {
         document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
           if (a!== audio) {
             a.pause();
-            a.currentTime = 0;
-            // Reset icon của nút khác
-            const otherBtn = a.parentElement?.parentElement?.querySelector('button');
-            if (otherBtn) {
-              otherBtn.dataset.playing = 'false';
+            if (a.src.startsWith('blob:')) {
+              URL.revokeObjectURL(a.src);
             }
+            a.src = '';
+            a.currentTime = 0;
+            const otherBtn = a.closest('.flex.items-center')?.querySelector('button');
+            if (otherBtn) otherBtn.dataset.playing = 'false';
           }
         });
 
         try {
           if (audio.paused) {
-            // FIX iOS: phải load và đợi canplay
-            if (audio.readyState < 2) {
-              audio.load();
+            // FIX: Fetch về blob trước khi play
+            if (!audio.src ||!audio.src.startsWith('blob:')) {
+              btn.dataset.playing = 'loading';
+
+              const response = await fetch(m.voice);
+              if (!response.ok) throw new Error('Network error');
+
+              const blob = await response.blob();
+              const blobUrl = URL.createObjectURL(blob);
+
+              // Cleanup URL cũ nếu có
+              if (audio.src.startsWith('blob:')) {
+                URL.revokeObjectURL(audio.src);
+              }
+
+              audio.src = blobUrl;
+
+              // Đợi load xong
               await new Promise<void>((resolve, reject) => {
-                const timeout = setTimeout(() => reject(new Error('Load timeout')), 5000);
-                audio.oncanplay = () => {
+                const timeout = setTimeout(() => reject(new Error('Timeout')), 10000);
+                audio.oncanplaythrough = () => {
                   clearTimeout(timeout);
                   resolve();
                 };
                 audio.onerror = () => {
                   clearTimeout(timeout);
-                  reject(new Error('Audio load error'));
+                  reject(new Error('Load failed'));
                 };
+                audio.load();
               });
             }
 
@@ -980,16 +997,16 @@ const sendVoice = async () => {
             btn.dataset.playing = 'false';
           }
         } catch (err: any) {
-          console.error('[VOICE PLAY]', err);
+          console.error('[VOICE]', err);
           btn.dataset.playing = 'false';
 
-          // Fallback: mở link trực tiếp nếu lỗi
-          if (err.name === 'NotSupportedError' || err.message.includes('not supported')) {
-            toast.error('File không hỗ trợ, đang mở...');
-            window.open(audio.src, '_blank');
-          } else {
-            toast.error('Không phát được: ' + err.message);
+          // Cleanup
+          if (audio.src.startsWith('blob:')) {
+            URL.revokeObjectURL(audio.src);
+            audio.src = '';
           }
+
+          toast.error('Không phát được, thử lại');
         }
       }}
       data-playing="false"
@@ -999,17 +1016,32 @@ const sendVoice = async () => {
           : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'
       }`}
     >
-      {/* Icon Play - hiện khi không playing */}
+      {/* Loading spinner */}
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        className="animate-spin hidden group-[[data-playing='loading']]:block"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+        <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+      </svg>
+
+      {/* Play icon */}
       <svg
         width="14"
         height="14"
         viewBox="0 0 24 24"
         fill="currentColor"
-        className="ml-0.5 group-[[data-playing='true']]:hidden"
+        className="ml-0.5 group-[[data-playing='true']]:hidden group-[[data-playing='loading']]:hidden"
       >
         <polygon points="5,3 19,12 5,21"/>
       </svg>
-      {/* Icon Pause - hiện khi playing */}
+
+      {/* Pause icon */}
       <svg
         width="14"
         height="14"
@@ -1024,49 +1056,43 @@ const sendVoice = async () => {
 
     <div className="voice-player flex-1 relative">
       <audio
-        src={m.voice}
         className="voice-audio"
-        preload="auto"
+        preload="none"
         playsInline
-        // BỎ crossOrigin
         style={{ display: 'none' }}
         onEnded={(e) => {
-          const audioEl = e.target as HTMLAudioElement;
-          const btn = audioEl.parentElement?.parentElement?.querySelector('button');
-          if (btn) {
-            btn.dataset.playing = 'false';
-          }
-        }}
-        onPause={(e) => {
-          const audioEl = e.target as HTMLAudioElement;
-          const btn = audioEl.parentElement?.parentElement?.querySelector('button');
-          if (btn && audioEl.currentTime === 0) {
-            btn.dataset.playing = 'false';
+          const audio = e.target as HTMLAudioElement;
+          const btn = audio.closest('.flex.items-center')?.querySelector('button');
+          if (btn) btn.dataset.playing = 'false';
+          if (audio.src.startsWith('blob:')) {
+            URL.revokeObjectURL(audio.src);
+            audio.src = '';
           }
         }}
         onError={(e) => {
-          console.error('[AUDIO ERROR]', e);
-          const audioEl = e.target as HTMLAudioElement;
-          const btn = audioEl.parentElement?.parentElement?.querySelector('button');
-          if (btn) {
-            btn.dataset.playing = 'false';
-          }
+          const audio = e.target as HTMLAudioElement;
+          const btn = audio.closest('.flex.items-center')?.querySelector('button');
+          if (btn) btn.dataset.playing = 'false';
+          console.error('[AUDIO ERROR]', audio.error);
         }}
       />
       <div className="flex items-end gap-[1.8px] h-6 pointer-events-none">
         {Array.from({ length: 22 }).map((_, i) => (
           <div
             key={i}
-            className={`w-[2px] rounded-full transition-all duration-200 ${
+            className={`w-[2px] rounded-full ${
               isMe? 'bg-white/40' : 'bg-gray-400/50'
             }`}
-            style={{ height: `${8 + Math.sin(i * 0.8) * 6 + Math.random() * 4}px` }}
+            style={{
+              height: `${10 + Math.sin(i * 0.9) * 5}px`,
+              animation: 'none'
+            }}
           />
         ))}
       </div>
     </div>
 
-    <span className={`text-[11px] font-mono min-w-[32px] text-right tabular-nums ${
+    <span className={`text-[11px] font-mono min-w-[32px] text-right ${
       isMe? 'text-white/80' : 'text-gray-500'
     }`}>
       {m.duration? `${Math.floor(m.duration/60)}:${String(m.duration%60).padStart(2,'0')}` : '0:00'}
