@@ -1384,3 +1384,5 @@ const sendVoice = async () => {
     )}
   </div>
 </div>
+  );
+}
