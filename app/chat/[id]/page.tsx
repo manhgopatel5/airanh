@@ -475,11 +475,13 @@ export default function ChatDetailPage() {
       streamRef.current?.getTracks().forEach(t => t.stop());
 
 const lamejsMod: any = await import('lamejs');
-const Mp3Encoder = lamejsMod.Mp3Encoder || lamejsMod.default?.Mp3Encoder || lamejsMod.default;
-const mp3encoder = new Mp3Encoder(1, 44100, 64);
+const Mp3Encoder = lamejsMod.Mp3Encoder || lamejsMod.default?.Mp3Encoder;
+if (!Mp3Encoder) throw new Error('Không load được Mp3Encoder');
 
+const mp3encoder = new Mp3Encoder(1, 44100, 64);
 const mp3Data: Uint8Array[] = [];
 const samples = pcmChunksRef.current;
+const sampleBlockSize = 1152;
 
 for (const sample of samples) {
   if (!sample) continue;
@@ -487,14 +489,22 @@ for (const sample of samples) {
   for (let j = 0; j < sample.length; j++) {
     int16[j] = Math.max(-1, Math.min(1, sample[j] || 0)) * 0x7FFF;
   }
-  for (let j = 0; j < int16.length; j += 1152) {
-    const chunk = int16.subarray(j, j + 1152);
+  for (let j = 0; j < int16.length; j += sampleBlockSize) {
+    const chunk = int16.subarray(j, j + sampleBlockSize);
     const mp3buf = mp3encoder.encodeBuffer(chunk);
     if (mp3buf.length > 0) mp3Data.push(new Uint8Array(mp3buf));
   }
 }
 const endBuf = mp3encoder.flush();
 if (endBuf.length > 0) mp3Data.push(new Uint8Array(endBuf));
+
+const blob = new Blob(mp3Data, { type: 'audio/mpeg' });
+setAudioBlob(blob);
+pcmChunksRef.current = [];
+} catch (e: any) {
+  console.error('Encode error', e);
+  toast.error("Lỗi mã hóa: " + (e.message || e));
+}
 
   const sendVoice = async () => {
     if (!audioBlob ||!user ||!chatId ||!chatData) {
