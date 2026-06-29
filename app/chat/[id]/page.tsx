@@ -474,8 +474,8 @@ export default function ChatDetailPage() {
       audioContextRef.current?.close();
       streamRef.current?.getTracks().forEach(t => t.stop());
 
-      const { default: lamejs } = await import('lamejs');
-      const mp3encoder = new lamejs.Mp3Encoder(1, 44100, 64);
+const lamejs: any = await import('lamejs');
+const mp3encoder = new lamejs.default.Mp3Encoder(1, 44100, 64);
       const mp3Data: Uint8Array[] = [];
       const samples = pcmChunksRef.current;
       const sampleBlockSize = 1152;
