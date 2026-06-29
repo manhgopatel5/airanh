@@ -438,10 +438,8 @@ const startRecording = async () => {
       }
     });
 
-    // FIX: Ưu tiên webm, fallback mp4
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : MediaRecorder.isTypeSupported('audio/webm')
+    // FIX: dùng webm đơn giản, không codecs
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm')
       ? 'audio/webm'
       : 'audio/mp4';
 
@@ -463,14 +461,25 @@ const startRecording = async () => {
     audioChunksRef.current = [];
 
     mediaRecorder.ondataavailable = (e) => {
-      if (e.data?.size > 0) audioChunksRef.current.push(e.data);
+      if (e.data?.size > 0) {
+        audioChunksRef.current.push(e.data);
+        console.log('[VOICE] Chunk:', e.data.size);
+      }
     };
 
-    mediaRecorder.onstop = () => {
-      // Dùng đúng mimeType đã chọn
+    mediaRecorder.onstop = async () => {
+      // Đợi chunk cuối
+      await new Promise(r => setTimeout(r, 150));
+      
       const blob = new Blob(audioChunksRef.current, { type: mimeType });
+      console.log('[VOICE] Blob created:', blob.type, Math.round(blob.size/1024)+'KB', 'chunks:', audioChunksRef.current.length);
 
-      console.log('[VOICE] Blob created:', blob.type, Math.round(blob.size/1024)+'KB');
+      // TEST LOCAL
+      const testUrl = URL.createObjectURL(blob);
+      const testAudio = new Audio(testUrl);
+      testAudio.oncanplay = () => console.log('[VOICE] ✓ Local playable');
+      testAudio.onerror = () => console.error('[VOICE] ✗ Local FAILED – file lỗi');
+      testAudio.load();
 
       setAudioBlob(blob);
       stream.getTracks().forEach(track => track.stop());
@@ -482,7 +491,7 @@ const startRecording = async () => {
       toast.error("Lỗi ghi âm");
     };
 
-    mediaRecorder.start(250);
+    mediaRecorder.start(); // BỎ 250
     setRecording(true);
     setRecordingTime(0);
 
@@ -498,7 +507,6 @@ const startRecording = async () => {
       : "Không thể truy cập microphone");
   }
 };
-
 const stopRecording = () => {
   if (mediaRecorderRef.current && recording) {
     try {
