@@ -104,6 +104,13 @@
 
     * {
     @apply border-border;
+    /* CHẶN COPY TOÀN TRANG */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
   }
 
   html {
@@ -124,15 +131,15 @@
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'tnum' 1;
     overscroll-behavior: none;
+    /* CHẶN THÊM */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   body {
     margin: 0;
     width: 100%;
-  }
-
-    * {
-    -webkit-tap-highlight-color: transparent;
   }
 
   button,
@@ -144,10 +151,13 @@
     -webkit-touch-callout: none;
   }
 
+  /* CHO PHÉP GÕ TRONG INPUT */
   input,
-  textarea {
-    -webkit-user-select: text;
-    user-select: text;
+  textarea,
+  [contenteditable="true"] {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default !important;
   }
 
   button,
