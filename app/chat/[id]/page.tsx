@@ -422,7 +422,7 @@ export default function ChatDetailPage() {
     }
   };
 
-  // ============ MP3 RECORDING ============
+// ============ WAV RECORDING ============
   const startRecording = async () => {
     if (isBlocked || isDeleted) {
       toast.error("Không thể nhắn tin");
@@ -461,48 +461,54 @@ export default function ChatDetailPage() {
   };
 
   const stopRecording = async () => {
-  if (!recording) return;
-  setRecording(false);
-  if (recordingIntervalRef.current) {
-    clearInterval(recordingIntervalRef.current);
-    recordingIntervalRef.current = null;
-  }
-  try {
-    processorRef.current?.disconnect();
-    audioContextRef.current?.close();
-    streamRef.current?.getTracks().forEach(t => t.stop());
-
-const lamejsMod: any = await import('@breezystack/lamejs');
-    const Mp3Encoder = lamejsMod.Mp3Encoder || lamejsMod.default?.Mp3Encoder;
-    if (!Mp3Encoder) throw new Error('Không load được Mp3Encoder');
-
-    const mp3encoder = new Mp3Encoder(1, 44100, 64);
-    const mp3Data: Uint8Array[] = [];
-    const samples = pcmChunksRef.current;
-
-    for (const sample of samples) {
-      if (!sample) continue;
-      const int16 = new Int16Array(sample.length);
-      for (let j = 0; j < sample.length; j++) {
-        int16[j] = Math.max(-1, Math.min(1, sample[j] || 0)) * 0x7FFF;
-      }
-      for (let j = 0; j < int16.length; j += 1152) {
-        const chunk = int16.subarray(j, j + 1152);
-        const mp3buf = mp3encoder.encodeBuffer(chunk);
-        if (mp3buf.length > 0) mp3Data.push(new Uint8Array(mp3buf));
-      }
+    if (!recording) return;
+    setRecording(false);
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
     }
-    const endBuf = mp3encoder.flush();
-    if (endBuf.length > 0) mp3Data.push(new Uint8Array(endBuf));
+    try {
+      processorRef.current?.disconnect();
+      audioContextRef.current?.close();
+      streamRef.current?.getTracks().forEach(t => t.stop());
 
-const blob = new Blob(mp3Data as any, { type: 'audio/mpeg' });
-    setAudioBlob(blob);
-    pcmChunksRef.current = [];
-  } catch (e: any) {
-    console.error('Encode error', e);
-    toast.error("Lỗi mã hóa: " + (e.message || e));
-  }
-};
+      const samples = pcmChunksRef.current.flat();
+      const sampleRate = 44100;
+      const buffer = new ArrayBuffer(44 + samples.length * 2);
+      const view = new DataView(buffer);
+
+      const writeString = (offset: number, str: string) => {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+      };
+      writeString(0, 'RIFF');
+      view.setUint32(4, 36 + samples.length * 2, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(36, 'data');
+      view.setUint32(40, samples.length * 2, true);
+
+      let offset = 44;
+      for (let i = 0; i < samples.length; i++) {
+        const s = Math.max(-1, Math.min(1, samples[i] || 0));
+        view.setInt16(offset, s * 0x7FFF, true);
+        offset += 2;
+      }
+
+      const blob = new Blob([buffer], { type: 'audio/wav' });
+      setAudioBlob(blob);
+      pcmChunksRef.current = [];
+    } catch (e: any) {
+      console.error('Encode error', e);
+      toast.error("Lỗi: " + e.message);
+    }
+  };
 
   const sendVoice = async () => {
     if (!audioBlob ||!user ||!chatId ||!chatData) {
@@ -512,11 +518,11 @@ const blob = new Blob(mp3Data as any, { type: 'audio/mpeg' });
 
     setUploading(true);
     try {
-      const fileName = `voice_${Date.now()}.mp3`;
+      const fileName = `voice_${Date.now()}.wav`;
       const storageRef = ref(storage, `chat-voice/${chatId}/${fileName}`);
 
       await uploadBytes(storageRef, audioBlob, {
-        contentType: 'audio/mp3',
+        contentType: 'audio/wav',
         cacheControl: 'public, max-age=31536000',
         customMetadata: { uid: user.uid, duration: String(recordingTime) }
       });
@@ -528,7 +534,7 @@ const blob = new Blob(mp3Data as any, { type: 'audio/mpeg' });
         voice: url,
         duration: Math.round(recordingTime),
         type: "voice",
-        mimeType: 'audio/mp3',
+        mimeType: 'audio/wav',
         createdAt: serverTimestamp(),
         seenBy: [user.uid],
         members: chatData.members,
