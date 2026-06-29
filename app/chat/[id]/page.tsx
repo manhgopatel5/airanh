@@ -953,26 +953,27 @@ export default function ChatDetailPage() {
                     )}
                   </div>
 
-             {isLastInGroup && (
-  <div className={`flex items-center gap-1 mt-1 ${isMe? "justify-end" : "justify-start"}`}>
-    <p className="text-[11px] text-gray-400 dark:text-zinc-500">{formatTime(m.createdAt)}</p>
-    {isMe && seenAvatars.length > 0 && (
-                        <div className="flex -space-x-2">
-                          {seenAvatars.slice(0, 3).map((u, idx) => (
-                            <img
-                              key={idx}
-                              src={u.avatar}
-                              className="w-4 h-4 rounded-full ring-2 ring-white dark:ring-zinc-950"
-                              alt={u.name}
-                            />
-                          ))}
-                        </div>
-                      )}
-                      {isMe && seenAvatars.length === 0 && m.seenBy && m.seenBy.length > 1 && <CheckCheck className="text-blue-500" size={14} />}
-                    </div>
-                  )}
+        
                 </div>
               </div>
+
+
+              {/* GIỜ Ở GIỮA */}
+              {isLastInGroup && (
+                <div className="flex w-full justify-center items-center gap-1.5 mt-1.5">
+                  <p className="text-[11px] text-gray-400 dark:text-zinc-500">{formatTime(m.createdAt)}</p>
+                  {isMe && seenAvatars.length > 0 && (
+                    <div className="flex -space-x-1">
+                      {seenAvatars.slice(0,3).map((u,i)=>(
+                        <img key={i} src={u.avatar} className="w-3 h-3 rounded-full ring-1 ring-white dark:ring-zinc-950" alt={u.name}/>
+                      ))}
+                    </div>
+                  )}
+                  {isMe && seenAvatars.length===0 && m.seenBy && m.seenBy.length>1 && <CheckCheck className="text-blue-500" size={12} />}
+                </div>
+              )}
+
+            </div> {/* đóng msg-${m.id} */}
             </div>
           );
         })}
