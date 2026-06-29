@@ -654,7 +654,7 @@ useEffect(() => {
 
   
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
+
 const [currentResultIndex, setCurrentResultIndex] = useState(0);
 
 const filteredMessages = useMemo(() =>
