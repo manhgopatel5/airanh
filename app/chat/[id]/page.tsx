@@ -935,61 +935,47 @@ const sendVoice = async () => {
                           </a>
                         )}
 {m.voice && (
-  <div className="flex items-center gap-2.5 w-[210px] py-1">
+  <div className="flex items-center gap-2.5 w-[210px] py-1" data-voice={m.voice}>
     <button
       onClick={async (e) => {
         const btn = e.currentTarget;
-        const audio = btn.parentElement?.querySelector('audio') as HTMLAudioElement;
-        if (!audio) return;
+        const wrap = btn.closest('[data-voice]') as HTMLElement;
+        const audio = wrap?.querySelector('audio') as HTMLAudioElement;
+        const voiceUrl = wrap?.dataset.voice;
 
-        // Pause tất cả audio khác
+        if (!audio ||!voiceUrl) return;
+
+        // Pause tất cả
         document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
           if (a!== audio) {
             a.pause();
-            if (a.src.startsWith('blob:')) {
-              URL.revokeObjectURL(a.src);
-            }
-            a.src = '';
-            a.currentTime = 0;
-            const otherBtn = a.closest('.flex.items-center')?.querySelector('button');
-            if (otherBtn) otherBtn.dataset.playing = 'false';
+            if (a.src.startsWith('blob:')) URL.revokeObjectURL(a.src);
+            a.removeAttribute('src'); // <-- ĐỔI từ a.src = ''
+            a.load();
+            const b = a.closest('[data-voice]')?.querySelector('button');
+            if (b) b.dataset.playing = 'false';
           }
         });
 
         try {
           if (audio.paused) {
-            // FIX: Fetch về blob trước khi play
-            if (!audio.src ||!audio.src.startsWith('blob:')) {
-              btn.dataset.playing = 'loading';
+            btn.dataset.playing = 'loading';
 
-if (!m.voice) return;
-const response = await fetch(m.voice);
-              if (!response.ok) throw new Error('Network error');
+            // Luôn fetch mới, không check src cũ
+            const res = await fetch(voiceUrl);
+            if (!res.ok) throw new Error('Network ' + res.status);
 
-              const blob = await response.blob();
-              const blobUrl = URL.createObjectURL(blob);
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
 
-              // Cleanup URL cũ nếu có
-              if (audio.src.startsWith('blob:')) {
-                URL.revokeObjectURL(audio.src);
-              }
+            if (audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src);
+            audio.src = url;
 
-              audio.src = blobUrl;
-
-              // Đợi load xong
-              await new Promise<void>((resolve, reject) => {
-                const timeout = setTimeout(() => reject(new Error('Timeout')), 10000);
-                audio.oncanplaythrough = () => {
-                  clearTimeout(timeout);
-                  resolve();
-                };
-                audio.onerror = () => {
-                  clearTimeout(timeout);
-                  reject(new Error('Load failed'));
-                };
-                audio.load();
-              });
-            }
+            await new Promise<void>((resolve, reject) => {
+              const t = setTimeout(() => reject(new Error('Timeout')), 8000);
+              audio.oncanplay = () => { clearTimeout(t); resolve(); };
+              audio.onerror = () => { clearTimeout(t); reject(new Error('Decode error')); };
+            });
 
             await audio.play();
             btn.dataset.playing = 'true';
@@ -1000,58 +986,27 @@ const response = await fetch(m.voice);
         } catch (err: any) {
           console.error('[VOICE]', err);
           btn.dataset.playing = 'false';
-
-          // Cleanup
           if (audio.src.startsWith('blob:')) {
             URL.revokeObjectURL(audio.src);
-            audio.src = '';
+            audio.removeAttribute('src');
           }
-
-          toast.error('Không phát được, thử lại');
+          toast.error('Không phát được');
         }
       }}
       data-playing="false"
       className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition active:scale-90 group ${
-        isMe
-         ? 'bg-white/25 hover:bg-white/35 text-white'
-          : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'
+        isMe? 'bg-white/25 hover:bg-white/35 text-white' : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'
       }`}
     >
-      {/* Loading spinner */}
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        className="animate-spin hidden group-[[data-playing='loading']]:block"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
+      <svg width="14" height="14" viewBox="0 0 24 24" className="animate-spin hidden group-[[data-playing='loading']]:block" fill="none" stroke="currentColor" strokeWidth="2">
         <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
         <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
       </svg>
-
-      {/* Play icon */}
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        className="ml-0.5 group-[[data-playing='true']]:hidden group-[[data-playing='loading']]:hidden"
-      >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5 group-[[data-playing='true']]:hidden group-[[data-playing='loading']]:hidden">
         <polygon points="5,3 19,12 5,21"/>
       </svg>
-
-      {/* Pause icon */}
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        className="hidden group-[[data-playing='true']]:block"
-      >
-        <rect x="6" y="4" width="4" height="16" rx="1"/>
-        <rect x="14" y="4" width="4" height="16" rx="1"/>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="hidden group-[[data-playing='true']]:block">
+        <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
       </svg>
     </button>
 
@@ -1060,42 +1015,29 @@ const response = await fetch(m.voice);
         className="voice-audio"
         preload="none"
         playsInline
-        style={{ display: 'none' }}
         onEnded={(e) => {
-          const audio = e.target as HTMLAudioElement;
-          const btn = audio.closest('.flex.items-center')?.querySelector('button');
-          if (btn) btn.dataset.playing = 'false';
-          if (audio.src.startsWith('blob:')) {
-            URL.revokeObjectURL(audio.src);
-            audio.src = '';
+          const a = e.target as HTMLAudioElement;
+          const b = a.closest('[data-voice]')?.querySelector('button');
+          if (b) b.dataset.playing = 'false';
+          if (a.src.startsWith('blob:')) {
+            URL.revokeObjectURL(a.src);
+            a.removeAttribute('src');
           }
         }}
         onError={(e) => {
-          const audio = e.target as HTMLAudioElement;
-          const btn = audio.closest('.flex.items-center')?.querySelector('button');
-          if (btn) btn.dataset.playing = 'false';
-          console.error('[AUDIO ERROR]', audio.error);
+          const a = e.target as HTMLAudioElement;
+          const b = a.closest('[data-voice]')?.querySelector('button');
+          if (b) b.dataset.playing = 'false';
         }}
       />
       <div className="flex items-end gap-[1.8px] h-6 pointer-events-none">
         {Array.from({ length: 22 }).map((_, i) => (
-          <div
-            key={i}
-            className={`w-[2px] rounded-full ${
-              isMe? 'bg-white/40' : 'bg-gray-400/50'
-            }`}
-            style={{
-              height: `${10 + Math.sin(i * 0.9) * 5}px`,
-              animation: 'none'
-            }}
-          />
+          <div key={i} className={`w-[2px] rounded-full ${isMe? 'bg-white/40' : 'bg-gray-400/50'}`} style={{ height: `${10 + Math.sin(i * 0.9) * 5}px` }} />
         ))}
       </div>
     </div>
 
-    <span className={`text-[11px] font-mono min-w-[32px] text-right ${
-      isMe? 'text-white/80' : 'text-gray-500'
-    }`}>
+    <span className={`text-[11px] font-mono min-w-[32px] text-right ${isMe? 'text-white/80' : 'text-gray-500'}`}>
       {m.duration? `${Math.floor(m.duration/60)}:${String(m.duration%60).padStart(2,'0')}` : '0:00'}
     </span>
   </div>
