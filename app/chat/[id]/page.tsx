@@ -752,27 +752,29 @@ useEffect(() => {
 
   return (
 <div className="fixed inset-0 flex flex-col bg-black">
-  {/* NỀN FIX TOÀN MÀN - không cuộn */}
-  {(chatData as any)?.background && (
-    <>
-      <div
-        className="fixed inset-0 z-0"
-        style={{
-          backgroundImage: `url(${(chatData as any).background})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
-          backgroundRepeat: 'no-repeat',
-          transform: 'translateZ(0)'
-        }}
-      />
-      <div className="fixed inset-0 z-0 bg-black/15 dark:bg-black/35 pointer-events-none" />
-    </>
-  )}
-
-  {/* Nền mặc định khi chưa có ảnh */}
-  {!(chatData as any)?.background && (
-    <div className="fixed inset-0 z-0 bg-gradient-to-b from-white via-gray-50 to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-black" />
-  )}
+{/* NỀN ẢNH - KHÔNG BỂ MÀU */}
+{(chatData as any)?.background ? (
+  <>
+    {/* 1 lớp duy nhất, đẩy xuống -z-10 */}
+    <div
+      className="fixed inset-0 -z-10"
+      style={{
+        backgroundImage: `url(${(chatData as any).background}${(chatData as any).background.includes('?') ? '&' : '?'}q=80&auto=format&fit=crop&w=1280)`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        // bỏ transform: translateZ(0) - chính nó gây banding trên iOS
+      }}
+    />
+    {/* overlay siêu nhẹ, dùng gradient thay vì đen đặc */}
+    <div className="fixed inset-0 -z-10 pointer-events-none
+      bg-gradient-to-b from-transparent via-black/[0.03] to-black/[0.06]
+      dark:from-black/10 dark:via-black/10 dark:to-black/20" />
+  </>
+) : (
+  /* Nền mặc định */
+  <div className="fixed inset-0 -z-10 bg-white dark:bg-zinc-950" />
+)}
 
   <Toaster richColors position="top-center" />
     {showSearch && (
@@ -1354,7 +1356,7 @@ useEffect(() => {
           </div>
         </div>
       )}
-{showBgPicker && (
+  {showBgPicker && (
   <div
     className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4"
     onClick={() => setShowBgPicker(false)}
@@ -1370,7 +1372,7 @@ useEffect(() => {
           <div className="w-14 h-14 rounded-2xl overflow-hidden ring-1 ring-white/10 shrink-0">
             <div className="w-full h-full" style={{
               background: (chatData as any)?.background
-              ? `url(${(chatData as any).background})`
+               ? `url(${(chatData as any).background}?w=200&q=60&auto=format)`
                 : 'linear-gradient(135deg, #1e1e22 0%, #0a0a0b 100%)',
               backgroundSize: 'cover', backgroundPosition: 'center'
             }}/>
@@ -1392,65 +1394,62 @@ useEffect(() => {
             title: 'Phổ biến',
             items: [
               { url: '', name: 'Mặc định', type: 'color', bg: 'linear-gradient(135deg, #1e1e22 0%, #0a0a0b 100%)' },
-              { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800', name: 'Núi tuyết' },
-              { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800', name: 'Hoàng hôn' },
-              { url: 'https://images.unsplash.com/photo-1531306728370-e2ebd9d7bb99?w=800', name: 'Cực quang' },
-              { url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800', name: 'Hồ gương' },
-              { url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800', name: 'Rừng sương' },
+              { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4', name: 'Núi tuyết' },
+              { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba', name: 'Hoàng hôn' },
+              { url: 'https://images.unsplash.com/photo-1531306728370-e2ebd9d7bb99', name: 'Cực quang' },
+              { url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb', name: 'Hồ gương' },
+              { url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05', name: 'Rừng sương' },
             ]
           },
           {
             id: 'nature',
             title: 'Thiên nhiên',
             items: [
-              'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800',
-              'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800',
-              'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800',
-              'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800',
-              'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800',
-              'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800',
-              'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800',
-              'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800',
-              'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800', // FIX: thay link lỗi
-              'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=800',
-              'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?w=800',
-              'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800',
+              'https://images.unsplash.com/photo-1490750967868-88aa4486c946',
+              'https://images.unsplash.com/photo-1469474968028-56623f02e42e',
+              'https://images.unsplash.com/photo-1441974231531-c6227db76b6e',
+              'https://images.unsplash.com/photo-1502082553048-f009c37129b9',
+              'https://images.unsplash.com/photo-1518837695005-2083093ee35b',
+              'https://images.unsplash.com/photo-1426604966848-d7adac402bff',
+              'https://images.unsplash.com/photo-1472214103451-9374bd1c798e',
+              'https://images.unsplash.com/photo-1501785888041-af3ef285b470',
+              'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07',
+              'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1',
             ]
           },
           {
             id: 'space',
             title: 'Vũ trụ',
             items: [
-              'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800',
-              'https://images.unsplash.com/photo-1465101162946-4377e57745c3?w=800',
-              'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800',
-              'https://images.unsplash.com/photo-1505506874110-6a7a69069a08?w=800',
-              'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=800',
-              'https://images.unsplash.com/photo-1610296669228-602fa827fc1f?w=800',
-              'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800',
-              'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800',
-              'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=800',
-              'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800',
-              'https://images.unsplash.com/photo-1531306728370-e2ebd9d7bb99?w=800', // FIX: thay link lỗi
-              'https://images.unsplash.com/photo-1464802686167-b939a6910659?w=800',
+              'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a',
+              'https://images.unsplash.com/photo-1465101162946-4377e57745c3',
+              'https://images.unsplash.com/photo-1534447677768-be436bb09401',
+              'https://images.unsplash.com/photo-1505506874110-6a7a69069a08',
+              'https://images.unsplash.com/photo-1614732414444-096e5f1122d5',
+              'https://images.unsplash.com/photo-1610296669228-602fa827fc1f',
+              'https://images.unsplash.com/photo-1451187580459-43490279c0fa',
+              'https://images.unsplash.com/photo-1462331940025-496dfbfc7564',
+              'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0',
+              'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa',
+              'https://images.unsplash.com/photo-1464802686167-b939a6910659',
             ]
           },
           {
             id: 'city',
             title: 'Thành phố',
             items: [
-              'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=800',
-              'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800',
-              'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800',
-              'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=800',
-              'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800',
-              'https://images.unsplash.com/photo-1494783367193-149034c05e8f?w=800',
-              'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800',
-              'https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=800',
-              'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800',
-              'https://images.unsplash.com/photo-1496568816309-51d7c20e3b21?w=800',
-              'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800',
-              'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=800',
+              'https://images.unsplash.com/photo-1514565131-fce0801e5785',
+              'https://images.unsplash.com/photo-1449824913935-59a10b8d2000',
+              'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9',
+              'https://images.unsplash.com/photo-1519501025264-65ba15a82390',
+              'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b',
+              'https://images.unsplash.com/photo-1494783367193-149034c05e8f',
+              'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df',
+              'https://images.unsplash.com/photo-1444723121867-7a241cacace9',
+              'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad',
+              'https://images.unsplash.com/photo-1496568816309-51d7c20e3b21',
+              'https://images.unsplash.com/photo-1502602898657-3e91760cbb34',
+              'https://images.unsplash.com/photo-1534351590666-13e3e96b5017',
             ]
           },
           {
@@ -1458,7 +1457,7 @@ useEffect(() => {
             title: 'Màu trơn',
             items: [
               { url: '', name: 'Đen', type: 'color', bg: '#000000' },
-              { url: '', name: 'Than', type: 'color', bg: '#1c1c1e' }, // FIX: sửa #1c1e
+              { url: '', name: 'Than', type: 'color', bg: '#1c1c1e' },
               { url: '', name: 'Navy', type: 'color', bg: '#0a192f' },
               { url: '', name: 'Tím', type: 'color', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
               { url: '', name: 'Xanh', type: 'color', bg: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)' },
@@ -1468,36 +1467,26 @@ useEffect(() => {
               { url: '', name: 'Vàng', type: 'color', bg: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
             ]
           },
-          {
-            id: 'art',
-            title: 'Nghệ thuật',
-            items: [
-              'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800',
-              'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800',
-              'https://images.unsplash.com/photo-1550859492-d5da9d8e45f3?w=800',
-              'https://images.unsplash.com/photo-1515405295579-ba7b454ad212?w=800', // FIX: thay link lỗi
-              'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800',
-              'https://images.unsplash.com/photo-1499781350541-7783f6c6a0c8?w=800',
-              'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800', // FIX: thay link lỗi
-              'https://images.unsplash.com/photo-1552083375-1447ce886485?w=800', // FIX: thay link lỗi
-              'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=800',
-            ]
-          },
         ].map((group) => (
           <div key={group.id} className="mb-7">
             <h4 className="text-white/60 text-[12px] font-semibold mb-3 uppercase tracking-widest">{group.title}</h4>
             <div className="grid grid-cols-3 gap-3">
               {group.items.map((item: any, i) => {
-                const url = typeof item === 'string'? item : item.url;
+                const baseUrl = typeof item === 'string'? item : item.url;
                 const name = typeof item === 'string'? '' : item.name;
                 const isColor = item?.type === 'color';
-                const isSelected = (chatData as any)?.background === url;
+                const currentBg = (chatData as any)?.background || '';
+                const isSelected = baseUrl === currentBg;
+
+                // thumbnail nhỏ cho picker
+                const thumbUrl =!isColor && baseUrl? `${baseUrl}?w=400&q=60&auto=format&fit=crop` : '';
 
                 return (
                   <button
                     key={i}
                     onClick={async () => {
-                      await updateDoc(doc(db, "chats", chatId), { background: url });
+                      // LƯU URL GỐC, không lưu w=800
+                      await updateDoc(doc(db, "chats", chatId), { background: baseUrl });
                       setShowBgPicker(false);
                       toast.success('Đã đổi hình nền');
                     }}
@@ -1507,16 +1496,13 @@ useEffect(() => {
                       <div className="w-full h-full" style={{ background: item.bg }} />
                     ) : (
                       <img
-                        src={url}
+                        src={thumbUrl}
                         alt={name}
                         className="w-full h-full object-cover"
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        // CHỐNG LỖI VĨNH VIỄN
                         onError={(e) => {
-                          const img = e.currentTarget;
-                          img.onerror = null;
-                          img.src = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800'; // fallback mặc định
+                          (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400';
                         }}
                       />
                     )}
@@ -1526,7 +1512,7 @@ useEffect(() => {
                       </span>
                     )}
                     {isSelected && (
-                      <div className="absolute inset-0 ring-2 ring-[#0A84FF] ring-inset rounded-2xl" />
+                      <div className="absolute inset-0 ring-2 ring-[#0A84FF] ring-inset rounded-2xl pointer-events-none" />
                     )}
                   </button>
                 );
@@ -1538,14 +1524,14 @@ useEffect(() => {
     </div>
   </div>
 )}
-
-{/* UPLOAD PROGRESS */}
-{uploading && (
-  <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-xl px-4 py-2.5 rounded-full flex items-center gap-2.5 z-[60]">
-    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-    <span className="text-white text-sm font-medium">Đang tải {uploadProgress}%</span>
-  </div>
-)}
+  
+  {/* UPLOAD PROGRESS */}
+  {uploading && (
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-xl px-4 py-2.5 rounded-full flex items-center gap-2.5 z-[60]">
+      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      <span className="text-white text-sm font-medium">Đang tải {uploadProgress}%</span>
+    </div>
+  )}
 
 
 
