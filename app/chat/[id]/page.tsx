@@ -1430,15 +1430,16 @@ useEffect(() => {
                   <button
                     key={id}
                     onClick={async () => {
-                      // CHỈ LƯU ID - 5 byte, không tốn Firestore
-                      await updateDoc(doc(db, "chats", chatId), {
-                        backgroundId: id === 'default'? '' : id,
-                        // xóa field cũ nếu còn
-                        background: deleteField()
-                      });
-                      setShowBgPicker(false);
-                      toast.success(`Đã đổi: ${bg.name}`);
-                    }}
+  const newId = id === 'default' ? '' : id;
+  await updateDoc(doc(db, "chats", chatId), {
+    backgroundId: newId,
+    background: deleteField()
+  });
+  // cập nhật ngay trên UI
+  setChatData(prev => prev ? { ...prev, backgroundId: newId } : prev);
+  setShowBgPicker(false);
+  toast.success(`Đã đổi: ${bg.name}`);
+}}
                     className="relative w-full h-28 rounded-2xl overflow-hidden bg-zinc-900 ring-1 ring-white/10 active:scale-95 transition group"
                   >
                     {isGrad? (
