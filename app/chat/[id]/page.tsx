@@ -962,7 +962,8 @@ const sendVoice = async () => {
             if (!audio.src ||!audio.src.startsWith('blob:')) {
               btn.dataset.playing = 'loading';
 
-              const response = await fetch(m.voice);
+if (!m.voice) return;
+const response = await fetch(m.voice);
               if (!response.ok) throw new Error('Network error');
 
               const blob = await response.blob();
