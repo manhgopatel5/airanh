@@ -952,7 +952,7 @@ const sendVoice = async () => {
                             <span className="text-sm truncate">{m.fileName}</span>
                           </a>
                         )}
-      {m.voice && (
+    {m.voice && (
   <div className="flex items-center gap-2.5 w-[210px] py-1">
     <button
       onClick={async (e) => {
@@ -966,11 +966,17 @@ const sendVoice = async () => {
           if (a!== audio) {
             a.pause();
             a.currentTime = 0;
+            const otherWrapper = a.closest('.flex') as HTMLElement;
+            const otherBtn = otherWrapper?.querySelector('button');
+            const otherBar = otherWrapper?.querySelector('.voice-progress') as HTMLElement;
+            if (otherBtn) otherBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
+            if (otherBar) otherBar.style.width = '0%';
           }
         });
 
         try {
           if (audio.paused) {
+            audio.load(); // <— BẮT BUỘC cho iOS
             await audio.play();
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
           } else {
@@ -979,18 +985,20 @@ const sendVoice = async () => {
           }
         } catch (err) {
           console.error('Play failed:', err);
+          window.open(audio.src, '_blank'); // fallback
         }
       }}
       className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition active:scale-90 ${isMe? 'bg-white/25 hover:bg-white/35 text-white' : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'}`}
     >
-      <Play size={14} fill="currentColor" className="ml-0.5" />
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5"><polygon points="5,3 19,12 5,21"/></svg>
     </button>
 
     <div className="voice-player flex-1 relative">
       <audio
         src={m.voice}
         className="voice-audio"
-        preload="metadata"
+        crossOrigin="anonymous" // <— THÊM
+        preload="none" // <— ĐỔI từ metadata → none
         playsInline
         style={{ display: 'none' }}
         onTimeUpdate={(e) => {
@@ -1031,7 +1039,15 @@ const sendVoice = async () => {
             style={{ height: `${4 + Math.sin(i * 0.8) * 3 + Math.random() * 5 + 6}px` }}
           />
         ))}
+        <div className="voice-progress absolute bottom-0 left-0 h-full bg-current opacity-30 transition-all" style={{ width: '0%' }} />
       </div>
+    </div>
+
+    <span className="voice-time text-[11px] tabular-nums w-8 text-right opacity-70">
+      0:00
+    </span>
+  </div>
+)}
       <div className="relative h-6 flex items-center">
         <div className={`w-full h-[2px] rounded-full overflow-hidden ${isMe? 'bg-white/25' : 'bg-gray-300/60 dark:bg-zinc-600'}`}>
           <div className={`voice-progress h-full rounded-full transition-[width] duration-100 ${isMe? 'bg-white' : 'bg-blue-500'}`} style={{ width: '0%' }} />
@@ -1248,12 +1264,15 @@ const sendVoice = async () => {
           {uploading? <Loader2 size={16} className="animate-spin" /> : 'Gửi'}
         </button>
 
-        <audio
-          ref={previewAudioRef}
-          src={audioBlob? URL.createObjectURL(audioBlob) : ''}
-          onEnded={() => setIsPreviewPlaying(false)}
-          className="hidden"
-        />
+      <audio
+  ref={previewAudioRef}
+  src={audioBlob ? URL.createObjectURL(audioBlob) : ''}
+  onEnded={() => setIsPreviewPlaying(false)}
+  className="hidden"
+  crossOrigin="anonymous"
+  preload="metadata"
+  playsInline
+/>
       </div>
     ) : recording? (
       // 2. ĐANG GHI ÂM
