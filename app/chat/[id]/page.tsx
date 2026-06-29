@@ -887,7 +887,7 @@ export default function ChatDetailPage() {
       onClick={(e) => {
         const container = e.currentTarget.closest('.voice-player') as HTMLElement;
         const audio = container.querySelector('audio') as HTMLAudioElement;
-        const icon = e.currentTarget.querySelector('svg');
+
 
         // dừng tất cả audio khác
         document.querySelectorAll('audio.voice-audio').forEach(a => {
