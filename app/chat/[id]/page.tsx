@@ -775,10 +775,7 @@ useEffect(() => {
     return format(date, "dd/MM/yyyy", { locale: vi });
   };
 
-  const scrollToMessage = (msgId: string) => {
-    const el = document.getElementById(`msg-${msgId}`);
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-  };
+  
 
   if (authLoading || loadingFriend ||!user) {
     return (
