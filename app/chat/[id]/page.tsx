@@ -1383,6 +1383,7 @@ const sendVoice = async () => {
       </div>
     )}
   </div>
+</div>   
 </div>
   );
 }
