@@ -653,7 +653,19 @@ useEffect(() => {
 
 
   return (
-<div className="flex flex-col h-screen bg-gradient-to-b from-white via-gray-50 to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-black overflow-hidden">
+<div
+  className="flex flex-col h-screen overflow-hidden relative"
+  style={{
+    backgroundImage: (chatData as any)?.background? `url(${(chatData as any).background})` : undefined,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed'
+  }}
+>
+  {/* Overlay mờ để chữ đọc được */}
+  {(chatData as any)?.background && (
+    <div className="absolute inset-0 bg-black/20 dark:bg-black/40 pointer-events-none" />
+  )}
       <Toaster richColors position="top-center" />
 
       {showSearch && (
@@ -674,7 +686,7 @@ useEffect(() => {
         </div>
       )}
 
-      <div className="px-4 py-3 border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex items-center gap-3 sticky top-0 z-50">
+<div className="px-4 py-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-white/20 dark:border-zinc-800/50 flex items-center justify-between sticky top-0 z-50">
         <button onClick={() => router.back()} className="md:hidden p-2 -ml-2 active:scale-90 transition-transform rounded-full hover:bg-gray-100 dark:hover:bg-zinc-900">
           <ArrowLeft size={24} className="text-gray-900 dark:text-white" />
         </button>
@@ -742,13 +754,7 @@ useEffect(() => {
 )}
 
 <div
-  className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-[100px] space-y-0.5 relative z-0"
-  style={{
-backgroundImage: (chatData as any)?.background? `url(${(chatData as any).background})` : undefined,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundAttachment: 'fixed'
-  }}
+  className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-[100px] space-y-0.5 relative z-10 bg-transparent"
   onTouchStart={(e) => {
     if (e.target === e.currentTarget) {
       const timer = setTimeout(() => setShowBgPicker(true), 800);
