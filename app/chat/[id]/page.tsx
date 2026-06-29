@@ -474,36 +474,27 @@ export default function ChatDetailPage() {
       audioContextRef.current?.close();
       streamRef.current?.getTracks().forEach(t => t.stop());
 
-const lamejs: any = await import('lamejs');
-const mp3encoder = new lamejs.default.Mp3Encoder(1, 44100, 64);
-      const mp3Data: Uint8Array[] = [];
-      const samples = pcmChunksRef.current;
-      const sampleBlockSize = 1152;
+const lamejsMod: any = await import('lamejs');
+const Mp3Encoder = lamejsMod.Mp3Encoder || lamejsMod.default?.Mp3Encoder || lamejsMod.default;
+const mp3encoder = new Mp3Encoder(1, 44100, 64);
 
-for (let i = 0; i < samples.length; i++) {
-  const sample = samples[i];
+const mp3Data: Uint8Array[] = [];
+const samples = pcmChunksRef.current;
+
+for (const sample of samples) {
   if (!sample) continue;
   const int16 = new Int16Array(sample.length);
   for (let j = 0; j < sample.length; j++) {
-int16[j] = Math.max(-1, Math.min(1, sample[j] || 0)) * 0x7FFF;
-        }
-        for (let j = 0; j < int16.length; j += sampleBlockSize) {
-          const chunk = int16.subarray(j, j + sampleBlockSize);
-          const mp3buf = mp3encoder.encodeBuffer(chunk);
-          if (mp3buf.length > 0) mp3Data.push(mp3buf);
-        }
-      }
-      const endBuf = mp3encoder.flush();
-      if (endBuf.length > 0) mp3Data.push(endBuf);
-
-const blob = new Blob(mp3Data as BlobPart[], { type: 'audio/mp3' });
-      setAudioBlob(blob);
-      pcmChunksRef.current = [];
-    } catch (e) {
-      console.error('Encode error', e);
-      toast.error("Lỗi mã hóa audio");
-    }
-  };
+    int16[j] = Math.max(-1, Math.min(1, sample[j] || 0)) * 0x7FFF;
+  }
+  for (let j = 0; j < int16.length; j += 1152) {
+    const chunk = int16.subarray(j, j + 1152);
+    const mp3buf = mp3encoder.encodeBuffer(chunk);
+    if (mp3buf.length > 0) mp3Data.push(new Uint8Array(mp3buf));
+  }
+}
+const endBuf = mp3encoder.flush();
+if (endBuf.length > 0) mp3Data.push(new Uint8Array(endBuf));
 
   const sendVoice = async () => {
     if (!audioBlob ||!user ||!chatId ||!chatData) {
