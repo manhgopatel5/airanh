@@ -12,7 +12,7 @@ import {
 import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
-  Image as ImageIcon, ChevronDown, ChevronUp, Flag, Plus, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
+  Image as ImageIcon, Navigation, ChevronDown, ChevronUp, Flag, Plus, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
   Smile, Reply, Trash2, Pencil, Shield, Pin, Copy, Search
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
