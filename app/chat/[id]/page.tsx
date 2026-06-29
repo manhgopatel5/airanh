@@ -421,7 +421,7 @@ const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
     }
   };
 
-  // thêm ở trên cùng với các ref
+// thêm ở trên cùng với các ref
 const audioChunksRef = useRef<Blob[]>([]);
 
 const startRecording = async () => {
@@ -430,52 +430,44 @@ const startRecording = async () => {
     return;
   }
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ 
+    const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
         sampleRate: 44100
-      } 
+      }
     });
-    
-    // FIX: thử từng codec iOS ăn được
-    const mimeOpts = [
-      'audio/mp4;codecs=mp4a.40.2', // <— iPhone cần cái này
-      'audio/mp4',
-      'audio/aac',
-      'audio/webm;codecs=opus',
-      'audio/webm'
-    ];
-    const mimeType = mimeOpts.find(t => MediaRecorder.isTypeSupported(t)) || '';
-    
-    if (!mimeType) {
-      toast.error("Trình duyệt không hỗ trợ ghi âm");
+
+    // FIX: CHỈ dùng mp4, không fallback webm
+    const mimeType = 'audio/mp4';
+
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      toast.error("Trình duyệt không hỗ trợ ghi âm m4a (cần iOS 14.1+ / Chrome 49+)");
       stream.getTracks().forEach(t => t.stop());
       return;
     }
 
-    console.log('[VOICE] Device:', navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android');
-    console.log('[VOICE] Selected mime:', mimeType);
+    console.log('[VOICE] Device:', /iPhone|iPad|iPod/.test(navigator.userAgent)? 'iOS' : 'Android');
+    console.log('[VOICE] Using mime:', mimeType);
 
-    const mediaRecorder = new MediaRecorder(stream, { 
+    const mediaRecorder = new MediaRecorder(stream, {
       mimeType,
       audioBitsPerSecond: 64000
     });
-    
+
     mediaRecorderRef.current = mediaRecorder;
     audioChunksRef.current = [];
-    (mediaRecorderRef.current as any)._mime = mimeType;
 
     mediaRecorder.ondataavailable = (e) => {
       if (e.data?.size > 0) audioChunksRef.current.push(e.data);
     };
 
     mediaRecorder.onstop = () => {
-      const finalMime = (mediaRecorderRef.current as any)._mime || mimeType;
-      const blob = new Blob(audioChunksRef.current, { type: finalMime });
-      
+      // KHÔNG tạo Blob mới, dùng trực tiếp chunks
+      const blob = new Blob(audioChunksRef.current, { type: 'audio/mp4' });
+
       console.log('[VOICE] Blob created:', blob.type, Math.round(blob.size/1024)+'KB');
-      
+
       setAudioBlob(blob);
       stream.getTracks().forEach(track => track.stop());
       audioChunksRef.current = [];
@@ -489,16 +481,16 @@ const startRecording = async () => {
     mediaRecorder.start(250);
     setRecording(true);
     setRecordingTime(0);
-    
+
     if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
     recordingIntervalRef.current = setInterval(() => {
       setRecordingTime(prev => prev + 1);
     }, 1000);
-    
+
   } catch (err: any) {
     console.error('[VOICE] getUserMedia failed:', err);
-    toast.error(err.name === 'NotAllowedError' 
-      ? "Chưa cấp quyền micro" 
+    toast.error(err.name === 'NotAllowedError'
+     ? "Chưa cấp quyền micro"
       : "Không thể truy cập microphone");
   }
 };
@@ -528,27 +520,12 @@ const sendVoice = async () => {
 
   setUploading(true);
   try {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const fullMime = audioBlob.type || 'audio/webm';
-const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
-
-    const ext = cleanMime.includes('mp4') || cleanMime.includes('aac')
-     ? 'm4a'
-      : cleanMime.includes('webm')
-     ? 'webm'
-      : 'ogg';
-
-    if (isIOS && ext === 'webm') {
-      toast.error("File webm không chạy trên iPhone - hãy ghi lại");
-      setUploading(false);
-      return;
-    }
-
-    const fileName = `voice_${Date.now()}.${ext}`;
+    // LUÔN dùng m4a, không check webm nữa
+    const fileName = `voice_${Date.now()}.m4a`;
     const storageRef = ref(storage, `chat-voice/${chatId}/${fileName}`);
 
     const metadata = {
-      contentType: cleanMime, // <— QUAN TRỌNG: không có ;codecs
+      contentType: 'audio/mp4', // Firebase hiểu m4a = audio/mp4
       cacheControl: 'public, max-age=31536000',
       customMetadata: {
         uid: user.uid,
@@ -556,6 +533,7 @@ const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
       }
     };
 
+    // Upload trực tiếp blob gốc
     await uploadBytes(storageRef, audioBlob, metadata);
     const url = await getDownloadURL(storageRef);
 
@@ -564,7 +542,7 @@ const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
       voice: url,
       duration: Math.round(recordingTime),
       type: "voice",
-      mimeType: cleanMime,
+      mimeType: 'audio/mp4',
       createdAt: serverTimestamp(),
       seenBy: [user.uid],
       members: chatData.members,
@@ -964,51 +942,133 @@ const cleanMime = fullMime.split(';')[0] || 'audio/mp4';
         const audio = btn.parentElement?.querySelector('audio') as HTMLAudioElement;
         if (!audio) return;
 
-        // Pause tất cả
-document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
-          if (a!== audio) { a.pause(); a.currentTime = 0; }
+        // Pause tất cả audio khác
+        document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
+          if (a!== audio) {
+            a.pause();
+            a.currentTime = 0;
+            // Reset icon của nút khác
+            const otherBtn = a.parentElement?.parentElement?.querySelector('button');
+            if (otherBtn) {
+              otherBtn.dataset.playing = 'false';
+            }
+          }
         });
 
         try {
           if (audio.paused) {
-            // BỎ audio.load() — để play tự load
+            // FIX iOS: phải load và đợi canplay
+            if (audio.readyState < 2) {
+              audio.load();
+              await new Promise<void>((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('Load timeout')), 5000);
+                audio.oncanplay = () => {
+                  clearTimeout(timeout);
+                  resolve();
+                };
+                audio.onerror = () => {
+                  clearTimeout(timeout);
+                  reject(new Error('Audio load error'));
+                };
+              });
+            }
+
             await audio.play();
-            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+            btn.dataset.playing = 'true';
           } else {
             audio.pause();
-            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
+            btn.dataset.playing = 'false';
           }
         } catch (err: any) {
-          alert('Play lỗi: ' + err.message + '\n' + audio.src.substring(0, 80));
-          console.error(err);
+          console.error('[VOICE PLAY]', err);
+          btn.dataset.playing = 'false';
+
+          // Fallback: mở link trực tiếp nếu lỗi
+          if (err.name === 'NotSupportedError' || err.message.includes('not supported')) {
+            toast.error('File không hỗ trợ, đang mở...');
+            window.open(audio.src, '_blank');
+          } else {
+            toast.error('Không phát được: ' + err.message);
+          }
         }
       }}
-      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition active:scale-90 ${isMe? 'bg-white/25 hover:bg-white/35 text-white' : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'}`}
+      data-playing="false"
+      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition active:scale-90 group ${
+        isMe
+         ? 'bg-white/25 hover:bg-white/35 text-white'
+          : 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400'
+      }`}
     >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5"><polygon points="5,3 19,12 5,21"/></svg>
+      {/* Icon Play - hiện khi không playing */}
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className="ml-0.5 group-[[data-playing='true']]:hidden"
+      >
+        <polygon points="5,3 19,12 5,21"/>
+      </svg>
+      {/* Icon Pause - hiện khi playing */}
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className="hidden group-[[data-playing='true']]:block"
+      >
+        <rect x="6" y="4" width="4" height="16" rx="1"/>
+        <rect x="14" y="4" width="4" height="16" rx="1"/>
+      </svg>
     </button>
 
     <div className="voice-player flex-1 relative">
       <audio
         src={m.voice}
         className="voice-audio"
-        crossOrigin="anonymous"
-        preload="metadata" // <-- ĐỔI từ none → metadata
+        preload="auto"
         playsInline
-        style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}
+        // BỎ crossOrigin
+        style={{ display: 'none' }}
         onEnded={(e) => {
-          const btn = (e.target as HTMLAudioElement).parentElement?.parentElement?.querySelector('button');
-          if (btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
+          const audioEl = e.target as HTMLAudioElement;
+          const btn = audioEl.parentElement?.parentElement?.querySelector('button');
+          if (btn) {
+            btn.dataset.playing = 'false';
+          }
+        }}
+        onPause={(e) => {
+          const audioEl = e.target as HTMLAudioElement;
+          const btn = audioEl.parentElement?.parentElement?.querySelector('button');
+          if (btn && audioEl.currentTime === 0) {
+            btn.dataset.playing = 'false';
+          }
+        }}
+        onError={(e) => {
+          console.error('[AUDIO ERROR]', e);
+          const audioEl = e.target as HTMLAudioElement;
+          const btn = audioEl.parentElement?.parentElement?.querySelector('button');
+          if (btn) {
+            btn.dataset.playing = 'false';
+          }
         }}
       />
-      <div className="flex items-end gap-[1.8px] h-6">
+      <div className="flex items-end gap-[1.8px] h-6 pointer-events-none">
         {Array.from({ length: 22 }).map((_, i) => (
-          <div key={i} className={`w-[2px] rounded-full ${isMe? 'bg-white/40' : 'bg-gray-400/50'}`} style={{ height: `${8 + Math.random()*12}px` }} />
+          <div
+            key={i}
+            className={`w-[2px] rounded-full transition-all duration-200 ${
+              isMe? 'bg-white/40' : 'bg-gray-400/50'
+            }`}
+            style={{ height: `${8 + Math.sin(i * 0.8) * 6 + Math.random() * 4}px` }}
+          />
         ))}
       </div>
     </div>
 
-    <span className={`text-[11px] font-mono min-w-[32px] text-right ${isMe? 'text-white/80' : 'text-gray-500'}`}>
+    <span className={`text-[11px] font-mono min-w-[32px] text-right tabular-nums ${
+      isMe? 'text-white/80' : 'text-gray-500'
+    }`}>
       {m.duration? `${Math.floor(m.duration/60)}:${String(m.duration%60).padStart(2,'0')}` : '0:00'}
     </span>
   </div>
