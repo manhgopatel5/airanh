@@ -503,51 +503,78 @@ useEffect(() => {
 
 
   const sendLocation = async () => {
-    if (!canSendMessage || isBlocked || isDeleted) {
-      toast.error("Không thể nhắn tin");
-      return;
-    }
-    if (!user ||!chatId ||!friendId ||!chatData) {
-      if (!chatData) toast.error("Đang tải dữ liệu chat...");
-      return;
-    }
-    if (!navigator.geolocation) {
-      toast.error("Trình duyệt không hỗ trợ định vị");
-      return;
-    }
+  if (!canSendMessage || isBlocked || isDeleted) {
+    toast.error("Không thể nhắn tin");
+    return;
+  }
+  if (!user || !chatId || !friendId || !chatData) {
+    if (!chatData) toast.error("Đang tải dữ liệu chat...");
+    return;
+  }
+  if (!navigator.geolocation) {
+    toast.error("Trình duyệt không hỗ trợ định vị");
+    return;
+  }
 
-    setUploading(true);
-    toast.info("Đang lấy vị trí...");
+  setUploading(true);
+  const toastId = toast.loading("Đang lấy vị trí...");
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      try {
+        // Reverse geocode miễn phí (OSM)
+        let address = '';
         try {
-          await addDoc(collection(db, "chats", chatId, "messages"), {
-            senderId: user.uid,
-            location: { lat: latitude, lng: longitude },
-            type: "location",
-            createdAt: serverTimestamp(),
-            seenBy: [user.uid],
-            members: chatData.members,
-          });
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            { headers: { 'Accept-Language': 'vi' } }
+          );
+          const data = await res.json();
+          // Lấy địa chỉ ngắn gọn
+          address = data.address?.road 
+            ? `${data.address.road}, ${data.address.city || data.address.town || data.address.village || ''}`
+            : data.display_name?.split(',').slice(0,2).join(', ');
+        } catch {}
 
-          toast.success("Đã gửi vị trí");
-        } catch (err: any) {
-          console.error(err);
-          toast.error(`Lỗi gửi vị trí: ${err.code}`);
-        } finally {
-          setUploading(false);
-        }
-      },
-      (err) => {
+        await addDoc(collection(db, "chats", chatId, "messages"), {
+          senderId: user.uid,
+          senderName: user.displayName || '',
+          type: "location",
+          lat: latitude,
+          lng: longitude,
+          address: address || 'Vị trí đã chia sẻ',
+          accuracy,
+          createdAt: serverTimestamp(),
+          seenBy: [user.uid],
+          members: chatData.members,
+        });
+
+        // Cập nhật chat preview
+        await updateDoc(doc(db, "chats", chatId), {
+          lastMessage: '📍 Vị trí',
+          lastMessageAt: serverTimestamp(),
+        });
+
+        toast.dismiss(toastId);
+        toast.success("Đã gửi vị trí");
+      } catch (err: any) {
         console.error(err);
-        toast.error("Không lấy được vị trí. Bật định vị trong trình duyệt");
+        toast.dismiss(toastId);
+        toast.error(`Lỗi gửi vị trí`);
+      } finally {
         setUploading(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
+      }
+    },
+    (err) => {
+      console.error(err);
+      toast.dismiss(toastId);
+      toast.error("Không lấy được vị trí. Hãy bật GPS");
+      setUploading(false);
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+};
 
   const toggleReaction = async (msgId: string, emoji: string) => {
     if (!user ||!chatId) return;
@@ -1139,20 +1166,64 @@ useEffect(() => {
                           </a>
                         )}
 
-          {m.location && (
-                          <a
-                            href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
-                            target="_blank"
-                            className="flex items-center gap-2 p-3 bg-black/10 rounded-xl"
-                          >
-                            <MapPin size={20} />
-                            <div>
-                              <p className="text-sm font-bold">Vị trí đã chia sẻ</p>
-                              <p className="text-xs opacity-70">Nhấn để mở Google Maps</p>
-                            </div>
-                          </a>
-                        )}
+      {(m.type === 'location' || m.location) && (() => {
+  const lat = m.lat?? m.location?.lat;
+  const lng = m.lng?? m.location?.lng;
+  const address = m.address;
+  const isMe = m.senderId === user?.uid;
 
+  return (
+    <a
+      href={`https://www.google.com/maps?q=${lat},${lng}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block w-[250px] sm:w-[270px] my-1 group"
+    >
+      <div className={`
+        relative rounded-[20px] p-[2px] transition-all duration-300 group-hover:scale-[1.02] group-active:scale-[0.98]
+        ${isMe
+         ? 'bg-gradient-to-br from-[#4F7DFF] to-[#8B5CF6] shadow-lg shadow-indigo-500/20'
+          : 'bg-zinc-200 dark:bg-zinc-700 shadow-md'
+        }
+      `}>
+        <div className={`
+          rounded-[18px] overflow-hidden backdrop-blur-xl
+          ${isMe? 'bg-white/10' : 'bg-white dark:bg-zinc-900'}
+        `}>
+          {/* MAP */}
+          <div className="relative h-[140px] w-full">
+            <img
+              src={`https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=16&size=400x200&markers=${lat},${lng},red-pushpin`}
+              alt="location"
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
+            {/* Pin */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+              <div className="w-10 h-10 rounded-full bg-white shadow-xl flex items-center justify-center">
+                <MapPin size={18} className="text-[#4F7DFF]" fill="#4F7DFF" />
+              </div>
+              <div className="absolute inset-0 rounded-full bg-[#4F7DFF]/30 animate-ping" />
+            </div>
+          </div>
+
+          {/* INFO */}
+          <div className="p-3">
+            <p className={`text-[14px] font-semibold leading-tight ${isMe? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
+              {address || 'Vị trí đã chia sẻ'}
+            </p>
+            <p className={`text-[12px] mt-1 flex items-center gap-1 ${isMe? 'text-white/70' : 'text-zinc-500 dark:text-zinc-400'}`}>
+              <Navigation size={12} />
+              Nhấn để mở Google Maps
+            </p>
+          </div>
+        </div>
+      </div>
+    </a>
+  );
+})()}
                         {m.text && (
 <p className="text-[15px] leading-none whitespace-pre-wrap break-words text-center">
                             {m.text}
