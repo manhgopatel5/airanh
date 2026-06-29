@@ -652,7 +652,7 @@ useEffect(() => {
 
 
   return (
-<div className="flex flex-col h-[100dvh] overflow-hidden relative">
+<div className="fixed inset-0 flex flex-col bg-black">
   {/* NỀN FIX TOÀN MÀN - không cuộn */}
   {(chatData as any)?.background && (
     <>
@@ -677,7 +677,7 @@ useEffect(() => {
 
   <Toaster richColors position="top-center" />
       {showSearch && (
-        <div className="px-4 py-2 border-b border-gray-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl">
+<div className="shrink-0 z-30 px-4 py-2 border-b border-white/10 bg-black/80 backdrop-blur-xl">
           <div className="flex items-center gap-2">
             <Search size={18} className="text-gray-400" />
             <input
@@ -695,11 +695,8 @@ useEffect(() => {
       )}
 
 {/* HEADER - fixed sát màn hình, bỏ nút back */}
-<div
-  className="fixed top-0 inset-x-0 z-40"
-  style={{ paddingTop: 'env(safe-area-inset-top)' }}
->
-  <div className="px-4 pt-2.5 pb-3 flex items-center justify-between bg-black/20 backdrop-blur-2xl">
+<div className="shrink-0 z-40 border-b border-white/10 bg-black/60 backdrop-blur-2xl" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
+ <div className="px-4 py-2.5 flex items-center justify-between">
     {/* Left: avatar + name */}
     <div className="flex items-center gap-2.5 min-w-0 flex-1">
       <div className="relative flex-shrink-0">
@@ -1047,7 +1044,7 @@ useEffect(() => {
 
       {/* REPLY/EDIT BAR */}
       {(replyTo || editingMsg) && (
-        <div className="px-4 pt-2 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl border-t border-gray-200/50 dark:border-zinc-800/50">
+<div className="shrink-0 z-30 px-4 py-2 border-t border-white/10 bg-black/70 backdrop-blur-xl">
           <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl">
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-blue-600 dark:text-blue-400">
@@ -1183,7 +1180,7 @@ useEffect(() => {
 
       {/* BANNER CẢNH BÁO */}
       {!isFriend &&!isBlocked &&!isDeleted && (
-        <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border-t border-amber-200/50 dark:border-amber-900/50">
+<div className="shrink-0 z-30 px-4 py-2 border-t border-amber-500/20 bg-amber-500/10 backdrop-blur-xl">
           <div className="flex items-center justify-center gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium">
             <Shield size={14} />
             Các bạn chưa kết bạn. Hãy cẩn thận khi chia sẻ thông tin cá nhân
@@ -1192,8 +1189,8 @@ useEffect(() => {
       )}
 
 {/* INPUT */}
-<div className="fixed bottom-0 left-0 right-0 bg-transparent px-3 py-3 z-30 pb-[env(safe-area-inset-bottom)]">
-  <div className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+<div className="shrink-0 z-30 border-t border-white/10 bg-black/80 backdrop-blur-2xl px-3 py-2.5" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
+ <div className="flex items-end gap-2">
     <div className="flex items-end gap-2">
       <input
         type="file"
