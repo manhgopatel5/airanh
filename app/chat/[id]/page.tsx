@@ -14,7 +14,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   Image as ImageIcon, MapPin, Paperclip, Phone, Send,
   ArrowLeft, Loader2, X, Video, CheckCheck,
-  Smile, Reply, Play, Pause, Trash2, Pencil, Shield, Pin, Copy, Mic, Square, Search
+  Smile, Reply, Play, Trash2, Pencil, Shield, Pin, Copy, Mic, Square, Search
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import imageCompression from "browser-image-compression";
