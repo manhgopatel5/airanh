@@ -770,18 +770,86 @@ useEffect(() => {
 
 {/* Action Menu */}
 {longPressMsg && (
-  <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-700 p-2 flex gap-2">
-    <button onClick={() => handlePinMessage(longPressMsg)} className="px-4 py-2.5 bg-gray-100 dark:bg-zinc-700 rounded-xl flex items-center gap-2 text-sm font-medium">
-      <Pin size={16} /> Ghim
-    </button>
-    {longPressMsg.senderId === user?.uid && (
-      <button onClick={() => handleDeleteMessage(longPressMsg.id)} className="px-4 py-2.5 bg-red-500 text-white rounded-xl flex items-center gap-2 text-sm font-medium">
-        <Trash2 size={16} /> Xóa
-      </button>
-    )}
-    <button onClick={() => setLongPressMsg(null)} className="px-3 py-2.5">
-      <X size={16} />
-    </button>
+  <div
+    className="fixed inset-0 z-[90] bg-black/50 backdrop-blur-md"
+    onClick={() => setLongPressMsg(null)}
+  >
+    <div
+      className="absolute left-1/2 -translate-x-1/2 bottom-20 w-[92%] max-w-[360px]"
+      onClick={e => e.stopPropagation()}
+    >
+      {/* THANH REACTION - giống ảnh */}
+      <div className="bg-white rounded-full px-3 py-2.5 flex items-center justify-between shadow-2xl mb-3">
+        <div className="flex items-center gap-1">
+          {["❤️","😆","😮","😢","😡","👍"].map(emoji => (
+            <button
+              key={emoji}
+              onClick={() => { toggleReaction(longPressMsg.id, emoji); setLongPressMsg(null); }}
+              className="w-10 h-10 text-[26px] active:scale-125 transition-transform"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5 pl-2 border-l border-gray-200">
+          <button className="w-8 h-8 rounded-full bg-[#0084FF] flex items-center justify-center active:scale-90">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 0 0 7zm0-9C7 6.5 2.7 9.4 1 13c1.7 3.6 6 6.5 11 6.5s9.3-2.9 11-6.5c-1.7-3.6-6-6.5-11-6.5z"/></svg>
+          </button>
+          <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:scale-90">
+            <Plus size={18} />
+          </button>
+        </div>
+      </div>
+
+      {/* MENU TRẮNG - y hệt ảnh */}
+      <div className="bg-white rounded-[20px] shadow-2xl overflow-hidden">
+        {longPressMsg.senderId === user?.uid && (
+          <button
+            onClick={() => { setEditingMsg(longPressMsg); setText(longPressMsg.text); setLongPressMsg(null); inputRef.current?.focus(); }}
+            className="w-full flex items-center justify-between px-5 py-[14px] active:bg-gray-50"
+          >
+            <span className="text-[17px] text-black">Chỉnh sửa</span>
+            <Pencil size={22} strokeWidth={1.8} />
+          </button>
+        )}
+
+        <button
+          onClick={() => { setReplyTo(longPressMsg); setLongPressMsg(null); }}
+          className="w-full flex items-center justify-between px-5 py-[14px] border-t border-gray-100 active:bg-gray-50"
+        >
+          <span className="text-[17px] text-black">Trả lời</span>
+          <Reply size={22} strokeWidth={1.8} className="scale-x-[-1]" />
+        </button>
+
+        <button
+          onClick={() => { navigator.clipboard.writeText(longPressMsg.text || ''); toast.success('Đã sao chép'); setLongPressMsg(null); }}
+          className="w-full flex items-center justify-between px-5 py-[14px] border-t border-gray-100 active:bg-gray-50"
+        >
+          <span className="text-[17px] text-black">Sao chép</span>
+          <Copy size={20} strokeWidth={1.8} />
+        </button>
+
+        <div className="h-[8px] bg-[#f2f2f7]" />
+
+        <button
+          onClick={() => handlePinMessage(longPressMsg)}
+          className="w-full flex items-center justify-between px-5 py-[14px] active:bg-gray-50"
+        >
+          <span className="text-[17px] text-black">Ghim</span>
+          <Pin size={22} strokeWidth={1.8} />
+        </button>
+
+        {longPressMsg.senderId === user?.uid && (
+          <button
+            onClick={() => handleDeleteMessage(longPressMsg.id)}
+            className="w-full flex items-center justify-between px-5 py-[14px] border-t border-gray-100 active:bg-red-50"
+          >
+            <span className="text-[17px] text-[#ff3b30]">Xóa, gỡ</span>
+            <Trash2 size={22} strokeWidth={1.8} className="text-[#ff3b30]" />
+          </button>
+        )}
+      </div>
+    </div>
   </div>
 )}
 
