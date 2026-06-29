@@ -961,7 +961,7 @@ const sendVoice = async () => {
         if (!audio) return;
 
         // Pause tất cả
-        document.querySelectorAll('audio.voice-audio').forEach(a => {
+document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
           if (a!== audio) { a.pause(); a.currentTime = 0; }
         });
 
