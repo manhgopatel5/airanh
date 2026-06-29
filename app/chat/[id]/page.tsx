@@ -826,8 +826,8 @@ export default function ChatDetailPage() {
                         </p>
                       </div>
                     ) : (
-                      <div
-                        className={`px-4 py-2.5 shadow-sm cursor-pointer ${
+<div
+  className={`px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer ${
                           isMe
                            ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
                                 isFirstInGroup && isLastInGroup
@@ -886,7 +886,7 @@ export default function ChatDetailPage() {
                         )}
 
                         {m.text && (
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+<p className="text-[15px] leading-none whitespace-pre-wrap break-words text-center">
                             {m.text}
                             {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
                           </p>
