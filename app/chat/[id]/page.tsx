@@ -3,14 +3,14 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
+import { getFirebaseDB, storage, getFirebaseStorage } from "@/lib/firebase";
 
 import {
   collection, query, onSnapshot, doc,
   orderBy, addDoc, serverTimestamp, Timestamp, updateDoc, deleteDoc, arrayUnion, arrayRemove
 } from "firebase/firestore";
 import { getDoc } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   Image as ImageIcon, MapPin, Paperclip, Phone, Send,
   ArrowLeft, Loader2, X, Video, CheckCheck,
