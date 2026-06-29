@@ -1113,7 +1113,7 @@ export default function ChatDetailPage() {
 {/* AUDIO PREVIEW - UI MỚI */}
 {audioBlob &&!recording && (
   <div className="fixed bottom-[84px] left-0 right-0 z-40 px-4 pointer-events-none">
-    <div className="pointer-events-auto flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border-gray-200 dark:border-zinc-800">
+    <div className="pointer-events-auto flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800">
       {/* Nút xóa */}
       <button
         onClick={() => setAudioBlob(null)}
@@ -1124,14 +1124,20 @@ export default function ChatDetailPage() {
 
       {/* Nút Play/Pause */}
       <button
+        id="preview-play-btn"
         onClick={() => {
           const audio = document.getElementById('preview-voice') as HTMLAudioElement;
-          if (!audio) return;
+          const btn = document.getElementById('preview-play-btn') as HTMLButtonElement;
+          if (!audio ||!btn) return;
+
+          document.querySelectorAll('audio').forEach(a => { if (a!== audio) a.pause(); });
+
           if (audio.paused) {
-            document.querySelectorAll('audio').forEach(a => a.pause());
             audio.play();
+            btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
           } else {
             audio.pause();
+            btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>';
           }
         }}
         className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/25 active:scale-95 transition"
@@ -1148,7 +1154,6 @@ export default function ChatDetailPage() {
               className="w-[2.5px] bg-blue-500/70 dark:bg-blue-400/70 rounded-full"
               style={{
                 height: `${10 + Math.abs(Math.sin(i * 0.6)) * 16}px`,
-                animation: `pulse 1.2s ease-in-out ${i * 0.05}s infinite alternate`
               }}
             />
           ))}
@@ -1171,13 +1176,16 @@ export default function ChatDetailPage() {
         {uploading? <Loader2 size={16} className="animate-spin" /> : 'Gửi'}
       </button>
 
-      {/* Audio ẩn để play */}
+      {/* Audio ẩn */}
       <audio
         id="preview-voice"
         src={audioBlob? URL.createObjectURL(audioBlob) : ''}
         className="hidden"
         onEnded={() => {
-          const btn = document.querySelector('#preview-voice')?.previousElementSibling?.previousElementSibling?.previousElementSibling as HTMLElement;
+          const btn = document.getElementById('preview-play-btn');
+          if (btn) {
+            btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>';
+          }
         }}
       />
     </div>
