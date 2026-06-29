@@ -496,7 +496,7 @@ int16[j] = Math.max(-1, Math.min(1, sample[j] || 0)) * 0x7FFF;
       const endBuf = mp3encoder.flush();
       if (endBuf.length > 0) mp3Data.push(endBuf);
 
-      const blob = new Blob(mp3Data, { type: 'audio/mp3' });
+const blob = new Blob(mp3Data as BlobPart[], { type: 'audio/mp3' });
       setAudioBlob(blob);
       pcmChunksRef.current = [];
     } catch (e) {
