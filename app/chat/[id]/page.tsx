@@ -645,7 +645,7 @@ useEffect(() => {
     );
   }
 
-  const pinnedMsg = messages.find(m => m.id === chatData?.pinnedMessage);
+
 
   return (
 <div className="flex flex-col h-screen bg-gradient-to-b from-white via-gray-50 to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-black overflow-hidden">
