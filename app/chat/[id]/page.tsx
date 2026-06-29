@@ -266,9 +266,41 @@ export default function ChatDetailPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
-  const handleTyping = useCallback(async () => {
-    return;
-  }, []);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+const handleTyping = useCallback(async () => {
+  if (!user ||!chatId ||!chatData || isBlocked || isDeleted) return;
+
+  try {
+    // Set đang nhập
+    await updateDoc(doc(db, "chats", chatId), {
+      [`typing.${user.uid}`]: true
+    });
+
+    // Clear timeout cũ
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Tự tắt sau 3s không gõ
+    typingTimeoutRef.current = setTimeout(async () => {
+      await updateDoc(doc(db, "chats", chatId), {
+        [`typing.${user.uid}`]: false
+      });
+    }, 3000);
+  } catch (e) {
+    console.error("Typing error:", e);
+  }
+}, [user, chatId, chatData, db, isBlocked, isDeleted]);
+
+// Cleanup
+useEffect(() => {
+  return () => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+  };
+}, []);
 
   const sendMessage = useCallback(async () => {
     if (isBlocked || isDeleted) {
@@ -641,15 +673,17 @@ export default function ChatDetailPage() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-gray-900 dark:text-white truncate">{friend.name}</p>
-         <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
-          {friend.isOnline? (
-            "Đang hoạt động"
-          ) : friend.lastSeen? (
-            formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })
-          ) : (
-            "Offline"
-          )}
-        </p>
+       <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
+  {chatData?.typing?.[friendId || ""] ? (
+    <span className="text-blue-500 animate-pulse">Đang nhập...</span>
+  ) : friend.isOnline ? (
+    "Đang hoạt động"
+  ) : friend.lastSeen ? (
+    formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })
+  ) : (
+    "Offline"
+  )}
+</p>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => setShowSearch(true)} className="p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
@@ -984,7 +1018,10 @@ export default function ChatDetailPage() {
         <input
           ref={inputRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+onChange={(e) => {
+  setText(e.target.value);
+  handleTyping();
+}}
           onKeyDown={(e) => {
             if (e.key === 'Enter' &&!e.shiftKey) {
               e.preventDefault();
