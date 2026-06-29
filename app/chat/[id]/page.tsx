@@ -943,14 +943,22 @@ const sendVoice = async () => {
         const audio = wrap?.querySelector('audio') as HTMLAudioElement;
         const voiceUrl = wrap?.dataset.voice;
 
-        if (!audio ||!voiceUrl) return;
+        console.log('[VOICE] Click', { voiceUrl, audio:!!audio });
+
+        if (!audio ||!voiceUrl) {
+          console.error('[VOICE] Missing audio or URL');
+          return;
+        }
 
         // Pause tất cả
         document.querySelectorAll<HTMLAudioElement>('audio.voice-audio').forEach(a => {
           if (a!== audio) {
             a.pause();
-            if (a.src.startsWith('blob:')) URL.revokeObjectURL(a.src);
-            a.removeAttribute('src'); // <-- ĐỔI từ a.src = ''
+            if (a.src.startsWith('blob:')) {
+              console.log('[VOICE] Cleanup blob', a.src);
+              URL.revokeObjectURL(a.src);
+            }
+            a.removeAttribute('src');
             a.load();
             const b = a.closest('[data-voice]')?.querySelector('button');
             if (b) b.dataset.playing = 'false';
@@ -960,37 +968,116 @@ const sendVoice = async () => {
         try {
           if (audio.paused) {
             btn.dataset.playing = 'loading';
+            console.log('[VOICE] Step 1: Fetching...');
 
-            // Luôn fetch mới, không check src cũ
-            const res = await fetch(voiceUrl);
-            if (!res.ok) throw new Error('Network ' + res.status);
-
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-
-            if (audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src);
-            audio.src = url;
-
-            await new Promise<void>((resolve, reject) => {
-              const t = setTimeout(() => reject(new Error('Timeout')), 8000);
-              audio.oncanplay = () => { clearTimeout(t); resolve(); };
-              audio.onerror = () => { clearTimeout(t); reject(new Error('Decode error')); };
+            // FETCH
+            const res = await fetch(voiceUrl, {
+              mode: 'cors',
+              cache: 'no-cache'
             });
 
+            console.log('[VOICE] Step 2: Response', {
+              status: res.status,
+              ok: res.ok,
+              type: res.type,
+              contentType: res.headers.get('content-type'),
+              contentLength: res.headers.get('content-length')
+            });
+
+            if (!res.ok) {
+              throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
+            }
+
+            // BLOB
+            const blob = await res.blob();
+            console.log('[VOICE] Step 3: Blob created', {
+              size: blob.size,
+              type: blob.type
+            });
+
+            if (blob.size < 100) {
+              throw new Error(`Blob too small: ${blob.size} bytes`);
+            }
+
+            const url = URL.createObjectURL(blob);
+            console.log('[VOICE] Step 4: Blob URL', url);
+
+            if (audio.src.startsWith('blob:')) {
+              URL.revokeObjectURL(audio.src);
+            }
+            audio.src = url;
+
+            // WAIT FOR LOAD
+            console.log('[VOICE] Step 5: Waiting for canplay...');
+            await new Promise<void>((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                console.error('[VOICE] Timeout after 8s');
+                reject(new Error('Timeout: audio not loaded in 8s'));
+              }, 8000);
+
+              const cleanup = () => {
+                clearTimeout(timeout);
+                audio.oncanplay = null;
+                audio.oncanplaythrough = null;
+                audio.onerror = null;
+                audio.onloadedmetadata = null;
+              };
+
+              audio.onloadedmetadata = () => {
+                console.log('[VOICE] Metadata loaded', {
+                  duration: audio.duration,
+                  readyState: audio.readyState
+                });
+              };
+
+              audio.oncanplay = () => {
+                console.log('[VOICE] Can play event fired');
+                cleanup();
+                resolve();
+              };
+
+              audio.oncanplaythrough = () => {
+                console.log('[VOICE] Can play through');
+                cleanup();
+                resolve();
+              };
+
+              audio.onerror = () => {
+                const err = audio.error;
+                console.error('[VOICE] Audio error', {
+                  code: err?.code,
+                  message: err?.message
+                });
+                cleanup();
+                reject(new Error(`Audio decode error: ${err?.message || 'unknown'} (code ${err?.code})`));
+              };
+
+              // Trigger load
+              audio.load();
+            });
+
+            // PLAY
+            console.log('[VOICE] Step 6: Playing...');
             await audio.play();
+            console.log('[VOICE] Step 7: Playing success');
+
             btn.dataset.playing = 'true';
           } else {
+            console.log('[VOICE] Pausing');
             audio.pause();
             btn.dataset.playing = 'false';
           }
         } catch (err: any) {
-          console.error('[VOICE]', err);
+          console.error('[VOICE] FAILED at:', err.message, err);
           btn.dataset.playing = 'false';
+
           if (audio.src.startsWith('blob:')) {
             URL.revokeObjectURL(audio.src);
             audio.removeAttribute('src');
           }
-          toast.error('Không phát được');
+
+          // Hiện lỗi chi tiết
+          toast.error(`Lỗi: ${err.message}`);
         }
       }}
       data-playing="false"
@@ -1017,6 +1104,7 @@ const sendVoice = async () => {
         playsInline
         onEnded={(e) => {
           const a = e.target as HTMLAudioElement;
+          console.log('[VOICE] Ended');
           const b = a.closest('[data-voice]')?.querySelector('button');
           if (b) b.dataset.playing = 'false';
           if (a.src.startsWith('blob:')) {
@@ -1026,6 +1114,7 @@ const sendVoice = async () => {
         }}
         onError={(e) => {
           const a = e.target as HTMLAudioElement;
+          console.error('[VOICE] onError event', a.error);
           const b = a.closest('[data-voice]')?.querySelector('button');
           if (b) b.dataset.playing = 'false';
         }}
@@ -1041,8 +1130,7 @@ const sendVoice = async () => {
       {m.duration? `${Math.floor(m.duration/60)}:${String(m.duration%60).padStart(2,'0')}` : '0:00'}
     </span>
   </div>
-)}
-                        {m.location && (
+)}          {m.location && (
                           <a
                             href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
                             target="_blank"
