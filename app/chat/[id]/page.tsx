@@ -982,11 +982,14 @@ useEffect(() => {
       className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70 transition text-left"
     >
       <div className="relative flex-shrink-0">
-        <img
-          src={friend.avatar}
-          className="w-10 h-10 rounded-full object-cover ring-2 ring-zinc-200/80"
-          alt={friend.name}
-        />
+ <NextImage
+  src={friend.avatar}
+  width={40}
+  height={40}
+  alt={friend.name}
+  className="rounded-full object-cover ring-2 ring-zinc-200/80"
+  unoptimized
+/>
         {friend.isOnline && (
           <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#31d158] rounded-full ring-2 ring-white grid place-items-center">
             <div className="absolute inset-0 bg-[#31d158] rounded-full animate-ping opacity-75" />
@@ -1239,7 +1242,16 @@ useEffect(() => {
         >
           {!isMe && (
             <div className="w-7 flex-shrink-0">
-              {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
+{showAvatar && (
+  <NextImage
+    src={friend.avatar}
+    width={28}
+    height={28}
+    alt={friend.name}
+    className="rounded-full shadow-sm"
+    unoptimized
+  />
+)}
             </div>
           )}
           <div className={`max-w-[75%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
@@ -1755,7 +1767,14 @@ useEffect(() => {
       {/* PROFILE HEADER */}
       <div className="px-5 pt-2 pb-5 flex flex-col items-center text-center border-b border-white/5">
         <div className="relative">
-          <img src={friend.avatar} className="w-20 h-20 rounded-full object-cover ring-2 ring-white/10" />
+<NextImage
+  src={friend.avatar}
+  width={80}
+  height={80}
+  alt={friend.name}
+  className="rounded-full object-cover ring-2 ring-white/10"
+  unoptimized
+/>
           {friend.isOnline && <div className="absolute bottom-1 right-1 w-4 h-4 bg-[#31d158] rounded-full ring-2 ring-[#0b0b0d]" />}
         </div>
         <h2 className="text-white text-[22px] font-semibold mt-3">{friend.name}</h2>
