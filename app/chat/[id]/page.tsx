@@ -173,9 +173,13 @@ const [showUnpinSheet, setShowUnpinSheet] = useState<any>(null); // thay vì boo
   const [showMedia, setShowMedia] = useState(false);
 const [mediaTab, setMediaTab] = useState<'photos'|'files'|'links'>('photos');
 
+const LINK_REGEX = /((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/i;
+const linkMatch = m.text?.match(LINK_REGEX);
+  const isLinkOnly =!!linkMatch &&!m.image &&!m.file && m.text.trim() === linkMatch[0];
+
 const mediaPhotos = messages.filter(m => m.imageUrl || m.image);
 const mediaFiles = messages.filter(m => m.fileUrl || m.file);
-const mediaLinks = messages.filter(m => m.text && /(https?:\/\/[^\s]+)/.test(m.text));
+const mediaLinks = messages.filter(m => m.text && LINK_REGEX.test(m.text));
   const [loadingFriend, setLoadingFriend] = useState(true);
 const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
 const isTyping = chatData?.typing?.[friendId || ""];
@@ -1643,38 +1647,51 @@ onClick={(e) => {
       </a>
     )}
  {m.text && (
-  <div className="text- leading-snug whitespace-pre-wrap break-words">
-    <p className="inline">
-      {m.text.split(/((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/gi).map((part, i) => {
-        if (!part) return null;
-        const isLink = part.match(/((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/i);
-        if (isLink) {
-          let href = part;
-          if (!/^https?:\/\//i.test(href)) href = 'https://' + href.replace(/^www\./i, '');
-          return (
-            <a key={i} href={href} target="_blank" rel="noopener noreferrer"
-               className="underline text-[#0A84FF] break-all"
-               onClick={e => e.stopPropagation()}>
-              {part}
-            </a>
-          );
-        }
-        return <span key={i}>{part}</span>;
-      })}
-      {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
-    </p>
+        <div className={`text-[15px] leading-snug whitespace-pre-wrap break-words ${isLinkOnly? 'w-[260px]' : ''}`}>
+          {/* Nếu không phải link-only thì render text bình thường */}
+          {!isLinkOnly && (
+            <p className="inline">
+              {m.text.split(LINK_REGEX).map((part, i) => {
+                if (!part) return null;
+                const isLink = LINK_REGEX.test(part);
+                if (isLink) {
+                  let href = part;
+                  if (!/^https?:\/\//i.test(href)) href = 'https://' + href.replace(/^www\./i, '');
+                  return (
+                    <a key={i} href={href} target="_blank" rel="noopener noreferrer"
+                       className="underline text-[#0A84FF] break-all"
+                       onClick={e => e.stopPropagation()}>
+                      {part}
+                    </a>
+                  );
+                }
+                return <span key={i}>{part}</span>;
+              })}
+              {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
+            </p>
+          )}
 
-    {/* Preview ô nhỏ tự load */}
-    {(() => {
-      const match = m.text.match(/((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/i);
-      if (!match || m.image || m.file) return null;
-      const link = match[0].startsWith('http')? match[0] : `https://${match[0].replace(/^www\./i,'')}`;
-      return <LinkPreview url={link} />;
-    })()}
-  </div>
-)}
-  </div>
-)}
+          {/* Nếu là link-only: chỉ hiện chữ link nhỏ phía trên preview */}
+          {isLinkOnly && (
+            <a href={linkMatch[0].startsWith('http')? linkMatch[0] : `https://${linkMatch[0].replace(/^www\./i,'')}`}
+               target="_blank" rel="noopener noreferrer"
+               className="text-[13px] text-[#0A84FF] underline block mb-1 px-1"
+               onClick={e => e.stopPropagation()}>
+              {linkMatch[0]}
+            </a>
+          )}
+
+          {/* Preview */}
+          {(() => {
+            if (!linkMatch || m.image || m.file) return null;
+            const link = linkMatch[0].startsWith('http')? linkMatch[0] : `https://${linkMatch[0].replace(/^www\./i,'')}`;
+            return <LinkPreview url={link} />;
+          })()}
+        </div>
+      )}
+    </div>
+  );
+})()}
                     {m.reactions && m.reactions.length > 0 && (
                       <div className="flex gap-1 mt-1 px-1">
                         {m.reactions.map((r) => (
