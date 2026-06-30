@@ -16,6 +16,7 @@ import HuhaLogo from "@/components/brand/HuhaLogo";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { getSafeRedirect } from "@/components/auth/authRoutes";
+import { establishSession } from "@/lib/authSession";
 
 type Province = { id: number; name: string; code: string };
 type District = { id: number; name: string; code: string };
@@ -248,13 +249,7 @@ function OnboardingContent() {
       await currentUser.reload();
 
       const idToken = await getIdToken(currentUser, true);
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (!res.ok) throw new Error('Set cookie failed');
+      await establishSession(idToken);
 
       toast.success(`Chào mừng, ${trimmed}!`);
 

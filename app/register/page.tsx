@@ -15,6 +15,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { getSafeRedirect } from "@/components/auth/authRoutes";
+import { establishSession } from "@/lib/authSession";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -116,6 +117,8 @@ export default function Register() {
       
       // 2. Gọi API gửi mail qua Resend
       const idToken = await userCred.user.getIdToken();
+      await establishSession(idToken);
+
       const res = await fetch('/api/send-verification', {
         method: 'POST',
         headers: { 

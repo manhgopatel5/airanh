@@ -29,7 +29,7 @@ export default function ClientLayout({ children }: Props) {
       return;
     }
 
-    if (user && isPublic &&!pathname.startsWith("/verify-email") && pathname!== "/onboarding") {
+    if (user && isPublic && !pathname.startsWith("/verify-email") && pathname !== "/onboarding" && pathname !== "/login" && pathname !== "/register") {
       router.replace("/");
       return;
     }

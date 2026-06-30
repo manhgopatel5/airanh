@@ -75,7 +75,8 @@ export async function middleware(request: NextRequest) {
       }
       
       // Đã verify + chưa onboard → về /onboarding
-      const hasOnboarded = userData?.onboarded === true;
+      const hasOnboarded =
+        userData?.onboarded === true || userData?.onboardingCompleted === true;
       if (userData?.emailVerified && !hasOnboarded && pathname !== '/onboarding') {
         return NextResponse.redirect(new URL('/onboarding', request.url))
       }

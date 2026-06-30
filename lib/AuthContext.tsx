@@ -19,7 +19,7 @@ import {
   onDisconnect,
   serverTimestamp as rtdbTimestamp,
 } from "firebase/database";
-import { setCookie, deleteCookie } from 'cookies-next';
+import { establishSession, clearServerSession } from "@/lib/authSession";
 
 export type AppUser = {
   uid: string;
@@ -161,12 +161,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refreshToken = useCallback(async () => {
     if (!auth?.currentUser) return;
     const token = await auth.currentUser.getIdToken(true);
-    setCookie('__session', token, {
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    });
+    await establishSession(token);
   }, [auth]);
 
   useEffect(() => {
@@ -182,30 +177,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!firebaseUser) {
         setUserData(null);
         setCachedUser(null);
-        deleteCookie('__session');
+        await clearServerSession();
         setLoading(false);
         return;
       }
 
-      // Fix 1: Có cache đúng uid thì tắt loading ngay, không chờ Firestore
+      // Có cache đúng uid → hiển thị nhanh, nhưng vẫn chờ session cookie
       const cached = getCachedUser();
       if (cached?.uid === firebaseUser.uid) {
         setUserData(cached);
-        setLoading(false);
       }
 
       try {
         // GỌI HÀM UPDATE Ở ĐÂY
         await updateUserLogin(firebaseUser);
 
-        // Fix 2: Không toast gì ở đây để tránh chặn redirect
+        // Tạo session cookie httpOnly cho middleware
         const token = await firebaseUser.getIdToken();
-        setCookie('__session', token, {
-          maxAge: 60 * 60 * 24 * 7,
-          path: '/',
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
-        });
+        await establishSession(token);
 
         const userRef = doc(db, "users", firebaseUser.uid);
         userDataUnsub.current = onSnapshot(
@@ -260,7 +249,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const currentUser = auth.currentUser;
 
     setCachedUser(null);
-    deleteCookie('__session');
+    await clearServerSession();
 
     if (currentUser) {
       try {
