@@ -1222,11 +1222,12 @@ useEffect(() => {
     >
       <div className="overflow-hidden rounded-2xl shadow-lg">
         <div className="relative h-[150px] w-full bg-zinc-200">
-          <img
-            src={`https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=16&l=map&size=450,300&pt=${lng},${lat},pm2rdm`}
-            className="absolute inset-0 w-full h-full object-cover"
-            alt=""
-          />
+      <img
+  src={`https://maps.wikimedia.org/img/osm-intl,16,${lat},${lng},400x200.png`}
+  className="absolute inset-0 w-full h-full object-cover"
+  alt=""
+  referrerPolicy="no-referrer"
+/>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
             <div className="w-9 h-9 bg-white rounded-full shadow-xl flex items-center justify-center">
               <MapPin size={16} className="text-[#FF3B30]" fill="#FF3B30" />
