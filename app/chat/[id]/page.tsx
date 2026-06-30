@@ -1168,92 +1168,92 @@ useEffect(() => {
             )}
 
             <div className="relative">
-              {m.type === "task_share"? (
-                <div
-                  onClick={() => router.push(`/task/${m.taskId}`)}
-                  className={`px-4 py-3 shadow-sm cursor-pointer active:scale-95 transition rounded-2xl ${
-                    isMe
-                      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
-                      : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border border-gray-200 dark:border-zinc-700"
-                  }`}
-                >
-                  <p className="text-xs font-bold mb-1 opacity-80">
-                    📋 Đã chia sẻ {m.taskPrice && m.taskPrice > 0? 'công việc' : 'kế hoạch'}
-                  </p>
-                  <p className="font-semibold leading-snug">{m.taskTitle}</p>
-                  <p className={`text-sm font-bold mt-1 ${isMe? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>
-                    {m.taskPrice && m.taskPrice > 0? `${m.taskPrice.toLocaleString()}đ` : 'Miễn phí'}
-                  </p>
-                  <p className={`text-xs mt-2 opacity-70`}>
-                    Nhấn để xem chi tiết →
-                  </p>
-                </div>
-              ) : (
-                <div
-                  className={`px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer rounded-2xl ${
-                    isMe
-                      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
-                      : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                  }`}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setShowEmojiPicker(m.id);
-                  }}
-                >
-                        {m.image && <img src={m.image} className="rounded-2xl max-w-full mb-1" alt="sent" />}
-                        {m.file && (
-                          <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
-                            <Paperclip size={16} />
-                            <span className="text-sm truncate">{m.fileName}</span>
-                          </a>
-                        )}
+            {m.type === "task_share"? (
+  <div
+    onClick={() => router.push(`/task/${m.taskId}`)}
+    className={`px-4 py-3 shadow-sm cursor-pointer active:scale-95 transition rounded-2xl ${
+      isMe
+      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+        : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border border-gray-200 dark:border-zinc-700"
+    }`}
+  >
+    <p className="text-xs font-bold mb-1 opacity-80">
+      📋 Đã chia sẻ {m.taskPrice && m.taskPrice > 0? 'công việc' : 'kế hoạch'}
+    </p>
+    <p className="font-semibold leading-snug">{m.taskTitle}</p>
+    <p className={`text-sm font-bold mt-1 ${isMe? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>
+      {m.taskPrice && m.taskPrice > 0? `${m.taskPrice.toLocaleString()}đ` : 'Miễn phí'}
+    </p>
+    <p className={`text-xs mt-2 opacity-70`}>
+      Nhấn để xem chi tiết →
+    </p>
+  </div>
 
-{(m.type === 'location' || m.location) && (() => {
-  const lat = Number(m.lat?? m.location?.lat?? 0);
-  const lng = Number(m.lng?? m.location?.lng?? 0);
-  if (!lat ||!lng) return null;
+) : (m.type === 'location' || m.location)? (
+  // === LOCATION: KHÔNG BUBBLE XANH ===
+  (() => {
+    const lat = Number(m.lat?? m.location?.lat?? 0);
+    const lng = Number(m.lng?? m.location?.lng?? 0);
+    if (!lat ||!lng) return null;
 
-  return (
-    <a
-      href={`https://www.google.com/maps?q=${lat},${lng}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block w-[240px] my-1"
-    >
-      <div className="overflow-hidden rounded-2xl shadow-lg">
-        <div className="relative h-[150px] w-full bg-zinc-200">
-<img
-  src={`https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=17&size=800x560&markers=${lat},${lng},red-pushpin`}
-  className="w-full h-full object-cover"
-  alt=""
-/>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <div className="w-9 h-9 bg-white rounded-full shadow-xl flex items-center justify-center">
-              <MapPin size={16} className="text-[#FF3B30]" fill="#FF3B30" />
+    return (
+      <div className="relative">
+        <a
+          href={`https://www.google.com/maps?q=${lat},${lng}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-[240px]"
+        >
+          <div className="overflow-hidden rounded-2xl shadow-lg">
+            <div className="relative h-[150px] w-full bg-zinc-200">
+              <img
+                src={`https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=17&size=800x560&markers=${lat},${lng},red-pushpin`}
+                className="w-full h-full object-cover"
+                alt=""
+              />
+            </div>
+            <div className="bg-white dark:bg-zinc-900 px-3 py-2.5">
+              <p className="text-sm font-medium truncate text-zinc-900 dark:text-white">
+                {m.address || 'Vị trí đã chia sẻ'}
+              </p>
+              <p className="text-xs flex items-center gap-1 mt-0.5 text-zinc-500 dark:text-zinc-400">
+                <Navigation size={12} />
+                Nhấn để mở bản đồ
+              </p>
             </div>
           </div>
-        </div> {/* <-- ĐÃ THÊM đóng div relative */}
-        <div className="bg-white dark:bg-zinc-900 px-3 py-2">
-          <p className="text- font-medium truncate text-zinc-900 dark:text-white">
-            {m.address || 'Vị trí đã chia sẻ'}
-          </p>
-          <p className="text- flex items-center gap-1 mt-0.5 text-zinc-500 dark:text-zinc-400">
-            <Navigation size={11} />
-            Nhấn để mở bản đồ
-          </p>
-        </div>
+        </a>
       </div>
-    </a>
-  );
-})()}
+    );
+  })()
 
-{m.text && (
-  <p className="text-[15px] leading-snug whitespace-pre-wrap break-words">
-    {m.text}
-    {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
-  </p>
-)}
-</div>
+) : (
+  // === TIN NHẮN THƯỜNG: giữ bubble ===
+  <div
+    className={`px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer rounded-2xl ${
+      isMe
+      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+        : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+    }`}
+    onContextMenu={(e) => {
+      e.preventDefault();
+      setShowEmojiPicker(m.id);
+    }}
+  >
+    {m.image && <img src={m.image} className="rounded-2xl max-w-full mb-1" alt="sent" />}
+    {m.file && (
+      <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
+        <Paperclip size={16} />
+        <span className="text-sm truncate">{m.fileName}</span>
+      </a>
+    )}
+    {m.text && (
+      <p className="text-[15px] leading-snug whitespace-pre-wrap break-words">
+        {m.text}
+        {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
+      </p>
+    )}
+  </div>
 )}
 
                     {m.reactions && m.reactions.length > 0 && (
