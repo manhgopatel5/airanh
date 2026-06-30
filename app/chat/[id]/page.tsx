@@ -1046,8 +1046,7 @@ useEffect(() => {
     <div className="shrink-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
       <div className="flex items-center justify-between px-4 h-12">
         <div className="w-8" />
-        <span className="text- font-semibold text-zinc-900 dark:text-white">Tin nhắn đã ghim</span>
-        {/* NÚT X góc phải giống hình nền */}
+        <span className="text-[17px] font-semibold text-zinc-900 dark:text-white">Tin nhắn đã ghim</span>
         <button
           onClick={() => setShowPinned(false)}
           className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center active:scale-90 transition"
@@ -1075,7 +1074,6 @@ useEffect(() => {
               setTimeout(() => {
                 const el = document.getElementById(`msg-${(chatData as any).pinnedMessage.id}`);
                 el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                // HIGHLIGHT VÀNG ĐÚNG BUBBLE TIN NHẮN
                 const bubble = el?.querySelector('div[class*="bg-"][class*="rounded-3xl"], div[class*="bg-gradient"]');
                 bubble?.classList.add('!bg-yellow-200/80', 'dark:!bg-yellow-400/30', 'transition-colors', 'duration-500');
                 setTimeout(() => {
@@ -1086,7 +1084,7 @@ useEffect(() => {
             onContextMenu={(e) => { e.preventDefault(); setShowUnpinSheet(true); }}
             onTouchStart={(e) => {
               (e.currentTarget as any)._timer = setTimeout(() => {
-                (navigator.vibrate||(()=>{}))(10);
+                (navigator.vibrate || (() => {}))(10);
                 setShowUnpinSheet(true);
               }, 500);
             }}
@@ -1102,14 +1100,14 @@ useEffect(() => {
             <div className="flex items-start gap-3">
               <img
                 src={(chatData as any).pinnedMessage.senderId === user?.uid
-                ? (user?.photoURL || '/default-avatar.png')
+                 ? (user?.photoURL || '/default-avatar.png')
                   : (friend?.avatar || '/default-avatar.png')}
                 className="w-10 h-10 rounded-full object-cover"
                 alt=""
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text- font-semibold text-zinc-900 dark:text-white truncate">
+                  <span className="text-[15px] font-semibold text-zinc-900 dark:text-white truncate">
                     {(chatData as any).pinnedMessage.senderId === user?.uid? 'Bạn' : friend?.name}
                   </span>
                   <span className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">
@@ -1117,17 +1115,17 @@ useEffect(() => {
                   </span>
                 </div>
 
-                <p className="text- text-zinc-600 dark:text-zinc-300 mt-1.5 line-clamp-2 leading-snug">
+                <p className="text-[14px] text-zinc-600 dark:text-zinc-300 mt-1.5 line-clamp-2 leading-snug">
                   {(() => {
                     const m = (chatData as any).pinnedMessage;
                     return m.text?.trim()
-                    ? m.text
+                     ? m.text
                       : m.imageUrl || m.image
-                    ? '📷 Hình ảnh'
+                     ? '📷 Hình ảnh'
                       : m.fileUrl || m.file
-                    ? '📎 Tệp đính kèm'
+                     ? '📎 Tệp đính kèm'
                       : m.location
-                    ? '📍 Vị trí'
+                     ? '📍 Vị trí'
                       : 'Tin nhắn';
                   })()}
                 </p>
@@ -1138,7 +1136,8 @@ useEffect(() => {
                     Ghim bởi {(chatData as any).pinnedMessage.by || 'Bạn'}
                   </span>
                 </div>
-              <ChevronRight size={16} className="text-zinc-400 mt-1" />
+              </div>
+              <ChevronRight size={16} className="text-zinc-400 mt-1 shrink-0" />
             </div>
           </button>
 
