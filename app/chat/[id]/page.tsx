@@ -1740,108 +1740,87 @@ onClick={(e) => {
 
 
 {showBgPicker && (
-  <div
-    className="fixed inset-0 z-[80]"
-    onClick={() => setShowBgPicker(false)}
-  >
-    <div className="absolute inset-0 bg-black/40 backdrop-blur-xl" />
+  <div className="fixed inset-0 z-[80]" onClick={() => setShowBgPicker(false)}>
+    <div className="absolute inset-0 bg-black/40" />
 
     <div
       className="fixed inset-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-[28px] bg-white flex flex-col overflow-hidden shadow-2xl"
       onClick={e => e.stopPropagation()}
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
-      {/* Header */}
-      <div className="px-5 pt-3 pb-3 sticky top-0 bg-white/95 backdrop-blur-xl z-10 border-b border-zinc-100 shrink-0">
+      {/* Header - TRẮNG ĐẶC, BỎ BORDER */}
+      <div className="px-5 pt-3 pb-3 sticky top-0 bg-white z-10 shrink-0">
         <div className="w-10 h-1 bg-zinc-300 rounded-full mx-auto mb-3 sm:hidden" />
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-2xl overflow-hidden ring-1 ring-zinc-200 shrink-0 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl overflow-hidden ring-1 ring-zinc-200 shrink-0">
             {(() => {
               const currentId = (chatData?.backgroundId || 'default') as BgId;
               const current = BACKGROUNDS[currentId];
-              return isGradient(currentId)? (
-                <div className="w-full h-full" style={{ background: current.url.replace('gradient:','') }} />
-              ) : current.url? (
-                <img
-                  src={getBgUrl(currentId, 200)}
-                  className="w-full h-full object-cover"
-                  alt=""
-                  onError={() => setFailedBg(prev => [...prev, currentId])}
-                />
+              const bgStyle = current.url?.startsWith('gradient:')
+               ? { background: current.url.slice(9) }
+                : current.url? {} : { background: '#f4f4f5' };
+              return current.url &&!current.url.startsWith('gradient:')? (
+                <img src={getBgUrl(currentId,200)} className="w-full h-full object-cover" alt="" />
               ) : (
-                <div className="w-full h-full bg-zinc-100" />
+                <div className="w-full h-full" style={bgStyle} />
               );
             })()}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-zinc-900 text-[22px] font-semibold leading-tight tracking-tight">Hình nền</h3>
+            <h3 className="text-black text-[22px] font-semibold">Hình nền</h3>
             <p className="text-zinc-500 text-[13px]">
-              Chọn cho đoạn chat này • {chatData?.backgroundId && chatData.backgroundId!== 'default'? BACKGROUNDS[chatData.backgroundId as BgId]?.name : 'Mặc định'}
+              Chọn cho đoạn chat này • {BACKGROUNDS[(chatData?.backgroundId || 'default') as BgId]?.name}
             </p>
           </div>
-          <button onClick={() => setShowBgPicker(false)} className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center active:scale-90 transition">
+          <button onClick={() => setShowBgPicker(false)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center active:scale-90">
             <X size={16} className="text-zinc-600"/>
           </button>
         </div>
       </div>
 
-      <div className="overflow-y-auto px-5 pb-6 flex-1 bg-zinc-50 overscroll-contain">
+      {/* List - NỀN TRẮNG */}
+      <div className="overflow-y-auto px-5 pb-6 flex-1 bg-white">
         {BACKGROUND_GROUPS.map((group) => (
           <div key={group.id} className="mb-7 first:mt-5">
             <h4 className="text-zinc-500 text-[12px] font-semibold mb-3 uppercase tracking-widest">{group.title}</h4>
             <div className="grid grid-cols-3 gap-3">
               {group.ids.filter(id =>!failedBg.includes(id)).map((id) => {
                 const bg = BACKGROUNDS[id];
-                const currentId = (chatData?.backgroundId || 'default') as BgId;
-                const isSelected = id === currentId;
-                const isGrad = isGradient(id);
+                const isSelected = id === (chatData?.backgroundId || 'default');
+                const isGradient = bg.url?.startsWith('gradient:');
+                const isColor = bg.url?.startsWith('#') || bg.type === 'color';
 
                 return (
                   <button
                     key={id}
                     onClick={async () => {
                       const newId = id === 'default'? '' : id;
-                      await updateDoc(doc(db, "chats", chatId), {
-                        backgroundId: newId,
-                        background: deleteField()
-                      });
+                      await updateDoc(doc(db, "chats", chatId), { backgroundId: newId, background: deleteField() });
                       setChatData(prev => prev? {...prev, backgroundId: newId } : prev);
                       setShowBgPicker(false);
                       toast.success(`Đã đổi: ${bg.name}`);
                     }}
-                    className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-white ring-1 ring-zinc-200 active:scale-[0.97] transition-all group shadow-sm hover:shadow-md"
+                    className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-white ring-1 ring-zinc-200 active:scale-[0.97] transition-all"
                   >
-                    {isGrad? (
-                      <div className="w-full h-full" style={{ background: bg.url.replace('gradient:','') }} />
+                    {/* FIX MÀU TRƠN */}
+                    {isGradient? (
+                      <div className="w-full h-full" style={{ background: bg.url.slice(9) }} />
+                    ) : isColor? (
+                      <div className="w-full h-full" style={{ background: bg.url }} />
                     ) : bg.url? (
-                      <img
-                        src={getBgUrl(id, 400)}
-                        alt={bg.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                        onError={() => setFailedBg(prev => prev.includes(id)? prev : [...prev, id])}
-                      />
+                      <img src={getBgUrl(id,400)} alt={bg.name} className="w-full h-full object-cover" loading="lazy" onError={() => setFailedBg(p=>[...p,id])} />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-zinc-50">
+                      <div className="w-full h-full bg-zinc-100 flex items-center justify-center">
                         <div className="w-8 h-8 rounded-full border-2 border-zinc-300" />
                       </div>
                     )}
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-60" />
-
-                    <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white font-medium drop-shadow-md text-center truncate">
+                    <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white font-medium drop-shadow text-center truncate">
                       {bg.name}
                     </span>
 
                     {isSelected && (
-                      <>
-                        <div className="absolute inset-0 ring-2 ring-[#0A84FF] ring-inset rounded-2xl pointer-events-none" />
-                        <div className="absolute top-2 right-2 w-5 h-5 bg-[#0A84FF] rounded-full flex items-center justify-center shadow-md">
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                            <path d="M3 6l2 2 4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                      </>
+                      <div className="absolute inset-0 ring-2 ring-[#0A84FF] ring-inset rounded-2xl pointer-events-none" />
                     )}
                   </button>
                 );
