@@ -462,99 +462,124 @@ useEffect(() => {
   }, [user, text, friend, chatId, sending, replyTo, editingMsg, friendId, db, chatData, isBlocked, isDeleted]);
 
   const sendImage = async (file: File) => {
-    if (isBlocked || isDeleted) {
-      toast.error("Không thể nhắn tin");
-      return;
-    }
-    if (!user ||!chatId ||!friendId ||!chatData) {
-      if (!chatData) toast.error("Đang tải dữ liệu chat...");
-      return;
-    }
-    setUploading(true);
-    setUploadProgress(0);
+  if (isBlocked || isDeleted) {
+    toast.error("Không thể nhắn tin");
+    return;
+  }
+  if (!user || !chatId || !friendId || !chatData) {
+    if (!chatData) toast.error("Đang tải dữ liệu chat...");
+    return;
+  }
+  
+  setUploading(true);
+  setUploadProgress(0);
 
-    try {
-      const compressed = await imageCompression(file, {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-      });
+  try {
+    // Nén thông minh: chỉ resize nếu >2560px, giữ chất lượng cao
+    const isBig = file.size > 1.5 * 1024 * 1024;
+    const compressed = isBig
+      ? await imageCompression(file, {
+          maxSizeMB: 2.5,
+          maxWidthOrHeight: 2560,
+          initialQuality: 0.92,
+          useWebWorker: true,
+          fileType: 'image/webp',
+          preserveExif: false,
+        })
+      : file;
 
-      const storageRef = ref(storage, `chat-images/${chatId}/${Date.now()}_${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, compressed);
+    const ext = compressed.type === 'image/webp' ? 'webp' : file.name.split('.').pop();
+    const storageRef = ref(storage, `chat-images/${chatId}/${Date.now()}.${ext}`);
+    const uploadTask = uploadBytesResumable(storageRef, compressed);
 
-      uploadTask.on(
-        "state_changed",
-        (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-        (err) => {
+    uploadTask.on(
+      "state_changed",
+      (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+      (err) => {
+        console.error(err);
+        toast.error("Upload ảnh thất bại");
+        setUploading(false);
+        setUploadProgress(0);
+      },
+      async () => {
+        try {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          await addDoc(collection(db, "chats", chatId, "messages"), {
+            senderId: user.uid,
+            image: url,
+            imageUrl: url,        // <-- fix hiển thị
+            type: "image",
+            createdAt: serverTimestamp(),
+            seenBy: [user.uid],
+            members: chatData.members,
+          });
+        } catch (err: any) {
           console.error(err);
-          toast.error("Upload ảnh thất bại");
+          toast.error(`Lỗi gửi ảnh: ${err.code}`);
+        } finally {
           setUploading(false);
           setUploadProgress(0);
-        },
-        async () => {
-          try {
-            const url = await getDownloadURL(uploadTask.snapshot.ref);
-            await addDoc(collection(db, "chats", chatId, "messages"), {
-              senderId: user.uid,
-              image: url,
-              type: "image",
-              createdAt: serverTimestamp(),
-              seenBy: [user.uid],
-              members: chatData.members,
-            });
-          } catch (err: any) {
-            console.error(err);
-            toast.error(`Lỗi gửi ảnh: ${err.code}`);
-          } finally {
-            setUploading(false);
-            setUploadProgress(0);
-          }
         }
-      );
-    } catch (err) {
-      console.error(err);
-      toast.error("Lỗi nén ảnh");
-      setUploading(false);
-    }
-  };
+      }
+    );
+  } catch (err) {
+    console.error(err);
+    toast.error("Lỗi nén ảnh");
+    setUploading(false);
+  }
+};
 
-  const sendFile = async (file: File) => {
-    if (!canSendMessage || isBlocked || isDeleted) {
-      toast.error("Không thể nhắn tin");
-      return;
-    }
-    if (!user ||!chatId ||!friendId ||!chatData) {
-      if (!chatData) toast.error("Đang tải dữ liệu chat...");
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("File không được vượt quá 10MB");
-      return;
-    }
+const sendFile = async (file: File) => {
+  if (!canSendMessage || isBlocked || isDeleted) {
+    toast.error("Không thể nhắn tin");
+    return;
+  }
+  if (!user || !chatId || !friendId || !chatData) {
+    if (!chatData) toast.error("Đang tải dữ liệu chat...");
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {  // tăng lên 25MB
+    toast.error("File không được vượt quá 5MB");
+    return;
+  }
 
-    setUploading(true);
-    try {
-      const storageRef = ref(storage, `chat-files/${chatId}/${Date.now()}_${file.name}`);
-      await uploadBytesResumable(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+  setUploading(true);
+  setUploadProgress(0);
+  
+  try {
+    const storageRef = ref(storage, `chat-files/${chatId}/${Date.now()}_${file.name}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
-      await addDoc(collection(db, "chats", chatId, "messages"), {
-        senderId: user.uid,
-        file: url,
-        fileName: file.name,
-        type: "file",
-        createdAt: serverTimestamp(),
-        seenBy: [user.uid],
-        members: chatData.members,
-      });
-    } catch (err: any) {
-      console.error(err);
-      toast.error(`Lỗi gửi file: ${err.code}`);
-    } finally {
-      setUploading(false);
-    }
-  };
+    uploadTask.on("state_changed",
+      (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+      (err) => {
+        console.error(err);
+        toast.error("Upload file thất bại");
+        setUploading(false);
+      },
+      async () => {
+        const url = await getDownloadURL(uploadTask.snapshot.ref);
+        await addDoc(collection(db, "chats", chatId, "messages"), {
+          senderId: user.uid,
+          file: url,
+          fileUrl: url,        // <-- fix cho media tab
+          fileName: file.name,
+          fileSize: file.size,
+          type: "file",
+          createdAt: serverTimestamp(),
+          seenBy: [user.uid],
+          members: chatData.members,
+        });
+        setUploading(false);
+        setUploadProgress(0);
+      }
+    );
+  } catch (err: any) {
+    console.error(err);
+    toast.error(`Lỗi gửi file: ${err.code}`);
+    setUploading(false);
+  }
+};
 
 
 
