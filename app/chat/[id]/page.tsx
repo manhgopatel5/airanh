@@ -1222,27 +1222,23 @@ useEffect(() => {
         rel="noopener noreferrer"
         className="block w-[260px]"
       >
-        <div className="overflow-hidden rounded- shadow-lg">
-          {/* BẢN ĐỒ THẬT - DÙNG OSM CHO ỔN ĐỊNH */}
-          <div className="relative h-[150px] w-full bg-[#e5e7eb]">
+        <div className="overflow-hidden rounded-2xl shadow-lg">
+          <div className="relative h-[150px] w-full bg-zinc-200">
             <iframe
               src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng-0.005},${lat-0.0035},${lng+0.005},${lat+0.0035}&layer=mapnik&marker=${lat},${lng}`}
-              className="absolute inset-0 w-full h-full border-0"
+              className="w-full h-full border-0"
               loading="lazy"
             />
-            {/* Pin */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[55%] pointer-events-none">
-              <MapPin size={30} className="text-[#FF3B30] drop-shadow-xl" fill="#FF3B30" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+              <MapPin size={28} fill="#FF3B30" className="text-[#FF3B30] drop-shadow-lg" />
             </div>
           </div>
-
-          {/* INFO */}
           <div className={isMe? "bg-[#0A84FF] px-3 py-2.5" : "bg-white dark:bg-zinc-800 px-3 py-2.5"}>
-            <p className={`text- font-medium truncate ${isMe? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
-              {address || 'Vị trí đã chia sẻ'}
+            <p className={`text-[14px] font-medium truncate ${isMe? "text-white" : "text-zinc-900 dark:text-white"}`}>
+              {address || "Vị trí đã chia sẻ"}
             </p>
-            <p className={`text- flex items-center gap-1 mt-0.5 ${isMe? 'text-white/75' : 'text-zinc-500 dark:text-zinc-400'}`}>
-              <Navigation size={11} />
+            <p className={`text-[12px] flex items-center gap-1 mt-0.5 ${isMe? "text-white/70" : "text-zinc-500"}`}>
+              <Navigation size={12} />
               Nhấn để mở bản đồ
             </p>
           </div>
@@ -1251,16 +1247,15 @@ useEffect(() => {
     );
   })()
 ) : (
-  <div className={`px-3.5 py-2 min-w- shadow-sm ${isMe? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl" : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white rounded-2xl"}`}>
+  <div className={`px-3.5 py-2 shadow-sm rounded-2xl ${isMe? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white" : "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"}`}>
     {m.image && <img src={m.image} className="rounded-xl max-w-full mb-1" alt="" />}
     {m.file && (
-      <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
-        <Paperclip size={16} />
-        <span className="text-sm truncate">{m.fileName}</span>
+      <a href={m.file} target="_blank" className="flex items-center gap-2">
+        <Paperclip size={16} /> {m.fileName}
       </a>
     )}
     {m.text && (
-      <p className="text- leading-snug whitespace-pre-wrap break-words">
+      <p className="text-[15px] whitespace-pre-wrap break-words">
         {m.text}
         {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
       </p>
@@ -1268,18 +1263,10 @@ useEffect(() => {
   </div>
 )}
 
-{m.reactions && m.reactions.length > 0 && (
+{m.reactions?.length > 0 && (
   <div className="flex gap-1 mt-1 px-1">
     {m.reactions.map((r) => (
-      <button
-        key={r.emoji}
-        onClick={() => toggleReaction(m.id, r.emoji)}
-        className={`px-2 py-0.5 rounded-full text-xs ${
-          r.users.includes(user.uid)
-          ? "bg-blue-100 dark:bg-blue-900/50"
-            : "bg-gray-100 dark:bg-zinc-800"
-        }`}
-      >
+      <button key={r.emoji} onClick={() => toggleReaction(m.id, r.emoji)} className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-zinc-800">
         {r.emoji} {r.users.length}
       </button>
     ))}
