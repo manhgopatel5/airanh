@@ -118,7 +118,7 @@ export default function ChatDetailPage() {
   const [isFriend, setIsFriend] = useState(true);
   const [chatData, setChatData] = useState<ChatData | null>(null);
   const [failedBg, setFailedBg] = useState<string[]>([]);
-  const [showUnpinSheet, setShowUnpinSheet] = useState(false)
+const [showUnpinSheet, setShowUnpinSheet] = useState<any>(null); // thay vì boolean
   const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
   const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
   const canSendMessage =!!friendId && isFriend &&!isBlocked &&!isDeleted;
@@ -1200,135 +1200,101 @@ useEffect(() => {
   </div>
 )}
 {showPinned && (
-  <div className="fixed inset-0 z-[200] bg-white dark:bg-zinc-950 flex flex-col">
-    {/* Header */}
+  <div className="fixed inset-0 z-[200] bg-white flex flex-col">
+    {/* Header - BỎ border, nền trắng đặc */}
     <div
-      className="shrink-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800"
+      className="shrink-0 bg-white"
       style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}
     >
       <div className="flex items-center justify-between px-4 h-12">
         <div className="w-8" />
-        <span className="text-[17px] font-semibold text-zinc-900 dark:text-white">Tin nhắn đã ghim</span>
+        <span className="text-[17px] font-semibold text-black">Tin nhắn đã ghim</span>
         <button
           onClick={() => setShowPinned(false)}
-          className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90 transition"
+          className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center active:scale-90"
         >
-          <X size={18} className="text-zinc-600 dark:text-zinc-300" strokeWidth={2.2} />
+          <X size={18} className="text-zinc-600" strokeWidth={2.2} />
         </button>
       </div>
     </div>
 
-    {/* List */}
-    <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-black">
-      {!chatData?.pinnedMessage? (
+    {/* List - nền TRẮNG đồng bộ */}
+    <div className="flex-1 overflow-y-auto bg-white">
+      {!chatData?.pinnedMessages?.length? (
         <div className="pt-24 text-center px-8">
-          <div className="w-16 h-16 mx-auto rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mb-4">
+          <div className="w-16 h-16 mx-auto rounded-full bg-zinc-100 flex items-center justify-center mb-4">
             <Pin size={28} className="text-zinc-400" />
           </div>
-          <p className="text-base font-medium text-zinc-900 dark:text-white">Chưa có ghim</p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Nhấn giữ tin nhắn và chọn "Ghim" để lưu lại</p>
+          <p className="text-base font-medium text-black">Chưa có ghim</p>
+          <p className="text-sm text-zinc-500 mt-1">Nhấn giữ tin nhắn và chọn "Ghim"</p>
         </div>
       ) : (
-        <div className="p-3">
-          <button
-            onClick={() => {
-  setShowPinned(false);
-  setTimeout(() => {
-    const el = document.getElementById(`msg-${(chatData as any).pinnedMessage.id}`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    // DÙNG Y HỆT SELECTOR BÊN SEARCH
-    const bubble = el?.querySelector('div[class*="bg-gradient"], div[class*="bg-white"], div[class*="dark:bg-zinc"]');
-    bubble?.classList.add('!bg-yellow-200', 'transition-colors', 'duration-300');
-    setTimeout(() => {
-      bubble?.classList.remove('!bg-yellow-200');
-    }, 1500);
-  }, 100);
-}}
-            onContextMenu={(e) => { e.preventDefault(); setShowUnpinSheet(true); }}
-            onTouchStart={(e) => {
-              (e.currentTarget as any)._timer = setTimeout(() => {
-                (navigator.vibrate || (() => {}))(10);
-                setShowUnpinSheet(true);
-              }, 500);
-            }}
-            onTouchEnd={(e) => clearTimeout((e.currentTarget as any)._timer)}
-            onTouchMove={(e) => clearTimeout((e.currentTarget as any)._timer)}
-            onMouseDown={(e) => { (e.currentTarget as any)._timer = setTimeout(() => setShowUnpinSheet(true), 500); }}
-            onMouseUp={(e) => clearTimeout((e.currentTarget as any)._timer)}
-            onMouseLeave={(e) => clearTimeout((e.currentTarget as any)._timer)}
-            className="w-full text-left bg-white dark:bg-zinc-900 rounded-2xl p-4 shadow-sm border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition"
-          >
-            <div className="flex items-start gap-3">
-              <img
-                src={(chatData as any).pinnedMessage.senderId === user?.uid
-                ? (user?.photoURL || '/default-avatar.png')
-                  : (friend?.avatar || '/default-avatar.png')}
-                className="w-10 h-10 rounded-full object-cover"
-                alt=""
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[15px] font-semibold text-zinc-900 dark:text-white truncate">
-                    {(chatData as any).pinnedMessage.senderId === user?.uid? 'Bạn' : friend?.name}
+        <div className="p-3 space-y-3">
+          {chatData.pinnedMessages.map((pm: any) => (
+            <button
+              key={pm.id}
+              onClick={() => {
+                setShowPinned(false);
+                setTimeout(() => {
+                  const el = document.getElementById(`msg-${pm.id}`);
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  const bubble = el?.querySelector('div[class*="bg-gradient"], div[class*="bg-white"], img');
+                  bubble?.classList.add('ring-2','ring-yellow-400');
+                  setTimeout(() => bubble?.classList.remove('ring-2','ring-yellow-400'), 1500);
+                }, 100);
+              }}
+              onContextMenu={(e) => { e.preventDefault(); setShowUnpinSheet(pm); }}
+              className="w-full text-left bg-white rounded-2xl p-4 shadow-sm border border-zinc-200 active:scale-[0.98]"
+            >
+              <div className="flex items-start gap-3">
+                <img
+                  src={pm.senderId === user?.uid? (user?.photoURL || '/default-avatar.png') : (friend?.avatar || '/default-avatar.png')}
+                  className="w-10 h-10 rounded-full object-cover"
+                  alt=""
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[15px] font-semibold text-black truncate">
+                    {pm.senderId === user?.uid? 'Bạn' : friend?.name}
                   </span>
-               
+                  <p className="text-[14px] text-zinc-600 mt-1.5 line-clamp-2">
+                    {pm.text?.trim()? pm.text : pm.image? '📷 Hình ảnh' : pm.file? '📎 Tệp đính kèm' : pm.location? '📍 Vị trí' : 'Tin nhắn'}
+                  </p>
                 </div>
-                <p className="text-[14px] text-zinc-600 dark:text-zinc-300 mt-1.5 line-clamp-2 leading-snug">
-                  {(() => {
-                    const m = (chatData as any).pinnedMessage;
-                    return m.text?.trim()
-                    ? m.text
-                      : m.imageUrl || m.image
-                    ? '📷 Hình ảnh'
-                      : m.fileUrl || m.file
-                    ? '📎 Tệp đính kèm'
-                      : m.location
-                    ? '📍 Vị trí'
-                      : 'Tin nhắn';
-                  })()}
-                </p>
-           
               </div>
-
-            </div>
-          </button>
-
+            </button>
+          ))}
           <div className="text-center mt-4 px-4 space-y-0.5">
-            <p className="text-xs text-zinc-500 dark:text-zinc-500">Nhấn để đi tới</p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-500">Nhấn giữ để bỏ ghim</p>
+            <p className="text-xs text-zinc-500">Nhấn để đi tới</p>
+            <p className="text-xs text-zinc-500">Nhấn giữ để bỏ ghim</p>
           </div>
         </div>
       )}
     </div>
 
-    {/* Action Sheet */}
+    {/* Action Sheet bỏ ghim */}
     {showUnpinSheet && (
-      <div className="fixed inset-0 z-[300] flex items-end justify-center p-3" onClick={() => setShowUnpinSheet(false)}>
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-        <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-          <div className="bg-white/95 dark:bg-zinc-800/95 backdrop-blur-2xl rounded-2xl overflow-hidden mb-2 shadow-2xl">
-            <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
-              <p className="text-[13px] text-zinc-500 dark:text-zinc-400 text-center">Tin nhắn đã ghim</p>
-              <p className="text-[15px] font-medium text-zinc-900 dark:text-white text-center mt-0.5 line-clamp-1">
-                {(chatData as any).pinnedMessage?.text?.slice(0, 40) || 'Hình ảnh'}
-              </p>
+      <div className="fixed inset-0 z-[300] flex items-end justify-center p-3" onClick={() => setShowUnpinSheet(null)}>
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative w-full max-w-sm" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl overflow-hidden mb-2">
+            <div className="px-4 py-3 border-b border-zinc-200">
+              <p className="text-[13px] text-zinc-500 text-center">Bỏ ghim tin nhắn</p>
             </div>
             <button
               onClick={async () => {
-                await updateDoc(doc(db, 'chats', chatId), { pinnedMessage: deleteField() });
-                setChatData((prev) => (prev? {...prev, pinnedMessage: null } : prev));
-                setShowUnpinSheet(false);
+                await updateDoc(doc(db, 'chats', chatId), {
+                  pinnedMessages: arrayRemove(showUnpinSheet)
+                });
+                setChatData(prev => prev? {...prev, pinnedMessages: prev.pinnedMessages.filter((x:any)=>x.id!==showUnpinSheet.id)} : prev);
+                setShowUnpinSheet(null);
                 toast.success('Đã bỏ ghim');
               }}
-              className="w-full px-4 h-14 text-[17px] text-red-500 font-normal active:bg-zinc-100 dark:active:bg-zinc-700"
+              className="w-full h-14 text-[17px] text-red-500"
             >
               Bỏ ghim
             </button>
           </div>
-          <button
-            onClick={() => setShowUnpinSheet(false)}
-            className="w-full h-14 bg-white/95 dark:bg-zinc-800/95 backdrop-blur-2xl rounded-2xl text-[17px] font-semibold text-[#0084FF] active:scale-[0.98] transition"
-          >
+          <button onClick={() => setShowUnpinSheet(null)} className="w-full h-14 bg-white rounded-2xl text-[17px] font-semibold text-[#0084FF]">
             Hủy
           </button>
         </div>
