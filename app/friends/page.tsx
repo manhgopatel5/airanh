@@ -412,7 +412,12 @@ const fetchSuggestedUsers = async () => {
       .map((d) => ({ uid: d.id, ...d.data() } as Record<string, unknown> & { uid: string }));
 
     const candidateUids = candidates.slice(0, 30).map((u) => u.uid);
-    const mutualCounts = await getMutualFriendCounts(db, myFriendIds, candidateUids);
+    let mutualCounts = new Map<string, number>();
+    try {
+      mutualCounts = await getMutualFriendCounts(db, myFriendIds, candidateUids);
+    } catch (e) {
+      console.warn("Mutual friends unavailable:", e);
+    }
 
     const results: UserSuggestion[] = [];
     const randomUsers: UserSuggestion[] = [];

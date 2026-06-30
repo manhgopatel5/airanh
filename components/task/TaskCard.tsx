@@ -28,8 +28,9 @@ import { toast } from "sonner";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { type FeedTask, getFeedItemDueMillis } from "@/types/task";
 import { cn } from "@/lib/utils";
-import { useProvinces } from "@/lib/useProvinces";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { getTaskAuthorId, getTaskAuthorName, getTaskAuthorAvatar } from "@/lib/task/author";
+import { useProvinces } from "@/lib/useProvinces";
 
 
 type Props = {
@@ -238,17 +239,9 @@ function TaskCard({
 
   const isOwner = currentUserId === task.userId;
 
-  const authorId = task.userId || (task as { ownerId?: string }).ownerId || "";
-  const authorName =
-    task.userName ||
-    (task as { displayName?: string }).displayName ||
-    (task as { name?: string }).name ||
-    "AIR user";
-  const authorAvatar =
-    task.userAvatar ||
-    (task as { photoURL?: string }).photoURL ||
-    (task as { avatar?: string }).avatar ||
-    null;
+  const authorId = getTaskAuthorId(task);
+  const authorName = getTaskAuthorName(task);
+  const authorAvatar = getTaskAuthorAvatar(task);
 
   const goToTask = useCallback(() => {
     vibrate();

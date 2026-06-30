@@ -5,6 +5,7 @@ import { getAuth, Auth } from "firebase-admin/auth";
 import { getStorage, Storage } from "firebase-admin/storage"; // THÊM
 import type { FeedTask, TaskListItem } from "@/types/task";
 import { isActiveFeedItem } from "@/types/task";
+import { enrichTasksWithUserDataAdmin } from "@/lib/task/enrichTasks";
 
 /* ================= CATEGORY MAP ================= */
 const CATEGORY_MAP: Record<string, string> = {
@@ -209,8 +210,8 @@ export async function getJobsFromFirebaseAdmin(
       status: d.status || "open",
       visibility: d.visibility || "public",
       userId: d.userId || "",
-      userName: d.userName || "",
-      userAvatar: d.userAvatar || "",
+      userName: d.userName || d.displayName || d.name || "",
+      userAvatar: d.userAvatar || d.photoURL || d.avatar || "",
     ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
     ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
     ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
@@ -269,6 +270,8 @@ export async function getJobsFromFirebaseAdmin(
   } else if (hasPriceFilter && sortBy === 'hot') {
     tasks = tasks.sort((a, b) => ((b as any).hotScore || 0) - ((a as any).hotScore || 0));
   }
+
+  tasks = await enrichTasksWithUserDataAdmin(db, tasks);
 
   const lastDoc = snap.docs[snap.docs.length - 1];
   const nextCursor = lastDoc? lastDoc.id : null;

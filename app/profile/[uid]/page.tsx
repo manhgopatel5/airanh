@@ -12,8 +12,11 @@ import {
   arrayUnion,
   serverTimestamp,
   Timestamp,
-  getDocs, // thêm
-  collection, // thêm
+  getDocs,
+  collection,
+  query,
+  where,
+  limit,
 } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
@@ -53,6 +56,7 @@ import { evaluateAchievements, getAchievementColor } from "@/lib/achievements";
 import { AchievementIcon } from "@/components/achievements/AchievementIcon";
 
 import { formatDistanceToNow } from "date-fns";
+import { toTimestampDate } from "@/lib/notifications";
 import { vi } from "date-fns/locale";
 
 
@@ -202,15 +206,25 @@ const fetchUser = useCallback(async () => {
       getDoc(doc(db, "users", user.uid)),
     ]);
 
+    let resolvedSnap = userSnap;
     if (!userSnap.exists()) {
+      const byPublicId = await getDocs(
+        query(collection(db, "users"), where("userId", "==", uid), limit(1))
+      );
+      if (!byPublicId.empty) {
+        resolvedSnap = byPublicId.docs[0]!;
+      }
+    }
+
+    if (!resolvedSnap.exists()) {
       toast.error("Không tìm thấy người dùng");
       router.replace("/404");
       return;
     }
 
-    const raw = userSnap.data();
+    const raw = resolvedSnap.data();
     const data = {
-      uid: userSnap.id,
+      uid: resolvedSnap.id,
       ...raw,
       name: raw.displayName || raw.name || raw.username || "Unknown User",
       avatar: raw.photoURL || raw.avatar || "",
@@ -223,24 +237,21 @@ const fetchUser = useCallback(async () => {
     }
 
   const friendSnap = await getDoc(
-  doc(db, "users", user.uid, "friends", userSnap.id)
+  doc(db, "users", user.uid, "friends", resolvedSnap.id)
 );
 setIsFriend(friendSnap.exists());
 
-// THÊM ĐOẠN NÀY
 if (!friendSnap.exists()) {
-  const reqId = [user.uid, userSnap.id].sort().join('_');
+  const reqId = [user.uid, resolvedSnap.id].sort().join('_');
   const reqSnap = await getDoc(doc(db, "friendRequests", reqId));
   if (reqSnap.exists() && reqSnap.data().from === user.uid) {
     setHasSentRequest(true);
     setRequestId(reqId);
   }
 }
-// HẾT ĐOẠN THÊM
-
 
     try {
-  const friendsCollection = await getDocs(collection(db, "users", uid as string, "friends"));
+  const friendsCollection = await getDocs(collection(db, "users", resolvedSnap.id, "friends"));
   setFriendCount(friendsCollection.size);
 } catch (e) {
   console.warn("Không đọc được số bạn bè:", e);
@@ -484,12 +495,11 @@ const handleMessage = async () => {
     }
   };
 
-  const formatLastSeen = (timestamp?: Timestamp) => {
-    if (!timestamp) {
-      return "Lâu rồi";
-    }
+  const formatLastSeen = (timestamp?: Timestamp | { seconds?: number }) => {
+    const date = toTimestampDate(timestamp);
+    if (!date) return "Lâu rồi";
 
-    return formatDistanceToNow(timestamp.toDate(), {
+    return formatDistanceToNow(date, {
       addSuffix: true,
       locale: vi,
     });

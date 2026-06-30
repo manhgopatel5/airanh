@@ -118,8 +118,6 @@ export async function saveUserLocation(
     doc(db, "users", uid),
     {
       location: { lat, lng, updatedAt: serverTimestamp() },
-      lastKnownLat: lat,
-      lastKnownLng: lng,
     },
     { merge: true }
   );
@@ -143,12 +141,16 @@ export async function getMutualFriendCounts(
     batches.map(async (batch) => {
       const results = await Promise.all(
         batch.map(async (candidateUid) => {
-          const theirFriends = await getMyFriendIds(db, candidateUid);
-          let mutual = 0;
-          myFriendIds.forEach((id) => {
-            if (theirFriends.has(id)) mutual++;
-          });
-          return { candidateUid, mutual };
+          try {
+            const theirFriends = await getMyFriendIds(db, candidateUid);
+            let mutual = 0;
+            myFriendIds.forEach((id) => {
+              if (theirFriends.has(id)) mutual++;
+            });
+            return { candidateUid, mutual };
+          } catch {
+            return { candidateUid, mutual: 0 };
+          }
         })
       );
       results.forEach(({ candidateUid, mutual }) => counts.set(candidateUid, mutual));

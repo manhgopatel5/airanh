@@ -12,17 +12,9 @@ import { incrementTaskView } from "@/lib/task";
 import { applyToTask, cancelToTask } from "@/app/actions/task";
 import type { FeedTask } from "@/types/task";
 
-type UserData = {
-  uid: string;
-  name: string;
-  avatar: string;
-  online?: boolean;
-  rating?: number;
-  reviewCount?: number;
-  joinedDate?: any;
-  phone?: string;
-  verified?: boolean;
-};
+import { mapFirestoreUserToOwner } from "@/lib/task/author";
+
+type OwnerData = ReturnType<typeof mapFirestoreUserToOwner>;
 
 type Application = {
   id: string;
@@ -40,7 +32,7 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
   const router = useRouter();
   const [db, setDb] = useState<any>(null);
   const [task, setTask] = useState<FeedTask | null>(null);
-  const [owner, setOwner] = useState<UserData | null>(null);
+  const [owner, setOwner] = useState<OwnerData | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
@@ -78,8 +70,8 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
         rating: d.rating, // Thêm dòng này
         xpClaimed: d.xpClaimed || false, // Thêm dòng này
         userId: d.userId || "",
-        userName: d.userName || "",
-        userAvatar: d.userAvatar || "",
+        userName: d.userName || d.displayName || d.name || "",
+        userAvatar: d.userAvatar || d.photoURL || d.avatar || null,
       ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
       ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
         price: d.price?? 0,
@@ -136,10 +128,23 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
   }, [db, taskId, currentUserId, router]);
 
   const loadOwner = useCallback(async () => {
-    if (!db ||!task?.userId) return;
+    if (!db || !task?.userId) return;
     const snap = await getDoc(doc(db, "users", task.userId));
-    if (snap.exists()) setOwner({ uid: snap.id,...snap.data() } as UserData);
-  }, [db, task?.userId]);
+    if (snap.exists()) {
+      setOwner(mapFirestoreUserToOwner(snap.data() as Record<string, unknown>, snap.id));
+      return;
+    }
+    setOwner({
+      uid: task.userId,
+      name: task.userName || "Người dùng",
+      avatar: task.userAvatar || "",
+      online: undefined,
+      rating: undefined,
+      reviewCount: undefined,
+      verified: false,
+      isNewUser: false,
+    });
+  }, [db, task?.userId, task?.userName, task?.userAvatar]);
 
   const loadApplications = useCallback(async () => {
     if (!db ||!task?.id) {

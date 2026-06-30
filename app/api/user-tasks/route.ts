@@ -4,6 +4,7 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin'
 import { Timestamp } from 'firebase-admin/firestore'
 import type { DocumentData, Query } from 'firebase-admin/firestore'
 import type { FeedTask } from '@/types/task'
+import { enrichTasksWithUserDataAdmin } from '@/lib/task/enrichTasks'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -102,44 +103,8 @@ const getRequestToken = (request: NextRequest): string | null => {
   return bearerToken || request.cookies.get('__session')?.value || null
 }
 
-const enrichTasksWithUserData = async (tasks: FeedTask[]): Promise<FeedTask[]> => {
-  const userIds = [...new Set(tasks.map((t) => t.userId).filter(Boolean))]
-  if (userIds.length === 0) return tasks
-
-  const userMap = new Map<string, { name: string; avatar: string }>()
-
-  for (let i = 0; i < userIds.length; i += 10) {
-    const chunk = userIds.slice(i, i + 10)
-    const refs = chunk.map((id) => adminDb().collection('users').doc(id))
-    const snaps = await adminDb().getAll(...refs)
-    snaps.forEach((snap) => {
-      if (!snap.exists) return
-      const u = snap.data()!
-      userMap.set(snap.id, {
-        name: u.displayName || u.name || u.username || '',
-        avatar: u.photoURL || u.avatar || '',
-      })
-    })
-  }
-
-  return tasks.map((task) => {
-    const fromUser = task.userId ? userMap.get(task.userId) : undefined
-    const userName =
-      task.userName ||
-      (task as FeedTask & { displayName?: string; name?: string }).displayName ||
-      (task as FeedTask & { name?: string }).name ||
-      fromUser?.name ||
-      ''
-    const userAvatar =
-      task.userAvatar ||
-      (task as FeedTask & { photoURL?: string; avatar?: string }).photoURL ||
-      (task as FeedTask & { avatar?: string }).avatar ||
-      fromUser?.avatar ||
-      null
-
-    return { ...task, userName, userAvatar }
-  })
-}
+const enrichTasksWithUserData = (tasks: FeedTask[]) =>
+  enrichTasksWithUserDataAdmin(adminDb(), tasks)
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
