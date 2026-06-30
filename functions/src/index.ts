@@ -459,14 +459,14 @@ export const updateHotScore = onSchedule(
 
 // 8. TÌM NGƯỜI LẠ CHAT 1-1 - CHUẨN
 function normalizeProvinceName(name?: string) {
-  if (!name || name === "Toàn quốc") return "Toàn quốc";
+  if (!name) return "";
   return String(name).replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "").trim();
 }
 
 function provincesMatch(a?: string, b?: string) {
   const na = normalizeProvinceName(a);
   const nb = normalizeProvinceName(b);
-  if (na === "Toàn quốc" || nb === "Toàn quốc") return true;
+  if (!na || !nb) return false;
   return na.toLowerCase() === nb.toLowerCase();
 }
 
@@ -592,6 +592,10 @@ export const findStranger = onCall(
       throw new HttpsError("invalid-argument", "Chọn ít nhất 3 sở thích");
     }
 
+    if (!province || String(province).trim() === "" || province === "Toàn quốc") {
+      throw new HttpsError("invalid-argument", "Chọn khu vực bằng GPS hoặc nhập địa chỉ");
+    }
+
     try {
       const userRef = db.doc(`users/${uid}`);
       const userDoc = await userRef.get();
@@ -648,9 +652,7 @@ export const findStranger = onCall(
         if (d.wantGender!== "all" && d.wantGender!== userGender) continue;
         if (ageRange && d.ageRange!== ageRange) continue;
 
-        if (province && province !== "Toàn quốc") {
-          if (!provincesMatch(province, d.province)) continue;
-        }
+        if (!provincesMatch(province, d.province)) continue;
 
         const common = interests.filter((i: string) => d.interests?.includes(i)).length;
         if (common >= 2 && common > maxCommon) {
@@ -683,7 +685,7 @@ export const findStranger = onCall(
               members: [uid, other.userId].sort(),
               topic: interests,
               ageRange,
-              province: province || "Toàn quốc",
+              province,
               messages: [],
               createdAt: FieldValue.serverTimestamp(),
               lastMessageTime: FieldValue.serverTimestamp(),
@@ -707,7 +709,7 @@ export const findStranger = onCall(
                 interests,
                 ageRange,
                 wantGender,
-                province: province || "Toàn quốc",
+                province,
                 ...(locationLat != null && locationLng != null
                   ? { locationLat, locationLng }
                   : {}),
@@ -744,7 +746,7 @@ export const findStranger = onCall(
         ageRange,
         wantGender,
         gender: userGender,
-        province: province || "Toàn quốc",
+        province,
         ...(locationLat != null && locationLng != null ? { locationLat, locationLng } : {}),
         status: "waiting",
         createdAt: FieldValue.serverTimestamp(),

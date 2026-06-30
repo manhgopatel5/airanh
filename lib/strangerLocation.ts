@@ -9,10 +9,8 @@ export type StrangerRegion = {
   ward?: string;
 };
 
-export const NATIONWIDE = "Toàn quốc";
-
 export function normalizeProvinceName(name: string): string {
-  if (!name || name === NATIONWIDE) return NATIONWIDE;
+  if (!name) return "";
   return name
     .replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "")
     .replace(/\s+/g, " ")
@@ -22,22 +20,24 @@ export function normalizeProvinceName(name: string): string {
 export function provincesMatch(a: string, b: string): boolean {
   const na = normalizeProvinceName(a);
   const nb = normalizeProvinceName(b);
-  if (na === NATIONWIDE || nb === NATIONWIDE) return true;
+  if (!na || !nb) return false;
   return na.toLowerCase() === nb.toLowerCase();
 }
 
+export function isStrangerRegionValid(region: StrangerRegion): boolean {
+  return Boolean(region.province?.trim() && region.displayLabel?.trim());
+}
+
 export function regionFromMapbox(parsed: ParsedMapboxLocation): StrangerRegion {
-  const province = parsed.city ? normalizeProvinceName(parsed.city) : NATIONWIDE;
+  const province = parsed.city ? normalizeProvinceName(parsed.city) : "";
   const displayLabel =
-    province === NATIONWIDE
-      ? NATIONWIDE
-      : formatShortLocation({
-          ...(parsed.ward ? { ward: parsed.ward } : {}),
-          ...(parsed.city ? { city: parsed.city } : {}),
-        }) || province;
+    formatShortLocation({
+      ...(parsed.ward ? { ward: parsed.ward } : {}),
+      ...(parsed.city ? { city: parsed.city } : {}),
+    }) || parsed.address || province;
 
   return {
-    province: province === NATIONWIDE ? NATIONWIDE : parsed.city || province,
+    province: parsed.city || province,
     displayLabel,
     lat: parsed.lat,
     lng: parsed.lng,
@@ -46,6 +46,6 @@ export function regionFromMapbox(parsed: ParsedMapboxLocation): StrangerRegion {
 }
 
 export const defaultStrangerRegion = (): StrangerRegion => ({
-  province: NATIONWIDE,
-  displayLabel: NATIONWIDE,
+  province: "",
+  displayLabel: "",
 });

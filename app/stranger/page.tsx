@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { useActiveStrangerChatId } from "@/hooks/useActiveStrangerChat";
 import {
   defaultStrangerRegion,
+  isStrangerRegionValid,
   type StrangerRegion,
 } from "@/lib/strangerLocation";
 import CategoryIcon from "@/components/stranger/CategoryIcon";
@@ -144,6 +145,7 @@ const isDisabled = accountStatus === "banned";
     if (from > to) return toast.error("Độ tuổi không hợp lệ");
     if (from < 18) return toast.error("Độ tuổi tối thiểu là 18");
     if (to > 100) return toast.error("Độ tuổi tối đa là 100");
+    if (!isStrangerRegionValid(tempRegion)) return toast.error("Chọn khu vực bằng GPS hoặc nhập địa chỉ");
 
     setAgeFrom(from);
     setAgeTo(to);
@@ -198,6 +200,13 @@ const isDisabled = accountStatus === "banned";
         return;
       }
 
+      if (!isStrangerRegionValid(tempRegion)) {
+        toast.error("Chọn khu vực bằng GPS hoặc nhập địa chỉ");
+        setCurrentStep(2);
+        openFilterModal();
+        return;
+      }
+
       setAgeFrom(from);
       setAgeTo(to);
       setSelectedGender(tempGender);
@@ -216,6 +225,7 @@ const isDisabled = accountStatus === "banned";
 
   if (finalCats.length < 3) return toast.error("Chọn ít nhất 3 sở thích");
   if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
+  if (!isStrangerRegionValid(region)) return toast.error("Chọn khu vực bằng GPS hoặc nhập địa chỉ");
 
   setFindingStranger(true);
   setInQueue(true);
@@ -506,7 +516,9 @@ const isDisabled = accountStatus === "banned";
                           <FiMapPin size={16} className="text-emerald-500" />
                           <span className="text-xs font-[600] text-zinc-500">Khu vực</span>
                         </div>
-                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">{region.displayLabel}</p>
+                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">
+                          {isStrangerRegionValid(region) ? region.displayLabel : "Chưa chọn — dùng GPS hoặc nhập địa chỉ"}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -566,7 +578,9 @@ const isDisabled = accountStatus === "banned";
                           <FiMapPin size={16} className="text-emerald-500" />
                           <span className="text-xs font-[600] text-zinc-500">Khu vực</span>
                         </div>
-                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">{region.displayLabel}</p>
+                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">
+                          {isStrangerRegionValid(region) ? region.displayLabel : "Chưa chọn — dùng GPS hoặc nhập địa chỉ"}
+                        </p>
                       </div>
                     </div>
 
