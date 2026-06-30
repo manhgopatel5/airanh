@@ -130,7 +130,34 @@ export default function ChatDetailPage() {
 
   const [loadingFriend, setLoadingFriend] = useState(true);
 const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
+const isTyping = chatData?.typing?.[friendId || ""];
+const [typingDisplay, setTypingDisplay] = useState("");
 
+useEffect(() => {
+  if (!isTyping) {
+    setTypingDisplay("");
+    return;
+  }
+  const fullText = `${friend.name} đang nhắn...`;
+  let i = 0;
+  setTypingDisplay("");
+  
+  const type = () => {
+    if (i <= fullText.length) {
+      setTypingDisplay(fullText.slice(0, i));
+      i++;
+      setTimeout(type, 45); // tốc độ từng chữ
+    } else {
+      // pause rồi lặp lại
+      setTimeout(() => {
+        i = 0;
+        setTypingDisplay("");
+        type();
+      }, 1200);
+    }
+  };
+  type();
+}, [isTyping, friend.name]);
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1692,17 +1719,7 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
   className="shrink-0 z-30 px-3 relative"
   style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
 >
-  {/* HIỂN THỊ TÊN ĐANG NHẮN - không avatar */}
-  {chatData?.typing?.[friendId || ""] && (
-    <div className="absolute -top-6 left-6 flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-400 italic pointer-events-none">
-      <span>{friend.name} đang nhắn</span>
-      <span className="flex gap-0.5">
-        <span className="animate-bounce [animation-delay:-0.3s]">.</span>
-        <span className="animate-bounce [animation-delay:-0.15s]">.</span>
-        <span className="animate-bounce">.</span>
-      </span>
-    </div>
-  )}
+
 
   <div className="flex items-center gap-1 h-[48px] px-2.5 bg-white dark:bg-zinc-900 backdrop-blur-2xl rounded-full shadow-[0_8px_24px_-8px_rgba(0,0,0,0.15)] border border-zinc-200 dark:border-zinc-800">
 
@@ -1735,33 +1752,47 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
       <Paperclip size={18} className="text-zinc-500 dark:text-zinc-400" />
     </button>
 
-    {/* Ô nhập */}
-    <div className="flex-1 relative h-full flex items-center">
-      <input
-        ref={inputRef}
-        value={text}
-        onChange={(e) => { setText(e.target.value); handleTyping(); }}
-        onKeyDown={(e) => { if (e.key === 'Enter' &&!e.shiftKey) { e.preventDefault(); if (!isBlocked &&!isDeleted && text.trim()) sendMessage(); } }}
-        disabled={isBlocked || isDeleted}
-        placeholder={
-          chatData?.typing?.[friendId || ""]
-           ? `${friend.name} đang nhắn...`
-            : isBlocked
-             ? 'Bạn không thể nhắn tin'
-              : isDeleted
-               ? 'Đã xóa'
-                : 'Nhắn tin...'
-        }
-        className="w-full h-full bg-transparent outline-none border-0 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 pr-9"
-      />
-      <button
-        onClick={sendMessage}
-        disabled={sending || isBlocked || isDeleted ||!text.trim()}
-        className="absolute right-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-[#0084FF] hover:bg-[#0073e6] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40 transition"
-      >
-        {sending? <Loader2 size={14} className="animate-spin" /> : <Send size={14} strokeWidth={2.5} />}
-      </button>
+   {/* Ô nhập */}
+<div className="flex-1 relative h-full flex items-center">
+  <input
+    ref={inputRef}
+    value={text}
+    onChange={(e) => { setText(e.target.value); handleTyping(); }}
+    onKeyDown={(e) => { 
+      if (e.key === 'Enter' && !e.shiftKey) { 
+        e.preventDefault(); 
+        if (!isBlocked && !isDeleted && text.trim()) sendMessage(); 
+      } 
+    }}
+    disabled={isBlocked || isDeleted}
+    placeholder={
+      isBlocked
+        ? 'Bạn không thể nhắn tin'
+        : isDeleted
+          ? 'Đã xóa'
+          : 'Nhắn tin...'
+    }
+    className="w-full h-full bg-transparent outline-none border-0 text- text-zinc-900 dark:text-white placeholder:text-zinc-400 pr-9"
+  />
+  
+  {/* Hiệu ứng đang nhắn chạy từng chữ */}
+  {isTyping && !text && (
+    <div className="absolute left-0 top-1/2 -translate-y-1/2 pointer-events-none flex items-center">
+      <span className="text- text-zinc-400">
+        {typingDisplay}
+        <span className="inline-block w-0.5 h-4 bg-zinc-400 ml-0.5 animate-pulse translate-y-0.5" />
+      </span>
     </div>
+  )}
+
+  <button
+    onClick={sendMessage}
+    disabled={sending || isBlocked || isDeleted || !text.trim()}
+    className="absolute right-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-[#0084FF] hover:bg-[#0073e6] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40 transition"
+  >
+    {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} strokeWidth={2.5} />}
+  </button>
+</div>
   </div>
 </div>
 {/* SETTINGS SHEET */}
