@@ -12,7 +12,7 @@ import {
 import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
-  Image as ImageIcon, ChevronRight, Navigation, ChevronDown, ChevronUp, Flag, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
+  Image as ImageIcon, Navigation, ChevronDown, ChevronUp, Flag, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
   Smile, Reply, Trash2, Pencil, Shield, Pin, Copy, Search
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
@@ -1073,15 +1073,18 @@ useEffect(() => {
         <div className="p-3">
           <button
             onClick={() => {
-              setShowPinned(false);
-              setTimeout(() => {
-                const el = document.getElementById(`msg-${(chatData as any).pinnedMessage.id}`);
-                el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                const bubble = el?.querySelector('div[class*="bg-"][class*="rounded-3xl"], div[class*="bg-gradient"]');
-                bubble?.classList.add('!bg-yellow-200/80', 'dark:!bg-yellow-400/30', 'transition-colors', 'duration-500');
-                setTimeout(() => bubble?.classList.remove('!bg-yellow-200/80', 'dark:!bg-yellow-400/30'), 2000);
-              }, 150);
-            }}
+  setShowPinned(false);
+  setTimeout(() => {
+    const el = document.getElementById(`msg-${(chatData as any).pinnedMessage.id}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // DÙNG Y HỆT SELECTOR BÊN SEARCH
+    const bubble = el?.querySelector('div[class*="bg-gradient"], div[class*="bg-white"], div[class*="dark:bg-zinc"]');
+    bubble?.classList.add('!bg-yellow-200', 'transition-colors', 'duration-300');
+    setTimeout(() => {
+      bubble?.classList.remove('!bg-yellow-200');
+    }, 1500);
+  }, 100);
+}}
             onContextMenu={(e) => { e.preventDefault(); setShowUnpinSheet(true); }}
             onTouchStart={(e) => {
               (e.currentTarget as any)._timer = setTimeout(() => {
@@ -1109,9 +1112,7 @@ useEffect(() => {
                   <span className="text-[15px] font-semibold text-zinc-900 dark:text-white truncate">
                     {(chatData as any).pinnedMessage.senderId === user?.uid? 'Bạn' : friend?.name}
                   </span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">
-                    {formatTime((chatData as any).pinnedMessage.createdAt)}
-                  </span>
+               
                 </div>
                 <p className="text-[14px] text-zinc-600 dark:text-zinc-300 mt-1.5 line-clamp-2 leading-snug">
                   {(() => {
@@ -1127,14 +1128,9 @@ useEffect(() => {
                       : 'Tin nhắn';
                   })()}
                 </p>
-                <div className="flex items-center gap-1.5 mt-2.5">
-                  <Pin size={12} className="text-[#0084FF]" />
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Ghim bởi {(chatData as any).pinnedMessage.by || 'Bạn'}
-                  </span>
-                </div>
+           
               </div>
-              <ChevronRight size={16} className="text-zinc-400 mt-1 shrink-0" />
+
             </div>
           </button>
 
