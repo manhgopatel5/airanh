@@ -11,6 +11,7 @@ import CustomFilterBar from "@/components/common/CustomFilterBar";
 import TaskCard from "@/components/task/TaskCard";
 import { useAppStore } from "@/store/app";
 import type { FeedTask } from "@/types/task";
+import { isActiveFeedItem } from "@/types/task";
 
 type SortBy = "new" | "views" | "price_asc" | "price_desc";
 
@@ -101,7 +102,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   }, []);
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) =>!task.banned &&!task.hidden);
+    return tasks.filter(isActiveFeedItem);
   }, [tasks]);
 
   const handleRefresh = useCallback(() => {

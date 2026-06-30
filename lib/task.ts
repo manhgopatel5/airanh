@@ -35,8 +35,10 @@ import {
   TaskListItem,
   PlanListItem,
   ItemListItem,
+  FeedTask,
   generateTaskSearchKeywords,
   isTaskOpen,
+  isActiveFeedItem,
   isTask,
   isPlan,
   User,
@@ -552,7 +554,9 @@ export const listenItems = (
   return onSnapshot(
     q,
     (snapshot) => {
-      const data = snapshot.docs.map((d) => ({...d.data(), id: d.id } as ItemListItem));
+      const data = snapshot.docs
+        .map((d) => ({ ...d.data(), id: d.id } as ItemListItem))
+        .filter((item) => isActiveFeedItem(item as FeedTask));
       callback(data);
     },
     (err) => {

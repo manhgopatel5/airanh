@@ -4,6 +4,7 @@ import { getFirestore, Firestore, FieldValue, Timestamp, Query } from "firebase-
 import { getAuth, Auth } from "firebase-admin/auth";
 import { getStorage, Storage } from "firebase-admin/storage"; // THÊM
 import type { FeedTask, TaskListItem } from "@/types/task";
+import { isActiveFeedItem } from "@/types/task";
 
 /* ================= CATEGORY MAP ================= */
 const CATEGORY_MAP: Record<string, string> = {
@@ -250,9 +251,10 @@ export async function getJobsFromFirebaseAdmin(
 
     return taskData as FeedTask;
   }).filter((task) =>
-    task.visibility!== 'private' &&
-    task.banned!== true &&
-    task.hidden!== true
+    task.visibility !== "private" &&
+    task.banned !== true &&
+    task.hidden !== true &&
+    isActiveFeedItem(task)
   );
 
   // FIX: Sort lại ở client nếu có filter giá + sortBy không phải price

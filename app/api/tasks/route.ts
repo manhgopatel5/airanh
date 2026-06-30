@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth, getJobsFromFirebaseAdmin } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
 import { FieldValue } from 'firebase-admin/firestore';
+import { getFeedItemDueMillis, isActiveFeedItem } from '@/types/task';
 
 const getPriceRange = (price: number): number => {
   if (price === 0) return 0;
@@ -74,7 +75,7 @@ const category = searchParams.get('category') || undefined;
     ...(cursor && { cursor }),
     });
 
-    let tasks = data.tasks;
+    let tasks = data.tasks.filter(isActiveFeedItem);
 
     if (query) {
       const q = query.toLowerCase();
@@ -108,16 +109,11 @@ if (deadlineRange!== 'all') {
       break;
   }
 
-  tasks = tasks.filter(task => {
-    if (!task.deadline) return false;
+  tasks = tasks.filter((task) => {
+    const dueMs = getFeedItemDueMillis(task);
+    if (dueMs === null) return false;
 
-    // FIX: check type trước khi gọi toDate()
-    const deadlineValue = task.deadline as any;
-    const taskDeadline = deadlineValue?.toDate
-     ? deadlineValue.toDate().getTime()
-      : new Date(deadlineValue).getTime();
-
-    return taskDeadline >= now && taskDeadline <= deadlineTimestamp;
+    return dueMs >= now && dueMs <= deadlineTimestamp;
   });
 }
 

@@ -15,7 +15,7 @@ import {
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { QueryConstraint } from "firebase/firestore";
-import { TaskListItem, FeedTask } from "@/types/task";
+import { TaskListItem, FeedTask, isActiveFeedItem } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { FiSearch, FiX, FiMapPin } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
@@ -140,7 +140,9 @@ export default function SearchPage() {
       try {
         const q = buildQuery(reset? undefined : lastDoc || undefined);
         const snap = await getDocs(q);
-        let data = snap.docs.map((doc) => ({ id: doc.id,...doc.data() } as TaskListItem));
+        let data = snap.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() } as TaskListItem))
+          .filter((item) => isActiveFeedItem(item as FeedTask));
 
         if (activeTab === "near" && userLocation) {
           data = data
