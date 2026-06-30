@@ -457,13 +457,34 @@ export const updateHotScore = onSchedule(
 );
 
 // 8. TÌM NGƯỜI LẠ CHAT 1-1 - CHUẨN
+function normalizeProvinceName(name?: string) {
+  if (!name || name === "Toàn quốc") return "Toàn quốc";
+  return String(name).replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "").trim();
+}
+
+function provincesMatch(a?: string, b?: string) {
+  const na = normalizeProvinceName(a);
+  const nb = normalizeProvinceName(b);
+  if (na === "Toàn quốc" || nb === "Toàn quốc") return true;
+  return na.toLowerCase() === nb.toLowerCase();
+}
+
+async function getUserPublic(uid: string) {
+  const snap = await db.doc(`users/${uid}`).get();
+  const d = snap.data();
+  return {
+    name: d?.displayName || d?.name || "Người lạ",
+    avatar: d?.photoURL || d?.avatar || "",
+  };
+}
+
 export const findStranger = onCall(
   { region: "asia-southeast1" },
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
 
-    const { interests, ageRange, wantGender, province } = request.data;
+    const { interests, ageRange, wantGender, province, locationLat, locationLng } = request.data;
 
     if (!interests || interests.length < 3) {
       throw new HttpsError("invalid-argument", "Chọn ít nhất 3 sở thích");
@@ -525,8 +546,8 @@ export const findStranger = onCall(
         if (d.wantGender!== "all" && d.wantGender!== userGender) continue;
         if (ageRange && d.ageRange!== ageRange) continue;
 
-        if (province && province!== "Toàn quốc") {
-          if (d.province!== province && d.province!== "Toàn quốc") continue;
+        if (province && province !== "Toàn quốc") {
+          if (!provincesMatch(province, d.province)) continue;
         }
 
         const common = interests.filter((i: string) => d.interests?.includes(i)).length;
@@ -542,6 +563,10 @@ export const findStranger = onCall(
 
         const chatId = `str_${[uid, other.userId].sort().join("_")}`;
         const chatRef = db.doc(`stranger_chats/${chatId}`);
+        const [mePublic, otherPublic] = await Promise.all([
+          getUserPublic(uid),
+          getUserPublic(other.userId),
+        ]);
 
         await db.runTransaction(async (transaction) => {
           const otherQueueSnap = await transaction.get(bestMatch!.ref);
@@ -556,7 +581,7 @@ export const findStranger = onCall(
               members: [uid, other.userId].sort(),
               topic: interests,
               ageRange,
-              province,
+              province: province || "Toàn quốc",
               messages: [],
               createdAt: FieldValue.serverTimestamp(),
               lastMessageTime: FieldValue.serverTimestamp(),
@@ -567,13 +592,27 @@ export const findStranger = onCall(
               status: "active",
               unreadCounts: { [uid]: 0, [other.userId]: 0 },
               onlineStatus: { [uid]: true, [other.userId]: false },
+              partnerNames: {
+                [uid]: mePublic.name,
+                [other.userId]: otherPublic.name,
+              },
+              partnerAvatars: {
+                [uid]: mePublic.avatar,
+                [other.userId]: otherPublic.avatar,
+              },
               friendRequests: {},
               filters: {
                 interests,
                 ageRange,
                 wantGender,
-                province
-              }
+                province: province || "Toàn quốc",
+                ...(locationLat != null && locationLng != null
+                  ? { locationLat, locationLng }
+                  : {}),
+              },
+              ...(locationLat != null && locationLng != null
+                ? { locationLat, locationLng }
+                : {}),
             });
           }
 
@@ -599,6 +638,7 @@ export const findStranger = onCall(
         wantGender,
         gender: userGender,
         province: province || "Toàn quốc",
+        ...(locationLat != null && locationLng != null ? { locationLat, locationLng } : {}),
         status: "waiting",
         createdAt: FieldValue.serverTimestamp(),
       });

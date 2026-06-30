@@ -609,7 +609,7 @@ const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
         className="bg-white dark:bg-zinc-900 border border-black/[0.06] dark:border-white/[0.06] rounded-xl shadow-sm hover:shadow-md transition-shadow"
       >
         <button
-          onClick={() => isStranger? router.push(`/chat/${(friend as StrangerChatItem).chatId}`) : handleStartChat(friend.uid)}
+          onClick={() => isStranger? router.push(`/stranger/${(friend as StrangerChatItem).chatId}`) : handleStartChat(friend.uid)}
           onContextMenu={(e) => { e.preventDefault(); if (!isStranger) setSelectedFriend(friend as FriendItem); }}
           className="flex items-center gap-3 p-4 w-full active:bg-gray-50 dark:active:bg-zinc-800 rounded-xl"
         >
@@ -817,7 +817,7 @@ const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
         <div key={chat.chatId} className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-black/[0.06] dark:border-white/[0.06] overflow-hidden">
           <div className="flex items-center gap-3 p-4">
             <button
-              onClick={() => router.push(`/chat/${chat.chatId}`)}
+              onClick={() => router.push(`/stranger/${chat.chatId}`)}
               className="flex items-center gap-3 flex-1 min-w-0 active:opacity-70"
             >
               <div className="relative flex-shrink-0">

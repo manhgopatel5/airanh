@@ -11,27 +11,33 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import ChatButton from "@/components/stranger/ChatButton";
+import RegionPicker from "@/components/stranger/RegionPicker";
 import { useRouter } from "next/navigation";
+import { useActiveStrangerChatId } from "@/hooks/useActiveStrangerChat";
+import {
+  defaultStrangerRegion,
+  type StrangerRegion,
+} from "@/lib/strangerLocation";
 const CATEGORIES = [
-  { id: "tat-ca", label: "Tất cả", icon: "🌟", count: 0 },
-  { id: "thich-di-phuot", label: "Thích đi phượt", icon: "🏍️", count: 93 },
-  { id: "nguoi-yeu", label: "Người yêu", icon: "🌹", count: 117 },
-  { id: "moi-quan-he-nghiem-tuc", label: "Mối quan hệ nghiêm túc", icon: "💍", count: 72 },
-  { id: "ranh-toi-nay", label: "Rảnh tối nay", icon: "🌙", count: 38 },
-  { id: "nhung-nguoi-ban-moi", label: "Những người bạn mới", icon: "👋", count: 34 },
-  { id: "muon-co-con", label: "Muốn có con", icon: "👶", count: 13 },
-  { id: "du-lich", label: "Du lịch", icon: "✈️", count: 96 },
-  { id: "hoi-me-phim", label: "Hội mê Phim", icon: "📺", count: 31 },
-  { id: "yeu-the-thao", label: "Yêu thể thao", icon: "💧", count: 47 },
-  { id: "hen-di-cafe", label: "Hẹn đi cafe", icon: "☕", count: 21 },
-  { id: "thich-di-nhau", label: "Thích đi nhậu", icon: "🍷", count: 16 },
-  { id: "me-mao-hiem", label: "Mê mạo hiểm", icon: "🎲", count: 30 },
-  { id: "hoi-yeu-sang-tao", label: "Hội yêu Sáng tạo", icon: "🎨", count: 45 },
-  { id: "dam-me-am-thuc", label: "Đam mê ẩm thực", icon: "🍑", count: 81 },
-  { id: "yeu-thien-nhien", label: "Yêu thiên nhiên", icon: "🌱", count: 75 },
-  { id: "yeu-am-nhac", label: "Yêu âm nhạc", icon: "🎧", count: 23 },
-  { id: "cham-soc-ban-than", label: "Chăm sóc bản thân", icon: "🦆", count: 107 },
-];
+  { id: "tat-ca", label: "Tất cả", icon: "🌟" },
+  { id: "thich-di-phuot", label: "Thích đi phượt", icon: "🏍️" },
+  { id: "nguoi-yeu", label: "Người yêu", icon: "🌹" },
+  { id: "moi-quan-he-nghiem-tuc", label: "Mối quan hệ nghiêm túc", icon: "💍" },
+  { id: "ranh-toi-nay", label: "Rảnh tối nay", icon: "🌙" },
+  { id: "nhung-nguoi-ban-moi", label: "Những người bạn mới", icon: "👋" },
+  { id: "muon-co-con", label: "Muốn có con", icon: "👶" },
+  { id: "du-lich", label: "Du lịch", icon: "✈️" },
+  { id: "hoi-me-phim", label: "Hội mê Phim", icon: "📺" },
+  { id: "yeu-the-thao", label: "Yêu thể thao", icon: "💧" },
+  { id: "hen-di-cafe", label: "Hẹn đi cafe", icon: "☕" },
+  { id: "thich-di-nhau", label: "Thích đi nhậu", icon: "🍷" },
+  { id: "me-mao-hiem", label: "Mê mạo hiểm", icon: "🎲" },
+  { id: "hoi-yeu-sang-tao", label: "Hội yêu Sáng tạo", icon: "🎨" },
+  { id: "dam-me-am-thuc", label: "Đam mê ẩm thực", icon: "🍑" },
+  { id: "yeu-thien-nhien", label: "Yêu thiên nhiên", icon: "🌱" },
+  { id: "yeu-am-nhac", label: "Yêu âm nhạc", icon: "🎧" },
+  { id: "cham-soc-ban-than", label: "Chăm sóc bản thân", icon: "🦆" },
+] as const;
 
 const GENDERS = [
   { value: "all", label: "Tất cả" },
@@ -39,24 +45,11 @@ const GENDERS = [
   { value: "female", label: "Nữ" },
 ] as const;
 
-const PROVINCES = [
-  "Toàn quốc", "Hà Nội", "TP. Hồ Chí Minh", "Hải Phòng", "Đà Nẵng", "Cần Thơ",
-  "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh",
-  "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau",
-  "Cao Bằng", "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp",
-  "Gia Lai", "Hà Giang", "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang",
-  "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu",
-  "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định", "Nghệ An",
-  "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam",
-  "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh",
-  "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "Trà Vinh",
-  "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
-];
-
 export default function StrangerPage() {
   const { user } = useAuth();
   const db = getFirebaseDB();
   const router = useRouter();
+  const activeStrangerChatId = useActiveStrangerChatId();
   const [userKarma, setUserKarma] = useState<number | null>(null);
   const [userTier, setUserTier] = useState<"user" | "vip" | "elite">("user");
   const [accountStatus, setAccountStatus] = useState<"active" | "warning" | "banned">("active");
@@ -76,12 +69,12 @@ export default function StrangerPage() {
   const [ageFrom, setAgeFrom] = useState<number>(18);
   const [ageTo, setAgeTo] = useState<number>(30);
   const [selectedGender, setSelectedGender] = useState<"all" | "male" | "female">("all");
-  const [selectedProvince, setSelectedProvince] = useState("Toàn quốc");
+  const [region, setRegion] = useState<StrangerRegion>(() => defaultStrangerRegion());
 
   const [tempAgeFrom, setTempAgeFrom] = useState<number | string>(18);
   const [tempAgeTo, setTempAgeTo] = useState<number | string>(30);
   const [tempGender, setTempGender] = useState<"all" | "male" | "female">("all");
-  const [tempProvince, setTempProvince] = useState("Toàn quốc");
+  const [tempRegion, setTempRegion] = useState<StrangerRegion>(() => defaultStrangerRegion());
 const [queueData, setQueueData] = useState<any>(null); // THÊM DÒNG NÀY
 
 useEffect(() => {
@@ -156,7 +149,7 @@ const isDisabled = accountStatus === "banned";
     setTempAgeFrom(ageFrom);
     setTempAgeTo(ageTo);
     setTempGender(selectedGender);
-    setTempProvince(selectedProvince);
+    setTempRegion(region);
     setShowFilterModal(true);
   };
 
@@ -171,7 +164,7 @@ const isDisabled = accountStatus === "banned";
     setAgeFrom(from);
     setAgeTo(to);
     setSelectedGender(tempGender);
-    setSelectedProvince(tempProvince);
+    setRegion(tempRegion);
     setShowFilterModal(false);
     toast.success("Đã lưu bộ lọc");
   };
@@ -224,7 +217,7 @@ const isDisabled = accountStatus === "banned";
       setAgeFrom(from);
       setAgeTo(to);
       setSelectedGender(tempGender);
-      setSelectedProvince(tempProvince);
+      setRegion(tempRegion);
       setCurrentStep(3);
     }
   };
@@ -251,7 +244,10 @@ const isDisabled = accountStatus === "banned";
       interests: finalCats,
       ageRange: `${ageFrom}-${ageTo}`,
       wantGender: selectedGender,
-      province: selectedProvince,
+      province: region.province,
+      ...(region.lat != null && region.lng != null
+        ? { locationLat: region.lat, locationLng: region.lng }
+        : {}),
     });
 
     const data = result.data as { chatId: string, matched: boolean };
@@ -308,7 +304,7 @@ const isDisabled = accountStatus === "banned";
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <ChatButton chatId={currentChatId} variant="default" showDetails />
+              <ChatButton chatId={activeStrangerChatId || currentChatId} variant="default" showDetails />
               <button
                 onClick={() => setShowStatusModal(true)}
                 className={cn(
@@ -494,12 +490,6 @@ const isDisabled = accountStatus === "banned";
                         <div className="text-5xl">{cat.icon}</div>
                         <div className="text-center">
                           <p className="text-sm font-[700] leading-tight">{cat.label}</p>
-                          {cat.count > 0 && (
-                            <div className="flex items-center justify-center gap-1 text-xs mt-1 opacity-60">
-                              <FiUsers size={12} />
-                              <span>{cat.count}</span>
-                            </div>
-                          )}
                         </div>
                       </button>
                     );
@@ -552,7 +542,7 @@ const isDisabled = accountStatus === "banned";
                           <FiMapPin size={16} className="text-emerald-500" />
                           <span className="text-xs font-[600] text-zinc-500">Khu vực</span>
                         </div>
-                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">{selectedProvince}</p>
+                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">{region.displayLabel}</p>
                       </div>
                     </div>
                   </div>
@@ -612,7 +602,7 @@ const isDisabled = accountStatus === "banned";
                           <FiMapPin size={16} className="text-emerald-500" />
                           <span className="text-xs font-[600] text-zinc-500">Khu vực</span>
                         </div>
-                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">{selectedProvince}</p>
+                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">{region.displayLabel}</p>
                       </div>
                     </div>
 
@@ -921,16 +911,8 @@ const isDisabled = accountStatus === "banned";
                 </div>
 
                 <div>
-                  <label className="text-sm font-[700] mb-2 block">Tỉnh/Thành phố</label>
-                  <select
-                    value={tempProvince}
-                    onChange={(e) => setTempProvince(e.target.value)}
-                    className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 text-base font-[600] focus:outline-none focus:ring-2 focus:ring-blue-600 border border-zinc-200 dark:border-zinc-700"
-                  >
-                    {PROVINCES.map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
+                  <label className="text-sm font-[700] mb-2 block">Khu vực</label>
+                  <RegionPicker value={tempRegion} onChange={setTempRegion} />
                 </div>
 
                 <button

@@ -1077,6 +1077,30 @@
     { "fieldPath": "uid", "order": "ASCENDING" },
     { "fieldPath": "lastActive", "order": "DESCENDING" }
   ]
+},
+{
+  "collectionGroup": "stranger_chats",
+  "queryScope": "COLLECTION",
+  "fields": [
+    { "fieldPath": "members", "arrayConfig": "CONTAINS" },
+    { "fieldPath": "lastMessageTime", "order": "DESCENDING" }
+  ]
+},
+{
+  "collectionGroup": "stranger_chats",
+  "queryScope": "COLLECTION",
+  "fields": [
+    { "fieldPath": "members", "arrayConfig": "CONTAINS" },
+    { "fieldPath": "status", "order": "ASCENDING" }
+  ]
+},
+{
+  "collectionGroup": "stranger_queue",
+  "queryScope": "COLLECTION",
+  "fields": [
+    { "fieldPath": "status", "order": "ASCENDING" },
+    { "fieldPath": "userId", "order": "ASCENDING" }
+  ]
 }
   ],
   "fieldOverrides": []

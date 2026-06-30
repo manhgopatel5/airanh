@@ -4,13 +4,14 @@ import { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { doc, onSnapshot, getDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useParams, useRouter } from "next/navigation";
-import { FiSend, FiCheckCircle, FiSmile, FiUserPlus, FiAlertCircle, FiClock, FiX, FiRefreshCw } from "react-icons/fi";
+import { FiSend, FiCheckCircle, FiSmile, FiUserPlus, FiAlertCircle, FiClock, FiX, FiRefreshCw, FiArrowLeft, FiFlag } from "react-icons/fi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import EmojiPicker, { EmojiClickData, Theme, EmojiStyle } from "emoji-picker-react";
 // XÓA DÒNG NÀY: import { sendFriendRequest, acceptRequest, type FriendRequest } from "@/lib/friendService";
 import { getApp } from "firebase/app";
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { fetchPartnerProfile, partnerOnline } from "@/lib/strangerPartners";
 
 interface Message {
   id: string;
@@ -35,7 +36,11 @@ interface ChatData {
     ageRange: string;
     wantGender: string;
     province: string;
+    locationLat?: number;
+    locationLng?: number;
   };
+  partnerNames?: Record<string, string>;
+  partnerAvatars?: Record<string, string>;
 }
 
 export default function ChatRoomPage() {
@@ -56,6 +61,8 @@ export default function ChatRoomPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [matchedChatId, setMatchedChatId] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [partnerProfile, setPartnerProfile] = useState({ name: "Người lạ", avatar: "" });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const emojiRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +78,19 @@ useEffect(() => {
     setIsFriend(snap.exists());
   });
 }, [user?.uid, partnerId]);
+
+useEffect(() => {
+  if (!partnerId) return;
+  const cachedName = chatData?.partnerNames?.[partnerId];
+  const cachedAvatar = chatData?.partnerAvatars?.[partnerId];
+  if (cachedName) {
+    setPartnerProfile({ name: cachedName, avatar: cachedAvatar || "" });
+    return;
+  }
+  fetchPartnerProfile(partnerId).then((p) => {
+    setPartnerProfile({ name: p.name, avatar: p.avatar });
+  });
+}, [partnerId, chatData?.partnerNames, chatData?.partnerAvatars]);
 
 
   useEffect(() => {
@@ -308,7 +328,10 @@ useEffect(() => {
         interests: oldFilters.interests,
         ageRange: oldFilters.ageRange,
         wantGender: oldFilters.wantGender,
-        province: oldFilters.province
+        province: oldFilters.province,
+        ...(oldFilters.locationLat != null && oldFilters.locationLng != null
+          ? { locationLat: oldFilters.locationLat, locationLng: oldFilters.locationLng }
+          : {}),
       });
 
       const data = result.data as { chatId: string, matched: boolean };
@@ -327,6 +350,34 @@ useEffect(() => {
       router.push("/stranger");
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleReport = async (reason: string) => {
+    if (!chatId || !user?.uid) return;
+    try {
+      const functions = getFunctions(getApp(), "asia-southeast1");
+      const reportFn = httpsCallable(functions, "reportStranger");
+      await reportFn({ chatId, reason });
+      toast.success("Đã gửi báo cáo");
+      setShowReport(false);
+      router.push("/stranger");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Báo cáo thất bại");
+    }
+  };
+
+  const formatMsgTime = (ts: unknown) => {
+    try {
+      const date =
+        ts && typeof ts === "object" && "toDate" in (ts as object)
+          ? (ts as { toDate: () => Date }).toDate()
+          : ts instanceof Date
+            ? ts
+            : new Date(ts as string | number);
+      return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    } catch {
+      return "";
     }
   };
 
@@ -385,7 +436,45 @@ useEffect(() => {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-zinc-50 to-white dark:from-black dark:to-zinc-950">
-      <div className="shrink-0 bg-white dark:bg-black px-3 py-2 flex items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
+      <div
+        className="shrink-0 border-b border-zinc-200 bg-white px-3 py-2 dark:border-zinc-800 dark:bg-black"
+        style={{ paddingTop: "max(8px, env(safe-area-inset-top))" }}
+      >
+        <div className="mb-2 flex items-center gap-2">
+          <button
+            onClick={() => router.push("/stranger/chats")}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-100 active:scale-95 dark:bg-zinc-900"
+          >
+            <FiArrowLeft size={18} />
+          </button>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <img
+              src={
+                partnerProfile.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(partnerProfile.name)}&background=random`
+              }
+              alt=""
+              className="h-9 w-9 rounded-xl object-cover"
+            />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-[800]">{partnerProfile.name}</p>
+              <p className="text-[11px] text-zinc-500">
+                {partnerId && partnerOnline(chatData as unknown as Record<string, unknown>, partnerId)
+                  ? "Đang online"
+                  : "Ngoại tuyến"}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowReport(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-600 active:scale-95 dark:bg-red-950/40"
+            title="Báo cáo"
+          >
+            <FiFlag size={16} />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
         <button
           onClick={handleEndChat}
           disabled={chatEnded}
@@ -413,6 +502,7 @@ useEffect(() => {
           <FiRefreshCw size={16} className={isSearching? "animate-spin" : ""} />
           {isSearching? "Đang tìm..." : "Tiếp tục"}
         </button>
+        </div>
       </div>
 
    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
@@ -514,18 +604,22 @@ useEffect(() => {
             );
           }
           const isMe = msg.senderId === user?.uid;
+          const timeLabel = formatMsgTime(msg.timestamp);
           return (
-            <div key={msg.id} className={cn("flex", isMe? "justify-end" : "justify-start")}>
+            <div key={msg.id} className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
               <div
                 className={cn(
                   "max-w-[75%] px-4 py-2.5 rounded-3xl text-sm break-words",
                   isMe
-          ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
+                    ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-lg"
                     : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-bl-lg"
                 )}
               >
                 {msg.text}
               </div>
+              {timeLabel && (
+                <span className="mt-1 px-1 text-[10px] text-zinc-400">{timeLabel}</span>
+              )}
             </div>
           );
         })}
@@ -582,6 +676,32 @@ useEffect(() => {
           </div>
         </div>
       ) : null}
+
+      {showReport && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 dark:bg-zinc-900">
+            <h3 className="mb-2 text-lg font-[800]">Báo cáo người dùng</h3>
+            <p className="mb-4 text-sm text-zinc-500">Chọn lý do báo cáo. Bạn sẽ bị trừ 20 điểm Huha nếu báo cáo sai.</p>
+            <div className="space-y-2">
+              {["Spam / quảng cáo", "Nội dung không phù hợp", "Quấy rối", "Lừa đảo", "Khác"].map((reason) => (
+                <button
+                  key={reason}
+                  onClick={() => handleReport(reason)}
+                  className="w-full rounded-xl bg-zinc-100 px-4 py-3 text-left text-sm font-semibold active:scale-[0.99] dark:bg-zinc-800"
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowReport(false)}
+              className="mt-3 w-full rounded-xl py-3 text-sm font-bold text-zinc-500"
+            >
+              Hủy
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

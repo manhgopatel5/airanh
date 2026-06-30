@@ -323,7 +323,7 @@ match /friendRequests/{reqId} {
             'messages', 'lastMessageTime', 'status',
             'endedAt', 'extended', 'expiresAt', 'reportedBy',
             'unreadCounts', 'onlineStatus', 'partnerNames', 'partnerAvatars',
-            'members', 'lastMessage', 'friendRequests', 'filters'
+            'members', 'lastMessage', 'friendRequests', 'friendRequestsTime', 'filters'
           ]);
       allow delete: if false;
 
