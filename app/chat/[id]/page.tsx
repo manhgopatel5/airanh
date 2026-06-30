@@ -1803,7 +1803,7 @@ onClick={(e) => {
                 const bg = BACKGROUNDS[id];
                 const isSelected = id === (chatData?.backgroundId || 'default');
                 const isGradient = bg.url?.startsWith('gradient:');
-                const isColor = bg.url?.startsWith('#') || bg.type === 'color';
+const isColor = bg.url?.startsWith('#');
 
                 return (
                   <button
