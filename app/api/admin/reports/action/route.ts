@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminAuth, adminDb } from '@/lib/firebase-admin'
+import { adminDb } from '@/lib/firebase-admin'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
-import { isAdminUser } from '@/lib/adminAuth'
+import { verifyAdminRequest } from '@/lib/adminAuth'
 
 export async function POST(req: NextRequest) {
-  const token = req.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1]
-  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const decoded = await adminAuth().verifyIdToken(token).catch(() => null)
-  if (!decoded || !isAdminUser(decoded.uid, decoded.email)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const auth = await verifyAdminRequest(req.headers.get('authorization'))
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
   }
+  const decoded = auth.decoded
 
   const body = await req.json()
   const { reportId, action, banDays, targetId } = body as {
@@ -41,6 +39,12 @@ export async function POST(req: NextRequest) {
     })
 
     if (action === 'resolved' && userId) {
+      const userRef = adminDb().collection('users').doc(userId)
+      const userSnap = await userRef.get()
+      if (!userSnap.exists) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      }
+
       const banUpdate: Record<string, unknown> = {
         status: 'banned',
         banned: true,
@@ -56,12 +60,13 @@ export async function POST(req: NextRequest) {
         banUpdate.bannedUntil = null
       }
 
-      await adminDb().collection('users').doc(userId).update(banUpdate)
+      await userRef.update(banUpdate)
     }
 
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Admin report action error:', error)
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Failed'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
