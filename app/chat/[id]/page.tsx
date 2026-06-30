@@ -12,7 +12,7 @@ import {
 import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
-  Image as ImageIcon, Navigation, ChevronDown, ChevronUp, Flag, Plus, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
+  Image as ImageIcon, Navigation, ChevronDown, ChevronUp, Flag, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
   Smile, Reply, Trash2, Pencil, Shield, Pin, Copy, Search
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
@@ -1503,22 +1503,25 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
           );
         })}
 
-        {chatData?.typing?.[friendId || ""] && (
-          <div className="flex items-end gap-2 px-3 mb-2 animate-in fade-in duration-200">
-            <img
-              src={friend.avatar || '/default-avatar.png'}
-              className="w-6 h-6 rounded-full object-cover"
-              alt=""
-            />
-            <div className="bg-[#303030] px-3 py-2 rounded-[18px] rounded-bl-[4px]">
-              <span className="flex gap-1 items-center">
-                <span className="w-1.5 h-1.5 bg-[#8e8e93] rounded-full animate-bounce" style={{animationDelay:'0ms'}}/>
-                <span className="w-1.5 h-1.5 bg-[#8e8e93] rounded-full animate-bounce" style={{animationDelay:'150ms'}}/>
-                <span className="w-1.5 h-1.5 bg-[#8e8e93] rounded-full animate-bounce" style={{animationDelay:'300ms'}}/>
-              </span>
-            </div>
-          </div>
-        )}
+    {chatData?.typing?.[friendId || ""] && (
+  <div className="flex items-end gap-2 px-3 mb-2 animate-in fade-in duration-200">
+    <img
+      src={friend.avatar || '/default-avatar.png'}
+      className="w-6 h-6 rounded-full object-cover"
+      alt=""
+    />
+    <div className="bg-[#2a2a2a] px-3.5 py-2 rounded-">
+      <span className="flex items-baseline gap-0.5">
+        <span className="text- text-white/80 italic">Đang nhắn</span>
+        <span className="flex gap-0.5 ml-0.5">
+          <span className="text-white/80 animate-pulse" style={{animationDelay:'0ms'}}>.</span>
+          <span className="text-white/80 animate-pulse" style={{animationDelay:'200ms'}}>.</span>
+          <span className="text-white/80 animate-pulse" style={{animationDelay:'400ms'}}>.</span>
+        </span>
+      </span>
+    </div>
+  </div>
+)}
         <div ref={messagesEndRef} />
       </div>
 
