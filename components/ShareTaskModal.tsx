@@ -142,7 +142,7 @@ const handleSend = async () => {
           taskId: task.id,
           taskTitle: task.title,
           taskType: task.type,
-          price: task.type === "task"? task.price : 0, // SỬA: Check type
+          taskPrice: task.type === "task" ? (task.price ?? 0) : (task.costAmount ?? 0),
           senderId: user.uid,
           senderName: user.displayName || user.email || "User",
           senderAvatar: user.photoURL || "",

@@ -102,6 +102,45 @@ const getRequestToken = (request: NextRequest): string | null => {
   return bearerToken || request.cookies.get('__session')?.value || null
 }
 
+const enrichTasksWithUserData = async (tasks: FeedTask[]): Promise<FeedTask[]> => {
+  const userIds = [...new Set(tasks.map((t) => t.userId).filter(Boolean))]
+  if (userIds.length === 0) return tasks
+
+  const userMap = new Map<string, { name: string; avatar: string }>()
+
+  for (let i = 0; i < userIds.length; i += 10) {
+    const chunk = userIds.slice(i, i + 10)
+    const refs = chunk.map((id) => adminDb().collection('users').doc(id))
+    const snaps = await adminDb().getAll(...refs)
+    snaps.forEach((snap) => {
+      if (!snap.exists) return
+      const u = snap.data()!
+      userMap.set(snap.id, {
+        name: u.displayName || u.name || u.username || '',
+        avatar: u.photoURL || u.avatar || '',
+      })
+    })
+  }
+
+  return tasks.map((task) => {
+    const fromUser = task.userId ? userMap.get(task.userId) : undefined
+    const userName =
+      task.userName ||
+      (task as FeedTask & { displayName?: string; name?: string }).displayName ||
+      (task as FeedTask & { name?: string }).name ||
+      fromUser?.name ||
+      ''
+    const userAvatar =
+      task.userAvatar ||
+      (task as FeedTask & { photoURL?: string; avatar?: string }).photoURL ||
+      (task as FeedTask & { avatar?: string }).avatar ||
+      fromUser?.avatar ||
+      null
+
+    return { ...task, userName, userAvatar }
+  })
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const requestedType = searchParams.get('type')
@@ -127,11 +166,13 @@ export async function GET(request: NextRequest) {
     const q = getUserTaskQuery(tab, uid)
     const snap = await q.get()
 
-    const tasks: FeedTask[] = snap.docs.map(doc => {
+    let tasks: FeedTask[] = snap.docs.map(doc => {
       const d = doc.data()
       return {
         id: doc.id,
         ...d,
+        userName: d.userName || d.displayName || d.name || '',
+        userAvatar: d.userAvatar || d.photoURL || d.avatar || null,
         createdAt: timestampToIsoString(d.createdAt),
         updatedAt: timestampToIsoString(d.updatedAt),
         deadline: timestampToIsoString(d.deadline),
@@ -144,6 +185,8 @@ export async function GET(request: NextRequest) {
       const data = task as FeedTask & DocumentData
       return data.type === type && data.banned !== true && data.hidden !== true && matchesTab(data, tab, nowMillis)
     }).sort((a, b) => taskSortValue(b, tab) - taskSortValue(a, tab)).slice(0, 20)
+
+    tasks = await enrichTasksWithUserData(tasks)
 
     return NextResponse.json(tasks, {
       headers: {

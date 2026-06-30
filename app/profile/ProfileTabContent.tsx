@@ -538,26 +538,27 @@ const handleUpdateName = async () => {
   ];
 
   return (
-    <div className="min-h-dvh bg-[#F4F6FA] dark:bg-[#09090B] font-sans text-zinc-950 dark:text-white">
-      <div className="pb-32 overflow-y-auto">
-        <div className="relative overflow-hidden">
-          <div className={`h-36 bg-gradient-to-br ${accentGradient}`} />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.25),transparent_50%)]" />
+    <div className="min-h-dvh bg-white font-sans text-zinc-950">
+      <div className="pb-32 overflow-y-auto bg-white">
+        <div className="relative border-b border-zinc-100 bg-white pt-6 pb-4">
+          <div className="px-4">
+            <h2 className="text-lg font-black tracking-tight text-zinc-900">Hồ sơ</h2>
+          </div>
         </div>
 
-        <div className="px-4 -mt-16 relative z-10">
-          <div className="rounded-[1.75rem] bg-white dark:bg-zinc-950 p-5 shadow-xl shadow-black/[0.06] ring-1 ring-black/[0.04] dark:ring-white/10">
+        <div className="px-4 pt-4 relative z-10">
+          <div className="rounded-[1.75rem] bg-white p-5 shadow-lg shadow-black/[0.06] ring-1 ring-zinc-200">
             <div className="flex items-end gap-4">
-              <div onClick={handleAvatarClick} className="group relative shrink-0 cursor-pointer -mt-12">
+              <div onClick={handleAvatarClick} className="group relative shrink-0 cursor-pointer">
                 <Image
                   src={avatarUrl}
                   alt={finalDisplayName}
                   width={88}
                   height={88}
-                  className="h-[88px] w-[88px] rounded-[1.4rem] object-cover ring-4 ring-white dark:ring-zinc-950 shadow-xl"
+                  className="h-[88px] w-[88px] rounded-[1.4rem] object-cover ring-4 ring-white shadow-xl"
                 />
                 {userData.emailVerified && (
-                  <div className={`absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br ${accentGradient} ring-4 ring-white dark:ring-zinc-950`}>
+                  <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-blue-500 ring-4 ring-white">
                     <Check className="h-3.5 w-3.5 text-white stroke-[3]" />
                   </div>
                 )}
@@ -579,7 +580,7 @@ const handleUpdateName = async () => {
                 <p className="text-sm font-semibold text-zinc-500 truncate">
                   @{userData.username || userData.userId || user.uid.slice(0, 8)}
                 </p>
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-zinc-100 dark:bg-zinc-900 px-2.5 py-1 text-xs font-bold">
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-bold">
                   <Circle className={`h-2 w-2 fill-current ${userData.online ? "text-emerald-500" : "text-zinc-400"}`} />
                   {userData.online ? "Đang hoạt động" : "Ngoại tuyến"}
                 </div>
@@ -591,7 +592,7 @@ const handleUpdateName = async () => {
                 <span className="text-zinc-500">Cấp {gamification.level}</span>
                 <span className="text-zinc-400">{gamification.exp}/{gamification.nextLevelExp} XP</span>
               </div>
-              <div className="h-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+              <div className="h-2.5 rounded-full bg-zinc-100 overflow-hidden">
                 <div
                   className={`h-full rounded-full bg-gradient-to-r ${accentGradient} transition-all`}
                   style={{ width: `${xpPercent}%` }}
@@ -605,7 +606,7 @@ const handleUpdateName = async () => {
                 { label: "Hoàn thành", value: String(userData.stats?.completed ?? 0) },
                 { label: "Đánh giá", value: (userData.stats?.rating ?? gamification.stats.rating ?? 0).toFixed(1) },
               ].map((item) => (
-                <div key={item.label} className="rounded-xl bg-zinc-50 dark:bg-zinc-900 p-2.5 text-center ring-1 ring-black/[0.03] dark:ring-white/5">
+                <div key={item.label} className="rounded-xl bg-zinc-50 p-2.5 text-center ring-1 ring-zinc-100">
                   <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">{item.label}</p>
                   <p className="mt-0.5 text-base font-black">{item.value}</p>
                 </div>
@@ -621,9 +622,9 @@ const handleUpdateName = async () => {
                   key={action.href}
                   type="button"
                   onClick={() => router.push(action.href)}
-                  className="flex items-center gap-3 rounded-2xl bg-white dark:bg-zinc-950 p-4 text-left ring-1 ring-black/[0.04] dark:ring-white/10 active:scale-[0.98] transition-transform"
+                  className="flex items-center gap-3 rounded-2xl bg-white p-4 text-left ring-1 ring-zinc-200 active:scale-[0.98] transition-transform"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center">
                     <Icon className={`h-5 w-5 ${action.color}`} />
                   </div>
                   <span className="text-sm font-bold flex-1">{action.label}</span>
@@ -636,7 +637,7 @@ const handleUpdateName = async () => {
 
         <div className="px-4 mt-4 space-y-3">
           <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1">Tài khoản</p>
-          <div className="bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden ring-1 ring-black/[0.04] dark:ring-white/10">
+          <div className="bg-white rounded-2xl overflow-hidden ring-1 ring-zinc-200">
             <SettingItem
               label="Thông tin cá nhân"
               subtitle="Tên, SĐT, Email"
@@ -792,7 +793,7 @@ const handleUpdateName = async () => {
             />
           </div>
 
-          <div className="bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden ring-1 ring-black/[0.04] dark:ring-white/10 mt-3">
+          <div className="bg-white rounded-2xl overflow-hidden ring-1 ring-zinc-200 mt-3">
             <SettingItem
               label="Đăng xuất"
               icon={LogOut}
@@ -804,7 +805,7 @@ const handleUpdateName = async () => {
           {ADMIN_EMAILS.includes(user?.email || "") && (
             <>
               <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1 pt-2">Quản trị</p>
-              <div className="bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden ring-1 ring-black/[0.04] dark:ring-white/10">
+              <div className="bg-white rounded-2xl overflow-hidden ring-1 ring-zinc-200">
                 <SettingItem
                   label="Quản lý Events"
                   subtitle="Tạo và chỉnh sửa sự kiện"

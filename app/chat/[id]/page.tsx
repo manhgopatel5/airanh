@@ -19,6 +19,7 @@ import { toast, Toaster } from "sonner";
 import imageCompression from "browser-image-compression";
 import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
+import SharedTaskMessage from "@/components/chat/SharedTaskMessage";
 // === LINK PREVIEW ===
 function LinkPreview({ url }: { url: string }) {
   const [data, setData] = useState<any>(null);
@@ -105,7 +106,9 @@ fileUrl?: string;
   members?: string[];
   taskId?: string;
   taskTitle?: string;
+  taskType?: "task" | "plan";
   taskPrice?: number;
+  price?: number;
 };
 
 type ChatData = {
@@ -1573,28 +1576,12 @@ onClick={(e) => {
             )}
 
             <div className="relative">
-            {m.type === "task_share"? (
-  <div
-    onClick={() => router.push(`/task/${m.taskId}`)}
-    className={`px-4 py-3 shadow-sm cursor-pointer active:scale-95 transition rounded-2xl ${
-      isMe
-     ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
-        : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border border-gray-200 dark:border-zinc-700"
-    }`}
-  >
-    <p className="text-xs font-bold mb-1 opacity-80">
-      📋 Đã chia sẻ {m.taskPrice && m.taskPrice > 0? 'công việc' : 'kế hoạch'}
-    </p>
-    <p className="font-semibold leading-snug">{m.taskTitle}</p>
-    <p className={`text-sm font-bold mt-1 ${isMe? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>
-      {m.taskPrice && m.taskPrice > 0? `${m.taskPrice.toLocaleString()}đ` : 'Miễn phí'}
-    </p>
-    <p className={`text-xs mt-2 opacity-70`}>
-      Nhấn để xem chi tiết →
-    </p>
-  </div>
-
-) : (m.type === 'location' || m.location)? (
+            {m.type === "task_share" ? (
+              <SharedTaskMessage
+                {...(m.taskId ? { taskId: m.taskId } : {})}
+                taskType={m.taskType ?? ((m.taskPrice ?? m.price ?? 0) > 0 ? "task" : "plan")}
+              />
+            ) : (m.type === 'location' || m.location)? (
   // LOCATION - không bubble
   (() => {
     const lat = Number(m.lat?? m.location?.lat?? 0);

@@ -21,7 +21,6 @@ import {
   FiTrash2,
   FiUsers,
   FiWifi,
-  FiZap,
 } from "react-icons/fi";
 import { HiHeart, HiOutlineHeart } from "react-icons/hi2";
 import { TbCurrencyDong } from "react-icons/tb";
@@ -239,10 +238,35 @@ function TaskCard({
 
   const isOwner = currentUserId === task.userId;
 
+  const authorId = task.userId || (task as { ownerId?: string }).ownerId || "";
+  const authorName =
+    task.userName ||
+    (task as { displayName?: string }).displayName ||
+    (task as { name?: string }).name ||
+    "AIR user";
+  const authorAvatar =
+    task.userAvatar ||
+    (task as { photoURL?: string }).photoURL ||
+    (task as { avatar?: string }).avatar ||
+    null;
+
   const goToTask = useCallback(() => {
     vibrate();
     router.push(`/task/${task.id}`);
   }, [router, task.id]);
+
+  const goToProfile = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!authorId) {
+        toast.error("Không có thông tin người đăng");
+        return;
+      }
+      vibrate();
+      router.push(`/profile/${authorId}`);
+    },
+    [router, authorId]
+  );
 
   const getAuthToken = useCallback(async () => {
     const authUser = getFirebaseAuth().currentUser;
@@ -350,14 +374,14 @@ function TaskCard({
     : "focus-visible:ring-[#30D158]";
 
   return (
-    <article className={cn("group w-full", className)}>
+    <article className={cn("group w-full mb-3", className)}>
       <div className="relative">
         <div
-          className="absolute -inset-px rounded-[18px] opacity-80"
+          className="absolute -inset-px rounded-[18px] opacity-90"
           style={{ background: accent }}
         />
 
-        <div className="relative overflow-hidden rounded-[18px] bg-white shadow-[0_8px_28px_-8px_rgba(0,0,0,0.14)] ring-1 ring-black/[0.04] transition-[transform,box-shadow] duration-200 active:scale-[0.99] dark:bg-zinc-950 dark:shadow-black/40 dark:ring-white/[0.06]">
+        <div className="relative overflow-hidden rounded-[18px] border border-zinc-200/90 bg-white shadow-[0_10px_32px_-10px_rgba(0,0,0,0.18)] ring-1 ring-black/[0.06] transition-[transform,box-shadow] duration-200 active:scale-[0.99] dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-black/50 dark:ring-white/[0.08]">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-black/[0.02] dark:from-white/[0.03]" />
 
           <div className="relative p-2.5 pb-2">
@@ -365,20 +389,20 @@ function TaskCard({
               <div className="flex min-w-0 items-center gap-2">
                 <button
                   type="button"
-                  onClick={goToTask}
+                  onClick={goToProfile}
                   className={cn("relative shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2", ringClass)}
                 >
                   <UserAvatar
-                    src={task.userAvatar}
-                    name={task.userName || "AIR"}
+                    src={authorAvatar}
+                    name={authorName}
                     size={34}
                     className="rounded-lg ring-2 ring-white shadow-sm dark:ring-zinc-950"
                   />
                   {task.userVerified && <FiCheckCircle className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-white dark:bg-zinc-950" style={{ color: accent }} />}
                 </button>
                 <div className="min-w-0">
-                  <button type="button" onClick={goToTask} className="block text-left">
-                    <p className="truncate text-[13px] font-bold text-zinc-950 hover:underline dark:text-white">{task.userName || "AIR user"}</p>
+                  <button type="button" onClick={goToProfile} className="block text-left">
+                    <p className="truncate text-[13px] font-bold text-zinc-950 hover:underline dark:text-white">{authorName}</p>
                   </button>
                   <p className="truncate text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{derived.timeAgo}</p>
                 </div>
@@ -401,17 +425,9 @@ function TaskCard({
             </div>
 
             <button type="button" onClick={goToTask} className={cn("block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 rounded-lg", ringClass)}>
-              <div className="flex items-start gap-1.5">
-                <h3 className="line-clamp-2 flex-1 text-[15px] font-bold leading-snug tracking-tight text-zinc-950 dark:text-white">
-                  {task.title}
-                </h3>
-                {derived.isUrgent && (
-                  <span className="mt-0.5 inline-flex shrink-0 items-center gap-0.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white shadow-sm">
-                    <FiZap className="h-2.5 w-2.5" />
-                    Gấp
-                  </span>
-                )}
-              </div>
+              <h3 className="line-clamp-2 text-[15px] font-bold leading-snug tracking-tight text-zinc-950 dark:text-white">
+                {task.title}
+              </h3>
               {derived.description && (
                 <p className="mt-0.5 line-clamp-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
                   {derived.description}
@@ -480,15 +496,15 @@ function TaskCard({
             </div>
           </div>
 
-          <div className="grid grid-cols-[1fr_auto] items-center gap-2 border-t border-zinc-100 px-1.5 py-1 dark:border-zinc-800/80">
-            <div className="grid grid-cols-4 gap-0.5">
+          <div className="flex items-center justify-between gap-2 border-t border-zinc-100 px-2 py-1 dark:border-zinc-800/80">
+            <div className="flex items-center gap-0">
               <button
                 type="button"
                 aria-label={liked? "Bỏ thích" : "Thích"}
                 aria-pressed={liked}
                 onClick={(e) => { e.stopPropagation(); handleLike(); }}
                 disabled={liking}
-                className={cn("flex h-9 flex-col items-center justify-center gap-0 rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
+                className={cn("flex h-9 w-9 flex-col items-center justify-center gap-0 rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
               >
                 {liked? <HiHeart className="h-4 w-4 text-red-500" /> : <HiOutlineHeart className="h-4 w-4" />}
                 <span className="text-[10px] font-bold leading-none">{task.likeCount || 0}</span>
@@ -497,7 +513,7 @@ function TaskCard({
                 type="button"
                 aria-label="Bình luận"
                 onClick={goToTask}
-                className={cn("flex h-9 flex-col items-center justify-center gap-0 rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
+                className={cn("flex h-9 w-9 flex-col items-center justify-center gap-0 rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
               >
                 <FiMessageCircle className="h-4 w-4" />
                 <span className="text-[10px] font-bold leading-none">{task.commentCount || 0}</span>
@@ -506,7 +522,7 @@ function TaskCard({
                 type="button"
                 aria-label="Chia sẻ"
                 onClick={(e) => { e.stopPropagation(); vibrate(8); onShare?.(task); }}
-                className={cn("flex h-9 items-center justify-center rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
+                className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
               >
                 <FiShare2 className="h-4 w-4" />
               </button>
@@ -516,13 +532,13 @@ function TaskCard({
                 aria-pressed={isSaved}
                 onClick={(e) => { e.stopPropagation(); handleSave(); }}
                 disabled={saving}
-                className={cn("flex h-9 items-center justify-center rounded-lg text-zinc-500 transition active:scale-95 disabled:opacity-50 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
+                className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 transition active:scale-95 disabled:opacity-50 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
               >
                 <FiBookmark className={cn("h-4 w-4", isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
               </button>
             </div>
 
-            <div className="flex max-w-[46%] items-center justify-end gap-1">
+            <div className="flex min-w-0 items-center justify-end gap-1">
               {derived.categoryLabel && (
                 <div
                   className="flex max-w-[72px] items-center gap-0.5 rounded-md px-1.5 py-1 text-[10px] font-bold text-white shadow-sm"

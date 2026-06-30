@@ -98,7 +98,7 @@ type RankData = {
 export default function PublicProfile() {
   const { uid } = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const db = getFirebaseDB();
   const [showUserInfo, setShowUserInfo] = useState(false);
   const [targetUser, setTargetUser] = useState<PublicUser | null>(null);
@@ -189,7 +189,12 @@ const Divider = () => <div className="h-px bg-zinc-100 ml-[52px]" />;
   const isOwnProfile = user?.uid === uid;
 
 const fetchUser = useCallback(async () => {
-  if (!uid || !user || typeof uid !== 'string') return; // THÊM typeof
+  if (!uid || typeof uid !== 'string' || uid === 'undefined') {
+    setLoading(false);
+    return;
+  }
+
+  if (!user) return;
 
   try {
     const [userSnap, currentUserSnap] = await Promise.all([
@@ -203,9 +208,12 @@ const fetchUser = useCallback(async () => {
       return;
     }
 
+    const raw = userSnap.data();
     const data = {
       uid: userSnap.id,
-      ...userSnap.data(),
+      ...raw,
+      name: raw.displayName || raw.name || raw.username || "Unknown User",
+      avatar: raw.photoURL || raw.avatar || "",
     } as PublicUser;
 
     setTargetUser(data);
@@ -251,8 +259,14 @@ if (!friendSnap.exists()) {
   
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      router.replace("/login");
+      return;
+    }
     fetchUser();
-  }, [fetchUser]);
+  }, [fetchUser, authLoading, user, router]);
 
   const handleConnect = async () => {
   if (!user || !targetUser || actionLoading) return;

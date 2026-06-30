@@ -23,9 +23,23 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
+    let userName = d.userName || d.displayName || d.name || ''
+    let userAvatar = d.userAvatar || d.photoURL || d.avatar || null
+
+    if ((!userName || !userAvatar) && d.userId) {
+      const userSnap = await adminDb().collection('users').doc(d.userId).get()
+      if (userSnap.exists) {
+        const u = userSnap.data()!
+        if (!userName) userName = u.displayName || u.name || u.username || ''
+        if (!userAvatar) userAvatar = u.photoURL || u.avatar || null
+      }
+    }
+
     const task: FeedTask = {
       id: snap.id,
      ...d,
+      userName,
+      userAvatar,
       createdAt: d.createdAt?.toDate?.()?.toISOString() || null,
       updatedAt: d.updatedAt?.toDate?.()?.toISOString() || null,
       deadline: d.deadline?.toDate?.()?.toISOString() || null,
