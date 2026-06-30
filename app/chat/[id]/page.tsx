@@ -21,9 +21,9 @@ import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
 // === LINK PREVIEW ===
 function LinkPreview({ url }: { url: string }) {
-  const [data, setData] = React.useState<any>(null);
+  const [data, setData] = useState<any>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetch(`/api/link-preview?url=${encodeURIComponent(url)}`)
      .then(r => r.json())
      .then(setData);
