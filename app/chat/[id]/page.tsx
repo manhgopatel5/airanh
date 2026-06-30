@@ -1208,7 +1208,7 @@ useEffect(() => {
                           </a>
                         )}
 
-      {(m.type === 'location' || m.location) && (() => {
+  {(m.type === 'location' || m.location) && (() => {
   const lat = m.lat?? m.location?.lat;
   const lng = m.lng?? m.location?.lng;
   const address = m.address;
@@ -1219,48 +1219,35 @@ useEffect(() => {
       href={`https://www.google.com/maps?q=${lat},${lng}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="block w-[250px] sm:w-[270px] my-1 group"
+      className="block w-[260px] my-1"
     >
-      <div className={`
-        relative rounded-[20px] p-[2px] transition-all duration-300 group-hover:scale-[1.02] group-active:scale-[0.98]
-        ${isMe
-         ? 'bg-gradient-to-br from-[#4F7DFF] to-[#8B5CF6] shadow-lg shadow-indigo-500/20'
-          : 'bg-zinc-200 dark:bg-zinc-700 shadow-md'
-        }
-      `}>
-        <div className={`
-          rounded-[18px] overflow-hidden backdrop-blur-xl
-          ${isMe? 'bg-white/10' : 'bg-white dark:bg-zinc-900'}
-        `}>
-          {/* MAP */}
-          <div className="relative h-[140px] w-full">
-            <img
-              src={`https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=16&size=400x200&markers=${lat},${lng},red-pushpin`}
-              alt="location"
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-
-            {/* Pin */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div className="w-10 h-10 rounded-full bg-white shadow-xl flex items-center justify-center">
-                <MapPin size={18} className="text-[#4F7DFF]" fill="#4F7DFF" />
-              </div>
-              <div className="absolute inset-0 rounded-full bg-[#4F7DFF]/30 animate-ping" />
+      <div className="overflow-hidden rounded- shadow-lg">
+        {/* BẢN ĐỒ THẬT */}
+        <div className="relative h-[150px] w-full bg-zinc-200 dark:bg-zinc-800">
+          <iframe
+            src={`https://maps.google.com/maps?q=${lat},${lng}&z=16&output=embed`}
+            className="absolute inset-0 w-full h-full border-0"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+          {/* Pin đỏ giữa */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+            <div className="w-9 h-9 bg-white rounded-full shadow-xl flex items-center justify-center">
+              <MapPin size={16} className="text-[#FF3B30]" fill="#FF3B30" />
             </div>
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white rotate-45" />
           </div>
+        </div>
 
-          {/* INFO */}
-          <div className="p-3">
-            <p className={`text-[14px] font-semibold leading-tight ${isMe? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
-              {address || 'Vị trí đã chia sẻ'}
-            </p>
-            <p className={`text-[12px] mt-1 flex items-center gap-1 ${isMe? 'text-white/70' : 'text-zinc-500 dark:text-zinc-400'}`}>
-              <Navigation size={12} />
-              Nhấn để mở Google Maps
-            </p>
-          </div>
+        {/* INFO GỌN */}
+        <div className={isMe? "bg-[#0A84FF] px-3 py-2" : "bg-white dark:bg-zinc-900 px-3 py-2"}>
+          <p className={`text- font-medium truncate ${isMe? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
+            {address || 'Vị trí đã chia sẻ'}
+          </p>
+          <p className={`text- flex items-center gap-1 mt-0.5 ${isMe? 'text-white/70' : 'text-zinc-500 dark:text-zinc-400'}`}>
+            <Navigation size={11} />
+            Nhấn để mở bản đồ
+          </p>
         </div>
       </div>
     </a>
