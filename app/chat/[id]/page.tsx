@@ -816,12 +816,12 @@ useEffect(() => {
 
   <Toaster richColors position="top-center" />
 {showSearch && (
-  <div className="fixed inset-0 z-[200] bg-black flex flex-col">
+  <div className="fixed inset-0 z-[200] bg-white flex flex-col">
     {/* HEADER */}
-    <div className="shrink-0 bg-[#1c1c1e] border-b border-white/10" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
+    <div className="shrink-0 bg-white border-b border-zinc-200" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
       <div className="flex items-center gap-3 px-3 py-2.5">
         <div className="flex-1 relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
           <input
             ref={searchInputRef}
             value={searchQuery}
@@ -834,15 +834,15 @@ useEffect(() => {
               if (e.key === 'Enter' && searchQuery) { goToNextResult(); }
             }}
             placeholder="Tìm trong cuộc trò chuyện"
-            className="w-full h-9 pl-9 pr-8 bg-[#2c2c2e] text-[15px] text-white placeholder:text-white/40 rounded-lg outline-none"
+            className="w-full h-9 pl-9 pr-8 bg-zinc-100 text-[15px] text-zinc-900 placeholder:text-zinc-400 rounded-lg outline-none focus:ring-2 focus:ring-[#0A84FF]/30"
             autoFocus
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/15 flex items-center justify-center"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-zinc-300 flex items-center justify-center active:scale-90"
             >
-              <X size={12} className="text-white/70" />
+              <X size={12} className="text-zinc-600" />
             </button>
           )}
         </div>
@@ -856,26 +856,26 @@ useEffect(() => {
 
       {/* THANH ĐẾM */}
       {searchQuery && (
-        <div className="flex items-center justify-between px-4 py-2 border-t border-white/5">
-          <span className="text-[14px] text-white/55">
+        <div className="flex items-center justify-between px-4 py-2 border-t border-zinc-100 bg-zinc-50">
+          <span className="text-[14px] text-zinc-500">
             {filteredMessages.length > 0
-            ? `${currentResultIndex + 1} / ${filteredMessages.length}`
+             ? `${currentResultIndex + 1} / ${filteredMessages.length}`
               : 'Không tìm thấy'}
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={goToPrevResult}
               disabled={filteredMessages.length === 0}
-              className="w-7 h-7 rounded-md bg-white/10 disabled:opacity-30 flex items-center justify-center active:scale-95"
+              className="w-7 h-7 rounded-md bg-zinc-200 disabled:opacity-30 flex items-center justify-center active:scale-95 hover:bg-zinc-300"
             >
-              <ChevronUp size={16} className="text-white/80" />
+              <ChevronUp size={16} className="text-zinc-700" />
             </button>
             <button
               onClick={goToNextResult}
               disabled={filteredMessages.length === 0}
-              className="w-7 h-7 rounded-md bg-white/10 disabled:opacity-30 flex items-center justify-center active:scale-95"
+              className="w-7 h-7 rounded-md bg-zinc-200 disabled:opacity-30 flex items-center justify-center active:scale-95 hover:bg-zinc-300"
             >
-              <ChevronDown size={16} className="text-white/80" />
+              <ChevronDown size={16} className="text-zinc-700" />
             </button>
           </div>
         </div>
@@ -883,17 +883,17 @@ useEffect(() => {
     </div>
 
     {/* LIST */}
-    <div className="flex-1 overflow-y-auto bg-black">
+    <div className="flex-1 overflow-y-auto bg-white">
       {!searchQuery? (
         <div className="flex flex-col items-center justify-center h-full -mt-20 px-4">
-          <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-3">
-            <Search size={24} className="text-white/30" />
+          <div className="w-14 h-14 rounded-full bg-zinc-100 flex items-center justify-center mb-3">
+            <Search size={24} className="text-zinc-400" />
           </div>
-          <p className="text-[15px] text-white/60">Tìm kiếm tin nhắn</p>
+          <p className="text-[15px] text-zinc-500">Tìm kiếm tin nhắn</p>
         </div>
       ) : filteredMessages.length === 0? (
         <div className="pt-20 text-center px-4">
-          <p className="text-[15px] text-white/40">Không có kết quả cho "{searchQuery}"</p>
+          <p className="text-[15px] text-zinc-400">Không có kết quả cho "{searchQuery}"</p>
         </div>
       ) : (
         <div>
@@ -910,30 +910,33 @@ useEffect(() => {
                   setTimeout(() => {
                     const el = document.getElementById(`msg-${msg.id}`);
                     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    el?.classList.add('ring-2', 'ring-[#0A84FF]/60');
-                    setTimeout(() => el?.classList.remove('ring-2', 'ring-[#0A84FF]/60'), 1500);
+                    const bubble = el?.querySelector('div[class*="bg-gradient"], div[class*="bg-white"], div[class*="dark:bg-zinc"]');
+                    bubble?.classList.add('!bg-yellow-200', 'transition-colors', 'duration-300');
+                    setTimeout(() => {
+                      bubble?.classList.remove('!bg-yellow-200');
+                    }, 1500);
                   }, 100);
                 }}
-                className={`w-full text-left px-4 py-3 border-b border-white/5 active:bg-white/5 ${
-                  idx === currentResultIndex? 'bg-[#0A84FF]/20' : ''
+                className={`w-full text-left px-4 py-3 border-b border-zinc-100 active:bg-zinc-50 ${
+                  idx === currentResultIndex? 'bg-zinc-100' : 'hover:bg-zinc-50'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <img
                     src={isMe? (user?.photoURL || '/default-avatar.png') : (friend?.avatar || '/default-avatar.png')}
-                    className="w-9 h-9 rounded-full object-cover mt-0.5"
+                    className="w-9 h-9 rounded-full object-cover mt-0.5 ring-1 ring-zinc-200"
                     alt=""
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-[15px] font-medium text-white truncate">
+                      <span className="text-[15px] font-medium text-zinc-900 truncate">
                         {isMe? 'Bạn' : friend?.name}
                       </span>
-                      <span className="text-[13px] text-white/40">
+                      <span className="text-[13px] text-zinc-400">
                         {formatTime(msg.createdAt)}
                       </span>
                     </div>
-                    <p className="text-[14px] text-white/65 mt-1 line-clamp-2">
+                    <p className="text-[14px] text-zinc-600 mt-1 line-clamp-2">
                       {preview}
                     </p>
                   </div>
@@ -1074,77 +1077,76 @@ useEffect(() => {
 )}
 {/* Action Menu */}
 {longPressMsg && (
-  <div className="fixed inset-0 z-[200] flex items-end justify-center sm:items-center">
-    {/* Backdrop */}
+  <div className="fixed inset-0 z-[200] flex items-end justify-center sm:items-center pb-6">
+    {/* Backdrop mờ */}
     <div
-      className="absolute inset-0 bg-black/40 backdrop-blur-xl animate-in fade-in duration-200"
+      className="absolute inset-0 bg-black/40 backdrop-blur-xl"
       onClick={() => setLongPressMsg(null)}
     />
 
-    <div className="relative w-full max-w-[375px] px-4 pb-6 sm:pb-0" onClick={e => e.stopPropagation()}>
-      {/* REACTION BAR - chỉ 6 emoji, bỏ + và nút xanh */}
-      <div className="bg-white rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.15)] px-2 py-2 flex items-center justify-center gap-0.5 mb-3 mx-auto w-fit animate-in zoom-in-95 slide-in-from-bottom-2 duration-250">
-        {["❤️","😆","😮","😢","😡","👍"].map((emoji, i) => (
+    <div className="relative w-full max-w-[320px] px-4" onClick={e => e.stopPropagation()}>
+      {/* THANH REACTION - 6 emoji y hệt ảnh */}
+      <div className="bg-white rounded-full shadow-xl px-2.5 py-2 flex items-center justify-between mb-2.5 mx-auto">
+        {["❤️","😆","😮","😢","😡","👍"].map((emoji) => (
           <button
             key={emoji}
             onClick={() => { toggleReaction(longPressMsg.id, emoji); setLongPressMsg(null); }}
-            className="w-[48px] h-[48px] flex items-center justify-center text-[28px] active:scale-110 hover:bg-gray-100 rounded-full transition-all duration-150"
-            style={{ animationDelay: `${i * 40}ms` }}
+            className="w-11 h-11 flex items-center justify-center text-[26px] active:scale-110 rounded-full hover:bg-zinc-100 transition"
           >
             {emoji}
           </button>
         ))}
       </div>
 
-      {/* MENU - đồng bộ font với ảnh 2-3 */}
-      <div className="bg-white rounded-[14px] shadow-[0_10px_40px_rgba(0,0,0,0.2)] overflow-hidden animate-in slide-in-from-bottom-3 zoom-in-95 duration-300">
-        <div className="divide-y divide-[#e5e5ea]">
+      {/* MENU TRẮNG */}
+      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="divide-y divide-zinc-200/80">
           {longPressMsg.senderId === user?.uid && (
             <button
               onClick={() => { setEditingMsg(longPressMsg); setText(longPressMsg.text || ''); setLongPressMsg(null); setTimeout(() => inputRef.current?.focus(), 100); }}
-              className="w-full flex items-center justify-between px-4 h-[48px] active:bg-[#f2f2f7] transition-colors"
+              className="w-full flex items-center justify-between px-4 h-[48px] active:bg-zinc-100"
             >
-              <span className="text-[17px] leading-[22px] text-black font-normal tracking-[-0.2px]">Chỉnh sửa</span>
-              <Pencil size={22} className="text-[#8e8e93]" strokeWidth={1.7} />
+              <span className="text-[17px] text-black font-[-apple-system]">Chỉnh sửa</span>
+              <Pencil size={20} className="text-[#8e8e93]" strokeWidth={1.8} />
             </button>
           )}
 
           <button
             onClick={() => { setReplyTo(longPressMsg); setLongPressMsg(null); }}
-            className="w-full flex items-center justify-between px-4 h-[48px] active:bg-[#f2f2f7] transition-colors"
+            className="w-full flex items-center justify-between px-4 h-[48px] active:bg-zinc-100"
           >
-            <span className="text-[17px] leading-[22px] text-black font-normal tracking-[-0.2px]">Trả lời</span>
-            <Reply size={22} className="text-[#8e8e93] scale-x-[-1]" strokeWidth={1.7} />
+            <span className="text-[17px] text-black">Trả lời</span>
+            <Reply size={20} className="text-[#8e8e93] scale-x-[-1]" strokeWidth={1.8} />
           </button>
 
           <button
             onClick={() => { navigator.clipboard.writeText(longPressMsg.text || ''); toast.success('Đã sao chép'); setLongPressMsg(null); }}
-            className="w-full flex items-center justify-between px-4 h-[48px] active:bg-[#f2f2f7] transition-colors"
+            className="w-full flex items-center justify-between px-4 h-[48px] active:bg-zinc-100"
           >
-            <span className="text-[17px] leading-[22px] text-black font-normal tracking-[-0.2px]">Sao chép</span>
-            <Copy size={21} className="text-[#8e8e93]" strokeWidth={1.7} />
+            <span className="text-[17px] text-black">Sao chép</span>
+            <Copy size={20} className="text-[#8e8e93]" strokeWidth={1.8} />
           </button>
         </div>
 
-        {/* Divider dày như ảnh */}
+        {/* Divider dày */}
         <div className="h-[8px] bg-[#f2f2f7]" />
 
-        <div className="divide-y divide-[#e5e5ea]">
+        <div className="divide-y divide-zinc-200/80">
           <button
             onClick={() => handlePinMessage(longPressMsg)}
-            className="w-full flex items-center justify-between px-4 h-[48px] active:bg-[#f2f2f7] transition-colors"
+            className="w-full flex items-center justify-between px-4 h-[48px] active:bg-zinc-100"
           >
-            <span className="text-[17px] leading-[22px] text-black font-normal tracking-[-0.2px]">Ghim</span>
-            <Pin size={22} className="text-[#8e8e93]" strokeWidth={1.7} />
+            <span className="text-[17px] text-black">Ghim</span>
+            <Pin size={20} className="text-[#8e8e93]" strokeWidth={1.8} />
           </button>
 
           {longPressMsg.senderId === user?.uid && (
             <button
               onClick={() => handleDeleteMessage(longPressMsg.id)}
-              className="w-full flex items-center justify-between px-4 h-[48px] active:bg-[#ff3b30]/10 transition-colors"
+              className="w-full flex items-center justify-between px-4 h-[48px] active:bg-red-50"
             >
-              <span className="text-[17px] leading-[22px] text-[#ff3b30] font-normal tracking-[-0.2px]">Xóa, gỡ</span>
-              <Trash2 size={22} className="text-[#ff3b30]" strokeWidth={1.7} />
+              <span className="text-[17px] text-[#ff3b30]">Xóa, gỡ</span>
+              <Trash2 size={20} className="text-[#ff3b30]" strokeWidth={1.8} />
             </button>
           )}
         </div>
@@ -1495,25 +1497,7 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
           );
         })}
 
-    {chatData?.typing?.[friendId || ""] && (
-  <div className="flex items-end gap-2 px-3 mb-2 animate-in fade-in duration-200">
-    <img
-      src={friend.avatar || '/default-avatar.png'}
-      className="w-6 h-6 rounded-full object-cover"
-      alt=""
-    />
-    <div className="bg-[#2a2a2a] px-3.5 py-2 rounded-">
-      <span className="flex items-baseline gap-0.5">
-        <span className="text- text-white/80 italic">Đang nhắn</span>
-        <span className="flex gap-0.5 ml-0.5">
-          <span className="text-white/80 animate-pulse" style={{animationDelay:'0ms'}}>.</span>
-          <span className="text-white/80 animate-pulse" style={{animationDelay:'200ms'}}>.</span>
-          <span className="text-white/80 animate-pulse" style={{animationDelay:'400ms'}}>.</span>
-        </span>
-      </span>
-    </div>
-  </div>
-)}
+ 
         <div ref={messagesEndRef} />
       </div>
 
@@ -1671,36 +1655,48 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
 
 {/* INPUT */}
 <div
-  className="shrink-0 z-30 px-3"
+  className="shrink-0 z-30 px-3 relative"
   style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
 >
-  <div className="flex items-center gap-1 h-[48px] px-2 bg-white/95 dark:bg-zinc-900/90 backdrop-blur-2xl rounded-full shadow-[0_8px_24px_-8px_rgba(0,0,0,0.18)] border border-zinc-200/70 dark:border-zinc-800">
+  {/* HIỂN THỊ TÊN ĐANG NHẮN - không avatar */}
+  {chatData?.typing?.[friendId || ""] && (
+    <div className="absolute -top-6 left-6 flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-400 italic pointer-events-none">
+      <span>{friend.name} đang nhắn</span>
+      <span className="flex gap-0.5">
+        <span className="animate-bounce [animation-delay:-0.3s]">.</span>
+        <span className="animate-bounce [animation-delay:-0.15s]">.</span>
+        <span className="animate-bounce">.</span>
+      </span>
+    </div>
+  )}
+
+  <div className="flex items-center gap-1 h-[48px] px-2.5 bg-white dark:bg-zinc-900 backdrop-blur-2xl rounded-full shadow-[0_8px_24px_-8px_rgba(0,0,0,0.15)] border border-zinc-200 dark:border-zinc-800">
 
     {/* 1. Ảnh */}
     <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])} />
     <button
       onClick={() => imageInputRef.current?.click()}
       disabled={isBlocked || isDeleted}
-      className={`w-8 h-8 flex items-center justify-center rounded-full active:scale-90 shrink-0 ${isBlocked || isDeleted? 'opacity-40' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
+      className={`w-8 h-8 flex items-center justify-center rounded-full active:scale-90 shrink-0 ${isBlocked || isDeleted? 'opacity-40' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
     >
       <ImageIcon size={20} className="text-[#0084FF]" strokeWidth={2.2} />
     </button>
 
-    {/* 2. VỊ TRÍ - THÊM MỚI BÊN TRÁI */}
+    {/* 2. Vị trí */}
     <button
       onClick={sendLocation}
       disabled={isBlocked || isDeleted}
-      className={`w-8 h-8 flex items-center justify-center rounded-full active:scale-90 shrink-0 ${isBlocked || isDeleted? 'opacity-40' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
+      className={`w-8 h-8 flex items-center justify-center rounded-full active:scale-90 shrink-0 ${isBlocked || isDeleted? 'opacity-40' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
     >
       <MapPin size={20} className="text-[#0084FF]" strokeWidth={2.2} />
     </button>
 
-    {/* 3. File (chỉ desktop) */}
+    {/* 3. File desktop */}
     <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
     <button
       onClick={() => fileInputRef.current?.click()}
       disabled={isBlocked || isDeleted}
-      className={`w-8 h-8 hidden sm:flex items-center justify-center rounded-full active:scale-90 shrink-0 ${isBlocked || isDeleted? 'opacity-40' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
+      className={`w-8 h-8 hidden sm:flex items-center justify-center rounded-full active:scale-90 shrink-0 ${isBlocked || isDeleted? 'opacity-40' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
     >
       <Paperclip size={18} className="text-zinc-500 dark:text-zinc-400" />
     </button>
@@ -1713,13 +1709,21 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
         onChange={(e) => { setText(e.target.value); handleTyping(); }}
         onKeyDown={(e) => { if (e.key === 'Enter' &&!e.shiftKey) { e.preventDefault(); if (!isBlocked &&!isDeleted && text.trim()) sendMessage(); } }}
         disabled={isBlocked || isDeleted}
-        placeholder={isBlocked? 'Bạn không thể nhắn tin' : isDeleted? 'Đã xóa' : 'Nhắn tin...'}
+        placeholder={
+          chatData?.typing?.[friendId || ""]
+           ? `${friend.name} đang nhắn...`
+            : isBlocked
+             ? 'Bạn không thể nhắn tin'
+              : isDeleted
+               ? 'Đã xóa'
+                : 'Nhắn tin...'
+        }
         className="w-full h-full bg-transparent outline-none border-0 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 pr-9"
       />
       <button
         onClick={sendMessage}
         disabled={sending || isBlocked || isDeleted ||!text.trim()}
-        className="absolute right-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-[#0084FF] hover:bg-[#0073e6] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40"
+        className="absolute right-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-[#0084FF] hover:bg-[#0073e6] text-white rounded-full flex items-center justify-center active:scale-90 disabled:opacity-40 transition"
       >
         {sending? <Loader2 size={14} className="animate-spin" /> : <Send size={14} strokeWidth={2.5} />}
       </button>
