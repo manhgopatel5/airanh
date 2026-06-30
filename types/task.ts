@@ -75,9 +75,11 @@ export type BaseItem = {
   location?: {
     country?: string;
     city?: string;
+    district?: string;
+    ward?: string;
     address?: string;
-    lat?: number; 
-    lng?: number; 
+    lat?: number;
+    lng?: number;
   };
 
   // Search

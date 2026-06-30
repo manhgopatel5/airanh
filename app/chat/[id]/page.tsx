@@ -20,6 +20,8 @@ import imageCompression from "browser-image-compression";
 import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
 import SharedTaskMessage from "@/components/chat/SharedTaskMessage";
+import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geolocation";
+import { formatShortLocation } from "@/lib/mapboxGeocode";
 // === LINK PREVIEW ===
 function LinkPreview({ url }: { url: string }) {
   const [data, setData] = useState<any>(null);
@@ -90,6 +92,8 @@ fileUrl?: string;
   lat?: number;
   lng?: number;
   address?: string;
+  ward?: string;
+  city?: string;
   accuracy?: number;
 
   type: "text" | "image" | "file" | "location" | "task_share";
@@ -637,69 +641,58 @@ const sendFile = async (file: File) => {
     if (!chatData) toast.error("Đang tải dữ liệu chat...");
     return;
   }
-  if (!navigator.geolocation) {
-    toast.error("Trình duyệt không hỗ trợ định vị");
-    return;
-  }
 
   setUploading(true);
   const toastId = toast.loading("Đang lấy vị trí...");
 
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const { latitude, longitude, accuracy } = pos.coords;
-      try {
-        // Reverse geocode OSM
-        let address = '';
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-            { headers: { 'Accept-Language': 'vi' } }
-          );
-          const data = await res.json();
-          address = data.address?.road
-           ? `${data.address.road}, ${data.address.city || data.address.town || data.address.village || ''}`
-            : data.display_name?.split(',').slice(0,2).join(', ');
-        } catch {}
+  try {
+    const { lat: latitude, lng: longitude, accuracy } = await getCurrentPosition();
 
-        await addDoc(collection(db, "chats", chatId, "messages"), {
-          senderId: user.uid,
-          senderName: user.displayName || user.email?.split('@')[0] || 'Bạn',
-          type: "location",
-          text: '', // <-- thêm để tránh lỗi text undefined
-          lat: latitude,
-          lng: longitude,
-          location: { lat: latitude, lng: longitude }, // <-- thêm để tương thích UI cũ
-          address: address || 'Vị trí đã chia sẻ',
-          accuracy,
-          createdAt: serverTimestamp(),
-          seenBy: [user.uid],
-          members: chatData.members,
-        });
-
-        await updateDoc(doc(db, "chats", chatId), {
-          lastMessage: '📍 Vị trí',
-          lastMessageAt: serverTimestamp(),
-        });
-
-        toast.dismiss(toastId);
-        toast.success("Đã gửi vị trí");
-      } catch (err: any) {
-        console.error(err);
-        toast.dismiss(toastId);
-        toast.error(`Lỗi gửi vị trí`);
-      } finally {
-        setUploading(false);
+    let address = "Vị trí đã chia sẻ";
+    let ward: string | undefined;
+    let city: string | undefined;
+    try {
+      const res = await fetch(`/api/places/geocode?lat=${latitude}&lng=${longitude}`);
+      const data = await res.json();
+      if (res.ok) {
+        address = data.address || address;
+        ward = data.ward;
+        city = data.city;
       }
-    },
-    (err) => {
-      console.error(err);
-      toast.dismiss(toastId);
-      toast.error("Không lấy được vị trí. Hãy bật GPS");
-      setUploading(false);
-    },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-  );
+    } catch {}
+
+    await addDoc(collection(db, "chats", chatId, "messages"), {
+      senderId: user.uid,
+      senderName: user.displayName || user.email?.split('@')[0] || 'Bạn',
+      type: "location",
+      text: '',
+      lat: latitude,
+      lng: longitude,
+      location: { lat: latitude, lng: longitude },
+      address,
+      ward,
+      city,
+      accuracy,
+      createdAt: serverTimestamp(),
+      seenBy: [user.uid],
+      members: chatData.members,
+    });
+
+    await updateDoc(doc(db, "chats", chatId), {
+      lastMessage: '📍 Vị trí',
+      lastMessageAt: serverTimestamp(),
+    });
+
+    toast.dismiss(toastId);
+    toast.success("Đã gửi vị trí");
+  } catch (err: unknown) {
+    console.error(err);
+    toast.dismiss(toastId);
+    const message = err instanceof Error ? err.message : "Không lấy được vị trí";
+    toast.error(message, { duration: message === GEO_PERMISSION_DENIED_MESSAGE ? 6000 : 4000 });
+  } finally {
+    setUploading(false);
+  }
 };
   const toggleReaction = async (msgId: string, emoji: string) => {
     if (!user ||!chatId) return;
@@ -1597,7 +1590,15 @@ onClick={(e) => {
               <img src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},16/360x220@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`} className="w-full h-full object-cover" alt="" />
             </div>
             <div className="bg-white dark:bg-zinc-900 px-2.5 py-2">
-              <p className="text-[10px] leading-none flex items-center justify-center gap-1 text-zinc-500 dark:text-zinc-400">
+              <p className="text-[11px] font-semibold leading-snug text-zinc-700 dark:text-zinc-200 line-clamp-2">
+                {formatShortLocation({
+                  ...(m.ward ? { ward: m.ward } : {}),
+                  ...(m.city ? { city: m.city } : {}),
+                }) ||
+                  m.address ||
+                  "Vị trí đã chia sẻ"}
+              </p>
+              <p className="text-[10px] leading-none flex items-center justify-center gap-1 text-zinc-500 dark:text-zinc-400 mt-1">
                 <Navigation size={10} strokeWidth={2.5} />
                 Nhấn để mở bản đồ
               </p>

@@ -32,6 +32,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { getTaskAuthorId, getTaskAuthorName, getTaskAuthorAvatar } from "@/lib/task/author";
 import { useProvinces } from "@/lib/useProvinces";
 import { getCategoryMeta } from "@/lib/taskCategories";
+import { formatShortLocation } from "@/lib/mapboxGeocode";
 import TaskAssigneeActions from "@/components/task/TaskAssigneeActions";
 
 
@@ -170,7 +171,14 @@ function TaskCard({
 
   const cityKey = task.location?.city || "";
   const rawProvinceName = provinceMap.get(cityKey) || cityKey || "";
-  const provinceName = rawProvinceName.replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "").trim();
+  const provinceName =
+    formatShortLocation({
+      ...(task.location?.ward ? { ward: task.location.ward } : {}),
+      ...(rawProvinceName || task.location?.city
+        ? { city: rawProvinceName || task.location?.city }
+        : {}),
+    }) ||
+    rawProvinceName.replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "").trim();
   
   const categoryData = getCategoryMeta(task.category, task.type === "plan" ? "plan" : "task");
   const coverImage = task.images?.[0];
@@ -392,11 +400,6 @@ function TaskCard({
                 </p>
               )}
               <div className="mt-1.5 flex flex-wrap gap-1">
-                {derived.isFull && (
-                  <span className="inline-flex items-center rounded-md bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:text-red-400">
-                    Đầy
-                  </span>
-                )}
                 {derived.isNearDeadline && !derived.isUrgent && isTaskTheme && (
                   <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
                     <FiClock className="h-2.5 w-2.5" /> Sắp hết hạn
@@ -500,6 +503,11 @@ function TaskCard({
             </div>
 
             <div className="flex min-w-0 items-center justify-end gap-1">
+              {derived.isFull && (
+                <span className="inline-flex shrink-0 items-center rounded-md bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:text-red-400">
+                  Đầy
+                </span>
+              )}
               {!isTaskTheme && derived.isNearDeadline && (
                 <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 shrink-0">
                   <FiClock className="h-2.5 w-2.5" /> Sắp hết hạn

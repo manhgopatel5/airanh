@@ -268,8 +268,12 @@ export async function POST(request: Request) {
         requireApproval: body.requireApproval || false,
         autoAccept:!body.requireApproval,
       }),
-    ...(body.location?.lat && body.location?.lng && {
+    ...(body.location?.lat != null && body.location?.lng != null && {
         location: {
+          address: body.location.address,
+          city: body.location.city,
+          ward: body.location.ward,
+          district: body.location.district,
           lat: body.location.lat,
           lng: body.location.lng,
         },

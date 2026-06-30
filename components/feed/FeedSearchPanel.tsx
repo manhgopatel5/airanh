@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type { FeedFilters, FeedScope, FeedSortBy } from "@/lib/feed";
 import { hasActiveFilters } from "@/lib/feed";
+import { getGeolocationErrorMessage } from "@/lib/geolocation";
 
 const CATEGORY_TASKS = [
   { id: "doing", label: "Việc gấp" },
@@ -187,8 +188,8 @@ export default function FeedSearchPanel({
         setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setLocating(false);
       },
-      () => {
-        setLocationError("Không lấy được vị trí. Bật GPS và thử lại.");
+      (err) => {
+        setLocationError(getGeolocationErrorMessage(err.code));
         setLocating(false);
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
