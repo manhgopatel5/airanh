@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@9.12.3",
   "engines": {
-    "node": "20.x",
+    "node": "24.x",
     "pnpm": ">=9"
   },
   "scripts": {
@@ -24,6 +24,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@breezystack/lamejs": "^1.2.6",
     "@headlessui/react": "^2.1.2",
     "@hookform/resolvers": "^3.10.0",
     "@lottiefiles/dotlottie-react": "^0.6.5",
@@ -36,6 +37,7 @@
     "@vercel/speed-insights": "^2.0.0",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.3",
+    "cheerio": "^1.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -50,7 +52,6 @@
     "isomorphic-dompurify": "^3.9.0",
     "linkify-react": "^4.3.2",
     "linkifyjs": "^4.3.3",
-"@breezystack/lamejs": "^1.2.6",
     "lucide-react": "^0.453.0",
     "nanoid": "^5.1.9",
     "next": "^15.5.15",
