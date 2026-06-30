@@ -19,7 +19,36 @@ import { toast, Toaster } from "sonner";
 import imageCompression from "browser-image-compression";
 import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
+// === LINK PREVIEW ===
+function LinkPreview({ url }: { url: string }) {
+  const [data, setData] = React.useState<any>(null);
 
+  React.useEffect(() => {
+    fetch(`/api/link-preview?url=${encodeURIComponent(url)}`)
+     .then(r => r.json())
+     .then(setData);
+  }, [url]);
+
+  if (!data) {
+    return <div className="mt-2 w-[260px] h-[90px] bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />;
+  }
+
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+       className="mt-2 block w-[260px] rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-sm hover:opacity-95 transition">
+      {data.image && (
+        <img src={data.image} className="w-full h-28 object-cover bg-zinc-100" alt="" />
+      )}
+      <div className="p-2.5">
+        <p className="text-[14px] font-semibold text-zinc-900 dark:text-white line-clamp-1">{data.title}</p>
+        {data.description && (
+          <p className="text-[12px] text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-0.5">{data.description}</p>
+        )}
+        <p className="text-[11px] text-zinc-400 mt-1 truncate">{url.replace(/^https?:\/\//, '').replace(/^www\./, '')}</p>
+      </div>
+    </a>
+  );
+}
 type UserData = {
   uid: string;
   name: string;
@@ -143,7 +172,42 @@ const [showUnpinSheet, setShowUnpinSheet] = useState<any>(null); // thay vì boo
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
   const [showMedia, setShowMedia] = useState(false);
 const [mediaTab, setMediaTab] = useState<'photos'|'files'|'links'>('photos');
+const URL_REGEX = /((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/gi;
 
+const renderTextWithLinks = (text: string) => {
+  if (!text) return null;
+  return text.split(URL_REGEX).map((part, i) => {
+    if (!part) return null;
+    const isLink = part.match(URL_REGEX);
+    if (isLink) {
+      let href = part;
+      if (!/^https?:\/\//i.test(href)) {
+        href = 'https://' + href.replace(/^www\./i, '');
+      }
+      return (
+        <a
+          key={i}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline break-all text-[#0A84FF] hover:opacity-80"
+          onClick={e => e.stopPropagation()}
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+};
+
+const getFirstLink = (text?: string) => {
+  const m = text?.match(URL_REGEX);
+  if (!m) return null;
+  let url = m[0];
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url.replace(/^www\./i, '');
+  return url;
+};
 const mediaPhotos = messages.filter(m => m.imageUrl || m.image);
 const mediaFiles = messages.filter(m => m.fileUrl || m.file);
 const mediaLinks = messages.filter(m => m.text && /(https?:\/\/[^\s]+)/.test(m.text));
@@ -1612,12 +1676,37 @@ onClick={(e) => {
         <span className="text-sm truncate">{(m as any).fileName || 'Tệp'}</span>
       </a>
     )}
-    {m.text && (
-      <p className="text-[15px] leading-snug whitespace-pre-wrap break-words">
-        {m.text}
-        {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
-      </p>
-    )}
+ {m.text && (
+  <div className="text- leading-snug whitespace-pre-wrap break-words">
+    <p className="inline">
+      {m.text.split(/((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/gi).map((part, i) => {
+        if (!part) return null;
+        const isLink = part.match(/((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/i);
+        if (isLink) {
+          let href = part;
+          if (!/^https?:\/\//i.test(href)) href = 'https://' + href.replace(/^www\./i, '');
+          return (
+            <a key={i} href={href} target="_blank" rel="noopener noreferrer"
+               className="underline text-[#0A84FF] break-all"
+               onClick={e => e.stopPropagation()}>
+              {part}
+            </a>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+      {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
+    </p>
+
+    {/* Preview ô nhỏ tự load */}
+    {(() => {
+      const match = m.text.match(/((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/i);
+      if (!match || m.image || m.file) return null;
+      const link = match[0].startsWith('http')? match[0] : `https://${match[0].replace(/^www\./i,'')}`;
+      return <LinkPreview url={link} />;
+    })()}
+  </div>
+)}
   </div>
 )}
                     {m.reactions && m.reactions.length > 0 && (
