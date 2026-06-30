@@ -8,6 +8,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type { TaskComment } from "@/types/task";
+import MarkdownContent from "@/components/common/MarkdownContent";
 import Linkify from "linkify-react";
 
 type Props = {
@@ -105,6 +106,20 @@ export function CommentList({
   };
 
   const renderText = (text: string, replyToUserName?: string) => {
+    if (replyToUserName) {
+      return (
+        <>
+          <span className="text-[#0A84FF] font-semibold">@{replyToUserName} </span>
+          <MarkdownContent content={text} className="inline" />
+        </>
+      );
+    }
+
+    const hasMarkdown = /[*_#`\[\]]/.test(text);
+    if (hasMarkdown) {
+      return <MarkdownContent content={text} />;
+    }
+
     const mentionRegex = /@(\w+)/g;
     const parts = text.split(mentionRegex);
 
@@ -115,12 +130,7 @@ export function CommentList({
       return part;
     });
 
-    return (
-      <Linkify options={linkifyOptions}>
-        {replyToUserName && <span className="text-[#0A84FF] font-semibold">@{replyToUserName} </span>}
-        {content}
-      </Linkify>
-    );
+    return <Linkify options={linkifyOptions}>{content}</Linkify>;
   };
 
   return (

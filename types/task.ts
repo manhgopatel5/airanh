@@ -333,6 +333,7 @@ export type PlanListItem = Pick<
   | "costAmount"
   | "paymentMethod" 
   | "milestones"
+  | "participants"
   | "savedBy"      
   | "applicants"  
   | "banned"

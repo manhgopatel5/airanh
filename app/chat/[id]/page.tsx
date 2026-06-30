@@ -1446,7 +1446,7 @@ const showDate =
     const seenAvatars = getSeenAvatars(m);
     const LINK_REGEX = /((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/i;
     const linkMatch = m.text?.match(LINK_REGEX);
-    const isLinkOnly =!!linkMatch &&!m.image &&!m.imageUrl &&!m.file &&!m.location && m.text.trim() === linkMatch[0];
+    const isLinkOnly = !!linkMatch && !m.image && !m.imageUrl && !m.file && !m.location && m.text?.trim() === linkMatch[0];
 
     return (
       <div key={m.id} id={`msg-${m.id}`}>
@@ -1687,12 +1687,6 @@ className={isLinkOnly
 )}
   </div>
 )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-})}
                     {m.reactions && m.reactions.length > 0 && (
                       <div className="flex gap-1 mt-1 px-1">
                         {m.reactions.map((r) => (
@@ -1775,7 +1769,7 @@ className={isLinkOnly
                 </div>
 
          {/* GIỜ Ở GIỮA */}
-{isLastInGroup && filteredMessages.length > 0 && i === filteredMessages.length - 1 && m.createdAt && (
+{isLastInGroup && messages.length > 0 && i === messages.length - 1 && m.createdAt && (
   <div className="flex w-full justify-center items-center gap-1.5 my-2">
     <span className="text-[11px] text-gray-400 dark:text-zinc-500">
       {formatTime(m.createdAt)}
@@ -1797,9 +1791,10 @@ className={isLinkOnly
     )}
   </div>
 )}
-            </div>
-          );
-        })}
+        </div>
+      </div>
+    );
+})}
 
  
         <div ref={messagesEndRef} />

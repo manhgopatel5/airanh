@@ -116,9 +116,10 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
       ...(d.startDate?.toDate && { startDate: d.startDate.toDate().toISOString() }),
       ...(d.applicationDeadline?.toDate && { applicationDeadline: d.applicationDeadline.toDate().toISOString() }),
       ...(d.type === "plan" && {
-          milestones: Array.isArray(d.milestones)? d.milestones : [],
+          milestones: Array.isArray(d.milestones) ? d.milestones : [],
+          participants: Array.isArray(d.participants) ? d.participants : [],
           costType: d.costType || "free",
-        ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
+        ...(d.costAmount !== undefined && { costAmount: d.costAmount }),
         }),
       };
 
@@ -219,6 +220,11 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
   const isApplied = applications.some(
     app => app.userId === currentUserId && ['pending', 'accepted'].includes(app.status)
   );
+  const isParticipant = task?.type === "plan" && currentUserId
+    ? (task as FeedTask & { participants?: { userId: string; status?: string }[] }).participants?.some(
+        (p) => p.userId === currentUserId && p.status !== "left" && p.status !== "kicked"
+      ) ?? false
+    : false;
   const isFull = task?
     (task.type === "task"
     ? (task.joined?? 0) >= task.totalSlots
@@ -232,6 +238,7 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
     loading,
     isOwner,
     isApplied,
+    isParticipant,
     isFull,
     isSaved,
     saving,

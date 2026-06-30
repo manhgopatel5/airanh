@@ -8,7 +8,6 @@
 
 @layer base {
   :root {
-    --font-sans: var(--font-sans);
     --color-primary: 59 130 246;
     --color-primary-dark: 37 99 235;
     --header-height: 60px;
@@ -115,7 +114,9 @@
 
   html {
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-    @apply font-sans;
+    font-size: 14px;
+    line-height: 1.43;
+    @apply font-sans text-base;
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
   }

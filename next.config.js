@@ -117,8 +117,16 @@ const nextConfig = {
 
   serverExternalPackages: ['firebase-admin', 'sharp'],
 
-  experimental: {
-    optimizePackageImports: ['date-fns', 'lucide-react', 'framer-motion', 'zustand'],
+    experimental: {
+    optimizePackageImports: [
+      'date-fns',
+      'lucide-react',
+      'framer-motion',
+      'zustand',
+      'react-icons/fi',
+      'react-icons/hi2',
+      'react-markdown',
+    ],
     serverActions: { bodySizeLimit: '2mb' },
     staleTimes: { dynamic: 30, static: 180 },
   },

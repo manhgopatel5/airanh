@@ -7,7 +7,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { doc, onSnapshot, runTransaction, arrayUnion, arrayRemove } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { incrementTaskView } from "@/lib/taskService";
+import { incrementTaskView } from "@/lib/task";
 
 type Props = {
   taskId: string;
