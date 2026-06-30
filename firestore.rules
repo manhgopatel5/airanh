@@ -33,6 +33,12 @@ match /users/{userId} {
     allow read: if isOwner(userId);
     allow write: if isOwner(userId);
   }
+
+  match /reviews/{reviewId} {
+    allow read: if true;
+    allow create: if isSignedIn();
+    allow update, delete: if false;
+  }
 }
 
 // ========== FRIENDS COLLECTION GỐC ==========

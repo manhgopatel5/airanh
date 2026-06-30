@@ -10,6 +10,7 @@ import {
   where,
   getDocs,
   increment,
+  arrayUnion,
   limit,
   runTransaction,
   onSnapshot,
@@ -694,6 +695,8 @@ export async function joinPlan(taskId: string, user: User, inviteCode?: string):
     transaction.update(planRef, {
       participants: [...plan.participants, planParticipant],
       currentParticipants: increment(1),
+      assignees: arrayUnion(user.uid),
+      status: "doing",
       updatedAt: serverTimestamp(),
     });
   });

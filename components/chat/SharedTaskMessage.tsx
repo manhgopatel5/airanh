@@ -9,9 +9,10 @@ import { useAuth } from "@/lib/AuthContext";
 type Props = {
   taskId?: string;
   taskType?: "task" | "plan";
+  progress?: number;
 };
 
-export default function SharedTaskMessage({ taskId, taskType = "task" }: Props) {
+export default function SharedTaskMessage({ taskId, taskType = "task", progress }: Props) {
   const { user } = useAuth();
   const [task, setTask] = useState<FeedTask | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +68,17 @@ export default function SharedTaskMessage({ taskId, taskType = "task" }: Props) 
 
   return (
     <div className="w-[min(100%,340px)]">
+      {progress != null && (
+        <div className="mb-2 rounded-xl bg-blue-50 px-3 py-2">
+          <div className="flex items-center justify-between text-xs font-bold text-blue-700 mb-1">
+            <span>Tiến độ công việc</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="h-2 rounded-full bg-blue-100 overflow-hidden">
+            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      )}
       <TaskCard
         task={task}
         theme={theme}

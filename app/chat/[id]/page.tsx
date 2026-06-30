@@ -109,6 +109,7 @@ fileUrl?: string;
   taskType?: "task" | "plan";
   taskPrice?: number;
   price?: number;
+  progress?: number;
 };
 
 type ChatData = {
@@ -1580,6 +1581,7 @@ onClick={(e) => {
               <SharedTaskMessage
                 {...(m.taskId ? { taskId: m.taskId } : {})}
                 taskType={m.taskType ?? ((m.taskPrice ?? m.price ?? 0) > 0 ? "task" : "plan")}
+                {...(m.progress != null ? { progress: Number(m.progress) } : {})}
               />
             ) : (m.type === 'location' || m.location)? (
   // LOCATION - không bubble
