@@ -172,42 +172,7 @@ const [showUnpinSheet, setShowUnpinSheet] = useState<any>(null); // thay vì boo
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
   const [showMedia, setShowMedia] = useState(false);
 const [mediaTab, setMediaTab] = useState<'photos'|'files'|'links'>('photos');
-const URL_REGEX = /((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/gi;
 
-const renderTextWithLinks = (text: string) => {
-  if (!text) return null;
-  return text.split(URL_REGEX).map((part, i) => {
-    if (!part) return null;
-    const isLink = part.match(URL_REGEX);
-    if (isLink) {
-      let href = part;
-      if (!/^https?:\/\//i.test(href)) {
-        href = 'https://' + href.replace(/^www\./i, '');
-      }
-      return (
-        <a
-          key={i}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline break-all text-[#0A84FF] hover:opacity-80"
-          onClick={e => e.stopPropagation()}
-        >
-          {part}
-        </a>
-      );
-    }
-    return <span key={i}>{part}</span>;
-  });
-};
-
-const getFirstLink = (text?: string) => {
-  const m = text?.match(URL_REGEX);
-  if (!m) return null;
-  let url = m[0];
-  if (!/^https?:\/\//i.test(url)) url = 'https://' + url.replace(/^www\./i, '');
-  return url;
-};
 const mediaPhotos = messages.filter(m => m.imageUrl || m.image);
 const mediaFiles = messages.filter(m => m.fileUrl || m.file);
 const mediaLinks = messages.filter(m => m.text && /(https?:\/\/[^\s]+)/.test(m.text));
