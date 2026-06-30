@@ -704,7 +704,9 @@ useEffect(() => {
 const [currentResultIndex, setCurrentResultIndex] = useState(0);
 
 const filteredMessages = useMemo(() =>
-  messages.filter(m => m.text?.toLowerCase().includes(searchQuery.toLowerCase())),
+  searchQuery
+    ? messages.filter(m => (m.text || '').toLowerCase().includes(searchQuery.toLowerCase()))
+    : messages,
   [searchQuery, messages]
 );
 
@@ -1402,19 +1404,18 @@ useEffect(() => {
   className="flex-1 min-h-0 overflow-y-auto px-0 pt-2 pb-2 space-y-0.5 relative z-10 bg-transparent"
 
 >
-  {filteredMessages.map((m, i) => {
+{messages.map((m, i) => {
     const isMe = m.senderId === user.uid;
-    const prev = filteredMessages[i - 1];
-    const next = filteredMessages[i + 1];
-    const showAvatar =!isMe && (!next || next.senderId!== m.senderId);
-    const isFirstInGroup =!prev || prev.senderId!== m.senderId;
-    const isLastInGroup =!next || next.senderId!== m.senderId;
-    const showDate =
-      prev &&
-      m.createdAt &&
-      prev.createdAt &&
-      m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString();
-
+const prev = messages[i - 1];
+const next = messages[i + 1];
+const showAvatar = !isMe && (!next || next.senderId !== m.senderId);
+const isFirstInGroup = !prev || prev.senderId !== m.senderId;
+const isLastInGroup = !next || next.senderId !== m.senderId;
+const showDate =
+  prev &&
+  m.createdAt &&
+  prev.createdAt &&
+  m.createdAt.toDate().toDateString() !== prev.createdAt.toDate().toDateString();
     const seenAvatars = getSeenAvatars(m);
 
     return (
