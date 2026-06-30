@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 
 import { useAppStore } from "@/store/app";
-import { scheduleTabPrefetch, prefetchTab } from "@/lib/tabPrefetch";
+import { scheduleAppTabPrefetch, prefetchAppTab } from "./tabPrefetch";
 import { AnimatePresence, motion } from "framer-motion";
 
 import CustomTabBar from "@/components/CustomTabBar";
@@ -62,11 +62,7 @@ export default function AppContainer({ initialJobs, initialPlans, initialEvents 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    scheduleTabPrefetch();
-    const timer = window.setTimeout(() => {
-      setVisitedTabs((prev) => new Set([...prev, "messages", "tasks", "profile"]));
-    }, 1500);
-    return () => clearTimeout(timer);
+    scheduleAppTabPrefetch();
   }, []);
 
   useEffect(() => {
@@ -80,10 +76,10 @@ export default function AppContainer({ initialJobs, initialPlans, initialEvents 
 
   const handleChangeTab = useCallback(
     (tab: MainTab) => {
-      if (tab === "messages") prefetchTab("messages");
-      if (tab === "tasks") prefetchTab("tasks");
-      if (tab === "profile") prefetchTab("profile");
-      if (tab === "home" || tab === "plans") prefetchTab("home");
+      if (tab === "messages") prefetchAppTab("messages");
+      if (tab === "tasks") prefetchAppTab("tasks");
+      if (tab === "profile") prefetchAppTab("profile");
+      if (tab === "home" || tab === "plans") prefetchAppTab("home");
       setCurrentMainTab(tab);
       const newUrl = tab === "home" ? "/" : `/?tab=${tab}`;
       router.replace(newUrl, { scroll: false });

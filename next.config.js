@@ -20,7 +20,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'image.thum.io' },
       { protocol: 'https', hostname: 'api.mapbox.com' },
       { protocol: 'https', hostname: 'maps.wikimedia.org' },
-      // ✅ THÊM DÒNG NÀY
+      { protocol: 'https', hostname: 'staticmap.openstreetmap.de' },
       { protocol: 'https', hostname: 'api.dicebear.com' },
     ],
     formats: ['image/avif', 'image/webp'],
@@ -61,7 +61,6 @@ const nextConfig = {
         'https://image.thum.io',
         'https://api.mapbox.com',
         'https://maps.wikimedia.org',
-        // ✅ THÊM DÒNG NÀY
         'https://staticmap.openstreetmap.de',
         'https://api.dicebear.com',
       ].join(' '),

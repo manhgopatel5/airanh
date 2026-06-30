@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseRTDB } from "@/lib/firebase";
 import { getCityMetaByRoomId } from "@/lib/publicRooms";
@@ -629,7 +628,8 @@ const formatTimeDivider = (timestamp: any) => {
           </button>
           <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl ring-2 ring-white shadow-md dark:ring-zinc-800">
             {roomData.imageUrl ? (
-              <Image src={roomData.imageUrl} alt={roomData.name} fill className="object-cover" sizes="44px" />
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={roomData.imageUrl} alt={roomData.name} className="h-full w-full object-cover" />
             ) : (
               <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${roomData.color} text-xl`}>
                 {roomData.emoji}
@@ -699,7 +699,8 @@ const formatTimeDivider = (timestamp: any) => {
     <div className="flex h-full flex-col items-center justify-center px-6 py-20 text-center">
       {roomData.imageUrl ? (
         <div className="relative mb-4 h-28 w-28 overflow-hidden rounded-3xl shadow-lg ring-4 ring-white dark:ring-zinc-800">
-          <Image src={roomData.imageUrl} alt={roomData.name} fill className="object-cover" sizes="112px" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={roomData.imageUrl} alt={roomData.name} className="h-full w-full object-cover" />
         </div>
       ) : (
         <div className="mb-4 text-6xl">{roomData.emoji}</div>

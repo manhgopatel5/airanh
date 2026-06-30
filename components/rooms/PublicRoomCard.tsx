@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { memo } from "react";
 import { FiCheck, FiTrendingUp, FiUsers } from "react-icons/fi";
 import type { PublicRoomItem } from "@/lib/publicRooms";
@@ -26,12 +25,11 @@ function PublicRoomCard({ room, layout = "vertical", className, onClick }: Props
       )}
     >
       <div className="relative h-32">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={room.imageUrl}
           alt={room.name}
-          fill
-          sizes={layout === "horizontal" ? "160px" : "100vw"}
-          className="object-cover"
+          className="absolute inset-0 h-full w-full object-cover"
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />

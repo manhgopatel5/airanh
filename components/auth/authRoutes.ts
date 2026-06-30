@@ -6,6 +6,8 @@ export const AUTH_PUBLIC_ROUTES = [
   "/terms",
   "/privacy",
   "/onboarding",
+  "/rooms",
+  "/explore",
 ] as const;
 
 export const DEFAULT_AUTH_REDIRECT = "/";

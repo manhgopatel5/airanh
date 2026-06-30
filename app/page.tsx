@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { getActiveEvents } from '@/lib/eventsServer'
 import AppContainer from './AppContainer'
 import type { FeedTask } from '@/types/task'
@@ -42,5 +43,9 @@ export default async function HomePage() {
     initialEvents = []
   }
 
-  return <AppContainer initialJobs={initialJobs} initialPlans={initialPlans} initialEvents={initialEvents} />
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-white dark:bg-zinc-950" />}>
+      <AppContainer initialJobs={initialJobs} initialPlans={initialPlans} initialEvents={initialEvents} />
+    </Suspense>
+  )
 }
