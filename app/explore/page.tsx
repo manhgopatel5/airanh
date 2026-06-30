@@ -6,7 +6,8 @@ import { CATEGORY_INFO, EventItem } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
 import { FiArrowLeft, FiUsers, FiMapPin, FiStar, FiFilter, FiX } from "react-icons/fi";
 import { RiEqualizerLine } from "react-icons/ri";
-import { onEventCheckin } from "@/lib/xp"; // THÊM DÒNG NÀY
+import { useAuth } from "@/lib/AuthContext";
+import { onEventCheckin } from "@/lib/xp";
 
 const PROVINCES = [
   "Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ",
@@ -51,6 +52,7 @@ type FilterState = {
 
 export default function ExplorePage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [eventsData, setEventsData] = useState<EventItem[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -379,8 +381,8 @@ export default function ExplorePage() {
   event={selectedEvent}
   onClose={() => setSelectedEvent(null)}
   onCheckinSuccess={async () => {
-    if (selectedEvent?.id) {
-      await onEventCheckin(selectedEvent.id); // BỎ 'user-id', CHỈ TRUYỀN eventId
+    if (user?.uid) {
+      await onEventCheckin(user.uid);
     }
     router.refresh();
   }}

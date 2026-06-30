@@ -200,6 +200,13 @@ banned: false,
   batch.set(doc(db, "shortIds", shortId), { taskId: taskRef.id });
   await batch.commit();
 
+  const { trackTaskCreated } = await import("./gamificationStats");
+  await trackTaskCreated(user.uid, {
+    type: "task",
+    category,
+    price: taskData.price,
+  }).catch(console.error);
+
   return { id: taskRef.id, slug };
 }
 
@@ -324,6 +331,14 @@ export async function createPlan(
   batch.set(planRef, planData);
   batch.set(doc(db, "shortIds", shortId), { taskId: planRef.id });
   await batch.commit();
+
+  const { trackTaskCreated } = await import("./gamificationStats");
+  await trackTaskCreated(user.uid, {
+    type: "plan",
+    category,
+    costType: data.costType,
+    maxParticipants: data.maxParticipants,
+  }).catch(console.error);
 
   return { id: planRef.id, slug };
 }

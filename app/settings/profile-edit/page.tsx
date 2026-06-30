@@ -9,6 +9,7 @@ import { updateProfile } from "firebase/auth";
 import { FiLoader, FiArrowLeft, FiX } from "react-icons/fi";
 import { Mail, Phone, AtSign, Calendar, User2, MapPin, ChevronRight } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import { onProfileUpdate } from "@/lib/xp";
 
 const BAD_WORDS = ["admin", "mod", "support", "đm", "vcl", "dm"];
 
@@ -215,6 +216,7 @@ export default function ProfileEditPage() {
       }
 
       await setDoc(doc(db, "users", user.uid), updateData, { merge: true });
+      await onProfileUpdate(user.uid);
 
       if ("vibrate" in navigator) navigator.vibrate(8);
       toast.success("Đã cập nhật thông tin");
