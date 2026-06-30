@@ -874,7 +874,7 @@ useEffect(() => {
           )}
         </div>
 
-        {/* NÚT X TRÒN - giống hình nền */}
+        {/* NÚT X TRÒN */}
         <button
           onClick={() => { setShowSearch(false); setSearchQuery(''); }}
           className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center active:scale-90 transition shrink-0"
@@ -885,46 +885,45 @@ useEffect(() => {
       </div>
     </div>
 
-      {/* THANH ĐẾM */}
-      {searchQuery && (
-        <div className="flex items-center justify-between px-4 py-2 border-t border-zinc-100 bg-zinc-50">
-          <span className="text-[14px] text-zinc-500">
-            {filteredMessages.length > 0
-             ? `${currentResultIndex + 1} / ${filteredMessages.length}`
-              : 'Không tìm thấy'}
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={goToPrevResult}
-              disabled={filteredMessages.length === 0}
-              className="w-7 h-7 rounded-md bg-zinc-200 disabled:opacity-30 flex items-center justify-center active:scale-95 hover:bg-zinc-300"
-            >
-              <ChevronUp size={16} className="text-zinc-700" />
-            </button>
-            <button
-              onClick={goToNextResult}
-              disabled={filteredMessages.length === 0}
-              className="w-7 h-7 rounded-md bg-zinc-200 disabled:opacity-30 flex items-center justify-center active:scale-95 hover:bg-zinc-300"
-            >
-              <ChevronDown size={16} className="text-zinc-700" />
-            </button>
-          </div>
+    {/* THANH ĐẾM */}
+    {searchQuery && (
+      <div className="flex items-center justify-between px-4 py-2 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+        <span className="text-sm text-zinc-500 dark:text-zinc-400">
+          {filteredMessages.length > 0
+           ? `${currentResultIndex + 1} / ${filteredMessages.length}`
+            : 'Không tìm thấy'}
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={goToPrevResult}
+            disabled={filteredMessages.length === 0}
+            className="w-7 h-7 rounded-md bg-zinc-200 dark:bg-zinc-800 disabled:opacity-30 flex items-center justify-center active:scale-95 hover:bg-zinc-300 dark:hover:bg-zinc-700"
+          >
+            <ChevronUp size={16} className="text-zinc-700 dark:text-zinc-300" />
+          </button>
+          <button
+            onClick={goToNextResult}
+            disabled={filteredMessages.length === 0}
+            className="w-7 h-7 rounded-md bg-zinc-200 dark:bg-zinc-800 disabled:opacity-30 flex items-center justify-center active:scale-95 hover:bg-zinc-300 dark:hover:bg-zinc-700"
+          >
+            <ChevronDown size={16} className="text-zinc-700 dark:text-zinc-300" />
+          </button>
         </div>
-      )}
-    </div>
+      </div>
+    )}
 
     {/* LIST */}
-    <div className="flex-1 overflow-y-auto bg-white">
+    <div className="flex-1 overflow-y-auto bg-white dark:bg-black">
       {!searchQuery? (
         <div className="flex flex-col items-center justify-center h-full -mt-20 px-4">
-          <div className="w-14 h-14 rounded-full bg-zinc-100 flex items-center justify-center mb-3">
+          <div className="w-14 h-14 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mb-3">
             <Search size={24} className="text-zinc-400" />
           </div>
-          <p className="text-[15px] text-zinc-500">Tìm kiếm tin nhắn</p>
+          <p className="text-[15px] text-zinc-500 dark:text-zinc-400">Tìm kiếm tin nhắn</p>
         </div>
       ) : filteredMessages.length === 0? (
         <div className="pt-20 text-center px-4">
-          <p className="text-[15px] text-zinc-400">Không có kết quả cho "{searchQuery}"</p>
+          <p className="text-[15px] text-zinc-400 dark:text-zinc-500">Không có kết quả cho "{searchQuery}"</p>
         </div>
       ) : (
         <div>
@@ -948,26 +947,26 @@ useEffect(() => {
                     }, 1500);
                   }, 100);
                 }}
-                className={`w-full text-left px-4 py-3 border-b border-zinc-100 active:bg-zinc-50 ${
-                  idx === currentResultIndex? 'bg-zinc-100' : 'hover:bg-zinc-50'
+                className={`w-full text-left px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 active:bg-zinc-50 dark:active:bg-zinc-900 ${
+                  idx === currentResultIndex? 'bg-zinc-100 dark:bg-zinc-900' : 'hover:bg-zinc-50 dark:hover:bg-zinc-900/70'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <img
                     src={isMe? (user?.photoURL || '/default-avatar.png') : (friend?.avatar || '/default-avatar.png')}
-                    className="w-9 h-9 rounded-full object-cover mt-0.5 ring-1 ring-zinc-200"
+                    className="w-9 h-9 rounded-full object-cover mt-0.5 ring-1 ring-zinc-200 dark:ring-zinc-800"
                     alt=""
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-[15px] font-medium text-zinc-900 truncate">
+                      <span className="text-[15px] font-medium text-zinc-900 dark:text-white truncate">
                         {isMe? 'Bạn' : friend?.name}
                       </span>
-                      <span className="text-[13px] text-zinc-400">
+                      <span className="text-[13px] text-zinc-400 dark:text-zinc-500">
                         {formatTime(msg.createdAt)}
                       </span>
                     </div>
-                    <p className="text-[14px] text-zinc-600 mt-1 line-clamp-2">
+                    <p className="text-[14px] text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-2">
                       {preview}
                     </p>
                   </div>
