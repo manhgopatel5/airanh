@@ -1223,7 +1223,7 @@ useEffect(() => {
       <div className="overflow-hidden rounded-2xl shadow-lg">
         <div className="relative h-[150px] w-full bg-zinc-200">
 <img
-  src={`https://image.thum.io/get/width/400/crop/280/noanimate/https://www.google.com/maps/@${lat},${lng},16z`}
+  src={`https://image.thum.io/get/width/800/crop/560/auth/xxxxx/https://www.google.com/maps/@${lat},${lng},17z?hl=vi`}
   className="w-full h-full object-cover"
   alt=""
 />
