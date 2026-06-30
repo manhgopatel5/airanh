@@ -1217,24 +1217,29 @@ useEffect(() => {
     <a
       href={`https://www.google.com/maps?q=${lat},${lng}`}
       target="_blank"
-      className="block w-[240px]"
+      rel="noopener noreferrer"
+      className="block w-[240px] my-1"
     >
-      <div className="overflow-hidden rounded-2xl">
-        <div className="relative h-[150px] bg-gray-100">
+      <div className="overflow-hidden rounded-2xl shadow-lg">
+        <div className="relative h-[150px] w-full bg-zinc-200">
           <img
             src={`https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=16&l=map&size=450,300&pt=${lng},${lat},pm2rdm`}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
             alt=""
           />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <div className="w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center">
-              <MapPin size={16} fill="#FF3B30" />
+            <div className="w-9 h-9 bg-white rounded-full shadow-xl flex items-center justify-center">
+              <MapPin size={16} className="text-[#FF3B30]" fill="#FF3B30" />
             </div>
           </div>
-        <div className="bg-white/95 dark:bg-zinc-800/95 px-3 py-2 backdrop-blur">
-          <p className="text-[14px] font-medium truncate">{m.address || 'Vị trí đã chia sẻ'}</p>
-          <p className="text-[12px] text-zinc-500 flex items-center gap-1 mt-0.5">
-            <Navigation size={11} /> Nhấn để mở
+        </div> {/* <-- ĐÃ THÊM đóng div relative */}
+        <div className="bg-white dark:bg-zinc-900 px-3 py-2">
+          <p className="text- font-medium truncate text-zinc-900 dark:text-white">
+            {m.address || 'Vị trí đã chia sẻ'}
+          </p>
+          <p className="text- flex items-center gap-1 mt-0.5 text-zinc-500 dark:text-zinc-400">
+            <Navigation size={11} />
+            Nhấn để mở bản đồ
           </p>
         </div>
       </div>
