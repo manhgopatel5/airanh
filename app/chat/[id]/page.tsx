@@ -1406,12 +1406,17 @@ useEffect(() => {
         <div className="flex items-center gap-3">
           <div className="w-14 h-14 rounded-2xl overflow-hidden ring-1 ring-white/10 shrink-0">
             {(() => {
-              const currentId = (chatData as any)?.backgroundId as BgId || 'default';
+              const currentId = (chatData?.backgroundId || 'default') as BgId;
               const current = BACKGROUNDS[currentId];
               return isGradient(currentId)? (
                 <div className="w-full h-full" style={{ background: current.url.replace('gradient:','') }} />
               ) : current.url? (
-                <img src={getBgUrl(currentId, 200)} className="w-full h-full object-cover" alt="" />
+                <img
+                  src={getBgUrl(currentId, 200)}
+                  className="w-full h-full object-cover"
+                  alt=""
+                  onError={() => setFailedBg(prev => [...prev, currentId])}
+                />
               ) : (
                 <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, #1e1e22 0%, #0a0a0b 100%)' }} />
               );
@@ -1420,7 +1425,7 @@ useEffect(() => {
           <div className="flex-1 min-w-0">
             <h3 className="text-white text-[22px] font-semibold leading-tight">Hình nền</h3>
             <p className="text-white/55 text-[13px]">
-              Chọn cho đoạn chat này • {((chatData as any)?.backgroundId && (chatData as any)?.backgroundId!== 'default')? BACKGROUNDS[(chatData as any).backgroundId as BgId]?.name : 'Mặc định'}
+              Chọn cho đoạn chat này • {chatData?.backgroundId && chatData.backgroundId!== 'default'? BACKGROUNDS[chatData.backgroundId as BgId]?.name : 'Mặc định'}
             </p>
           </div>
           <button onClick={() => setShowBgPicker(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center active:scale-90">
@@ -1434,9 +1439,9 @@ useEffect(() => {
           <div key={group.id} className="mb-7">
             <h4 className="text-white/60 text-[12px] font-semibold mb-3 uppercase tracking-widest">{group.title}</h4>
             <div className="grid grid-cols-3 gap-3">
-{group.ids.filter(id => !failedBg.includes(id)).map((id) => {
+              {group.ids.filter(id =>!failedBg.includes(id)).map((id) => {
                 const bg = BACKGROUNDS[id];
-                const currentId = (chatData as any)?.backgroundId as BgId || 'default';
+                const currentId = (chatData?.backgroundId || 'default') as BgId;
                 const isSelected = id === currentId;
                 const isGrad = isGradient(id);
 
@@ -1444,16 +1449,15 @@ useEffect(() => {
                   <button
                     key={id}
                     onClick={async () => {
-  const newId = id === 'default' ? '' : id;
-  await updateDoc(doc(db, "chats", chatId), {
-    backgroundId: newId,
-    background: deleteField()
-  });
-  // cập nhật ngay trên UI
-  setChatData(prev => prev ? { ...prev, backgroundId: newId } : prev);
-  setShowBgPicker(false);
-  toast.success(`Đã đổi: ${bg.name}`);
-}}
+                      const newId = id === 'default'? '' : id;
+                      await updateDoc(doc(db, "chats", chatId), {
+                        backgroundId: newId,
+                        background: deleteField()
+                      });
+                      setChatData(prev => prev? {...prev, backgroundId: newId } : prev);
+                      setShowBgPicker(false);
+                      toast.success(`Đã đổi: ${bg.name}`);
+                    }}
                     className="relative w-full h-28 rounded-2xl overflow-hidden bg-zinc-900 ring-1 ring-white/10 active:scale-95 transition group"
                   >
                     {isGrad? (
@@ -1464,6 +1468,7 @@ useEffect(() => {
                         alt={bg.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
+                        onError={() => setFailedBg(prev => prev.includes(id)? prev : [...prev, id])}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -1498,7 +1503,7 @@ useEffect(() => {
   </div>
 )}
 
-{/* UPLOAD PROGRESS - giữ nguyên */}
+{/* UPLOAD PROGRESS */}
 {uploading && (
   <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-xl px-4 py-2.5 rounded-full flex items-center gap-2.5 z-[60]">
     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
