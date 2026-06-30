@@ -834,7 +834,7 @@ useEffect(() => {
               if (e.key === 'Enter' && searchQuery) { goToNextResult(); }
             }}
             placeholder="Tìm trong cuộc trò chuyện"
-            className="w-full h-9 pl-9 pr-8 bg-zinc-100 text-[15px] text-zinc-900 placeholder:text-zinc-400 rounded-lg outline-none focus:ring-2 focus:ring-[#0A84FF]/30"
+className="w-full h-9 pl-9 pr-8 bg-white text-[15px] text-zinc-900 placeholder:text-zinc-400 rounded-[10px] outline-none border border-zinc-300 focus:border-[#0A84FF] transition-colors"
             autoFocus
           />
           {searchQuery && (
@@ -1015,64 +1015,95 @@ useEffect(() => {
     {/* Header */}
     <div className="shrink-0 bg-[#1c1c1e] border-b border-white/10" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
       <div className="flex items-center justify-between px-4 h-11">
-        <button onClick={() => setShowPinned(false)} className="text-[#0A84FF] text-">Đóng</button>
-        <span className="text- font-semibold text-white">Tin nhắn đã ghim</span>
+        <button onClick={() => setShowPinned(false)} className="text-[#0A84FF] text-[17px]">Đóng</button>
+        <span className="text-[17px] font-semibold text-white">Tin nhắn đã ghim</span>
         <div className="w-10" />
       </div>
     </div>
 
     {/* List */}
-  <div className="flex-1 overflow-y-auto bg-black">
-  {!chatData?.pinnedMessage ? (
-    <div className="pt-20 text-center">
-      <Pin size={32} className="mx-auto text-white/20 mb-3" />
-      <p className="text-white/40 text-sm">Chưa có tin nhắn nào được ghim</p>
-    </div>
-  ) : (
-    <button
-      onClick={() => {
-        setShowPinned(false);
-        setTimeout(() => {
-          const el = document.getElementById(`msg-${(chatData as any).pinnedMessage.id}`);
-          el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el?.classList.add('ring-2','ring-white/30');
-          setTimeout(() => el?.classList.remove('ring-2','ring-white/30'), 1200);
-        }, 100);
-      }}
-      className="w-full text-left px-4 py-3 border-b border-white/5 active:bg-white/5"
-    >
-      <div className="flex items-start gap-3">
-        <img
-          src={(chatData as any).pinnedMessage.senderId === user?.uid 
-            ? (user?.photoURL || '/default-avatar.png') 
-            : (friend?.avatar || '/default-avatar.png')}
-          className="w-9 h-9 rounded-full object-cover mt-0.5"
-          alt=""
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-medium text-white">
-              {(chatData as any).pinnedMessage.senderId === user?.uid ? 'Bạn' : friend?.name}
-            </span>
-            <span className="text-xs text-white/40">
-              {formatTime((chatData as any).pinnedMessage.createdAt)}
-            </span>
-          </div>
-          <p className="text-sm text-white/70 mt-1 line-clamp-2">
-{(chatData as any).pinnedMessage.text || 
- (chatData as any).pinnedMessage.image ? '📷 Hình ảnh' : 
- (chatData as any).pinnedMessage.file ? '📎 Tệp đính kèm' : 'Tin nhắn'}
-          </p>
-          {(chatData as any).pinnedMessage.by && (
-            <p className="text-xs text-white/40 mt-1">
-              Ghim bởi {(chatData as any).pinnedMessage.by}
-            </p>
-          )}
+    <div className="flex-1 overflow-y-auto bg-black">
+      {!chatData?.pinnedMessage? (
+        <div className="pt-20 text-center">
+          <Pin size={32} className="mx-auto text-white/20 mb-3" />
+          <p className="text-white/40 text-sm">Chưa có tin nhắn nào được ghim</p>
         </div>
-      </div>
-    </button>
-  )}
-</div>
+      ) : (
+        <button
+          onClick={() => {
+            setShowPinned(false);
+            setTimeout(() => {
+              const el = document.getElementById(`msg-${(chatData as any).pinnedMessage.id}`);
+              el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // highlight vàng thay vì ring trắng
+              const bubble = el?.querySelector('div[class*="bg-gradient"], div[class*="bg-[#"]');
+              bubble?.classList.add('!bg-yellow-400/30', 'transition-colors');
+              setTimeout(() => bubble?.classList.remove('!bg-yellow-400/30'), 1500);
+            }, 100);
+          }}
+          // GIỮ 600ms = bỏ ghim
+          onContextMenu={async (e) => {
+            e.preventDefault();
+            if (confirm('Bỏ ghim tin nhắn này?')) {
+              await updateDoc(doc(db, "chats", chatId), { pinnedMessage: deleteField() });
+              setChatData(prev => prev? {...prev, pinnedMessage: null} : prev);
+              toast.success('Đã bỏ ghim');
+            }
+          }}
+          onTouchStart={(e) => {
+            (e.currentTarget as any)._timer = setTimeout(async () => {
+              if (confirm('Bỏ ghim tin nhắn này?')) {
+                await updateDoc(doc(db, "chats", chatId), { pinnedMessage: deleteField() });
+                setChatData(prev => prev? {...prev, pinnedMessage: null} : prev);
+                toast.success('Đã bỏ ghim');
+                setShowPinned(false);
+              }
+            }, 600);
+          }}
+          onTouchEnd={(e) => clearTimeout((e.currentTarget as any)._timer)}
+          onTouchMove={(e) => clearTimeout((e.currentTarget as any)._timer)}
+          className="w-full text-left px-4 py-3 border-b border-white/5 active:bg-white/5"
+        >
+          <div className="flex items-start gap-3">
+            <img
+              src={(chatData as any).pinnedMessage.senderId === user?.uid
+               ? (user?.photoURL || '/default-avatar.png')
+                : (friend?.avatar || '/default-avatar.png')}
+              className="w-9 h-9 rounded-full object-cover mt-0.5"
+              alt=""
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-medium text-white">
+                  {(chatData as any).pinnedMessage.senderId === user?.uid? 'Bạn' : friend?.name}
+                </span>
+                <span className="text-xs text-white/40">
+                  {formatTime((chatData as any).pinnedMessage.createdAt)}
+                </span>
+              </div>
+              <p className="text-sm text-white/70 mt-1 line-clamp-2">
+                {(() => {
+                  const m = (chatData as any).pinnedMessage;
+                  // FIX lỗi chữ thành ảnh
+                  return m.text?.trim()
+                   ? m.text
+                    : m.imageUrl || m.image
+                   ? '📷 Hình ảnh'
+                    : m.fileUrl || m.file
+                   ? '📎 Tệp đính kèm'
+                    : 'Tin nhắn';
+                })()}
+              </p>
+              {(chatData as any).pinnedMessage.by && (
+                <p className="text-xs text-white/40 mt-1">
+                  Ghim bởi {(chatData as any).pinnedMessage.by}
+                </p>
+              )}
+            </div>
+          </div>
+        </button>
+      )}
+    </div>
   </div>
 )}
 {/* Action Menu */}
@@ -1523,18 +1554,21 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
 
 {showBgPicker && (
   <div
-    className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4"
+    className="fixed inset-0 z-[80]"
     onClick={() => setShowBgPicker(false)}
   >
+    <div className="absolute inset-0 bg-black/40 backdrop-blur-xl" />
+
     <div
-      className="bg-[#101012]/95 backdrop-blur-2xl w-full sm:max-w-lg max-h-[85vh] sm:rounded-[28px] rounded-t-[28px] overflow-hidden flex flex-col"
+      className="fixed inset-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-[28px] bg-white flex flex-col overflow-hidden shadow-2xl"
       onClick={e => e.stopPropagation()}
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       {/* Header */}
-      <div className="px-5 pt-5 pb-3 sticky top-0 bg-[#101012]/90 backdrop-blur-2xl z-10 border-b border-white/5">
-        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4 sm:hidden" />
+      <div className="px-5 pt-3 pb-3 sticky top-0 bg-white/95 backdrop-blur-xl z-10 border-b border-zinc-100 shrink-0">
+        <div className="w-10 h-1 bg-zinc-300 rounded-full mx-auto mb-3 sm:hidden" />
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-2xl overflow-hidden ring-1 ring-white/10 shrink-0">
+          <div className="w-14 h-14 rounded-2xl overflow-hidden ring-1 ring-zinc-200 shrink-0 shadow-sm">
             {(() => {
               const currentId = (chatData?.backgroundId || 'default') as BgId;
               const current = BACKGROUNDS[currentId];
@@ -1548,26 +1582,26 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
                   onError={() => setFailedBg(prev => [...prev, currentId])}
                 />
               ) : (
-                <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, #1e1e22 0%, #0a0a0b 100%)' }} />
+                <div className="w-full h-full bg-zinc-100" />
               );
             })()}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-white text-[22px] font-semibold leading-tight">Hình nền</h3>
-            <p className="text-white/55 text-[13px]">
+            <h3 className="text-zinc-900 text-[22px] font-semibold leading-tight tracking-tight">Hình nền</h3>
+            <p className="text-zinc-500 text-[13px]">
               Chọn cho đoạn chat này • {chatData?.backgroundId && chatData.backgroundId!== 'default'? BACKGROUNDS[chatData.backgroundId as BgId]?.name : 'Mặc định'}
             </p>
           </div>
-          <button onClick={() => setShowBgPicker(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center active:scale-90">
-            <X size={16} className="text-white/80"/>
+          <button onClick={() => setShowBgPicker(false)} className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center active:scale-90 transition">
+            <X size={16} className="text-zinc-600"/>
           </button>
         </div>
       </div>
 
-      <div className="overflow-y-auto px-5 pb-6 flex-1">
+      <div className="overflow-y-auto px-5 pb-6 flex-1 bg-zinc-50 overscroll-contain">
         {BACKGROUND_GROUPS.map((group) => (
-          <div key={group.id} className="mb-7">
-            <h4 className="text-white/60 text-[12px] font-semibold mb-3 uppercase tracking-widest">{group.title}</h4>
+          <div key={group.id} className="mb-7 first:mt-5">
+            <h4 className="text-zinc-500 text-[12px] font-semibold mb-3 uppercase tracking-widest">{group.title}</h4>
             <div className="grid grid-cols-3 gap-3">
               {group.ids.filter(id =>!failedBg.includes(id)).map((id) => {
                 const bg = BACKGROUNDS[id];
@@ -1588,7 +1622,7 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
                       setShowBgPicker(false);
                       toast.success(`Đã đổi: ${bg.name}`);
                     }}
-                    className="relative w-full h-28 rounded-2xl overflow-hidden bg-zinc-900 ring-1 ring-white/10 active:scale-95 transition group"
+                    className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-white ring-1 ring-zinc-200 active:scale-[0.97] transition-all group shadow-sm hover:shadow-md"
                   >
                     {isGrad? (
                       <div className="w-full h-full" style={{ background: bg.url.replace('gradient:','') }} />
@@ -1601,23 +1635,23 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
                         onError={() => setFailedBg(prev => prev.includes(id)? prev : [...prev, id])}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className="w-8 h-8 rounded-full border-2 border-white/20" />
+                      <div className="w-full h-full flex items-center justify-center bg-zinc-50">
+                        <div className="w-8 h-8 rounded-full border-2 border-zinc-300" />
                       </div>
                     )}
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-60" />
 
-                    <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white font-medium drop-shadow-lg text-center truncate">
+                    <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white font-medium drop-shadow-md text-center truncate">
                       {bg.name}
                     </span>
 
                     {isSelected && (
                       <>
                         <div className="absolute inset-0 ring-2 ring-[#0A84FF] ring-inset rounded-2xl pointer-events-none" />
-                        <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#0A84FF] rounded-full flex items-center justify-center">
+                        <div className="absolute top-2 right-2 w-5 h-5 bg-[#0A84FF] rounded-full flex items-center justify-center shadow-md">
                           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                            <path d="M3 6l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                            <path d="M3 6l2 2 4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                         </div>
                       </>
@@ -1733,73 +1767,65 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
 {/* SETTINGS SHEET */}
 {showSettings && (
   <div
-    className="fixed inset-0 bg-black/80 backdrop-blur-2xl z-[70] flex items-end sm:items-center justify-center"
+    className="fixed inset-0 bg-black/40 backdrop-blur-xl z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4"
     onClick={() => setShowSettings(false)}
   >
     <div
-      className="bg-[#0b0b0d] w-full sm:max-w-[420px] h-[92vh] sm:h-auto sm:max-h-[85vh] sm:rounded-[28px] rounded-t-[28px] overflow-hidden flex flex-col border border-white/10"
+      className="bg-white w-full sm:max-w-[400px] h-[92vh] sm:h-auto sm:max-h-[85vh] sm:rounded-[28px] rounded-t-[28px] overflow-hidden flex flex-col shadow-2xl border border-zinc-200"
       onClick={e => e.stopPropagation()}
     >
       {/* Handle */}
-      <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-2 sm:hidden" />
+      <div className="w-10 h-1 bg-zinc-300 rounded-full mx-auto mt-3 mb-2 sm:hidden" />
 
       {/* PROFILE HEADER */}
-      <div className="px-5 pt-2 pb-5 flex flex-col items-center text-center border-b border-white/5">
+      <div className="px-5 pt-3 pb-5 flex flex-col items-center text-center border-b border-zinc-100 bg-gradient-to-b from-white to-zinc-50">
         <div className="relative">
-          <img src={friend.avatar} className="w-20 h-20 rounded-full object-cover ring-2 ring-white/10" />
-          {friend.isOnline && <div className="absolute bottom-1 right-1 w-4 h-4 bg-[#31d158] rounded-full ring-2 ring-[#0b0b0d]" />}
+          <img src={friend.avatar} className="w-20 h-20 rounded-full object-cover ring-4 ring-white shadow-md" />
+          {friend.isOnline && <div className="absolute bottom-1 right-1 w-4 h-4 bg-[#31d158] rounded-full ring-2 ring-white" />}
         </div>
-        <h2 className="text-white text-[22px] font-semibold mt-3">{friend.name}</h2>
-        <p className="text-white/50 text-sm">@{friend.username || 'user'}</p>
+        <h2 className="text-zinc-900 text-[22px] font-semibold mt-3 tracking-tight">{friend.name}</h2>
+        <p className="text-zinc-500 text-[14px]">@{friend.username || 'user'}</p>
 
         <div className="flex gap-3 mt-4">
-          <button onClick={() => router.push(`/profile/${friend.userId}`)} className="px-4 py-2 bg-white/10 hover:bg-white/15 rounded-full text-white text-sm font-medium active:scale-95 transition">Trang cá nhân</button>
-          <button onClick={() => { setShowSettings(false); toast.info('Gọi thoại...') }} className="w-9 h-9 bg-white/10 hover:bg-white/15 rounded-full flex items-center justify-center active:scale-95"><Phone size={18} className="text-white" /></button>
-          <button onClick={() => { setShowSettings(false); toast.info('Gọi video...') }} className="w-9 h-9 bg-white/10 hover:bg-white/15 rounded-full flex items-center justify-center active:scale-95"><Video size={18} className="text-white" /></button>
+          <button onClick={() => router.push(`/profile/${friend.userId}`)} className="px-4 py-2 bg-zinc-900 text-white rounded-full text-[14px] font-medium active:scale-95 transition shadow-sm hover:bg-black">Trang cá nhân</button>
+          <button onClick={() => { setShowSettings(false); toast.info('Gọi thoại...') }} className="w-9 h-9 bg-zinc-100 hover:bg-zinc-200 rounded-full flex items-center justify-center active:scale-95 transition"><Phone size={18} className="text-zinc-700" /></button>
+          <button onClick={() => { setShowSettings(false); toast.info('Gọi video...') }} className="w-9 h-9 bg-zinc-100 hover:bg-zinc-200 rounded-full flex items-center justify-center active:scale-95 transition"><Video size={18} className="text-zinc-700" /></button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-zinc-50">
         {/* TÙY CHỈNH */}
-        <div className="bg-white/[0.04] rounded-2xl overflow-hidden border border-white/5">
+        <div className="bg-white rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
           {[
             { icon: Search, label: 'Tìm trong cuộc trò chuyện', action: () => { setShowSettings(false); setShowSearch(true); } },
-            { icon: ImageIcon, label: 'Đổi hình nền', value: (chatData as any)?.background? 'Đã đặt' : 'Mặc định', action: () => { setShowSettings(false); setShowBgPicker(true); } },
-{ 
-  icon: Pin, 
-  label: 'Tin nhắn đã ghim', 
-  value: chatData?.pinnedMessage ? '1 tin nhắn' : 'Không có', 
-  action: () => { 
-    setShowSettings(false); 
-    setShowPinned(true); 
-  } 
-},
+            { icon: ImageIcon, label: 'Đổi hình nền', value: chatData?.backgroundId? 'Đã đặt' : 'Mặc định', action: () => { setShowSettings(false); setShowBgPicker(true); } },
+            { icon: Pin, label: 'Tin nhắn đã ghim', value: chatData?.pinnedMessage? '1 tin nhắn' : 'Không có', action: () => { setShowSettings(false); setShowPinned(true); } },
           ].map((item,i) => (
-            <button key={i} onClick={item.action} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/5 active:bg-white/[0.03] transition border-b border-white/5 last:border-0">
-              <item.icon size={20} className="text-white/70" />
-              <span className="flex-1 text-left text-white">{item.label}</span>
-              {item.value && <span className="text-white/40 text-sm">{item.value}</span>}
+            <button key={i} onClick={item.action} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-zinc-50 active:bg-zinc-100 transition border-b border-zinc-100 last:border-0">
+              <item.icon size={20} className="text-zinc-500" />
+              <span className="flex-1 text-left text-[16px] text-zinc-900">{item.label}</span>
+              {item.value && <span className="text-zinc-400 text-[14px]">{item.value}</span>}
             </button>
           ))}
         </div>
 
         {/* MEDIA */}
-        <div className="bg-white/[0.04] rounded-2xl overflow-hidden border border-white/5">
-          <button onClick={() => toast.info('Đang phát triển')} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/5">
-            <ImageIcon size={20} className="text-white/70" />
-            <span className="flex-1 text-left text-white">Ảnh, file, liên kết</span>
-            <span className="text-white/40 text-sm">Xem tất cả</span>
+        <div className="bg-white rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
+          <button onClick={() => toast.info('Đang phát triển')} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-zinc-50 active:bg-zinc-100 transition">
+            <ImageIcon size={20} className="text-zinc-500" />
+            <span className="flex-1 text-left text-[16px] text-zinc-900">Ảnh, file, liên kết</span>
+            <span className="text-zinc-400 text-[14px]">Xem tất cả</span>
           </button>
         </div>
 
         {/* QUYỀN RIÊNG TƯ */}
-        <div className="bg-white/[0.04] rounded-2xl overflow-hidden border border-white/5">
+        <div className="bg-white rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
           {[
             { icon: BellOff, label: 'Tắt thông báo', action: async () => { toast.success('Đã tắt thông báo'); setShowSettings(false); } },
             {
               icon: Shield,
               label: chatData?.blockedUsers?.includes(friendId || '')? 'Bỏ chặn' : 'Chặn người dùng',
-              danger: true,
+              danger: false,
               action: async () => {
                 if (!chatId ||!friendId) return;
                 const blocked = chatData?.blockedUsers?.includes(friendId);
@@ -1812,15 +1838,15 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
             },
             { icon: Flag, label: 'Báo cáo', action: () => toast.info('Đã gửi báo cáo') },
           ].map((item,i) => (
-            <button key={i} onClick={item.action} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/5 active:bg-white/[0.03] transition border-b border-white/5 last:border-0">
-              <item.icon size={20} className={item.danger? "text-red-400" : "text-white/70"} />
-              <span className={`flex-1 text-left ${item.danger? 'text-red-400' : 'text-white'}`}>{item.label}</span>
+            <button key={i} onClick={item.action} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-zinc-50 active:bg-zinc-100 transition border-b border-zinc-100 last:border-0">
+              <item.icon size={20} className="text-zinc-500" />
+              <span className="flex-1 text-left text-[16px] text-zinc-900">{item.label}</span>
             </button>
           ))}
         </div>
 
         {/* NGUY HIỂM */}
-        <div className="bg-white/[0.04] rounded-2xl overflow-hidden border border-white/5">
+        <div className="bg-white rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
           <button
             onClick={async () => {
               if (!confirm('Xóa toàn bộ cuộc trò chuyện này?')) return;
@@ -1828,10 +1854,10 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
               toast.success('Đã xóa');
               router.replace('/chat');
             }}
-            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-red-500/10 active:bg-red-500/5 transition"
+            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-red-50 active:bg-red-100 transition"
           >
-            <Trash2 size={20} className="text-red-400" />
-            <span className="flex-1 text-left text-red-400 font-medium">Xóa cuộc trò chuyện</span>
+            <Trash2 size={20} className="text-red-500" />
+            <span className="flex-1 text-left text-[16px] text-red-500 font-medium">Xóa cuộc trò chuyện</span>
           </button>
         </div>
       </div>
