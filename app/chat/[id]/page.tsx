@@ -94,12 +94,24 @@ type ChatData = {
     createdAt?: any;
     pinnedAt?: any;
   } | null;
+  // THÊM MẢNG MỚI
+  pinnedMessages?: {
+    id: string;
+    text?: string;
+    image?: string | null;
+    file?: string | null;
+    fileName?: string | null;
+    location?: any;
+    senderId: string;
+    createdAt?: any;
+    pinnedAt?: any;
+  }[];
   typing?: Record<string, boolean>;
   blockedUsers?: string[];
   deletedFor?: string[];
   type?: string;
-  backgroundId?: string; // <-- dùng cho nền mới, chỉ lưu id
-  background?: string; // <-- giữ lại để đọc dữ liệu cũ
+  backgroundId?: string;
+  background?: string;
 };
 
 const EMOJI_LIST = ["❤️", "😂", "😮", "😢", "😡", "👍"];
