@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, onSnapshot, doc, orderBy, getDoc, setDoc, serverTimestamp, query, limit, getDocs, where } from "firebase/firestore";
+import { collection, onSnapshot, doc, orderBy, getDoc, setDoc, deleteDoc, serverTimestamp, query, limit, getDocs, where } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { FiUsers, FiShare2, FiShield, FiSearch, FiMessageCircle, FiUserPlus, FiUserX, FiMapPin, FiRefreshCw, FiX, FiZap } from "react-icons/fi";
 import { RiVipCrownLine } from "react-icons/ri";
@@ -17,6 +17,13 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import Image from "next/image";
+import {
+  getFriendRequestStatus,
+  getMutualFriendCounts,
+  getMyFriendIds,
+  getUserAvatar,
+  saveUserLocation,
+} from "@/lib/friendDiscovery";
 
 type FriendItem = {
   uid: string;
@@ -60,11 +67,11 @@ type UserSuggestion = {
   uid: string;
   username: string;
   name: string;
-  avatarUrl?: string;
+  avatarUrl?: string | undefined;
   status?: "none" | "friend" | "sent" | "received";
   distance?: number;
-  age?: number;
-  gender?: "male" | "female" | "other";
+  age?: number | undefined;
+  gender?: "male" | "female" | "other" | undefined;
   mutualFriends?: number;
 };
 
@@ -279,24 +286,34 @@ useEffect(() => {
 }, [user?.uid, db]);
 
   useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setLocationDenied(false);
-        },
-        () => {
-          setLocationDenied(true);
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    }
-  }, []);
+    if (!("geolocation" in navigator)) return;
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(coords);
+        setLocationDenied(false);
+        if (user?.uid) {
+          try {
+            await saveUserLocation(db, user.uid, coords.lat, coords.lng);
+          } catch (e) {
+            console.error("Failed to save user location:", e);
+          }
+        }
+      },
+      () => setLocationDenied(true),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, [user?.uid, db]);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    fetchSuggestedUsers();
+  }, [user?.uid]);
 
   useEffect(() => {
     if (!userLocation) return;
     fetchNearbyUsers();
-    fetchSuggestedUsers();
   }, [userLocation, filters]);
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -319,55 +336,42 @@ useEffect(() => {
       const currentUid = auth.currentUser?.uid;
       if (!currentUid) return;
 
+      const myFriendIds = await getMyFriendIds(db, currentUid);
       const usersRef = collection(db, "users");
-      const q = query(usersRef, limit(100));
+      const q = query(usersRef, limit(150));
       const snap = await getDocs(q);
       const results: UserSuggestion[] = [];
 
       for (const docSnap of snap.docs) {
-        if (docSnap.id === currentUid) continue;
+        if (docSnap.id === currentUid || myFriendIds.has(docSnap.id)) continue;
         const data = docSnap.data();
 
-        if (!data.location?.lat ||!data.location?.lng) continue;
+        const lat = data.location?.lat ?? data.lastKnownLat;
+        const lng = data.location?.lng ?? data.lastKnownLng;
+        if (lat == null || lng == null) continue;
 
-        const distance = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
-          data.location.lat,
-          data.location.lng
-        );
+        const distance = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
 
         const maxDist = Number(filters.maxDistance) || 100;
         const minAge = Number(filters.minAge) || 18;
         const maxAge = Number(filters.maxAge) || 100;
 
         if (distance > maxDist) continue;
-        if (filters.gender!== "all" && data.gender!== filters.gender) continue;
+        if (filters.gender !== "all" && data.gender !== filters.gender) continue;
         if (data.age && (data.age < minAge || data.age > maxAge)) continue;
 
-        let status: UserSuggestion["status"] = "none";
-        const friendDoc = await getDoc(doc(db, "users", currentUid, "friends", docSnap.id));
-        if (friendDoc.exists()) continue;
-
-        const sentReq = await getDoc(doc(db, "friendRequests", `${currentUid}_${docSnap.id}`));
-        if (sentReq.exists() && sentReq.data().status === "pending") {
-          status = "sent";
-        } else {
-          const receivedReq = await getDoc(doc(db, "friendRequests", `${docSnap.id}_${currentUid}`));
-          if (receivedReq.exists() && receivedReq.data().status === "pending") {
-            status = "received";
-          }
-        }
+        const status = await getFriendRequestStatus(db, currentUid, docSnap.id);
+        if (status === "friend") continue;
 
         results.push({
           uid: docSnap.id,
           username: data.username || "",
-          name: data.name || "",
-          avatarUrl: data.avatarUrl,
+          name: data.name || data.displayName || "User",
+          avatarUrl: getUserAvatar(data),
           status,
           distance: Math.round(distance * 10) / 10,
           age: data.age,
-          gender: data.gender
+          gender: data.gender,
         });
       }
 
@@ -375,6 +379,7 @@ useEffect(() => {
       setNearbyUsers(results.slice(0, 20));
     } catch (e) {
       console.error(e);
+      toast.error("Không tải được người dùng gần bạn");
     } finally {
       setLoadingNearby(false);
     }
@@ -387,53 +392,41 @@ const fetchSuggestedUsers = async () => {
     const currentUid = auth.currentUser?.uid;
     if (!currentUid) return;
 
-    const db = getFirebaseDB();
-    
-    // 1. Lấy list bạn hiện tại 1 lần duy nhất
-    const myFriendsSnap = await getDocs(
-      query(collection(db, "friends"), where("userId", "==", currentUid), limit(500))
+    const myFriendIds = await getMyFriendIds(db, currentUid);
+    const pendingSnap = await getDocs(
+      query(
+        collection(db, "friendRequests"),
+        where("fromUserId", "==", currentUid),
+        where("status", "==", "pending"),
+        limit(50)
+      )
     );
-    const myFriendIds = new Set(myFriendsSnap.docs.map(d => d.data().friendId));
+    const sentTo = new Set(pendingSnap.docs.map((d) => d.data().toUserId as string));
 
-    // 2. Lấy 50 user random
-    const usersSnap = await getDocs(query(collection(db, "users"), limit(50)));
+    const usersSnap = await getDocs(query(collection(db, "users"), limit(80)));
     const candidates = usersSnap.docs
-     .filter(d => d.id!== currentUid &&!myFriendIds.has(d.id))
-     .map(d => ({ uid: d.id,...d.data() } as any));
+      .filter((d) => d.id !== currentUid && !myFriendIds.has(d.id) && !sentTo.has(d.id))
+      .map((d) => ({ uid: d.id, ...d.data() } as Record<string, unknown> & { uid: string }));
 
-    // 3. Lấy bạn của tất cả candidates trong 1 query
-    const candidateUids = candidates.map(u => u.uid);
-    const allFriendsSnap = await getDocs(
-      query(collection(db, "friends"), where("userId", "in", candidateUids.slice(0, 10)))
-    );
-
-    // 4. Map mutual count
-    const friendsMap = new Map<string, Set<string>>();
-    allFriendsSnap.docs.forEach(d => {
-      const { userId, friendId } = d.data();
-      if (!friendsMap.has(userId)) friendsMap.set(userId, new Set());
-      friendsMap.get(userId)!.add(friendId);
-    });
+    const candidateUids = candidates.slice(0, 30).map((u) => u.uid);
+    const mutualCounts = await getMutualFriendCounts(db, myFriendIds, candidateUids);
 
     const results: UserSuggestion[] = [];
     const randomUsers: UserSuggestion[] = [];
 
-    for (const u of candidates.slice(0, 10)) { // Giới hạn 10 để tránh vượt limit 'in'
-      const theirFriends = friendsMap.get(u.uid) || new Set();
-      let mutualCount = 0;
-      myFriendIds.forEach(id => {
-        if (theirFriends.has(id)) mutualCount++;
-      });
+    for (const u of candidates.slice(0, 30)) {
+      const mutualCount = mutualCounts.get(u.uid) || 0;
+      const status = sentTo.has(u.uid) ? "sent" : "none";
 
       const userData: UserSuggestion = {
         uid: u.uid,
-        username: u.username || "",
-        name: u.name || "",
-        avatarUrl: u.avatarUrl,
-        status: "none",
+        username: (u.username as string) || "",
+        name: (u.name as string) || (u.displayName as string) || "User",
+        avatarUrl: getUserAvatar(u),
+        status,
         mutualFriends: mutualCount,
-        age: u.age,
-        gender: u.gender
+        age: u.age as number | undefined,
+        gender: u.gender as UserSuggestion["gender"],
       };
 
       if (mutualCount > 0) results.push(userData);
@@ -450,6 +443,7 @@ const fetchSuggestedUsers = async () => {
     }
   } catch (e) {
     console.error(e);
+    toast.error("Không tải được gợi ý kết bạn");
   } finally {
     setLoadingSuggested(false);
   }
@@ -484,12 +478,24 @@ const handleAccept = async (requestId: string, fromUid: string) => {
   const functions = getFunctions(getApp(), "asia-southeast1");
   const accept = httpsCallable(functions, 'acceptFriendRequest');
   try {
-    await accept({ fromUid, requestId }); // ĐỔI notifId -> requestId
+    await accept({ fromUid, requestId });
     toast.success("Đã chấp nhận");
     if ("vibrate" in navigator) navigator.vibrate(10);
   } catch (e: any) {
     console.error(e);
     toast.error(e.message || "Lỗi chấp nhận lời mời");
+  }
+};
+
+const handleReject = async (requestId: string) => {
+  if (!user?.uid) return;
+  try {
+    await deleteDoc(doc(db, "friendRequests", requestId));
+    setRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+    toast.success("Đã từ chối lời mời");
+  } catch (e) {
+    console.error(e);
+    toast.error("Không thể từ chối lời mời");
   }
 };
 
@@ -506,6 +512,12 @@ const handleAddFriend = async (toUid: string, username?: string) => {
     await sendRequest({ toUid });
     
     toast.success(`Đã gửi lời mời đến @${username || toUid}`);
+    setNearbyUsers((prev) =>
+      prev.map((u) => (u.uid === toUid ? { ...u, status: "sent" as const } : u))
+    );
+    setSuggestions((prev) =>
+      prev.map((u) => (u.uid === toUid ? { ...u, status: "sent" as const } : u))
+    );
     if ("vibrate" in navigator) navigator.vibrate(10);
   } catch (e: any) {
     setSentRequests(prev => {
@@ -764,7 +776,11 @@ const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
 >
   Chấp nhận
 </button>
-                  <button className="flex-1 h-11 bg-[#F2F2F7] dark:bg-zinc-800 text-[#8e8e93] rounded-xl text-base font-[600]">
+                  <button
+                    type="button"
+                    onClick={() => handleReject(req.requestId)}
+                    className="flex-1 h-11 bg-[#F2F2F7] dark:bg-zinc-800 text-[#8e8e93] rounded-xl text-base font-[600]"
+                  >
                     Xóa
                   </button>
                 </div>
@@ -1162,12 +1178,25 @@ const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
                           )}
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleAddFriend(user.uid, user.username)}
-                        className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] active:scale-95 transition-all shadow-md shadow-[#0a84ff]/30"
-                      >
-                        Kết bạn
-                      </button>
+                      {(user.status === "sent" || sentRequests.has(user.uid)) && (
+                        <div className="px-3 py-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text-sm font-[600]">
+                          Đã gửi
+                        </div>
+                      )}
+                      {user.status === "received" && (
+                        <div className="px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-[600]">
+                          Chờ xác nhận
+                        </div>
+                      )}
+                      {user.status !== "sent" && !sentRequests.has(user.uid) && user.status !== "received" && (
+                        <button
+                          type="button"
+                          onClick={() => handleAddFriend(user.uid, user.username)}
+                          className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] active:scale-95 transition-all shadow-md shadow-[#0a84ff]/30"
+                        >
+                          Kết bạn
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

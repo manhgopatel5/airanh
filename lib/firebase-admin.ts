@@ -93,7 +93,7 @@ const tsToString = (ts: any): string | null => {
 export type GetJobsOptions = {
   type?: 'task' | 'plan';
   limitCount?: number;
-  sortBy?: 'hot' | 'new' | 'views' | 'price_asc' | 'price_desc';
+  sortBy?: 'hot' | 'new' | 'views' | 'likes' | 'price_asc' | 'price_desc';
   category?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -119,7 +119,7 @@ export async function getJobsFromFirebaseAdmin(
     'slug', 'shortId', 'title', 'description', 'type', 'status', 'visibility',
     'userId', 'userName', 'userAvatar', 'userShortId', 'userUsername', 'userVerified',
     'price', 'currency', 'totalSlots', 'joined', 'budgetType', 'paymentMethod',
-    'isRemote', 'category', 'tags', 'images', 'viewCount', 'likeCount', 'hotScore', 'priceRange',
+    'isRemote', 'category', 'tags', 'images', 'viewCount', 'likeCount', 'hotScore', 'priceRange', 'urgency',
     'commentCount', 'location', 'banned', 'hidden', 'appliedCount',
     'createdAt', 'updatedAt', 'deadline', 'startDate', 'applicationDeadline',
     'eventDate', 'endDate', 'maxParticipants', 'currentParticipants',
@@ -160,6 +160,8 @@ export async function getJobsFromFirebaseAdmin(
       query = query.orderBy('hotScore', 'desc');
     } else if (sortBy === 'views') {
       query = query.orderBy('viewCount', 'desc');
+    } else if (sortBy === 'likes') {
+      query = query.orderBy('likeCount', 'desc');
     } else if (sortBy === 'price_asc') {
       query = query.orderBy('price', 'asc');
     } else if (sortBy === 'price_desc') {

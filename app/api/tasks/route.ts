@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth, getJobsFromFirebaseAdmin } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
 import { FieldValue } from 'firebase-admin/firestore';
-import { getFeedItemDueMillis, isActiveFeedItem } from '@/types/task';
+import { getFeedItemDueMillis, isActiveFeedItem, generateTaskSearchKeywords } from '@/types/task';
+import { haversineKm } from '@/lib/geo';
+import type { FeedTask } from '@/types/task';
 
 const getPriceRange = (price: number): number => {
   if (price === 0) return 0;
@@ -12,18 +14,54 @@ const getPriceRange = (price: number): number => {
   return 4;
 };
 
+function matchesQuery(task: FeedTask, rawQuery: string): boolean {
+  const tokens = rawQuery
+    .toLowerCase()
+    .trim()
+    .split(/\s+/)
+    .filter((t) => t.length > 0);
+  if (!tokens.length) return true;
+
+  const haystack = [
+    task.title,
+    task.description,
+    task.category,
+    ...(task.tags || []),
+    ...((task as FeedTask & { searchKeywords?: string[] }).searchKeywords || []),
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  return tokens.every((token) => haystack.includes(token));
+}
+
+async function getFriendIdsForUser(uid: string): Promise<string[]> {
+  const snap = await adminDb().collection('users').doc(uid).collection('friends').get();
+  return snap.docs
+    .filter((d) => d.data().status !== 'removed')
+    .map((d) => d.id);
+}
+
+function mapTabToSort(tab: string | null, sortBy: string): string {
+  if (tab === 'hot') return 'likes';
+  if (tab === 'new') return 'new';
+  return sortBy;
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const type = (searchParams.get('type') as 'task' | 'plan') || 'task';
   const limit = parseInt(searchParams.get('limit') || '20');
-  const sortBy = (searchParams.get('sortBy') as any) || 'new';
+  const tab = searchParams.get('tab');
+  const sortByParam = (searchParams.get('sortBy') as string) || 'new';
+  const sortBy = mapTabToSort(tab, sortByParam);
 
   const cursor = searchParams.get('cursor') || undefined;
-
-  // CHANGED: chỉ lấy 1 category đầu tiên thay vì array
-const category = searchParams.get('category') || undefined;
-
+  const category = searchParams.get('category') || undefined;
   const deadlineRange = searchParams.get('deadlineRange') || 'all';
+  const lat = searchParams.get('lat') ? parseFloat(searchParams.get('lat')!) : undefined;
+  const lng = searchParams.get('lng') ? parseFloat(searchParams.get('lng')!) : undefined;
+  const radiusKm = searchParams.get('radiusKm') ? parseFloat(searchParams.get('radiusKm')!) : 50;
   const priceRangeParam = searchParams.get('priceRange');
   let minPrice: number | undefined;
   let maxPrice: number | undefined;
@@ -61,29 +99,57 @@ const category = searchParams.get('category') || undefined;
 
   const query = searchParams.get('query') || undefined;
 
-  console.log('>>> API PARAMS:', { type, sortBy, priceRangeParam, minPrice, maxPrice, category, query, cursor, deadlineRange });
+  let friendIds: string[] = [];
+  if (tab === 'friends') {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.split('Bearer ')[1];
+    if (token) {
+      const decoded = await adminAuth().verifyIdToken(token).catch(() => null);
+      if (decoded) {
+        friendIds = await getFriendIdsForUser(decoded.uid);
+      }
+    }
+    if (!friendIds.length) {
+      return NextResponse.json({ tasks: [], nextCursor: null });
+    }
+  }
+
+  const fetchLimit = tab === 'near' || tab === 'friends' ? Math.max(limit, 60) : limit;
 
   try {
     const data = await getJobsFromFirebaseAdmin({
       type,
-      limitCount: limit,
-      sortBy,
-     // CHANGED: categories -> category
-    ...(category && { category }),
-    ...(minPrice!== undefined && { minPrice }),
-    ...(maxPrice!== undefined && { maxPrice }),
-    ...(cursor && { cursor }),
+      limitCount: fetchLimit,
+      sortBy: sortBy as 'hot' | 'new' | 'views' | 'likes' | 'price_asc' | 'price_desc',
+      ...(category && { category }),
+      ...(minPrice !== undefined && { minPrice }),
+      ...(maxPrice !== undefined && { maxPrice }),
+      ...(cursor && { cursor }),
     });
 
     let tasks = data.tasks.filter(isActiveFeedItem);
 
     if (query) {
-      const q = query.toLowerCase();
-      tasks = tasks.filter(t =>
-        t.title.toLowerCase().includes(q) ||
-        t.description.toLowerCase().includes(q) ||
-        t.tags?.some(tag => tag.toLowerCase().includes(q))
-      );
+      tasks = tasks.filter((t) => matchesQuery(t, query));
+    }
+
+    if (tab === 'friends' && friendIds.length) {
+      const friendSet = new Set(friendIds);
+      tasks = tasks.filter((t) => friendSet.has(t.userId));
+    }
+
+    if (tab === 'near' && lat != null && lng != null) {
+      tasks = tasks
+        .map((t) => {
+          const tLat = t.location?.lat;
+          const tLng = t.location?.lng;
+          const distance =
+            tLat != null && tLng != null ? haversineKm(lat, lng, tLat, tLng) : 9999;
+          return { task: t, distance };
+        })
+        .filter(({ distance }) => distance < radiusKm)
+        .sort((a, b) => a.distance - b.distance)
+        .map(({ task }) => task);
     }
 
  // Lọc theo thời hạn còn lại
@@ -116,6 +182,8 @@ if (deadlineRange!== 'all') {
     return dueMs >= now && dueMs <= deadlineTimestamp;
   });
 }
+
+    tasks = tasks.slice(0, limit);
 
     return NextResponse.json({ tasks, nextCursor: data.nextCursor });
   } catch (error) {
@@ -175,6 +243,13 @@ export async function POST(request: Request) {
       priceRange: getPriceRange(price),
       tags: Array.isArray(body.tags)? body.tags : [],
       images: Array.isArray(body.images)? body.images : [],
+      searchKeywords: generateTaskSearchKeywords({
+        title: body.title.trim(),
+        description: body.description.trim(),
+        tags: Array.isArray(body.tags) ? body.tags : [],
+        category: body.category,
+        location: body.location,
+      }),
     ...(isTask && {
         totalSlots: Number(body.totalSlots) || 1,
         joined: 0,

@@ -1,10 +1,12 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, ArrowLeft, ArrowUp, ArrowDown, Star, Clock, Check, ChevronDown } from "lucide-react";
+import { Search, X, ArrowLeft, ArrowUp, ArrowDown, Star, Clock, Check, ChevronDown, MapPin } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
+import type { FeedFilters } from "@/lib/feed";
 
 const haptics = {
   light: () => navigator?.vibrate?.(5),
@@ -17,7 +19,8 @@ interface CustomFilterBarProps {
   onOpenSearch: () => void;
   showSearchModal: boolean;
   onCloseSearch: () => void;
-  onApplyFilters: (filters: any) => void;
+  onApplyFilters: (filters: Partial<FeedFilters> & { category?: string }) => void;
+  currentFilters?: FeedFilters;
 }
 
 const CATEGORY_TASKS = [
@@ -87,7 +90,9 @@ export default function CustomFilterBar({
   showSearchModal,
   onCloseSearch,
   onApplyFilters,
+  currentFilters,
 }: CustomFilterBarProps) {
+  const router = useRouter();
   const mode = useAppStore((s) => s.mode) || "task";
   const modalRef = useRef<HTMLDivElement>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -128,6 +133,15 @@ export default function CustomFilterBar({
   }, []);
 
   useEffect(() => {
+    if (!currentFilters) return;
+    setSelectedCategories(currentFilters.category ? [currentFilters.category] : []);
+    setPriceRange(currentFilters.priceRange || "all");
+    setDeadlineRange(currentFilters.deadlineRange || "all");
+    setSortBy((currentFilters.sortBy as SortBy) || "new");
+    setLocalQuery(currentFilters.query || "");
+  }, [showSearchModal, currentFilters]);
+
+  useEffect(() => {
     if (showSearchModal) {
       document.body.style.overflow = "hidden";
       return () => { document.body.style.overflow = "unset"; };
@@ -153,7 +167,7 @@ const toggleCategory = (id: string) => {
 const handleApply = () => {
   haptics.medium();
   onApplyFilters({
-    category: selectedCategories[0] || undefined, // gửi "cooking" hoặc undefined
+    ...(selectedCategories[0] ? { category: selectedCategories[0] } : {}),
     priceRange,
     deadlineRange,
     sortBy,
@@ -584,7 +598,7 @@ const handleApply = () => {
 
   return (
     <>
-      <div className="mt-3">
+      <div className="mt-3 space-y-2">
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={onOpenSearch}
@@ -593,11 +607,21 @@ const handleApply = () => {
             border: `2px solid ${currentTheme.bg}`,
           }}
         >
-          <span className="relative text-zinc-500 dark:text-zinc-400 font-serif font-semibold text-[15px]">Tìm kiếm nâng cao...</span>
+          <span className="relative text-zinc-500 dark:text-zinc-400 font-serif font-semibold text-[15px]">
+            {currentFilters?.query?.trim() || "Tìm kiếm nâng cao..."}
+          </span>
           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 dark:bg-zinc-700/80 flex items-center justify-center">
             <Search size={16} className="text-zinc-500 dark:text-zinc-400" strokeWidth={2.5} />
           </div>
         </motion.button>
+        <button
+          type="button"
+          onClick={() => router.push("/search?tab=near")}
+          className="w-full h-10 flex items-center justify-center gap-2 rounded-[20px] text-sm font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100/80 dark:bg-zinc-800/80 active:scale-[0.98] transition-transform"
+        >
+          <MapPin size={16} />
+          Tìm việc gần bạn
+        </button>
       </div>
 
       {mounted && createPortal(modalContent, document.body)}

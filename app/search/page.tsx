@@ -1,31 +1,40 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  getDocs,
-  startAfter,
-  QueryDocumentSnapshot,
-  DocumentData,
-} from "firebase/firestore";
-import { getFirebaseDB } from "@/lib/firebase";
+import useSWRInfinite from "swr/infinite";
+import { useInView } from "react-intersection-observer";
 import { useAuth } from "@/lib/AuthContext";
-import { QueryConstraint } from "firebase/firestore";
-import { TaskListItem, FeedTask, isActiveFeedItem } from "@/types/task";
-import TaskCard from "@/components/task/TaskCard";
-import { FiSearch, FiX, FiMapPin } from "react-icons/fi";
+import { getFirebaseAuth } from "@/lib/firebase";
+import TaskCard, { TaskCardSkeleton } from "@/components/task/TaskCard";
+import { buildFeedApiUrl, mergeFeedPages, type FeedFilters, type FeedPage } from "@/lib/feed";
+import type { FeedTask } from "@/types/task";
+import { FiSearch, FiX, FiMapPin, FiArrowLeft } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast, Toaster } from "sonner";
 
 type TabId = "hot" | "near" | "friends" | "new";
-const PAGE_SIZE = 15;
+
+const TABS: { id: TabId; label: string; icon: ComponentType<{ size?: number; className?: string }> }[] = [
+  { id: "hot", label: "Hot", icon: HiFire },
+  { id: "near", label: "Gần bạn", icon: FiMapPin },
+  { id: "friends", label: "Bạn bè", icon: HiUsers },
+  { id: "new", label: "Mới", icon: HiSparkles },
+];
+
+async function fetchWithAuth(url: string): Promise<FeedPage> {
+  const auth = getFirebaseAuth().currentUser;
+  const headers: HeadersInit = {};
+  if (auth) {
+    const token = await auth.getIdToken();
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const res = await fetch(url, { headers });
+  if (!res.ok) throw new Error("Không tải được kết quả");
+  return res.json();
+}
 
 export default function SearchPage() {
-  const db = getFirebaseDB();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useAuth();
@@ -34,42 +43,18 @@ export default function SearchPage() {
     (searchParams.get("tab") as TabId) || "hot"
   );
   const [keyword, setKeyword] = useState(searchParams.get("q") || "");
-  const [tasks, setTasks] = useState<TaskListItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [debouncedKeyword, setDebouncedKeyword] = useState(keyword);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [friendIds, setFriendIds] = useState<string[]>([]);
-
-  const locationCache = useRef<{
-    coords: { lat: number; lng: number };
-    time: number;
-  } | null>(null);
-  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const friendIdsRef = useRef<string[]>([]);
+  const [locationDenied, setLocationDenied] = useState(false);
+  const locationCache = useRef<{ coords: { lat: number; lng: number }; time: number } | null>(null);
 
   useEffect(() => {
-    if (!user?.uid || activeTab!== "friends" || friendIdsRef.current.length > 0) return;
-
-    const loadFriends = async () => {
-      try {
-        const snap = await getDocs(
-          query(collection(db, "friends"), where("userId", "==", user.uid), limit(10))
-        );
-        const ids = [user.uid,...snap.docs.map((d) => d.data().friendId)];
-        friendIdsRef.current = ids;
-        setFriendIds(ids);
-      } catch (e) {
-        console.error("Load friends error:", e);
-        setFriendIds([user.uid]);
-      }
-    };
-    loadFriends();
-  }, [user?.uid, activeTab]);
+    const timer = setTimeout(() => setDebouncedKeyword(keyword), 350);
+    return () => clearTimeout(timer);
+  }, [keyword]);
 
   useEffect(() => {
-    if (activeTab!== "near" ||!navigator.geolocation) return;
+    if (activeTab !== "near" || !navigator.geolocation) return;
 
     const now = Date.now();
     if (locationCache.current && now - locationCache.current.time < 10 * 60 * 1000) {
@@ -81,111 +66,66 @@ export default function SearchPage() {
       (pos) => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserLocation(coords);
+        setLocationDenied(false);
         locationCache.current = { coords, time: now };
       },
-      (err) => {
-        console.error("GPS error:", err);
-        toast.error("Không lấy được vị trí. Bật GPS và thử lại");
+      () => {
+        setLocationDenied(true);
+        toast.error("Bật GPS để tìm việc gần bạn");
       },
-      { enableHighAccuracy: false, timeout: 5000, maximumAge: 600000 }
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
     );
   }, [activeTab]);
 
-  const buildQuery = useCallback(
-    (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
-      const baseConstraints = [
-        where("status", "in", ["open", "full"]),
-        where("visibility", "==", "public"),
-        where("banned", "==", false),
-      ];
-
-      if (keyword.trim()) {
-        baseConstraints.push(where("searchKeywords", "array-contains", keyword.toLowerCase().trim()));
-      }
-
-      let constraints: QueryConstraint[] = [...baseConstraints];
-
-      if (activeTab === "hot") {
-        constraints.push(orderBy("likeCount", "desc"));
-        constraints.push(orderBy("createdAt", "desc"));
-      } else if (activeTab === "new") {
-        constraints.push(orderBy("createdAt", "desc"));
-      } else if (activeTab === "friends" && friendIds.length > 0) {
-        constraints.push(where("userId", "in", friendIds.slice(0, 10)));
-        constraints.push(orderBy("createdAt", "desc"));
-      } else if (activeTab === "near") {
-        constraints.push(orderBy("createdAt", "desc"));
-      }
-
-      constraints.push(limit(PAGE_SIZE));
-      if (startAfterDoc) constraints.push(startAfter(startAfterDoc));
-
-      return query(collection(db, "tasks"),...constraints);
-    },
-    [activeTab, keyword, friendIds]
+  const filters = useMemo<FeedFilters>(
+    () => ({
+      category: undefined,
+      priceRange: "all",
+      deadlineRange: "all",
+      sortBy: activeTab === "new" ? "new" : activeTab === "hot" ? "likes" : "new",
+      query: debouncedKeyword,
+      tab: activeTab,
+      lat: userLocation?.lat,
+      lng: userLocation?.lng,
+      radiusKm: 50,
+    }),
+    [activeTab, debouncedKeyword, userLocation]
   );
 
-  const fetchTasks = useCallback(
-    async (reset = false) => {
-      if (activeTab === "friends" && friendIds.length === 0 && user) return;
-      if (activeTab === "near" &&!userLocation) return;
+  const filtersKey = JSON.stringify(filters);
 
-      reset? setLoading(true) : setLoadingMore(true);
-      if (reset) {
-        setTasks([]);
-        setLastDoc(null);
-        setHasMore(true);
-      }
-
-      try {
-        const q = buildQuery(reset? undefined : lastDoc || undefined);
-        const snap = await getDocs(q);
-        let data = snap.docs
-          .map((doc) => ({ id: doc.id, ...doc.data() } as TaskListItem))
-          .filter((item) => isActiveFeedItem(item as FeedTask));
-
-        if (activeTab === "near" && userLocation) {
-          data = data
-       .map((t) => ({
-         ...t,
-              distance:
-                t.location?.lat && t.location?.lng
-             ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
-                  : 9999,
-            }))
-       .filter((t: any) => t.distance < 50)
-       .sort((a: any, b: any) => a.distance - b.distance);
-        }
-
-        setTasks((prev) => {
-          if (reset) return data;
-          const map = new Map(prev.map((t) => [t.id, t]));
-          data.forEach((t) => map.set(t.id, t));
-          return Array.from(map.values());
-        });
-
-        setLastDoc(snap.docs[snap.docs.length - 1] || null);
-        setHasMore(snap.docs.length === PAGE_SIZE);
-      } catch (err) {
-        console.error(err);
-        toast.error("Tải dữ liệu thất bại");
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-      }
+  const getKey = useCallback(
+    (pageIndex: number, previousPageData: FeedPage | null) => {
+      if (activeTab === "near" && !userLocation) return null;
+      if (activeTab === "friends" && !user) return null;
+      if (previousPageData && !previousPageData.nextCursor) return null;
+      const cursor = pageIndex === 0 ? null : previousPageData?.nextCursor ?? null;
+      return buildFeedApiUrl("task", filters, cursor);
     },
-    [activeTab, buildQuery, friendIds, userLocation, lastDoc, user]
+    [filters, activeTab, userLocation, user]
+  );
+
+  const { data, error, isLoading, isValidating, setSize } = useSWRInfinite<FeedPage>(
+    getKey,
+    fetchWithAuth,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 5000,
+      onError: () => toast.error("Tải dữ liệu thất bại"),
+    }
   );
 
   useEffect(() => {
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => {
-      fetchTasks(true);
-    }, 400);
-    return () => {
-      if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    };
-  }, [keyword, activeTab, friendIds, userLocation]);
+    setSize(1);
+  }, [filtersKey, setSize]);
+
+  const tasks = useMemo(() => (data?.length ? mergeFeedPages(data) : []), [data]);
+  const hasMore = !!data?.[data.length - 1]?.nextCursor;
+
+  const { ref: loadMoreRef, inView } = useInView({ rootMargin: "400px 0px" });
+  useEffect(() => {
+    if (inView && hasMore && !isValidating) setSize((s) => s + 1);
+  }, [inView, hasMore, isValidating, setSize]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -194,76 +134,72 @@ export default function SearchPage() {
     router.replace(`/search?${params.toString()}`, { scroll: false });
   }, [keyword, activeTab, router]);
 
-  const toFeedTask = (t: TaskListItem): FeedTask => {
-    const raw = t as any;
-    return {
- ...raw,
-      createdAt: raw.createdAt?.toDate?.()?.toISOString() || null,
-      updatedAt: raw.updatedAt?.toDate?.()?.toISOString() || null,
-      deadline: raw.deadline?.toDate?.()?.toISOString() || null,
-      eventDate: raw.eventDate?.toDate?.()?.toISOString() || null,
-      endDate: raw.endDate?.toDate?.()?.toISOString() || null,
-      startDate: raw.startDate?.toDate?.()?.toISOString() || null,
-      applicationDeadline: raw.applicationDeadline?.toDate?.()?.toISOString() || null,
-    };
-  };
+  const handleTaskUpdate = useCallback((id: string, updates: Partial<FeedTask>) => {
+    void id;
+    void updates;
+  }, []);
 
-  // FIX: Ép any để tránh lỗi exactOptionalPropertyTypes
-  const handleTaskUpdate = (id: string, updates: Partial<FeedTask>) => {
-    setTasks(prev => prev.map(t => t.id === id? ({...t,...updates } as any) : t));
-  };
-
-  const tabs: { id: TabId; label: string; icon: any }[] = [
-    { id: "hot", label: "Hot", icon: HiFire },
-    { id: "near", label: "Gần bạn", icon: FiMapPin },
-    { id: "friends", label: "Bạn bè", icon: HiUsers },
-    { id: "new", label: "Mới", icon: HiSparkles },
-  ];
+  const loading =
+    isLoading ||
+    (activeTab === "near" && !userLocation && !locationDenied) ||
+    (activeTab === "friends" && !user);
 
   return (
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 pb-24">
-<div className="sticky top-0 z-50 bg-white dark:bg-zinc-900">
+        <div className="sticky top-0 z-50 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-b border-zinc-200/60 dark:border-zinc-800/60">
           <div className="max-w-2xl mx-auto px-4 py-3">
-            <div className="relative mb-3">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="Tìm công việc..."
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                className="w-full pl-10 pr-10 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-              {keyword && (
-                <button
-                  onClick={() => setKeyword("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <FiX size={20} />
-                </button>
-              )}
+            <div className="flex items-center gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center"
+                aria-label="Quay lại"
+              >
+                <FiArrowLeft size={18} />
+              </button>
+              <div className="relative flex-1">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  type="search"
+                  placeholder="Tìm công việc, kế hoạch..."
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  className="w-full pl-10 pr-10 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                {keyword && (
+                  <button
+                    type="button"
+                    onClick={() => setKeyword("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  >
+                    <FiX size={18} />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-around">
-              {tabs.map((tab) => {
+              {TABS.map((tab) => {
                 const Icon = tab.icon;
                 const active = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
+                    type="button"
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex flex-col items-center py-2 px-2 flex-1 transition-all ${
                       active
-                   ? "text-blue-600 dark:text-blue-400"
-                        : "text-gray-400 dark:text-zinc-500 hover:text-gray-600"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-400 dark:text-zinc-500"
                     }`}
                   >
-                    <Icon size={20} className={active? "scale-110" : ""} />
+                    <Icon size={20} className={active ? "scale-110" : ""} />
                     <span className="text-xs font-semibold mt-1">{tab.label}</span>
                     <div
                       className={`mt-1 h-0.5 rounded-full transition-all ${
-                        active? "w-6 bg-blue-600 dark:bg-blue-400" : "w-0"
+                        active ? "w-6 bg-blue-600 dark:bg-blue-400" : "w-0"
                       }`}
                     />
                   </button>
@@ -274,27 +210,51 @@ export default function SearchPage() {
         </div>
 
         <div className="max-w-2xl mx-auto p-4 space-y-3">
-          {loading && <SkeletonList />}
-          {!loading && tasks.length === 0 && (
-            <Empty tab={activeTab} hasKeyword={!!keyword} hasLocation={!!userLocation} />
+          {loading && (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <TaskCardSkeleton key={i} />
+              ))}
+            </div>
           )}
-          {!loading && tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={toFeedTask(task)}
-              theme={task.type === "task"? "task" : "plan"}
-              onTaskUpdate={handleTaskUpdate}
-            />
-          ))}
 
-          {!loading && hasMore && tasks.length > 0 && (
-            <button
-              onClick={() => fetchTasks(false)}
-              disabled={loadingMore}
-              className="w-full py-3 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-semibold text-sm active:scale-[0.98] transition-all disabled:opacity-50"
-            >
-              {loadingMore? "Đang tải..." : "Tải thêm"}
-            </button>
+          {!loading && activeTab === "near" && locationDenied && (
+            <EmptyState message="Bật GPS để tìm việc gần bạn" hint="Vào cài đặt trình duyệt và cho phép vị trí" />
+          )}
+
+          {!loading && activeTab === "friends" && !user && (
+            <EmptyState message="Đăng nhập để xem bài của bạn bè" hint="Bạn cần tài khoản để dùng tab này" />
+          )}
+
+          {!loading && !error && tasks.length === 0 && !(activeTab === "near" && locationDenied) && (
+            <EmptyState
+              message={
+                debouncedKeyword
+                  ? "Không tìm thấy kết quả"
+                  : activeTab === "near"
+                    ? "Không có việc gần bạn"
+                    : activeTab === "friends"
+                      ? "Bạn bè chưa đăng bài"
+                      : "Chưa có bài phù hợp"
+              }
+              hint="Thử từ khóa khác hoặc đổi tab"
+            />
+          )}
+
+          {!loading &&
+            tasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                theme={task.type === "task" ? "task" : "plan"}
+                currentUserId={user?.uid}
+                onTaskUpdate={handleTaskUpdate}
+              />
+            ))}
+
+          <div ref={loadMoreRef} className="h-4" />
+          {isValidating && tasks.length > 0 && (
+            <p className="text-center text-sm text-zinc-400 py-2">Đang tải thêm...</p>
           )}
         </div>
       </div>
@@ -302,51 +262,12 @@ export default function SearchPage() {
   );
 }
 
-function SkeletonList() {
+function EmptyState({ message, hint }: { message: string; hint: string }) {
   return (
-    <div className="space-y-3">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-white dark:bg-zinc-900 rounded-3xl p-4 animate-pulse border border-gray-100 dark:border-zinc-800">
-          <div className="flex gap-3 mb-3">
-            <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-800 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
-              <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
-            </div>
-          </div>
-          <div className="h-5 bg-gray-200 dark:bg-zinc-800 rounded w-3/4 mb-2" />
-          <div className="h-20 bg-gray-200 dark:bg-zinc-800 rounded" />
-        </div>
-      ))}
+    <div className="text-center text-gray-400 dark:text-zinc-500 mt-16">
+      <div className="text-5xl mb-4">🔍</div>
+      <p className="font-semibold text-zinc-700 dark:text-zinc-300">{message}</p>
+      <p className="text-sm mt-1">{hint}</p>
     </div>
   );
-}
-
-function Empty({ tab, hasKeyword, hasLocation }: { tab: TabId; hasKeyword: boolean; hasLocation: boolean }) {
-  const messages = {
-    hot: hasKeyword? "Không tìm thấy kết quả" : "Chưa có bài hot",
-    near:!hasLocation? "Bật GPS để tìm gần bạn" : hasKeyword? "Không có kết quả gần bạn" : "Không có bài gần bạn",
-    friends: hasKeyword? "Bạn bè chưa đăng bài này" : "Bạn bè chưa đăng bài",
-    new: hasKeyword? "Không tìm thấy kết quả" : "Chưa có bài mới",
-  };
-  return (
-    <div className="text-center text-gray-400 dark:text-zinc-500 mt-20">
-      <div className="text-6xl mb-4">🔍</div>
-      <p className="font-semibold">{messages[tab]}</p>
-      <p className="text-sm mt-1">Thử từ khóa khác hoặc đổi tab</p>
-    </div>
-  );
-}
-
-function getDistance(p1: { lat: number; lng: number }, p2: { lat: number; lng: number }) {
-  const R = 6371;
-  const dLat = ((p2.lat - p1.lat) * Math.PI) / 180;
-  const dLng = ((p2.lng - p1.lng) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((p1.lat * Math.PI) / 180) *
-      Math.cos((p2.lat * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }

@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useId } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -19,12 +20,14 @@ import {
   FiShare2,
   FiTrash2,
   FiUsers,
+  FiWifi,
+  FiZap,
 } from "react-icons/fi";
 import { HiHeart, HiOutlineHeart } from "react-icons/hi2";
 import { TbCurrencyDong } from "react-icons/tb";
 import { toast } from "sonner";
 import { getFirebaseAuth } from "@/lib/firebase";
-import { type FeedTask } from "@/types/task";
+import { type FeedTask, getFeedItemDueMillis } from "@/types/task";
 import { cn } from "@/lib/utils";
 import { useProvinces } from "@/lib/useProvinces";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -122,6 +125,7 @@ function TaskCard({
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const menuPanelRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const fallbackProvinceMap = useProvinceMap();
   const provinceMap = provinceMapProp ?? fallbackProvinceMap;
@@ -146,9 +150,14 @@ function TaskCard({
     if (!showMenu) return;
     const handleKey = (e: KeyboardEvent) => e.key === "Escape" && setShowMenu(false);
     const handleClick = (e: MouseEvent) => {
-      if (menuBtnRef.current && !menuBtnRef.current.contains(e.target as Node)) {
-        setShowMenu(false);
+      const target = e.target as Node;
+      if (
+        menuBtnRef.current?.contains(target) ||
+        menuPanelRef.current?.contains(target)
+      ) {
+        return;
       }
+      setShowMenu(false);
     };
     const handleScroll = () => setShowMenu(false);
     let resizeTimer: ReturnType<typeof setTimeout>;
@@ -175,6 +184,9 @@ function TaskCard({
   const currentCount = task.type === "task"? task.joined?? 0 : task.currentParticipants?? 0;
   const created = task.createdAt? new Date(task.createdAt) : new Date();
   const dueRaw = task.type === "task"? task.deadline : task.eventDate;
+  const dueMs = getFeedItemDueMillis(task);
+  const now = Date.now();
+  const hoursLeft = dueMs != null ? (dueMs - now) / (1000 * 60 * 60) : null;
   const due = dueRaw
   ? format(new Date(dueRaw), "EEE dd/MM", { locale: vi })
     : "Linh hoạt";
@@ -187,21 +199,29 @@ function TaskCard({
     ? "Miễn phí"
       : task.costType === "share"
     ? "Chia đều"
+      : task.costType === "host"
+    ? "Host trả"
+      : task.costType === "ticket"
+    ? "Vé"
       : task.costAmount
     ? `${task.costAmount.toLocaleString("vi-VN")} VNĐ`
       : "Linh hoạt";
 
   const cityKey = task.location?.city || "";
-  const rawProvinceName = provinceMap.get(cityKey) || cityKey || "Chưa rõ";
+  const rawProvinceName = provinceMap.get(cityKey) || cityKey || "";
   const provinceName = rawProvinceName.replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "").trim();
   
   const categories = task.type === "task" ? CATEGORY_TASKS : CATEGORY_PLANS;
   const categoryData = categories.find(c => c.id === task.category);
+  const coverImage = task.images?.[0];
+  const description = task.description?.trim() || "";
 
   return {
     maxSlots,
     currentCount,
     due,
+    dueMs,
+    hoursLeft,
     price,
     timeAgo: formatDistanceToNow(created, { addSuffix: true, locale: vi }),
     provinceName,
@@ -209,6 +229,11 @@ function TaskCard({
     categoryIcon: categoryData?.icon || "📋",
     categoryColor: categoryData?.color || "#8E8E93",
     isFull: maxSlots > 0 && currentCount >= maxSlots,
+    isUrgent: task.type === "task" && ((task as { urgency?: string }).urgency === "urgent" || (hoursLeft != null && hoursLeft > 0 && hoursLeft <= 24)),
+    isNearDeadline: hoursLeft != null && hoursLeft > 0 && hoursLeft <= 72,
+    isRemote: task.type === "task" && !!(task as { isRemote?: boolean }).isRemote,
+    coverImage,
+    description,
   };
 }, [task, provinceMap]);
 
@@ -351,7 +376,7 @@ function TaskCard({
                     size={40}
                     className="rounded-xl ring-2 ring-white shadow-md dark:ring-zinc-950"
                   />
-                  {task.userVerified && <FiCheckCircle className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-white text-[#0A84FF] dark:bg-zinc-950" />}
+                  {task.userVerified && <FiCheckCircle className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-white dark:bg-zinc-950" style={{ color: accent }} />}
                 </button>
                 <div className="min-w-0">
                   <button type="button" onClick={goToTask} className="block text-left">
@@ -383,7 +408,54 @@ function TaskCard({
 
             <button type="button" onClick={goToTask} className={cn("block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 rounded-lg", ringClass)}>
               <h3 className="text-lg font-bold leading-snug tracking-tight text-zinc-950 dark:text-white line-clamp-2">{task.title}</h3>
+              {derived.description && (
+                <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400 line-clamp-2">
+                  {derived.description}
+                </p>
+              )}
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {derived.isFull && (
+                  <span className="inline-flex items-center rounded-md bg-red-500/10 px-2 py-0.5 text-[11px] font-bold text-red-600 dark:text-red-400">
+                    Đầy
+                  </span>
+                )}
+                {derived.isUrgent && (
+                  <span className="inline-flex items-center gap-0.5 rounded-md bg-orange-500/10 px-2 py-0.5 text-[11px] font-bold text-orange-600 dark:text-orange-400">
+                    <FiZap className="h-3 w-3" /> Gấp
+                  </span>
+                )}
+                {derived.isNearDeadline && !derived.isUrgent && (
+                  <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-400">
+                    <FiClock className="h-3 w-3" /> Sắp hết hạn
+                  </span>
+                )}
+                {derived.isRemote && (
+                  <span className="inline-flex items-center gap-0.5 rounded-md bg-sky-500/10 px-2 py-0.5 text-[11px] font-bold text-sky-600 dark:text-sky-400">
+                    <FiWifi className="h-3 w-3" /> Từ xa
+                  </span>
+                )}
+                {!isTaskTheme && (
+                  <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold text-white" style={{ background: accent }}>
+                    Kế hoạch
+                  </span>
+                )}
+              </div>
             </button>
+
+            {derived.coverImage && (
+              <button type="button" onClick={goToTask} className="relative mt-3 block w-full overflow-hidden rounded-xl focus-visible:outline-none focus-visible:ring-2" style={{ outlineColor: accent }}>
+                <div className="relative h-36 w-full">
+                  <Image
+                    src={derived.coverImage}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 680px) 100vw, 680px"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                </div>
+              </button>
+            )}
 
          <div className="mt-3 grid grid-cols-3 gap-1.5">
   <div className="rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
@@ -469,6 +541,7 @@ function TaskCard({
             <div className="fixed inset-0 z-50" onClick={() => setShowMenu(false)} />
             <motion.div
               id={menuId}
+              ref={menuPanelRef}
               role="menu"
               initial={reduceMotion? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -8 }}
               animate={reduceMotion? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}

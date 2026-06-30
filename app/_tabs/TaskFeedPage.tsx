@@ -16,6 +16,7 @@ import { useProvinces } from "@/lib/useProvinces";
 import {
   buildFeedApiUrl,
   mergeFeedPages,
+  hasActiveFilters,
   type FeedFilters,
   type FeedPage,
 } from "@/lib/feed";
@@ -255,7 +256,40 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
             showSearchModal={showSearchModal}
             onCloseSearch={() => setShowSearchModal(false)}
             onApplyFilters={handleApplyFilters}
+            currentFilters={filters}
           />
+
+          {hasActiveFilters(filters) && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {filters.query && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                  &ldquo;{filters.query}&rdquo;
+                </span>
+              )}
+              {filters.category && (
+                <span className="inline-flex rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ background: accent }}>
+                  {filters.category}
+                </span>
+              )}
+              {filters.priceRange !== "all" && (
+                <span className="inline-flex rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                  Giá: {filters.priceRange}
+                </span>
+              )}
+              {filters.deadlineRange !== "all" && (
+                <span className="inline-flex rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                  Hạn: {filters.deadlineRange}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setFilters(DEFAULT_FILTERS)}
+                className="inline-flex rounded-full px-3 py-1 text-xs font-semibold text-[#0A84FF]"
+              >
+                Xóa lọc
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
