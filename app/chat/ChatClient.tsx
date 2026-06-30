@@ -10,11 +10,23 @@ import { getFirebaseDB } from "@/lib/firebase";
 
 
 
+import dynamic from "next/dynamic";
 import LeaderboardModal from "@/components/LeaderboardModal";
 import { EventItem } from "@/data/events";
-import ExploreTodaySection from "@/components/inbox/ExploreTodaySection";
-import PublicRoomsSection, { type PublicRoomItem } from "@/components/inbox/PublicRoomsSection";
 import EventDetailModal from "@/components/EventDetailModal";
+import { type PublicRoomItem } from "@/lib/publicRooms";
+import { joinPublicRoom } from "@/lib/joinPublicRoom";
+
+const ExploreTodaySection = dynamic(() => import("@/components/inbox/ExploreTodaySection"), {
+  loading: () => (
+    <div className="mx-4 mt-4 h-40 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />
+  ),
+});
+const PublicRoomsSection = dynamic(() => import("@/components/inbox/PublicRoomsSection"), {
+  loading: () => (
+    <div className="mx-4 mt-6 h-44 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />
+  ),
+});
 
 import { useAppStore } from "@/store/app";
 import {
@@ -25,18 +37,12 @@ import {
   doc,
   getDoc,
   arrayUnion,
-  setDoc,
   updateDoc,
-  
-  
   arrayRemove,
   Timestamp,
   Unsubscribe,
   QuerySnapshot,
   DocumentData,
-  
-  
-  serverTimestamp,
 } from "firebase/firestore";
 import {
   FiUsers,
@@ -461,42 +467,13 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
   if (room.isJoined) return router.push(`/rooms/${room.id}`);
 
   try {
-    const roomRef = doc(db, "chats", room.id);
-    const roomSnap = await getDoc(roomRef);
-
-    if (!roomSnap.exists()) {
-      // Tạo phòng mới nếu chưa có - đúng format collection chats
-      await setDoc(roomRef, {
-        isGroup: true,
-        isPublicRoom: true,
-        groupName: room.name,
-        emoji: room.emoji,
-        color: room.color,
-        groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
-        members: [user.uid],
-        memberCount: 1,
-        onlineCount: 1,
-        lastMessage: `Chào mừng đến ${room.name}!`,
-        lastSenderId: "system",
-        lastSenderName: "Hệ thống",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        blockedUsers: [],
-      });
-    } else {
-      // Join phòng đã có - chỉ cần add vào members
-      await updateDoc(roomRef, {
-        members: arrayUnion(user.uid),
-        updatedAt: serverTimestamp(),
-      });
-    }
-
+    await joinPublicRoom(room, user.uid);
     if ("vibrate" in navigator) navigator.vibrate(10);
     toast.success(`Đã vào ${room.name}`, { icon: room.emoji });
     router.push(`/rooms/${room.id}`);
-  } catch (e: any) {
-    console.error(e);
-    toast.error("Lỗi vào phòng: " + e.message);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Lỗi vào phòng";
+    toast.error(message);
   }
 };
 if (authLoading) {

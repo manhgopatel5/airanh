@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseRTDB } from "@/lib/firebase";
+import { getCityMetaByRoomId } from "@/lib/publicRooms";
 import { doc, getDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, orderBy, limit, writeBatch, where, getDocs } from "firebase/firestore";
 import { ref, onValue, set, onDisconnect } from "firebase/database";
 import { FiArrowLeft, FiUser, FiUsers, FiSend, FiLoader, FiMoreVertical, FiSearch, FiChevronUp, FiTrash2, FiChevronDown, FiUserPlus, FiClipboard, FiX, FiPlus, FiCheck } from "react-icons/fi";
@@ -16,6 +18,7 @@ type RoomData = {
   name: string;
   emoji: string;
   color: string;
+  imageUrl?: string;
   members: string[];
   memberCount: number;
   onlineCount: number;
@@ -165,63 +168,59 @@ const deleteMessage = async (msgId: string) => {
   }, [user?.uid, roomId, rtdb]);
 
   useEffect(() => {
-    if (!roomId ||!user?.uid) return;
+    if (!roomId || !user?.uid) return;
 
-    let unsubRoom: () => void = () => {};
     let unsubMessages: () => void = () => {};
+    const roomRef = doc(db, "chats", roomId as string);
 
-const roomRef = doc(db, "chats", roomId as string);
-    unsubRoom = onSnapshot(roomRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setRoomData(prev => ({
-          id: snap.id,
-          name: data.name || data.groupName || "Phòng chat",
-          emoji: data.emoji || "💬",
-          color: data.color || "from-blue-500 to-cyan-500",
-          members: data.members || [],
-          memberCount: data.members?.length || 0,
-          onlineCount: prev?.onlineCount || 0,
-        }));
-        setLoading(false);
-      } else {
+    const unsubRoom = onSnapshot(roomRef, (snap) => {
+      if (!snap.exists()) {
         toast.error("Phòng không tồn tại");
-        router.push("/chat");
+        router.push("/rooms");
+        return;
       }
-    });
 
-    const chatRef = doc(db, "chats", roomId as string);
-    const unsubChatCheck = onSnapshot(chatRef, (chatSnap) => {
-      if (chatSnap.exists()) {
-        const messagesRef = collection(db, "chats", roomId as string, "messages");
-        const q = query(messagesRef, orderBy("createdAt", "asc"), limit(200));
-        unsubMessages = onSnapshot(q, (snap) => {
-          const msgs: Message[] = [];
-          snap.forEach((doc) => {
-            const data = doc.data();
-            const senderName = data.senderName || "User";
-            const senderAvatar = data.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random`;
-            msgs.push({
-              id: doc.id,
-              text: data.text || "",
-              senderId: data.senderId || "",
-              senderName,
-              senderAvatar,
-              createdAt: data.createdAt,
-              type: data.type || 'text',
-              pollData: data.pollData || null,
-            } as Message);
-          });
-          setMessages(msgs);
+      const data = snap.data();
+      const cityMeta = getCityMetaByRoomId(snap.id);
+      setRoomData((prev) => ({
+        id: snap.id,
+        name: data.name || data.groupName || cityMeta?.name || "Phòng chat",
+        emoji: data.emoji || cityMeta?.emoji || "💬",
+        color: data.color || cityMeta?.color || "from-blue-500 to-cyan-500",
+        imageUrl: data.imageUrl || data.groupAvatar || cityMeta?.imageUrl,
+        members: data.members || [],
+        memberCount: data.members?.length || 0,
+        onlineCount: prev?.onlineCount || 0,
+      }));
+      setLoading(false);
+
+      unsubMessages();
+      const messagesRef = collection(db, "chats", roomId as string, "messages");
+      const q = query(messagesRef, orderBy("createdAt", "asc"), limit(200));
+      unsubMessages = onSnapshot(q, (msgSnap) => {
+        const msgs: Message[] = [];
+        msgSnap.forEach((messageDoc) => {
+          const msgData = messageDoc.data();
+          const senderName = msgData.senderName || "User";
+          msgs.push({
+            id: messageDoc.id,
+            text: msgData.text || "",
+            senderId: msgData.senderId || "",
+            senderName,
+            senderAvatar:
+              msgData.senderAvatar ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random`,
+            createdAt: msgData.createdAt,
+            type: msgData.type || "text",
+            pollData: msgData.pollData || null,
+          } as Message);
         });
-      } else {
-        setMessages([]);
-      }
+        setMessages(msgs);
+      });
     });
 
     return () => {
       unsubRoom();
-      unsubChatCheck();
       unsubMessages();
     };
   }, [roomId, user?.uid, db, router]);
@@ -249,7 +248,7 @@ const roomRef = doc(db, "chats", roomId as string);
         groupName: roomData?.name || "Phòng chat",
         emoji: roomData?.emoji || "💬",
         color: roomData?.color || "from-blue-500 to-cyan-500",
-        groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(roomData?.emoji || "💬")}&background=random&color=fff&bold=true&size=128`,
+        groupAvatar: roomData?.imageUrl || roomData?.emoji || "💬",
         members: [user.uid],
         memberCount: 1,
         createdAt: serverTimestamp(),
@@ -533,6 +532,63 @@ const inviteUsers = async () => {
     toast.error("Lỗi vote: " + e.message);
   }
 };
+  const voterIds = useMemo(() => {
+    const ids = new Set<string>();
+    messages.forEach((msg) => {
+      if (msg.type === "poll" && msg.pollData) {
+        msg.pollData.options.forEach((opt) => opt.votes.forEach((uid) => ids.add(uid)));
+      }
+    });
+    return Array.from(ids);
+  }, [messages]);
+
+  useEffect(() => {
+    if (!voterIds.length) return;
+    let cancelled = false;
+
+    (async () => {
+      setAllUsers((prev) => {
+        const missing = voterIds.filter((id) => !prev.some((u) => u.uid === id));
+        if (!missing.length) return prev;
+
+        void (async () => {
+          const chunks: string[][] = [];
+          for (let i = 0; i < missing.length; i += 10) chunks.push(missing.slice(i, i + 10));
+          const loaded: UserData[] = [];
+          for (const chunk of chunks) {
+            const q = query(collection(db, "users"), where("__name__", "in", chunk));
+            const snap = await getDocs(q);
+            snap.forEach((userDoc) => {
+              const data = userDoc.data();
+              loaded.push({
+                uid: userDoc.id,
+                displayName: data.name || data.displayName || "User",
+                email: data.email || "",
+                photoURL:
+                  data.avatar ||
+                  data.photoURL ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "User")}&background=random`,
+              });
+            });
+          }
+          if (!cancelled && loaded.length) {
+            setAllUsers((current) => {
+              const map = new Map(current.map((u) => [u.uid, u]));
+              loaded.forEach((u) => map.set(u.uid, u));
+              return Array.from(map.values());
+            });
+          }
+        })();
+
+        return prev;
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [voterIds, db]);
+
 const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
   e.stopPropagation();
   setActivePopupMsgId(prev => prev === msgId? null : msgId);
@@ -564,15 +620,21 @@ const formatTimeDivider = (timestamp: any) => {
   if (!roomData) return null;
 
   return (
-    <div className="fixed inset-0 bg-white dark:bg-black flex flex-col">
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-[#F7FAFF] via-white to-[#F0F4FA] dark:from-zinc-950 dark:via-black dark:to-zinc-950">
  {/* Header */}
-<div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-black/5 dark:border-white/5 pt-[env(safe-area-inset-top)] relative z-50">
+<div className="relative z-50 flex-shrink-0 border-b border-black/5 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur-xl dark:border-white/5 dark:bg-black/95">
   <div className="flex items-center gap-3 px-4 py-3">
-          <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center -ml-2 active:opacity-60">
+          <button onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center active:opacity-60">
             <FiArrowLeft size={22} />
           </button>
-          <div className={`w-10 h-10 bg-gradient-to-br ${roomData.color} rounded-full flex items-center justify-center text-xl flex-shrink-0`}>
-            {roomData.emoji}
+          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl ring-2 ring-white shadow-md dark:ring-zinc-800">
+            {roomData.imageUrl ? (
+              <Image src={roomData.imageUrl} alt={roomData.name} fill className="object-cover" sizes="44px" />
+            ) : (
+              <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${roomData.color} text-xl`}>
+                {roomData.emoji}
+              </div>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-[17px] font-semibold truncate leading-5">{roomData.name}</h1>
@@ -634,10 +696,16 @@ const formatTimeDivider = (timestamp: any) => {
   className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-[2px]"
 >
   {messages.length === 0? (
-    <div className="flex flex-col items-center justify-center h-full text-center py-20">
-      <div className="text-6xl mb-4">{roomData.emoji}</div>
-      <h3 className="text-[17px] font-semibold mb-1">Chào mừng đến {roomData.name}!</h3>
-      <p className="text-[15px] text-[#8e8e93]">Hãy là người đầu tiên gửi tin nhắn</p>
+    <div className="flex h-full flex-col items-center justify-center px-6 py-20 text-center">
+      {roomData.imageUrl ? (
+        <div className="relative mb-4 h-28 w-28 overflow-hidden rounded-3xl shadow-lg ring-4 ring-white dark:ring-zinc-800">
+          <Image src={roomData.imageUrl} alt={roomData.name} fill className="object-cover" sizes="112px" />
+        </div>
+      ) : (
+        <div className="mb-4 text-6xl">{roomData.emoji}</div>
+      )}
+      <h3 className="mb-1 text-[17px] font-semibold">Chào mừng đến {roomData.name}!</h3>
+      <p className="text-[15px] text-[#8e8e93]">Hãy là người đầu tiên gửi tin nhắn 🌸</p>
     </div>
   ) : (
     messages.map((msg, idx) => {

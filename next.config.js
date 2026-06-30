@@ -21,7 +21,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'api.mapbox.com' },
       { protocol: 'https', hostname: 'maps.wikimedia.org' },
       // ✅ THÊM DÒNG NÀY
-      { protocol: 'https', hostname: 'staticmap.openstreetmap.de' },
+      { protocol: 'https', hostname: 'api.dicebear.com' },
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
@@ -63,6 +63,7 @@ const nextConfig = {
         'https://maps.wikimedia.org',
         // ✅ THÊM DÒNG NÀY
         'https://staticmap.openstreetmap.de',
+        'https://api.dicebear.com',
       ].join(' '),
       "font-src 'self' data:",
       [
