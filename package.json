@@ -21,7 +21,8 @@
     "analyze": "ANALYZE=true next build",
     "prepare": "husky",
     "test": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "deploy:firestore": "node scripts/deploy-firestore.mjs"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.6",
