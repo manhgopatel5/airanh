@@ -127,7 +127,12 @@ export default function ChatDetailPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
+  const [showMedia, setShowMedia] = useState(false);
+const [mediaTab, setMediaTab] = useState<'photos'|'files'|'links'>('photos');
 
+const mediaPhotos = messages.filter(m => m.imageUrl || m.image);
+const mediaFiles = messages.filter(m => m.fileUrl || m.file);
+const mediaLinks = messages.filter(m => m.text && /(https?:\/\/[^\s]+)/.test(m.text));
   const [loadingFriend, setLoadingFriend] = useState(true);
 const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
 const isTyping = chatData?.typing?.[friendId || ""];
@@ -1039,7 +1044,141 @@ useEffect(() => {
 </div>
   </div>
 </div>
+{showMedia && (
+  <div className="fixed inset-0 z-[200] bg-white flex flex-col">
+    {/* HEADER */}
+    <div className="shrink-0 bg-white" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
+      <div className="relative flex items-center justify-center h-[44px] border-b border-zinc-200">
+        <span className="text-[17px] font-semibold text-black">Ảnh, file, liên kết</span>
+        <button
+          onClick={() => setShowMedia(false)}
+          className="absolute right-3 w-7 h-7 rounded-full bg-zinc-200/80 flex items-center justify-center active:scale-90"
+        >
+          <X size={16} className="text-zinc-700" strokeWidth={2.5} />
+        </button>
+      </div>
 
+      {/* TABS - pill trắng */}
+      <div className="px-3 py-2.5 bg-white">
+        <div className="grid grid-cols-3 gap-1.5 bg-zinc-100 rounded-[10px] p-1">
+          {[
+            {k:'photos', label:'Ảnh'},
+            {k:'files', label:'File'},
+            {k:'links', label:'Liên kết'},
+          ].map(t => (
+            <button
+              key={t.k}
+              onClick={() => setMediaTab(t.k as any)}
+              className={`h-[32px] rounded-[8px] text-[15px] font-medium transition-all ${
+                mediaTab===t.k
+                ? 'bg-white text-black shadow-[0_1px_2px_rgba(0,0,0,0.08)]'
+                  : 'text-zinc-500'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* CONTENT - nền trắng 100% */}
+    <div className="flex-1 overflow-y-auto bg-white">
+      {/* ẢNH */}
+      {mediaTab==='photos' && (
+        mediaPhotos.length===0? (
+          <div className="flex flex-col items-center justify-center h-[60vh]">
+            <div className="w-20 h-20 mb-3">
+              <svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="40" fill="#F2F2F7"/><path d="M30 35a5 5 0 110-10 5 5 0 010 10zM52 54H28c-1.1 0-2-.9-2-2V32c0-1.1.9-2 2-2h24c1.1 0 2.9 2 2v20c0 1.1-.9 2-2 2z" stroke="#AEAEB2" strokeWidth="2"/></svg>
+            </div>
+            <p className="text-[15px] text-zinc-500">Chưa có ảnh</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-[2px] bg-white">
+            {mediaPhotos.map((m, i) => (
+              <button
+                key={m.id}
+                onClick={() => {
+                  setShowMedia(false);
+                  setTimeout(() => {
+                    const el = document.getElementById(`msg-${m.id}`);
+                    el?.scrollIntoView({behavior:'smooth', block:'center'});
+                    const bubble = el?.querySelector('div[class*="bg-gradient"], div[class*="bg-white"], div[class*="dark:bg-zinc"]');
+                    bubble?.classList.add('!bg-yellow-200');
+                    setTimeout(() => bubble?.classList.remove('!bg-yellow-200'), 1500);
+                  }, 100);
+                }}
+                className="aspect-square bg-zinc-100 overflow-hidden active:opacity-70"
+              >
+                <img src={m.imageUrl || m.image} className="w-full h-full object-cover" loading="lazy" alt="" />
+              </button>
+            ))}
+          </div>
+        )
+      )}
+
+      {/* FILE */}
+      {mediaTab==='files' && (
+        <div>
+          {mediaFiles.length===0? (
+            <div className="flex flex-col items-center justify-center h-[60vh]">
+              <FileText size={48} className="text-zinc-300 mb-3" strokeWidth={1.5} />
+              <p className="text-[15px] text-zinc-500">Chưa có tệp</p>
+            </div>
+          ) : mediaFiles.map(m => {
+            const name = m.fileName || 'Tài liệu';
+            const ext = name.split('.').pop()?.toUpperCase() || 'FILE';
+            return (
+              <button
+                key={m.id}
+                onClick={() => window.open(m.fileUrl || m.file, '_blank')}
+                className="w-full flex items-center gap-3 px-4 h-[68px] border-b border-zinc-100 active:bg-zinc-50 text-left"
+              >
+                <div className="w-12 h-12 rounded-xl bg-[#007AFF] flex items-center justify-center shrink-0">
+                  <span className="text-[11px] font-bold text-white">{ext.slice(0,4)}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[16px] text-black truncate leading-tight">{name}</p>
+                  <p className="text-[13px] text-zinc-500 mt-0.5">{m.fileSize? `${(m.fileSize/1024/1024).toFixed(1)} MB` : 'Tệp'}</p>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* LINK */}
+      {mediaTab==='links' && (
+        <div>
+          {mediaLinks.length===0? (
+            <div className="flex flex-col items-center justify-center h-[60vh]">
+              <Link2 size={48} className="text-zinc-300 mb-3" strokeWidth={1.5} />
+              <p className="text-[15px] text-zinc-500">Chưa có liên kết</p>
+            </div>
+          ) : mediaLinks.map(m => {
+            const url = m.text.match(/(https?:\/\/[^\s]+)/)?.[0] || '';
+            const domain = url? new URL(url).hostname.replace('www.','') : '';
+            return (
+              <button
+                key={m.id}
+                onClick={() => window.open(url, '_blank')}
+                className="w-full flex items-center gap-3 px-4 h-[72px] border-b border-zinc-100 active:bg-zinc-50 text-left"
+              >
+                <div className="w-12 h-12 rounded-xl bg-zinc-100 flex items-center justify-center overflow-hidden shrink-0">
+                  <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`} className="w-6 h-6" alt="" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[16px] text-black truncate leading-tight">{m.linkTitle || domain}</p>
+                  <p className="text-[13px] text-zinc-500 truncate mt-0.5">{url}</p>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  </div>
+)}
 {showPinned && (
   <div className="fixed inset-0 z-[200] bg-white dark:bg-zinc-950 flex flex-col">
     {/* Header */}
@@ -1897,14 +2036,21 @@ onClick={(e) => {
           ))}
         </div>
 
-        {/* MEDIA */}
-        <div className="bg-white rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
-          <button onClick={() => toast.info('Đang phát triển')} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-zinc-50 active:bg-zinc-100 transition">
-            <ImageIcon size={20} className="text-zinc-500" />
-            <span className="flex-1 text-left text-[16px] text-zinc-900">Ảnh, file, liên kết</span>
-            <span className="text-zinc-400 text-[14px]">Xem tất cả</span>
-          </button>
-        </div>
+     {/* MEDIA */}
+<div className="bg-white rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
+  <button 
+    onClick={() => setShowMedia(true)} 
+    className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-zinc-50 transition"
+  >
+    <ImageIcon size={20} className="text-zinc-500" />
+    <span className="flex-1 text-left text-base text-zinc-900">
+      Ảnh, file, liên kết
+    </span>
+    <span className="text-sm text-zinc-400">
+      Xem tất cả
+    </span>
+  </button>
+</div>
 
         {/* QUYỀN RIÊNG TƯ */}
         <div className="bg-white rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
