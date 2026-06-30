@@ -3,17 +3,15 @@ import GpsRequiredModal from "@/components/GpsRequiredModal";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import CreateGroupModal from "@/components/CreateGroupModal";
 import { useAuth } from "@/lib/AuthContext";
-
 import { getFirebaseDB } from "@/lib/firebase";
-
-
-
 import LeaderboardModal from "@/components/LeaderboardModal";
-import { EventItem, CATEGORY_INFO } from "@/data/events";
+import { EventItem } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
-
+import { type PublicRoomItem } from "@/lib/publicRooms";
+import { joinPublicRoom } from "@/lib/joinPublicRoom";
 import { useAppStore } from "@/store/app";
 import {
   collection,
@@ -23,43 +21,37 @@ import {
   doc,
   getDoc,
   arrayUnion,
-  setDoc,
   updateDoc,
-  
-  
   arrayRemove,
   Timestamp,
   Unsubscribe,
   QuerySnapshot,
   DocumentData,
-  
-  
-  serverTimestamp,
 } from "firebase/firestore";
 import {
-  
-  FiStar,
-  
   FiUsers,
-  FiTrendingUp,
-  FiCheck,
-
-  
   FiHome,
   FiAward,
-  FiMapPin,
   FiLoader,
   FiZap,
   FiBell,
-  
-  
 } from "react-icons/fi";
-import {  RiPushpinFill } from "react-icons/ri";
+import { RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Crown } from "lucide-react";
-
 import { format, isToday, isYesterday } from "date-fns";
+
+const ExploreTodaySection = dynamic(() => import("@/components/inbox/ExploreTodaySection"), {
+  loading: () => (
+    <div className="mx-4 mt-4 h-40 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />
+  ),
+});
+const PublicRoomsSection = dynamic(() => import("@/components/inbox/PublicRoomsSection"), {
+  loading: () => (
+    <div className="mx-4 mt-6 h-44 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />
+  ),
+});
 
 
 type ChatItem = {
@@ -92,28 +84,13 @@ type RawChat = {
   other?: string;
   isGroup: boolean;
 };
-const getDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-};
-
-const formatDistance = (km: number): string => {
-  return km < 1? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
-};
 const PINNED_KEY = "pinned_chats";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1500;
 const BATCH_SIZE = 10;
 
-export default function ChatClient() {
+export default function ChatClient({ initialEvents = [] }: { initialEvents?: EventItem[] }) {
   const { user, loading: authLoading } = useAuth();
   const db = getFirebaseDB();
   const router = useRouter();
@@ -219,109 +196,6 @@ const [activeTab, setActiveTab] = useState<"all" | "unread">("all"); // Bỏ "no
 const [userVip, setUserVip] = useState<{tier: 'free' | 'pro' | 'elite', expiresAt?: Timestamp} | null>(null);
 
 const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
-const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-const [eventsData, setEventsData] = useState<EventItem[]>([]);
-const [eventsLoading, setEventsLoading] = useState<boolean>(true);
-// THÊM DÒNG NÀY
-const [publicRooms, setPublicRooms] = useState<PublicRoomItem[]>([]);
-
-const [publicRoomsLoading, setPublicRoomsLoading] = useState(true);
-const [showPublicRooms, setShowPublicRooms] = useState(false);
-
-type PublicRoomItem = {
-  id: string;
-  name: string;
-  emoji: string;
-  color: string;
-  memberCount: number;
-  onlineCount: number;
-  lastMessage?: string;
-  isJoined: boolean;
-  isHot: boolean;
-};
-
-const PUBLIC_CITIES = [
-  { id: "hcm", name: "SÀI GÒN", emoji: "🏙️", color: "from-blue-500 to-cyan-500" },
-  { id: "hn", name: "HÀ NỘI", emoji: "🏛️", color: "from-orange-500 to-red-500" },
-  { id: "dn", name: "ĐÀ NẴNG", emoji: "🌉", color: "from-teal-500 to-emerald-500" },
-  { id: "ct", name: "CẦN THƠ", emoji: "🌾", color: "from-green-500 to-lime-500" },
-  { id: "hp", name: "HẢI PHÒNG", emoji: "⚓", color: "from-purple-500 to-pink-500" },
-  { id: "dl", name: "ĐÀ LẠT", emoji: "🌸", color: "from-pink-500 to-rose-500" },
-  { id: "nt", name: "NHA TRANG", emoji: "🏖️", color: "from-sky-500 to-blue-500" },
-  { id: "hue", name: "HUẾ", emoji: "🏯", color: "from-violet-500 to-purple-500" },
-  { id: "vt", name: "VŨNG TÀU", emoji: "🌊", color: "from-cyan-500 to-blue-500" },
-  { id: "pq", name: "PHÚ QUỐC", emoji: "🏝️", color: "from-emerald-500 to-teal-500" },
-];
-// Fetch events từ API thay vì Firestore trực tiếp
-useEffect(() => {
-  const fetchEvents = async () => {
-    try {
-      const res = await fetch('/api/admin/events', { cache: 'no-store' });
-      const data = await res.json();
-      console.log('Events from API:', data.events); // Debug
-      setEventsData(data.events || []);
-    } catch (error) {
-      console.error("Events fetch error:", error);
-      setEventsData([]);
-    } finally {
-      setEventsLoading(false);
-    }
-  };
-
-  fetchEvents();
-}, []); // Bỏ dependency [db]
-// THÊM DÒNG NÀY
-useEffect(() => {
-  // 1. Set data ảo ngay lập tức để có card hiển thị
-  const defaultRooms = PUBLIC_CITIES.map((city) => ({
-    id: `public_${city.id}`,
-    name: city.name,
-    emoji: city.emoji,
-    color: city.color,
-    memberCount: 0,
-    onlineCount: 0,
-    lastMessage: `Chào mừng đến ${city.name}!`,
-    isJoined: false,
-    isHot: false,
-  }));
-  setPublicRooms(defaultRooms);
-  setPublicRoomsLoading(false);
-
-  // 2. Nếu có user thì listen Firestore để update số thật
-  if (!user?.uid) return;
-
-  const unsubs: (() => void)[] = [];
-  PUBLIC_CITIES.forEach((city) => {
-    const roomId = `public_${city.id}`;
-    // ĐỔI DÒNG NÀY: "public_rooms" -> "chats"
-    const unsub = onSnapshot(doc(db, "chats", roomId), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setPublicRooms((prev) => {
-          const filtered = prev.filter((r) => r.id !== roomId);
-          const newRoom: PublicRoomItem = {
-            id: roomId,
-            name: city.name,
-            emoji: city.emoji,
-            color: city.color,
-            memberCount: data.memberCount || data.members?.length || 0, // fallback thêm
-            onlineCount: data.onlineCount || 0,
-            lastMessage: data.lastMessage || `Chào mừng đến ${city.name}!`,
-            isJoined: data.members?.includes(user.uid) || false,
-            isHot: (data.onlineCount || 0) > 20,
-          };
-          return [...filtered, newRoom].sort((a, b) => b.onlineCount - a.onlineCount);
-        });
-      }
-      // Nếu snap không tồn tại thì giữ nguyên default 0 ở trên
-    }, (error) => {
-      console.error("Public room error:", error);
-    });
-    unsubs.push(unsub);
-  });
-
-  return () => unsubs.forEach((u) => u());
-}, [user?.uid, db]);
 
 
 
@@ -587,42 +461,13 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
   if (room.isJoined) return router.push(`/rooms/${room.id}`);
 
   try {
-    const roomRef = doc(db, "chats", room.id);
-    const roomSnap = await getDoc(roomRef);
-
-    if (!roomSnap.exists()) {
-      // Tạo phòng mới nếu chưa có - đúng format collection chats
-      await setDoc(roomRef, {
-        isGroup: true,
-        isPublicRoom: true,
-        groupName: room.name,
-        emoji: room.emoji,
-        color: room.color,
-        groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
-        members: [user.uid],
-        memberCount: 1,
-        onlineCount: 1,
-        lastMessage: `Chào mừng đến ${room.name}!`,
-        lastSenderId: "system",
-        lastSenderName: "Hệ thống",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        blockedUsers: [],
-      });
-    } else {
-      // Join phòng đã có - chỉ cần add vào members
-      await updateDoc(roomRef, {
-        members: arrayUnion(user.uid),
-        updatedAt: serverTimestamp(),
-      });
-    }
-
+    await joinPublicRoom(room, user.uid);
     if ("vibrate" in navigator) navigator.vibrate(10);
     toast.success(`Đã vào ${room.name}`, { icon: room.emoji });
     router.push(`/rooms/${room.id}`);
-  } catch (e: any) {
-    console.error(e);
-    toast.error("Lỗi vào phòng: " + e.message);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Lỗi vào phòng";
+    toast.error(message);
   }
 };
 if (authLoading) {
@@ -696,157 +541,15 @@ return (
 <div className="pt-2 pb-24">
   {activeTab === "all" && (
     <div>
-      <div className="px-4 pt-4 space-y-3">
-        {/* 1. Title Khám phá hôm nay */}
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="text-sm font-[700] flex items-center gap-1.5">
-            <span className="text-lg">🔥</span>
-            Khám phá hôm nay
-          </h3>
-          <button
-            onClick={() => router.push('/explore')}
-            className="text-xs font-[600] text-[#0a84ff] active:opacity-60 transition-opacity"
-          >
-            Xem thêm
-          </button>
-        </div>
+      <ExploreTodaySection
+        initialEvents={initialEvents}
+        userLat={userLat}
+        userLng={userLng}
+        primaryBg={primaryBg}
+        onSelectEvent={setSelectedEvent}
+      />
 
-        {/* 2. Filter Category */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-          <button
-            onClick={() => setSelectedCategory(null)}
-            className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
-             !selectedCategory
-               ? `${primaryBg} text-white`
-                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
-            }`}
-          >
-            Tất cả
-          </button>
-          {Object.entries(CATEGORY_INFO).map(([key, cat]) => (
-            <button
-              key={key}
-              onClick={() => setSelectedCategory(key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap flex items-center gap-1 ${
-                selectedCategory === key
-                 ? `${primaryBg} text-white`
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
-              }`}
-            >
-              <span>{cat.icon}</span>
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* 3. List event */}
-        <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4">
-          {eventsLoading? (
-            <div className="flex-shrink-0 w-full snap-center h-64 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
-          ) : (selectedCategory? eventsData.filter(e => e.category === selectedCategory) : eventsData)
-           .map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setSelectedEvent(item)}
-                className="flex-shrink-0 w-full snap-center bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
-              >
-                <div className="relative h-32">
-                  <img src={item.image} className="w-full h-full object-cover" loading="lazy" alt={item.title} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
-                  <div className={`absolute top-2 left-2 px-2 py-0.5 bg-gradient-to-r ${item.tagColor} rounded-md`}>
-                    <span className="text-[10px] font-[800] text-white">{item.tag}</span>
-                  </div>
-                  {(item.rating || 0) > 0 && (
-                    <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-md flex items-center gap-1">
-                      <FiStar className="text-amber-400" size={10} fill="currentColor" />
-                      <span className="text-xs font-[700] text-white">
-                        {item.rating}{(item.reviews || 0) > 0 && ` (${item.reviews})`}
-                      </span>
-                    </div>
-                  )}
-                  <div className="absolute bottom-2 left-3 right-3">
-                    <div className="flex items-center gap-1.5 text-white">
-                      <span className="text-lg">{item.icon}</span>
-                      <h4 className="text-base font-[700] drop-shadow-lg">{item.title}</h4>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-3">
-                  <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 line-clamp-2">{item.desc}</p>
-                  <div className="flex items-center justify-between text-xs text-[#8e8e93]">
-                    <span className="flex items-center gap-1">
-                      <FiUsers size={12} />
-                      {item.joined} người
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <FiMapPin size={12} />
-                      {item.province} • {userLat && userLng && item.lat && item.lng
-                       ? formatDistance(getDistanceKm(userLat, userLng, item.lat, item.lng))
-                        : '?km'}
-                    </span>
-                  </div>
-                </div>
-              </button>
-            ))}
-        </div>
-      </div>
-
-      <div className="px-4 pt-6">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="text-sm font-[700] flex items-center gap-1.5">
-            <span className="text-lg">💬</span>
-            Phòng Chat Công Cộng
-          </h3>
-          <button
-            onClick={() => setShowPublicRooms(true)}
-            className="text-xs font-[600] text-[#0a84ff] active:opacity-60 transition-opacity"
-          >
-            Xem tất cả
-          </button>
-        </div>
-
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
-          {publicRoomsLoading? (
-            [1,2,3,4].map(i => (
-              <div key={i} className="flex-shrink-0 w-36 h-36 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
-            ))
-          ) : publicRooms.slice(0, 8).map((room) => (
-            <button
-              key={room.id}
-              onClick={() => handleJoinPublicRoom(room)}
-              className="flex-shrink-0 w-36 bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
-            >
-              <div className={`relative h-20 bg-gradient-to-br ${room.color} flex items-center justify-center`}>
-                <span className="text-4xl drop-shadow-lg">{room.emoji}</span>
-                {room.isHot && (
-                  <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-red-500 rounded-md flex items-center gap-0.5">
-                    <FiTrendingUp size={10} className="text-white" />
-                    <span className="text-sm font-[800] text-white">HOT</span>
-                  </div>
-                )}
-                {room.isJoined && (
-                  <div className="absolute top-1.5 left-1.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-                    <FiCheck className="text-white" size={12} strokeWidth={3} />
-                  </div>
-                )}
-              </div>
-              <div className="p-2.5">
-                <h4 className="text-sm font-[700] mb-1 tracking-tight">{room.name}</h4>
-                <div className="flex items-center justify-between text-sm text-[#8e8e93]">
-                  <span className="flex items-center gap-1">
-                    <FiUsers size={11} />
-                    <span className="font-[600]">{room.memberCount || 0}</span>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                    <span className="font-[600]">{room.onlineCount || 0}</span>
-                  </span>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+      <PublicRoomsSection userId={user?.uid} onJoinRoom={handleJoinPublicRoom} />
     </div>
   )}
 
@@ -950,24 +653,6 @@ return (
 </div>
 </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
-{showPublicRooms && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div className="absolute inset-0 bg-black/40" onClick={() => setShowPublicRooms(false)} />
-    <div className="relative bg-white dark:bg-zinc-900 rounded-2xl p-5 max-w-md w-full">
-      <h3 className="text-lg font-bold mb-3">Tất cả phòng công cộng</h3>
-      <div className="space-y-2 max-h-96 overflow-auto">
-        {publicRooms.map(room => (
-          <button key={room.id} onClick={() => handleJoinPublicRoom(room)} 
-            className="w-full p-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-left">
-            {room.emoji} {room.name} - {room.onlineCount} online
-          </button>
-        ))}
-      </div>
-      <button onClick={() => setShowPublicRooms(false)} 
-        className="mt-3 w-full h-10 bg-zinc-200 dark:bg-zinc-700 rounded-xl">Đóng</button>
-    </div>
-  </div>
-)}
 <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
 
 <GpsRequiredModal 

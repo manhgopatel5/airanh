@@ -1,35 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { isTask, type FeedTask } from "@/types/task"; // FIX: Task -> FeedTask
+import { isTask, isPlan, type FeedTask } from "@/types/task";
 import { motion } from "framer-motion";
 import { FiDollarSign, FiUsers, FiClock, FiMapPin, FiUserCheck, FiCalendar } from "react-icons/fi";
 
 type Application = {
   id: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  status: "pending" | "accepted" | "rejected" | "cancelled";
 };
 
 type Props = {
-  task: FeedTask; // FIX: Task -> FeedTask
+  task: FeedTask;
   applications: Application[];
   theme?: "task" | "plan";
 };
 
-export default function TaskInfoGrid({ task, applications, theme = "task" }: Props) {
+export default function TaskInfoGrid({ task, applications, theme }: Props) {
+  const resolvedTheme = theme ?? (task.type === "plan" ? "plan" : "task");
   const [timeLeft, setTimeLeft] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
 
-  const accentClass = theme === "task" ? "text-[#0A84FF]" : "text-[#30D158]";
+  const accentClass = resolvedTheme === "task" ? "text-[#0A84FF]" : "text-[#30D158]";
+
+  const targetDate = isTask(task) ? task.deadline : isPlan(task) ? task.eventDate : null;
 
   useEffect(() => {
-    // FIX: task.deadline giờ là string | null, không phải Timestamp
-    if (!isTask(task) || !task.deadline || task.status === "completed") {
+    if (!targetDate || task.status === "completed") {
       setIsUrgent(false);
       return;
     }
 
-    const deadlineMs = new Date(task.deadline).getTime();
+    const deadlineMs = new Date(targetDate).getTime();
     if (isNaN(deadlineMs)) {
       setIsUrgent(false);
       return;
@@ -38,40 +40,60 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
     const tick = () => {
       const diff = deadlineMs - Date.now();
       if (diff <= 0) {
-        setTimeLeft("Đã hết hạn");
+        setTimeLeft(isPlan(task) ? "Đã diễn ra" : "Đã hết hạn");
         setIsUrgent(true);
         return;
       }
       const totalHours = diff / 3600000;
-      setIsUrgent(totalHours <= 5); // Đổi 1h → 5h
+      setIsUrgent(totalHours <= 5);
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`Còn ${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`);
+      setTimeLeft(`Còn ${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`);
     };
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [task]);
+  }, [targetDate, task.status, task]);
 
-  // FIX: createdAt là string | null
   const taskDate = task.createdAt
-    ? new Date(task.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    ? new Date(task.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
     : "Chưa xác định";
 
-  // FIX: deadline là string | null
-  const taskDeadline = isTask(task) && task.deadline
-    ? new Date(task.deadline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const formattedTarget = targetDate
+    ? new Date(targetDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
     : "";
 
-  const acceptedCount = applications.filter(a => a.status === 'accepted').length;
+  const acceptedCount = applications.filter((a) => a.status === "accepted").length;
   const totalApplied = applications.length;
-  const totalSlots = task.totalSlots ?? 0;
 
-  const InfoItem = ({ icon: Icon, label, value, highlight = false, urgent = false, blinking = false }: { 
-    icon: any;
-    label: string; 
-    value: string; 
+  const planCost = isPlan(task)
+    ? task.costType === "free"
+      ? "Miễn phí"
+      : task.costType === "share"
+        ? task.costAmount
+          ? `${task.costAmount.toLocaleString("vi-VN")}đ/người`
+          : "Chia đều"
+        : task.costAmount
+          ? `${task.costAmount.toLocaleString("vi-VN")}đ`
+          : "Linh hoạt"
+    : "";
+
+  const slotLabel = isPlan(task)
+    ? `${task.currentParticipants ?? 0}/${task.maxParticipants ?? task.totalSlots ?? 0} người`
+    : `${acceptedCount}/${task.totalSlots ?? 0} người`;
+
+  const InfoItem = ({
+    icon: Icon,
+    label,
+    value,
+    highlight = false,
+    urgent = false,
+    blinking = false,
+  }: {
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+    label: string;
+    value: string;
     highlight?: boolean;
     urgent?: boolean;
     blinking?: boolean;
@@ -81,24 +103,20 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
         animate={blinking ? { opacity: [1, 0.3, 1] } : {}}
         transition={blinking ? { duration: 1, repeat: Infinity } : {}}
       >
-        <Icon 
-          size={16} 
+        <Icon
+          size={16}
           className={`mt-0.5 shrink-0 ${
-            urgent ? 'text-[#FF3B30]' : 
-            highlight ? accentClass : 
-            'text-zinc-500 dark:text-zinc-400'
+            urgent ? "text-[#FF3B30]" : highlight ? accentClass : "text-zinc-500 dark:text-zinc-400"
           }`}
         />
       </motion.div>
       <div>
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{label}</p>
-        <motion.p 
+        <motion.p
           animate={blinking ? { opacity: [1, 0.3, 1] } : {}}
           transition={blinking ? { duration: 1, repeat: Infinity } : {}}
           className={`text-sm font-semibold mt-0.5 ${
-            urgent ? 'text-[#FF3B30]' : 
-            highlight ? accentClass : 
-            'text-zinc-900 dark:text-zinc-100'
+            urgent ? "text-[#FF3B30]" : highlight ? accentClass : "text-zinc-900 dark:text-zinc-100"
           }`}
         >
           {value}
@@ -108,40 +126,35 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
   );
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mt-4"
-    >
-      <h2 className="text-base font-bold leading-snug text-zinc-900 dark:text-zinc-100">
-        {task.title}
-      </h2>
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
+      <h2 className="text-base font-bold leading-snug text-zinc-900 dark:text-zinc-100">{task.title}</h2>
 
       <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-screen -ml-4 my-3" />
 
       <div className="grid grid-cols-2 gap-x-6 gap-y-4">
         <div className="space-y-4">
           {isTask(task) && task.price > 0 && (
-            <InfoItem 
+            <InfoItem
               icon={FiDollarSign}
-              label="Tiền công" 
+              label="Tiền công"
               value={`${task.price.toLocaleString("vi-VN")} đ`}
               highlight
             />
           )}
-          {isTask(task) && (
-            <InfoItem 
-              icon={FiUsers}
-              label="Ứng tuyển" 
-              value={`${totalApplied} người`}
-              highlight
-            />
+          {isPlan(task) && (
+            <InfoItem icon={FiDollarSign} label="Chi phí" value={planCost} highlight />
           )}
-          {isTask(task) && task.deadline && (
-            <InfoItem 
+          {isTask(task) && (
+            <InfoItem icon={FiUsers} label="Ứng tuyển" value={`${totalApplied} người`} highlight />
+          )}
+          {isPlan(task) && (
+            <InfoItem icon={FiUsers} label="Tham gia" value={`${task.currentParticipants ?? 0} người`} highlight />
+          )}
+          {targetDate && (
+            <InfoItem
               icon={FiClock}
-              label="Hạn chót" 
-              value={timeLeft || taskDeadline}
+              label={isPlan(task) ? "Diễn ra" : "Hạn chót"}
+              value={timeLeft || formattedTarget}
               highlight={!isUrgent}
               urgent={isUrgent}
               blinking={isUrgent}
@@ -150,24 +163,14 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
         </div>
 
         <div className="space-y-4">
-          <InfoItem 
+          <InfoItem
             icon={FiMapPin}
-            label="Địa chỉ" 
+            label="Địa chỉ"
             value={task.location?.address || task.location?.city || "Online"}
             highlight
           />
-          <InfoItem 
-            icon={FiUserCheck}
-            label="Đã nhận" 
-            value={`${acceptedCount}/${totalSlots} người`}
-            highlight
-          />
-          <InfoItem 
-            icon={FiCalendar}
-            label="Ngày đăng" 
-            value={taskDate}
-            highlight
-          />
+          <InfoItem icon={FiUserCheck} label={isPlan(task) ? "Số chỗ" : "Đã nhận"} value={slotLabel} highlight />
+          <InfoItem icon={FiCalendar} label="Ngày đăng" value={taskDate} highlight />
         </div>
       </div>
     </motion.div>

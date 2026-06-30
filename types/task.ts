@@ -333,6 +333,7 @@ export type PlanListItem = Pick<
   | "costAmount"
   | "paymentMethod" 
   | "milestones"
+  | "participants"
   | "savedBy"      
   | "applicants"  
   | "banned"
@@ -427,6 +428,48 @@ export const generateTaskSearchKeywords = ({
     20
   );
 };
+
+export function dateValueToMillis(value: unknown): number | null {
+  if (!value) return null;
+  if (typeof value === "string") {
+    const ms = new Date(value).getTime();
+    return Number.isNaN(ms) ? null : ms;
+  }
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === "object" && value !== null) {
+    if ("toMillis" in value && typeof (value as Timestamp).toMillis === "function") {
+      return (value as Timestamp).toMillis();
+    }
+    if ("toDate" in value && typeof (value as Timestamp).toDate === "function") {
+      return (value as Timestamp).toDate().getTime();
+    }
+  }
+  return null;
+}
+
+export function getFeedItemDueMillis(
+  item: Pick<FeedTask, "type" | "deadline" | "eventDate">
+): number | null {
+  if (item.type === "plan") {
+    return dateValueToMillis(item.eventDate);
+  }
+  return dateValueToMillis(item.deadline);
+}
+
+/** Ẩn task/plan hết hạn khỏi feed công khai (giống nhau cho cả hai loại). */
+export function isActiveFeedItem(
+  item: Pick<FeedTask, "type" | "status" | "deadline" | "eventDate" | "banned" | "hidden">
+): boolean {
+  if (item.banned || item.hidden) return false;
+  if (["expired", "completed", "cancelled", "deleted"].includes(item.status)) {
+    return false;
+  }
+
+  const dueMs = getFeedItemDueMillis(item);
+  if (dueMs !== null && dueMs < Date.now()) return false;
+
+  return true;
+}
 
 export const isTaskOpen = (task: Task): boolean => {
   if (!task) return false;

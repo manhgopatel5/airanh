@@ -4,6 +4,7 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin'
 import { Timestamp } from 'firebase-admin/firestore'
 import type { DocumentData, Query } from 'firebase-admin/firestore'
 import type { FeedTask } from '@/types/task'
+import { enrichTasksWithUserDataAdmin } from '@/lib/task/enrichTasks'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -102,6 +103,9 @@ const getRequestToken = (request: NextRequest): string | null => {
   return bearerToken || request.cookies.get('__session')?.value || null
 }
 
+const enrichTasksWithUserData = (tasks: FeedTask[]) =>
+  enrichTasksWithUserDataAdmin(adminDb(), tasks)
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const requestedType = searchParams.get('type')
@@ -127,11 +131,13 @@ export async function GET(request: NextRequest) {
     const q = getUserTaskQuery(tab, uid)
     const snap = await q.get()
 
-    const tasks: FeedTask[] = snap.docs.map(doc => {
+    let tasks: FeedTask[] = snap.docs.map(doc => {
       const d = doc.data()
       return {
         id: doc.id,
         ...d,
+        userName: d.userName || d.displayName || d.name || '',
+        userAvatar: d.userAvatar || d.photoURL || d.avatar || null,
         createdAt: timestampToIsoString(d.createdAt),
         updatedAt: timestampToIsoString(d.updatedAt),
         deadline: timestampToIsoString(d.deadline),
@@ -144,6 +150,8 @@ export async function GET(request: NextRequest) {
       const data = task as FeedTask & DocumentData
       return data.type === type && data.banned !== true && data.hidden !== true && matchesTab(data, tab, nowMillis)
     }).sort((a, b) => taskSortValue(b, tab) - taskSortValue(a, tab)).slice(0, 20)
+
+    tasks = await enrichTasksWithUserData(tasks)
 
     return NextResponse.json(tasks, {
       headers: {

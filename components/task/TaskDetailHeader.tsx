@@ -13,14 +13,16 @@ import { doc, deleteDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/fir
 import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/ui/UserAvatar";
-import type { FeedTask } from "@/types/task"; // FIX: Task -> FeedTask
+import { getTaskAuthorName, getTaskAuthorAvatar } from "@/lib/task/author";
+import type { FeedTask } from "@/types/task";
 
 type UserData = {
   uid: string;
   name: string;
   avatar: string;
-  rating?: number;
-  reviewCount?: number;
+  online?: boolean | undefined;
+  rating?: number | undefined;
+  reviewCount?: number | undefined;
   verified?: boolean;
   isNewUser?: boolean;
 };
@@ -89,23 +91,37 @@ export default function TaskDetailHeader({
     }
   };
 
+  const ownerName = owner?.name || getTaskAuthorName(task);
+  const ownerAvatar = owner?.avatar || getTaskAuthorAvatar(task);
+  const profileUid = task.userId;
+
   return (
     <div className="bg-white dark:bg-zinc-950">
       <div className="pt-4 pb-3">
         <div className="flex gap-3">
-          <Link href={`/profile/${task.userId}`} className="relative shrink-0 active:opacity-70 transition-opacity">
-            <UserAvatar src={owner?.avatar} name={owner?.name} size={48} />
-          </Link>
+          {profileUid ? (
+            <Link href={`/profile/${profileUid}`} className="relative shrink-0 active:opacity-70 transition-opacity">
+              <UserAvatar src={ownerAvatar} name={ownerName} size={48} />
+            </Link>
+          ) : (
+            <UserAvatar src={ownerAvatar} name={ownerName} size={48} />
+          )}
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <Link
-                  href={`/profile/${task.userId}`}
-                  className="font-semibold text-base text-zinc-900 dark:text-zinc-100 truncate leading-5 active:opacity-70"
-                >
-                  {owner?.name || "Người dùng"}
-                </Link>
+                {profileUid ? (
+                  <Link
+                    href={`/profile/${profileUid}`}
+                    className="font-semibold text-base text-zinc-900 dark:text-zinc-100 truncate leading-5 active:opacity-70"
+                  >
+                    {ownerName}
+                  </Link>
+                ) : (
+                  <p className="font-semibold text-base text-zinc-900 dark:text-zinc-100 truncate leading-5">
+                    {ownerName}
+                  </p>
+                )}
 
                 <div className="flex items-center gap-1 mt-0.5">
                   <FiStar className="fill-[#FFB800] text-[#FFB800] shrink-0" size={14} />

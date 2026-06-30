@@ -19,6 +19,7 @@ import { toast, Toaster } from "sonner";
 import imageCompression from "browser-image-compression";
 import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
+import SharedTaskMessage from "@/components/chat/SharedTaskMessage";
 // === LINK PREVIEW ===
 function LinkPreview({ url }: { url: string }) {
   const [data, setData] = useState<any>(null);
@@ -105,7 +106,9 @@ fileUrl?: string;
   members?: string[];
   taskId?: string;
   taskTitle?: string;
+  taskType?: "task" | "plan";
   taskPrice?: number;
+  price?: number;
 };
 
 type ChatData = {
@@ -1446,7 +1449,7 @@ const showDate =
     const seenAvatars = getSeenAvatars(m);
     const LINK_REGEX = /((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/i;
     const linkMatch = m.text?.match(LINK_REGEX);
-    const isLinkOnly =!!linkMatch &&!m.image &&!m.imageUrl &&!m.file &&!m.location && m.text.trim() === linkMatch[0];
+    const isLinkOnly = !!linkMatch && !m.image && !m.imageUrl && !m.file && !m.location && m.text?.trim() === linkMatch[0];
 
     return (
       <div key={m.id} id={`msg-${m.id}`}>
@@ -1573,28 +1576,12 @@ onClick={(e) => {
             )}
 
             <div className="relative">
-            {m.type === "task_share"? (
-  <div
-    onClick={() => router.push(`/task/${m.taskId}`)}
-    className={`px-4 py-3 shadow-sm cursor-pointer active:scale-95 transition rounded-2xl ${
-      isMe
-     ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
-        : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border border-gray-200 dark:border-zinc-700"
-    }`}
-  >
-    <p className="text-xs font-bold mb-1 opacity-80">
-      📋 Đã chia sẻ {m.taskPrice && m.taskPrice > 0? 'công việc' : 'kế hoạch'}
-    </p>
-    <p className="font-semibold leading-snug">{m.taskTitle}</p>
-    <p className={`text-sm font-bold mt-1 ${isMe? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>
-      {m.taskPrice && m.taskPrice > 0? `${m.taskPrice.toLocaleString()}đ` : 'Miễn phí'}
-    </p>
-    <p className={`text-xs mt-2 opacity-70`}>
-      Nhấn để xem chi tiết →
-    </p>
-  </div>
-
-) : (m.type === 'location' || m.location)? (
+            {m.type === "task_share" ? (
+              <SharedTaskMessage
+                {...(m.taskId ? { taskId: m.taskId } : {})}
+                taskType={m.taskType ?? ((m.taskPrice ?? m.price ?? 0) > 0 ? "task" : "plan")}
+              />
+            ) : (m.type === 'location' || m.location)? (
   // LOCATION - không bubble
   (() => {
     const lat = Number(m.lat?? m.location?.lat?? 0);
@@ -1687,12 +1674,6 @@ className={isLinkOnly
 )}
   </div>
 )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-})}
                     {m.reactions && m.reactions.length > 0 && (
                       <div className="flex gap-1 mt-1 px-1">
                         {m.reactions.map((r) => (
@@ -1775,7 +1756,7 @@ className={isLinkOnly
                 </div>
 
          {/* GIỜ Ở GIỮA */}
-{isLastInGroup && filteredMessages.length > 0 && i === filteredMessages.length - 1 && m.createdAt && (
+{isLastInGroup && messages.length > 0 && i === messages.length - 1 && m.createdAt && (
   <div className="flex w-full justify-center items-center gap-1.5 my-2">
     <span className="text-[11px] text-gray-400 dark:text-zinc-500">
       {formatTime(m.createdAt)}
@@ -1797,9 +1778,10 @@ className={isLinkOnly
     )}
   </div>
 )}
-            </div>
-          );
-        })}
+        </div>
+      </div>
+    );
+})}
 
  
         <div ref={messagesEndRef} />
@@ -2044,7 +2026,7 @@ const isColor = bg.url?.startsWith('#');
 
   <div className="flex gap-2.5 mt-4">
     <button 
-      onClick={() => router.push(`/profile/${friend?.userId}`)} 
+      onClick={() => friend?.uid && router.push(`/profile/${friend.uid}`)} 
       className="px-4 h-9 bg-[#0084FF] hover:bg-[#0073e6] text-white rounded-full text- font-medium active:scale-95 transition shadow-sm"
     >
       Trang cá nhân

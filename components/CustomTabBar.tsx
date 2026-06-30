@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useAppStore } from "@/store/app";
 import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
+import { prefetchAppTab, type AppTab } from "@/app/tabPrefetch";
 
 const haptics = {
   light: () => navigator?.vibrate?.(8),
@@ -225,7 +226,19 @@ export default function CustomTabBar({
       onCreateClick();
     } else {
       haptics.medium();
+      const tab = key as AppTab;
+      if (tab === "home" || tab === "messages" || tab === "tasks" || tab === "profile") {
+        prefetchAppTab(tab);
+      }
       onChangeTab(key as MainTab);
+    }
+  };
+
+  const handleTabHover = (key: string) => {
+    if (key === "create") return;
+    const tab = key as AppTab;
+    if (tab === "home" || tab === "messages" || tab === "tasks" || tab === "profile") {
+      prefetchAppTab(tab);
     }
   };
 
@@ -276,6 +289,7 @@ export default function CustomTabBar({
                   key={tab.key}
                   whileTap={{ scale: 0.9 }}
                   onTouchStart={() => haptics.light()}
+                  onPointerEnter={() => handleTabHover(tab.key)}
                   onClick={() => handleTabClick(tab.key)}
                   className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-1"
                 >

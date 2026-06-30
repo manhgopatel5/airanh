@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import type { FeedTask } from "@/types/task";
 
-import { onJobCompleted, onHotTaskCreated } from "@/lib/xp";
+import { onJobCompleted, onHotTaskCreated, onPlanCompleted } from "@/lib/xp";
 import * as Dialog from "@radix-ui/react-dialog";
 
 type Application = {
@@ -88,16 +88,15 @@ export default function TaskApplications({ applications, item, currentUserId, on
       });
 
       const newJoined = acceptedApps.length + 1;
-      const collectionName = isPlan? 'plans' : 'tasks';
 
-      await updateDoc(doc(db, collectionName, itemId), {
+      await updateDoc(doc(db, "tasks", itemId), {
         joined: newJoined,
-        status: newJoined >= itemSlots? 'full' : 'open'
+        currentParticipants: newJoined,
+        status: newJoined >= itemSlots ? "full" : "open",
       });
 
-      // CHECK HOT 5+ NGƯỜI - CỘNG XP
-      if (newJoined >= 5 && itemSlots >= 5) {
-        await onHotTaskCreated(itemOwnerId, itemId); // +30 XP cho chủ
+      if (newJoined >= 5) {
+        await onHotTaskCreated(itemOwnerId, itemId, type);
       }
 
       const chatId = [currentUserId, applicantId].sort().join("_");
@@ -135,15 +134,17 @@ export default function TaskApplications({ applications, item, currentUserId, on
     if (!completingApp) return;
     setLoading(true);
     const db = getFirebaseDB();
-    const collectionName = isPlan? 'plans' : 'tasks';
-
     try {
-      await updateDoc(doc(db, collectionName, itemId), {
+      await updateDoc(doc(db, "tasks", itemId), {
         status: "completed",
         rating: rating,
       });
 
-      await onJobCompleted(completingApp.userId, rating, itemId);
+      if (isPlan) {
+        await onPlanCompleted(itemOwnerId, rating, itemId);
+      } else {
+        await onJobCompleted(completingApp.userId, rating, itemId);
+      }
 
       toast.success(`Đã hoàn thành + ${rating} sao + XP`);
       navigator.vibrate?.(15);

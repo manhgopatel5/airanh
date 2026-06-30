@@ -1,7 +1,7 @@
 "use client";
-import { onProfileUpdate } from "@/lib/xp"; // thêm dòng này
+import { onProfileUpdate } from "@/lib/xp";
 import { useRouter } from "next/navigation";
-import { Database } from "lucide-react"; // thêm icon
+import { Database, Trophy, Users, Crown, ChevronRight } from "lucide-react";
 import { signOut, updateProfile } from "firebase/auth";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
@@ -47,6 +47,9 @@ import AvatarCropModal from "@/components/profile/AvatarCropModal";
 import { useAvatarUpload } from "@/hooks/useAvatarUpload";
 
 import type { UserData } from "@/types/user";
+import { buildGamificationUser } from "@/lib/gamification";
+import Image from "next/image";
+import { isAdminUser } from "@/lib/adminAuth";
 
 export default function ProfileTabContent() {
   const db = getFirebaseDB();
@@ -79,8 +82,7 @@ export default function ProfileTabContent() {
   const accentGradient = isPlan
    ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
-const ADMIN_EMAILS = ["justastormyday@gmail.com", "hongann2210@gmail.com"];
-  // Ẩn nav bar khi modal mở - FIX SSR
+  // Ẩn nav bar khi modal mở
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -517,70 +519,125 @@ const handleUpdateName = async () => {
       user.uid.slice(0, 4)
     }`;
 
+  const gamification = buildGamificationUser(userData as unknown as Record<string, unknown>, user.uid);
+  const xpPercent = gamification.nextLevelExp
+    ? Math.min(100, Math.round((gamification.exp / gamification.nextLevelExp) * 100))
+    : 0;
+
   const avatarUrl =
     userData.photoURL ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(
       finalDisplayName
     )}&size=176&background=0A84FF&color=fff&bold=true`;
 
+  const quickActions = [
+    { label: "Chỉnh sửa hồ sơ", href: "/settings/profile-edit", icon: User, color: "text-blue-500" },
+    { label: "Bạn bè", href: "/friends", icon: Users, color: "text-indigo-500" },
+    { label: "Thành tích", href: `/profile/${user.uid}`, icon: Trophy, color: "text-amber-500" },
+    { label: "VIP", href: "/vip", icon: Crown, color: "text-purple-500" },
+  ];
+
   return (
-    <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] font-sans text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
-      <div className="pb-32 sm:pb-24 overflow-y-auto">
-        <div className="px-4 pt-4 pb-4">
-  <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/82 p-5 shadow-2xl shadow-black/[0.05] ring-1 ring-black/[0.03] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/72 dark:ring-white/10">
-    <div className={`absolute -right-16 -top-20 h-48 w-48 rounded-full bg-gradient-to-br ${accentGradient} opacity-20 blur-3xl`} />
-    <div className="relative flex items-start gap-4">
-      <div onClick={handleAvatarClick} className="group relative shrink-0 cursor-pointer">
-        <img src={avatarUrl} className="h-20 w-20 rounded-[1.6rem] object-cover shadow-xl shadow-black/10 ring-4 ring-white dark:ring-zinc-950" alt="Avatar" />
-        {userData.emailVerified && (
-          <div className={`absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br ${accentGradient} ring-4 ring-white dark:ring-zinc-950`}>
-            <Check className="h-3.5 w-3.5 text-white stroke-[3]" />
+    <div className="min-h-dvh bg-white font-sans text-zinc-950">
+      <div className="pb-32 overflow-y-auto bg-white">
+        <div className="relative border-b border-zinc-100 bg-white pt-6 pb-4">
+          <div className="px-4">
+            <h2 className="text-lg font-black tracking-tight text-zinc-900">Hồ sơ</h2>
           </div>
-        )}
-        <div className="absolute inset-0 flex items-center justify-center rounded-[1.6rem] bg-black/45 opacity-0 transition-opacity group-active:opacity-100">
-          <Camera size={22} className="text-white" />
         </div>
-        <input type="file" accept="image/*" className="hidden" id="avatar-upload" onChange={handleAvatarFileSelect} disabled={uploading} />
-        {uploading && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-[1.6rem] bg-black/60 backdrop-blur-sm">
-            <span className="text-xs font-black text-white">{uploadProgress}%</span>
+
+        <div className="px-4 pt-4 relative z-10">
+          <div className="rounded-[1.75rem] bg-white p-5 shadow-lg shadow-black/[0.06] ring-1 ring-zinc-200">
+            <div className="flex items-end gap-4">
+              <div onClick={handleAvatarClick} className="group relative shrink-0 cursor-pointer">
+                <Image
+                  src={avatarUrl}
+                  alt={finalDisplayName}
+                  width={88}
+                  height={88}
+                  className="h-[88px] w-[88px] rounded-[1.4rem] object-cover ring-4 ring-white shadow-xl"
+                />
+                {userData.emailVerified && (
+                  <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-blue-500 ring-4 ring-white">
+                    <Check className="h-3.5 w-3.5 text-white stroke-[3]" />
+                  </div>
+                )}
+                <div className="absolute inset-0 flex items-center justify-center rounded-[1.4rem] bg-black/45 opacity-0 transition-opacity group-active:opacity-100">
+                  <Camera size={22} className="text-white" />
+                </div>
+                {uploading && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-[1.4rem] bg-black/60 backdrop-blur-sm">
+                    <span className="text-xs font-black text-white">{uploadProgress}%</span>
+                  </div>
+                )}
+                <input type="file" accept="image/*" className="hidden" id="avatar-upload" onChange={handleAvatarFileSelect} disabled={uploading} />
+              </div>
+
+              <div className="min-w-0 flex-1 pb-1">
+                <button type="button" onClick={handleOpenNameModal} className="text-left w-full">
+                  <h1 className="truncate text-2xl font-black tracking-tight">{finalDisplayName}</h1>
+                </button>
+                <p className="text-sm font-semibold text-zinc-500 truncate">
+                  @{userData.username || userData.userId || user.uid.slice(0, 8)}
+                </p>
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-bold">
+                  <Circle className={`h-2 w-2 fill-current ${userData.online ? "text-emerald-500" : "text-zinc-400"}`} />
+                  {userData.online ? "Đang hoạt động" : "Ngoại tuyến"}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <div className="flex items-center justify-between text-xs font-bold mb-1.5">
+                <span className="text-zinc-500">Cấp {gamification.level}</span>
+                <span className="text-zinc-400">{gamification.exp}/{gamification.nextLevelExp} XP</span>
+              </div>
+              <div className="h-2.5 rounded-full bg-zinc-100 overflow-hidden">
+                <div
+                  className={`h-full rounded-full bg-gradient-to-r ${accentGradient} transition-all`}
+                  style={{ width: `${xpPercent}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {[
+                { label: "Tin cậy", value: `${gamification.trustScore}%` },
+                { label: "Hoàn thành", value: String(userData.stats?.completed ?? 0) },
+                { label: "Đánh giá", value: (userData.stats?.rating ?? gamification.stats.rating ?? 0).toFixed(1) },
+              ].map((item) => (
+                <div key={item.label} className="rounded-xl bg-zinc-50 p-2.5 text-center ring-1 ring-zinc-100">
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">{item.label}</p>
+                  <p className="mt-0.5 text-base font-black">{item.value}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
-      </div>
 
-      <div className="min-w-0 flex-1">
-        <h1 onClick={handleOpenNameModal} className="cursor-pointer truncate text-3xl font-black tracking-tight text-zinc-950 active:opacity-70 dark:text-white">
-          {finalDisplayName}
-        </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
-            <Circle className={`h-2 w-2 fill-current ${userData.online? "text-emerald-500" : "text-zinc-400"}`} />
-            {userData.online? "Đang hoạt động" : "Ngoại tuyến"}
-          </span>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <button
+                  key={action.href}
+                  type="button"
+                  onClick={() => router.push(action.href)}
+                  className="flex items-center gap-3 rounded-2xl bg-white p-4 text-left ring-1 ring-zinc-200 active:scale-[0.98] transition-transform"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center">
+                    <Icon className={`h-5 w-5 ${action.color}`} />
+                  </div>
+                  <span className="text-sm font-bold flex-1">{action.label}</span>
+                  <ChevronRight className="h-4 w-4 text-zinc-300" />
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    </div>
 
-    <div className="relative mt-5 grid grid-cols-3 gap-2">
-      {[
-        { label: "Tin cậy", value: userData.emailVerified? "100" : "60", suffix: "%" },
-        { label: "Hồ sơ", value: userData.photoURL? "Đầy" : "Cơ bản", suffix: "" },
-        { label: "Bảo mật", value: userData.emailVerified? "OK" : "Chờ", suffix: "" },
-      ].map((item) => (
-        <div key={item.label} className="rounded-2xl bg-zinc-50/90 p-3 ring-1 ring-black/5 dark:bg-zinc-900/70 dark:ring-white/10">
-          <p className="text-[11px] font-bold text-zinc-400">{item.label}</p>
-          <p className="mt-1 text-lg font-black text-zinc-950 dark:text-white">{item.value}<span className="text-sm">{item.suffix}</span></p>
-        </div>
-      ))}
-    </div>
-  </div>
-</div>
-     
-
-        {/* SETTINGS */}
-
-        <div className="px-4 mt-2 space-y-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
+        <div className="px-4 mt-4 space-y-3">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1">Tài khoản</p>
+          <div className="bg-white rounded-2xl overflow-hidden ring-1 ring-zinc-200">
             <SettingItem
               label="Thông tin cá nhân"
               subtitle="Tên, SĐT, Email"
@@ -735,31 +792,38 @@ const handleUpdateName = async () => {
               }
             />
           </div>
-          {/* NÚT ADMIN - CHỈ HIỆN VỚI justastormyday@gmail.com */}
-    {ADMIN_EMAILS.includes(user?.email || "") && (
-  <>
-    <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-    <SettingItem
-      label="Quản lý Events"
-      subtitle="Tạo và chỉnh sửa sự kiện"
-      icon={Database}
-      iconColor="text-[#0a84ff]"
-      onClick={() => router.push("/admin/events")}
-    />
-  </>
-)}
 
-         
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
+          <div className="bg-white rounded-2xl overflow-hidden ring-1 ring-zinc-200 mt-3">
             <SettingItem
               label="Đăng xuất"
               icon={LogOut}
               iconColor="text-gray-500"
-              onClick={() =>
-                setShowLogoutModal(true)
-              }
+              onClick={() => setShowLogoutModal(true)}
             />
           </div>
+
+          {isAdminUser(user?.uid, user?.email) && (
+            <>
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1 pt-2">Quản trị</p>
+              <div className="bg-white rounded-2xl overflow-hidden ring-1 ring-zinc-200">
+                <SettingItem
+                  label="Quản lý báo cáo"
+                  subtitle="Xử lý vi phạm và ban người dùng"
+                  icon={Shield}
+                  iconColor="text-red-500"
+                  onClick={() => router.push("/admin/reports")}
+                />
+                <div className="h-px bg-gray-100 ml-14" />
+                <SettingItem
+                  label="Quản lý Events"
+                  subtitle="Tạo và chỉnh sửa sự kiện"
+                  icon={Database}
+                  iconColor="text-[#0a84ff]"
+                  onClick={() => router.push("/admin/events")}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 

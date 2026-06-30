@@ -49,3 +49,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const token = req.headers.get('Authorization')?.split('Bearer ')[1];
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const decoded = await adminAuth().verifyIdToken(token);
+    const { sessionId } = await req.json();
+    if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
+
+    const sessionRef = adminDb().collection('sessions').doc(sessionId);
+    const snap = await sessionRef.get();
+    if (!snap.exists || snap.data()?.uid !== decoded.uid) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    await sessionRef.update({ lastActive: FieldValue.serverTimestamp() });
+    return NextResponse.json({ ok: true });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}

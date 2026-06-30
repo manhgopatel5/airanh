@@ -1,6 +1,9 @@
-import { getJobsFromFirebaseAdmin } from '@/lib/firebase-admin'
+import { Suspense } from 'react'
+import { getActiveEvents } from '@/lib/eventsServer'
 import AppContainer from './AppContainer'
 import type { FeedTask } from '@/types/task'
+import type { EventItem } from '@/data/events'
+import { getJobsFromFirebaseAdmin } from '@/lib/firebase-admin'
 
 // 1. ISR: Cache HTML + data 60s cho toàn bộ user
 // 1000 user vào trong 60s chỉ tốn 20 Firestore reads
@@ -22,22 +25,27 @@ export async function generateMetadata() {
 export default async function HomePage() {
   let initialJobs: FeedTask[] = []
   let initialPlans: FeedTask[] = []
+  let initialEvents: EventItem[] = []
 
-  // Prefetch cả Task và Plan để chuyển mode tức thì trên Home.
-  // API public đã cache CDN, nên 2 query này được amortize theo revalidate thay vì mỗi lần bấm tab.
   try {
-    const [jobsData, plansData] = await Promise.all([
-  getJobsFromFirebaseAdmin({ type: 'task' }),
-  getJobsFromFirebaseAdmin({ type: 'plan' }),
-])
-initialJobs = jobsData.tasks
-initialPlans = plansData.tasks
+    const [jobsData, plansData, events] = await Promise.all([
+      getJobsFromFirebaseAdmin({ type: 'task' }),
+      getJobsFromFirebaseAdmin({ type: 'plan' }),
+      getActiveEvents(),
+    ])
+    initialJobs = jobsData.tasks
+    initialPlans = plansData.tasks
+    initialEvents = events
   } catch (error) {
     console.error('Failed to prefetch feeds:', error)
     initialJobs = []
     initialPlans = []
+    initialEvents = []
   }
 
-  // 6. Truyền data xuống Client Component
-  return <AppContainer initialJobs={initialJobs} initialPlans={initialPlans} />
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-white dark:bg-zinc-950" />}>
+      <AppContainer initialJobs={initialJobs} initialPlans={initialPlans} initialEvents={initialEvents} />
+    </Suspense>
+  )
 }

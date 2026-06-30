@@ -1,5 +1,6 @@
 "use client";
-import { TaskListItem, FeedTask } from "@/types/task";
+
+import { TaskListItem, FeedTask, isActiveFeedItem } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 
 type Props = {
@@ -49,7 +50,7 @@ export default function PlanFeed({ plans, onPlanUpdate }: Props) {
 
   return (
     <div className="space-y-3">
-      {plans.map((plan) => (
+      {plans.filter((plan) => isActiveFeedItem(plan as FeedTask)).map((plan) => (
         <div key={plan.id} className="px-4">
           <TaskCard 
             task={toFeedTask(plan)} 

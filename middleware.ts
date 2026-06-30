@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { adminAuth } from '@/lib/firebase-admin'
 import { getFirestore } from 'firebase-admin/firestore'
+import { isGuestBrowsableRoute } from '@/components/auth/authRoutes'
 
 const PUBLIC_ROUTES = [
   '/login', 
@@ -43,7 +44,7 @@ export async function middleware(request: NextRequest) {
 
   // 2. Chưa login
   if (!token) {
-    if (!isPublicRoute) {
+    if (!isPublicRoute && !isGuestBrowsableRoute(pathname)) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
@@ -75,7 +76,8 @@ export async function middleware(request: NextRequest) {
       }
       
       // Đã verify + chưa onboard → về /onboarding
-      const hasOnboarded = userData?.onboarded === true;
+      const hasOnboarded =
+        userData?.onboarded === true || userData?.onboardingCompleted === true;
       if (userData?.emailVerified && !hasOnboarded && pathname !== '/onboarding') {
         return NextResponse.redirect(new URL('/onboarding', request.url))
       }

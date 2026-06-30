@@ -26,6 +26,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { getSafeRedirect } from "@/components/auth/authRoutes";
+import { establishSession } from "@/lib/authSession";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -71,11 +72,12 @@ const { loading: authLoading } = useAuth();
         setErrors({ submit: "Nhập email rồi gửi lại link đăng nhập để xác nhận thiết bị này." });
       } else {
         signInWithEmailLink(auth, email, window.location.href)
-         .then(() => {
+         .then(async (cred) => {
             localStorage.removeItem("emailForSignIn");
             localStorage.setItem("last_email", email);
+            await establishSession(await cred.user.getIdToken());
             toast.success("Đăng nhập thành công");
-            window.location.reload(); // FIX 3: reload để middleware check lại
+            window.location.href = redirectTo;
           })
          .catch(() => setErrors({ submit: "Link đăng nhập không hợp lệ hoặc đã hết hạn" }));
       }
@@ -137,12 +139,12 @@ const { loading: authLoading } = useAuth();
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
 
-      // FIX 4: Không check emailVerified ở đây. Để middleware redirect về /verify-email
-      localStorage.setItem("last_email", auth.currentUser?.email || "");
+      localStorage.setItem("last_email", result.user.email || "");
+      await establishSession(await result.user.getIdToken());
       toast.success("Đăng nhập thành công");
-      window.location.reload(); // Reload để middleware check
+      window.location.href = redirectTo;
     } catch (err: any) {
       if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
       const message = err.code === "auth/popup-blocked"
@@ -174,14 +176,14 @@ await signInWithPopup(auth, provider);
       setLoading(true);
       setErrors({});
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
-      await signInWithEmailAndPassword(auth, form.email, form.password);
+      const cred = await signInWithEmailAndPassword(auth, form.email, form.password);
 
-      // FIX 5: Không check emailVerified ở đây. Để middleware redirect
       failedAttempts.current = 0;
       localStorage.removeItem("login_fail_time");
       localStorage.setItem("last_email", form.email);
+      await establishSession(await cred.user.getIdToken());
       toast.success("Đăng nhập thành công");
-      window.location.reload(); // Reload để middleware check
+      window.location.href = redirectTo;
     } catch (err: any) {
       failedAttempts.current += 1;
       localStorage.setItem("login_fail_time", Date.now().toString());

@@ -21,7 +21,8 @@
     "analyze": "ANALYZE=true next build",
     "prepare": "husky",
     "test": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "deploy:firestore": "node scripts/deploy-firestore.mjs"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.6",
@@ -65,7 +66,9 @@
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.6.0",
     "react-intersection-observer": "^10.0.3",
+    "react-markdown": "^10.1.0",
     "react-select": "^5.8.0",
+    "remark-gfm": "^4.0.1",
     "resend": "^4.0.0",
     "sharp": "^0.33.5",
     "sonner": "^1.7.4",

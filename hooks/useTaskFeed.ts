@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import type { FeedTask } from "@/types/task";
+import { isActiveFeedItem } from "@/types/task";
 
 type TabId = "hot" | "near" | "friends" | "new";
 
@@ -106,7 +107,7 @@ export function useTaskFeed(tab: TabId = "hot") {
     taskIdsRef.current.clear();
 
     unsubRef.current = onSnapshot(buildQuery(db), (snap) => {
-      const newTasks = snap.docs.map(docToFeedTask);
+      const newTasks = snap.docs.map(docToFeedTask).filter(isActiveFeedItem);
       setTasks(newTasks);
       taskIdsRef.current = new Set(newTasks.map((t) => t.id));
       lastDocRef.current = snap.docs[snap.docs.length - 1] || null;
@@ -130,7 +131,7 @@ export function useTaskFeed(tab: TabId = "hot") {
     const db = getFirebaseDB();
     const snap = await getDocs(buildQuery(db, lastDocRef.current));
 
-    const moreTasks = snap.docs.map(docToFeedTask);
+    const moreTasks = snap.docs.map(docToFeedTask).filter(isActiveFeedItem);
     setTasks((prev) => {
       const existing = new Set(prev.map((t) => t.id));
       const filtered = moreTasks.filter((t) =>!existing.has(t.id));

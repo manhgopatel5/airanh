@@ -4,6 +4,8 @@ import { getFirestore, Firestore, FieldValue, Timestamp, Query } from "firebase-
 import { getAuth, Auth } from "firebase-admin/auth";
 import { getStorage, Storage } from "firebase-admin/storage"; // THÊM
 import type { FeedTask, TaskListItem } from "@/types/task";
+import { isActiveFeedItem } from "@/types/task";
+import { enrichTasksWithUserDataAdmin } from "@/lib/task/enrichTasks";
 
 /* ================= CATEGORY MAP ================= */
 const CATEGORY_MAP: Record<string, string> = {
@@ -92,7 +94,7 @@ const tsToString = (ts: any): string | null => {
 export type GetJobsOptions = {
   type?: 'task' | 'plan';
   limitCount?: number;
-  sortBy?: 'hot' | 'new' | 'views' | 'price_asc' | 'price_desc';
+  sortBy?: 'hot' | 'new' | 'views' | 'likes' | 'price_asc' | 'price_desc';
   category?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -118,7 +120,7 @@ export async function getJobsFromFirebaseAdmin(
     'slug', 'shortId', 'title', 'description', 'type', 'status', 'visibility',
     'userId', 'userName', 'userAvatar', 'userShortId', 'userUsername', 'userVerified',
     'price', 'currency', 'totalSlots', 'joined', 'budgetType', 'paymentMethod',
-    'isRemote', 'category', 'tags', 'images', 'viewCount', 'likeCount', 'hotScore', 'priceRange',
+    'isRemote', 'category', 'tags', 'images', 'viewCount', 'likeCount', 'hotScore', 'priceRange', 'urgency',
     'commentCount', 'location', 'banned', 'hidden', 'appliedCount',
     'createdAt', 'updatedAt', 'deadline', 'startDate', 'applicationDeadline',
     'eventDate', 'endDate', 'maxParticipants', 'currentParticipants',
@@ -159,6 +161,8 @@ export async function getJobsFromFirebaseAdmin(
       query = query.orderBy('hotScore', 'desc');
     } else if (sortBy === 'views') {
       query = query.orderBy('viewCount', 'desc');
+    } else if (sortBy === 'likes') {
+      query = query.orderBy('likeCount', 'desc');
     } else if (sortBy === 'price_asc') {
       query = query.orderBy('price', 'asc');
     } else if (sortBy === 'price_desc') {
@@ -206,8 +210,8 @@ export async function getJobsFromFirebaseAdmin(
       status: d.status || "open",
       visibility: d.visibility || "public",
       userId: d.userId || "",
-      userName: d.userName || "",
-      userAvatar: d.userAvatar || "",
+      userName: d.userName || d.displayName || d.name || "",
+      userAvatar: d.userAvatar || d.photoURL || d.avatar || "",
     ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
     ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
     ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
@@ -250,9 +254,10 @@ export async function getJobsFromFirebaseAdmin(
 
     return taskData as FeedTask;
   }).filter((task) =>
-    task.visibility!== 'private' &&
-    task.banned!== true &&
-    task.hidden!== true
+    task.visibility !== "private" &&
+    task.banned !== true &&
+    task.hidden !== true &&
+    isActiveFeedItem(task)
   );
 
   // FIX: Sort lại ở client nếu có filter giá + sortBy không phải price
@@ -265,6 +270,8 @@ export async function getJobsFromFirebaseAdmin(
   } else if (hasPriceFilter && sortBy === 'hot') {
     tasks = tasks.sort((a, b) => ((b as any).hotScore || 0) - ((a as any).hotScore || 0));
   }
+
+  tasks = await enrichTasksWithUserDataAdmin(db, tasks);
 
   const lastDoc = snap.docs[snap.docs.length - 1];
   const nextCursor = lastDoc? lastDoc.id : null;

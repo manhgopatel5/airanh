@@ -35,8 +35,10 @@ import {
   TaskListItem,
   PlanListItem,
   ItemListItem,
+  FeedTask,
   generateTaskSearchKeywords,
   isTaskOpen,
+  isActiveFeedItem,
   isTask,
   isPlan,
   User,
@@ -200,6 +202,13 @@ banned: false,
   batch.set(doc(db, "shortIds", shortId), { taskId: taskRef.id });
   await batch.commit();
 
+  const { trackTaskCreated } = await import("./gamificationStats");
+  await trackTaskCreated(user.uid, {
+    type: "task",
+    category,
+    price: taskData.price,
+  }).catch(console.error);
+
   return { id: taskRef.id, slug };
 }
 
@@ -324,6 +333,14 @@ export async function createPlan(
   batch.set(planRef, planData);
   batch.set(doc(db, "shortIds", shortId), { taskId: planRef.id });
   await batch.commit();
+
+  const { trackTaskCreated } = await import("./gamificationStats");
+  await trackTaskCreated(user.uid, {
+    type: "plan",
+    category,
+    costType: data.costType,
+    maxParticipants: data.maxParticipants,
+  }).catch(console.error);
 
   return { id: planRef.id, slug };
 }
@@ -537,7 +554,9 @@ export const listenItems = (
   return onSnapshot(
     q,
     (snapshot) => {
-      const data = snapshot.docs.map((d) => ({...d.data(), id: d.id } as ItemListItem));
+      const data = snapshot.docs
+        .map((d) => ({ ...d.data(), id: d.id } as ItemListItem))
+        .filter((item) => isActiveFeedItem(item as FeedTask));
       callback(data);
     },
     (err) => {

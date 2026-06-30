@@ -5,7 +5,8 @@ import FCMProvider from "@/components/FCMProvider";
 import { useEffect, useMemo } from "react";
 import { Toaster } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
-import { isAuthPublicRoute } from "@/components/auth/authRoutes";
+import { isGuestBrowsableRoute } from "@/components/auth/authRoutes";
+import { cn } from "@/lib/utils";
 
 type Props = {
   children: React.ReactNode;
@@ -17,19 +18,23 @@ export default function ClientLayout({ children }: Props) {
   const { user, userData, loading } = useAuth();
 
   const isPublic = useMemo(
-    () => isAuthPublicRoute(pathname),
+    () => isGuestBrowsableRoute(pathname),
     [pathname]
   );
+  const isHomeShell = pathname === "/";
 
   useEffect(() => {
     if (loading) return;
 
-    if (!user &&!isPublic) {
+    if (!user && !isPublic) {
       router.replace("/login");
       return;
     }
 
-    if (user && isPublic &&!pathname.startsWith("/verify-email") && pathname!== "/onboarding") {
+    if (
+      user &&
+      (pathname === "/login" || pathname === "/register" || pathname === "/forgot-password")
+    ) {
       router.replace("/");
       return;
     }
@@ -49,9 +54,16 @@ export default function ClientLayout({ children }: Props) {
     <div className="h-dvh flex flex-col bg-white dark:bg-zinc-950 font-sans">
       {user && <FCMProvider userId={user.uid} />}
 
-  <main className="flex-1 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[calc(56px+env(safe-area-inset-bottom)+16px)]">
-  {children}
-</main>
+  <main
+    className={cn(
+      "flex-1 pt-[env(safe-area-inset-top)]",
+      isHomeShell
+        ? "overflow-hidden flex flex-col min-h-0"
+        : "overflow-y-auto pb-[calc(56px+env(safe-area-inset-bottom)+16px)] [-webkit-overflow-scrolling:touch] overscroll-y-contain"
+    )}
+  >
+    {children}
+  </main>
 
       <Toaster
         richColors

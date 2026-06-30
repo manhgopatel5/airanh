@@ -12,8 +12,11 @@ import {
   arrayUnion,
   serverTimestamp,
   Timestamp,
-  getDocs, // thêm
-  collection, // thêm
+  getDocs,
+  collection,
+  query,
+  where,
+  limit,
 } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
@@ -23,13 +26,12 @@ import {
   UserPlus,
   Check,
   UserMinus,
-  User, 
+  User,
   Star,
-  Clock, 
+  Clock,
   Briefcase,
   Info,
   MapPin,
-  
   ExternalLink,
   Zap,
   Share2,
@@ -38,43 +40,23 @@ import {
   Sparkles,
   Flame,
   Shield,
-  
   Gem,
   ChevronRight,
-  Coffee,
   Users,
-  Heart,
-  Award,
   Mail,
-  Music,
-  Camera,
-  Sun,
-  Globe,
-  Gamepad2,
-  Utensils,
-  Dumbbell,
-  Film,
-  Plane,
-  Moon,
-  Gift,
-  Calendar,
-  ShoppingBag,
-  Mic,
-  Bike,
-  Palette,
-  Beer,
-  Map,
-  PartyPopper,
-  TrendingUp,
-  ThumbsUp,
-  BookOpen,
   Phone,
   ShieldCheck,
   Lock,
+  Calendar,
+  Globe,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { buildGamificationUser } from "@/lib/gamification";
+import { evaluateAchievements, getAchievementColor } from "@/lib/achievements";
+import { AchievementIcon } from "@/components/achievements/AchievementIcon";
 
 import { formatDistanceToNow } from "date-fns";
+import { toTimestampDate } from "@/lib/notifications";
 import { vi } from "date-fns/locale";
 
 
@@ -101,8 +83,12 @@ type PublicUser = {
     completed: number;
     rating: number;
     totalReviews: number;
-    
+    streakDays?: number;
+    tasksCreated?: number;
+    plansCreated?: number;
+    taskCategories?: Record<string, number>;
   };
+  huhaScore?: number;
   createdAt?: Timestamp;
 };
 
@@ -116,7 +102,7 @@ type RankData = {
 export default function PublicProfile() {
   const { uid } = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const db = getFirebaseDB();
   const [showUserInfo, setShowUserInfo] = useState(false);
   const [targetUser, setTargetUser] = useState<PublicUser | null>(null);
@@ -171,498 +157,48 @@ const InfoRow = ({
 
 const Divider = () => <div className="h-px bg-zinc-100 ml-[52px]" />;
 
-  // ===== TÍNH TOÁN STATS - CHỈ KHAI BÁO 1 LẦN =====
-  const completed = targetUser?.stats?.completed || 0;
-  const reviews = targetUser?.stats?.totalReviews || 0;
-  const rating = targetUser?.stats?.rating || 0;
-  
-
-const xp =
-  completed * 12 +
-  reviews * 8 +
-  Math.floor(rating * 20);
-
-  const level = Math.max(1, Math.floor(xp / 300) + 1);
-  const currentLevelXP = xp % 300;
-  const progress = (currentLevelXP / 300) * 100;
-
-const trustScore = Math.min(
-  100,
-  Math.floor(rating * 15 + completed * 1.2 + reviews) // BỎ + responseRate * 0.35
-);
-
-const joinedDays =
-  targetUser?.createdAt?.seconds
-  ? Math.floor(
-      (Date.now() - targetUser.createdAt.seconds * 1000) / 86400000
-    )
-  : 999;
-
-  const profileCompletion = Math.round(
-    ([
-      targetUser?.avatar,
-      targetUser?.bio,
-      targetUser?.skills?.length,
-      targetUser?.portfolio?.length,
-      targetUser?.location,
-      targetUser?.title,
-      targetUser?.emailVerified,
-      targetUser?.isVerifiedId,
-    ].filter(Boolean).length / 8) * 100
+  const gamUser = useMemo(
+    () => buildGamificationUser((targetUser || {}) as Record<string, unknown>, targetUser?.uid, friendCount),
+    [targetUser, friendCount]
   );
 
-  // ===== 40 THÀNH TỰU =====
-  const allAchievements = useMemo(() => [
-    // Profile 20 cái
-  {
-    id: 1,
-    icon: <Users className="w-5 h-5" />,
-    label: "Bạn bè khắp nơi",
-    desc: "Kết nối 10+ người bạn",
-    unlocked: friendCount >= 10,
-    condition: "Có ≥ 10 bạn bè",
-    color: "from-pink-400 to-rose-400",
-    borderColor: "border-pink-400",
-    category: "profile",
-  },
-    
-    {
-      id: 2,
-      icon: <Sparkles className="w-5 h-5" />,
-      label: "Tân binh",
-      desc: "Thành viên lâu năm",
-      unlocked: joinedDays <= 30,
-      condition: "Tham gia < 30 ngày",
-      color: "from-emerald-400 to-teal-400",
-      borderColor: "border-emerald-400",
-      category: "profile",
-    },
-    {
-      id: 3,
-      icon: <Star className="w-5 h-5" />,
-      label: "5 sao lấp lánh",
-      desc: "Được crush cho 5 sao",
-      unlocked: rating >= 5.0 && reviews >= 1,
-      condition: "Rating = 5.0",
-      color: "from-yellow-400 to-amber-400",
-      borderColor: "border-yellow-400",
-      category: "profile",
-    },
-    {
-      id: 4,
-      icon: <Shield className="w-5 h-5" />,
-      label: "Chính chủ 100%",
-      desc: "Xác minh CCCD xong",
-      unlocked: targetUser?.isVerifiedId || false,
-      condition: "Xác minh CCCD",
-      color: "from-blue-400 to-sky-400",
-      borderColor: "border-blue-400",
-      category: "profile",
-    },
-    {
-      id: 5,
-      icon: <Briefcase className="w-5 h-5" />,
-      label: "Thợ cày",
-      desc: "Cày 50 job như trâu",
-      unlocked: completed >= 50,
-      condition: "Hoàn thành ≥ 50 job",
-      color: "from-indigo-400 to-blue-400",
-      borderColor: "border-indigo-400",
-      category: "profile",
-    },
-    {
-      id: 6,
-      icon: <Flame className="w-5 h-5" />,
-      label: "Streak 30 ngày",
-      desc: "Online không nghỉ ngày nào",
-      unlocked: joinedDays >= 30,
-      condition: "Tham gia ≥ 30 ngày",
-      color: "from-orange-400 to-red-400",
-      borderColor: "border-orange-400",
-      category: "profile",
-    },
-    {
-      id: 7,
-      icon: <Award className="w-5 h-5" />,
-      label: "Profile xịn sò",
-      desc: "Điền đủ 100% thông tin",
-      unlocked: profileCompletion >= 100,
-      condition: "Hồ sơ = 100%",
-      color: "from-green-400 to-emerald-400",
-      borderColor: "border-green-400",
-      category: "profile",
-    },
-    {
-      id: 8,
-      icon: <Mail className="w-5 h-5" />,
-      label: "Email real",
-      desc: "Xác thực email rồi",
-      unlocked: targetUser?.emailVerified || false,
-      condition: "Xác minh email",
-      color: "from-sky-400 to-blue-400",
-      borderColor: "border-sky-400",
-      category: "profile",
-    },
-    {
-      id: 9,
-      icon: <Camera className="w-5 h-5" />,
-      label: "Nhiếp ảnh gia",
-      desc: "Đăng 5+ ảnh portfolio",
-      unlocked: (targetUser?.portfolio?.length || 0) >= 5,
-      condition: "Portfolio ≥ 5 mục",
-      color: "from-teal-400 to-cyan-400",
-      borderColor: "border-teal-400",
-      category: "profile",
-    },
-    {
-      id: 10,
-      icon: <Crown className="w-5 h-5" />,
-      label: "Đại gia",
-      desc: "Cày 100 job không biết mệt",
-      unlocked: completed >= 100,
-      condition: "Hoàn thành ≥ 100 job",
-      color: "from-yellow-500 to-amber-500",
-      borderColor: "border-yellow-500",
-      category: "profile",
-    },
-    {
-      id: 11,
-      icon: <Clock className="w-5 h-5" />,
-      label: "Lão làng",
-      desc: "Tham gia 365 ngày",
-      unlocked: joinedDays >= 365,
-      condition: "Tham gia ≥ 1 năm",
-      color: "from-lime-400 to-green-400",
-      borderColor: "border-lime-400",
-      category: "profile",
-    },
-    {
-      id: 12,
-      icon: <Globe className="w-5 h-5" />,
-      label: "Quốc tế hóa",
-      desc: "Đi chơi với bạn nước ngoài",
-      unlocked: false,
-      condition: "Có task với user nước ngoài",
-      color: "from-indigo-400 to-purple-400",
-      borderColor: "border-indigo-400",
-      category: "profile",
-    },
-    {
-      id: 13,
-      icon: <Gem className="w-5 h-5" />,
-      label: "Kim cương",
-      desc: "Đạt level 50",
-      unlocked: level >= 50,
-      condition: "Đạt Lv.50",
-      color: "from-cyan-400 to-blue-500",
-      borderColor: "border-cyan-400",
-      category: "profile",
-    },
-    {
-      id: 14,
-      icon: <ShieldCheck className="w-5 h-5" />,
-      label: "Uy tín 100%",
-      desc: "Tin được như vàng 9999",
-      unlocked: trustScore >= 100,
-      condition: "Độ uy tín = 100%",
-      color: "from-blue-500 to-indigo-500",
-      borderColor: "border-blue-500",
-      category: "profile",
-    },
-    {
-      id: 15,
-      icon: <Crown className="w-5 h-5" />,
-      label: "Top 1%",
-      desc: "Lọt top 1% người dùng",
-      unlocked: trustScore >= 95,
-      condition: "Độ uy tín ≥ 95%",
-      color: "from-amber-400 to-yellow-500",
-      borderColor: "border-amber-400",
-      category: "profile",
-    },
-   {
-  id: 16,
-  icon: <Heart className="w-5 h-5" />,
-  label: "Bạn thân 50 người",
-  desc: "Mở rộng vòng kết nối",
-  unlocked: friendCount >= 50,
-  condition: "Có ≥ 50 bạn bè",
-  color: "from-rose-400 to-pink-500",
-  borderColor: "border-rose-400",
-  category: "profile",
-},
-    {
-      id: 17,
-      icon: <TrendingUp className="w-5 h-5" />,
-      label: "Level 25+",
-      desc: "Chăm cày lên level",
-      unlocked: level >= 25,
-      condition: "Đạt Lv.25",
-      color: "from-purple-400 to-violet-400",
-      borderColor: "border-purple-400",
-      category: "profile",
-    },
-    {
-      id: 18,
-      icon: <ThumbsUp className="w-5 h-5" />,
-      label: "Được yêu thích",
-      desc: "50+ đánh giá tích cực",
-      unlocked: reviews >= 50,
-      condition: "Reviews ≥ 50",
-      color: "from-rose-400 to-pink-400",
-      borderColor: "border-rose-400",
-      category: "profile",
-    },
-    {
-      id: 19,
-      icon: <BookOpen className="w-5 h-5" />,
-      label: "Skill master",
-      desc: "Thêm 10+ kỹ năng",
-      unlocked: (targetUser?.skills?.length || 0) >= 10,
-      condition: "Skills ≥ 10",
-      color: "from-slate-400 to-gray-400",
-      borderColor: "border-slate-400",
-      category: "profile",
-    },
-    {
-      id: 20,
-      icon: <MapPin className="w-5 h-5" />,
-      label: "Dân chơi Sài Gòn",
-      desc: "Check-in Ho Chi Minh City",
-      unlocked: targetUser?.location?.includes("Hồ Chí Minh") || false,
-      condition: "Location ở Sài gòn",
-      color: "from-emerald-400 to-green-500",
-      borderColor: "border-emerald-400",
-      category: "profile",
-    },
-    // Task 20 cái
-    {
-      id: 21,
-      icon: <Coffee className="w-5 h-5" />,
-      label: "Trùm cafe",
-      desc: "Tạo 5 kèo đi cafe",
-      unlocked: false,
-      condition: "Tạo 5 task cafe",
-      color: "from-amber-600 to-yellow-600",
-      borderColor: "border-amber-600",
-      category: "task",
-    },
-    {
-      id: 22,
-      icon: <Heart className="w-5 h-5" />,
-      label: "Ông mai bà mối",
-      desc: "Tạo 10 kèo hẹn hò",
-      unlocked: false,
-      condition: "Tạo 10 task hẹn hò",
-      color: "from-rose-400 to-pink-500",
-      borderColor: "border-rose-400",
-      category: "task",
-    },
-    {
-      id: 23,
-      icon: <Music className="w-5 h-5" />,
-      label: "Party king",
-      desc: "Tổ chức 3 buổi nhậu",
-      unlocked: false,
-      condition: "Tạo 3 task nhậu/party",
-      color: "from-purple-400 to-fuchsia-400",
-      borderColor: "border-purple-400",
-      category: "task",
-    },
-    {
-      id: 24,
-      icon: <Sun className="w-5 h-5" />,
-      label: "Dậy sớm",
-      desc: "Tạo task buổi sáng 10 lần",
-      unlocked: false,
-      condition: "Tạo 10 task buổi sáng",
-      color: "from-yellow-400 to-orange-400",
-      borderColor: "border-yellow-400",
-      category: "task",
-    },
-    {
-      id: 25,
-      icon: <Gamepad2 className="w-5 h-5" />,
-      label: "Game thủ",
-      desc: "Tạo 5 kèo chơi game",
-      unlocked: false,
-      condition: "Tạo 5 task game",
-      color: "from-violet-400 to-purple-400",
-      borderColor: "border-violet-400",
-      category: "task",
-    },
-    {
-      id: 26,
-      icon: <Utensils className="w-5 h-5" />,
-      label: "Food reviewer",
-      desc: "Tạo 10 kèo đi ăn",
-      unlocked: false,
-      condition: "Tạo 10 task ăn uống",
-      color: "from-orange-400 to-red-400",
-      borderColor: "border-orange-400",
-      category: "task",
-    },
-    {
-      id: 27,
-      icon: <Dumbbell className="w-5 h-5" />,
-      label: "Gymer",
-      desc: "Rủ 5 người đi tập gym",
-      unlocked: false,
-      condition: "Tạo 5 task gym",
-      color: "from-red-400 to-rose-400",
-      borderColor: "border-red-400",
-      category: "task",
-    },
-    {
-      id: 28,
-      icon: <Film className="w-5 h-5" />,
-      label: "Mọt phim",
-      desc: "Tạo 5 kèo xem phim",
-      unlocked: false,
-      condition: "Tạo 5 task xem phim",
-      color: "from-slate-400 to-zinc-400",
-      borderColor: "border-slate-400",
-      category: "task",
-    },
-    {
-      id: 29,
-      icon: <Plane className="w-5 h-5" />,
-      label: "Phượt thủ",
-      desc: "Tổ chức 3 chuyến đi chơi xa",
-      unlocked: false,
-      condition: "Tạo 3 task du lịch",
-      color: "from-sky-400 to-blue-500",
-      borderColor: "border-sky-400",
-      category: "task",
-    },
-    {
-      id: 30,
-      icon: <Moon className="w-5 h-5" />,
-      label: "Cú đêm",
-      desc: "Tạo 10 task buổi tối",
-      unlocked: false,
-      condition: "Tạo 10 task tối",
-      color: "from-indigo-500 to-purple-600",
-      borderColor: "border-indigo-500",
-      category: "task",
-    },
-    {
-      id: 31,
-      icon: <Gift className="w-5 h-5" />,
-      label: "Người hào phóng",
-      desc: "Tạo 5 task miễn phí",
-      unlocked: false,
-      condition: "Tạo 5 task free",
-      color: "from-pink-400 to-rose-400",
-      borderColor: "border-pink-400",
-      category: "task",
-    },
-    {
-      id: 32,
-      icon: <Users className="w-5 h-5" />,
-      label: "Nhóm trưởng",
-      desc: "Tạo task cho 10+ người",
-      unlocked: false,
-      condition: "Task có 10+ người join",
-      color: "from-cyan-400 to-blue-400",
-      borderColor: "border-cyan-400",
-      category: "task",
-    },
-    {
-      id: 33,
-      icon: <Calendar className="w-5 h-5" />,
-      label: "Siêu bận rộn",
-      desc: "Có task 7 ngày liên tiếp",
-      unlocked: false,
-      condition: "Tạo task 7 ngày liên tục",
-      color: "from-teal-400 to-green-400",
-      borderColor: "border-teal-400",
-      category: "task",
-    },
-    {
-      id: 34,
-      icon: <ShoppingBag className="w-5 h-5" />,
-      label: "Thánh shopping",
-      desc: "Rủ 5 người đi mua sắm",
-      unlocked: false,
-      condition: "Tạo 5 task shopping",
-      color: "from-fuchsia-400 to-pink-400",
-      borderColor: "border-fuchsia-400",
-      category: "task",
-    },
-    {
-      id: 35,
-      icon: <Mic className="w-5 h-5" />,
-      label: "Ca sĩ phòng trà",
-      desc: "Tổ chức 3 buổi karaoke",
-      unlocked: false,
-      condition: "Tạo 3 task karaoke",
-      color: "from-purple-500 to-pink-500",
-      borderColor: "border-purple-500",
-      category: "task",
-    },
-    {
-      id: 36,
-      icon: <Bike className="w-5 h-5" />,
-      label: "Vận động viên",
-      desc: "Rủ 5 người đi đạp xe/chạy bộ",
-      unlocked: false,
-      condition: "Tạo 5 task thể thao",
-      color: "from-green-500 to-emerald-500",
-      borderColor: "border-green-500",
-      category: "task",
-    },
-    {
-      id: 37,
-      icon: <Palette className="w-5 h-5" />,
-      label: "Nghệ sĩ",
-      desc: "Tổ chức workshop vẽ/nhạc",
-      unlocked: false,
-      condition: "Tạo 3 task workshop",
-      color: "from-rose-400 to-orange-400",
-      borderColor: "border-rose-400",
-      category: "task",
-    },
-    {
-      id: 38,
-      icon: <Beer className="w-5 h-5" />,
-      label: "Bợm nhậu",
-      desc: "Tạo 10 kèo nhậu",
-      unlocked: false,
-      condition: "Tạo 10 task nhậu",
-      color: "from-amber-500 to-yellow-600",
-      borderColor: "border-amber-500",
-      category: "task",
-    },
-    {
-      id: 39,
-      icon: <Map className="w-5 h-5" />,
-      label: "Hướng dẫn viên",
-      desc: "Dẫn 20 người đi chơi",
-      unlocked: false,
-      condition: "20+ người join task",
-      color: "from-blue-400 to-cyan-400",
-      borderColor: "border-blue-400",
-      category: "task",
-    },
-    {
-      id: 40,
-      icon: <PartyPopper className="w-5 h-5" />,
-      label: "Vua task",
-      desc: "Tạo 100 task đi chơi",
-      unlocked: false,
-      condition: "Tạo 100 task",
-      color: "from-yellow-400 via-orange-400 to-red-400",
-      borderColor: "border-orange-400",
-      category: "task",
-    },
-], [rating, completed, trustScore, joinedDays, targetUser, reviews, profileCompletion, level, friendCount]);
+  const completed = gamUser.stats.completed || 0;
+  const reviews = gamUser.stats.totalReviews || 0;
+  const rating = gamUser.stats.rating || 0;
+  const huhaScore = gamUser.huhaScore;
+  const level = gamUser.level;
+  const currentLevelXP = gamUser.exp;
+  const nextLevelExp = gamUser.nextLevelExp;
+  const progress = nextLevelExp > 0 ? (currentLevelXP / nextLevelExp) * 100 : 0;
+  const trustScore = gamUser.trustScore;
+  const joinedDays = gamUser.joinedDays;
+  const profileCompletion = gamUser.profileCompletion;
+
+  const allAchievements = useMemo(
+    () =>
+      evaluateAchievements(gamUser).map((a) => {
+        const colors = getAchievementColor(a.id);
+        return {
+          ...a,
+          icon: <AchievementIcon name={a.iconName} className="w-5 h-5" />,
+          color: colors.gradient,
+          borderColor: colors.border,
+        };
+      }),
+    [gamUser]
+  );
+
 
   
   const isOwnProfile = user?.uid === uid;
 
 const fetchUser = useCallback(async () => {
-  if (!uid || !user || typeof uid !== 'string') return; // THÊM typeof
+  if (!uid || typeof uid !== 'string' || uid === 'undefined') {
+    setLoading(false);
+    return;
+  }
+
+  if (!user) return;
 
   try {
     const [userSnap, currentUserSnap] = await Promise.all([
@@ -670,15 +206,28 @@ const fetchUser = useCallback(async () => {
       getDoc(doc(db, "users", user.uid)),
     ]);
 
+    let resolvedSnap = userSnap;
     if (!userSnap.exists()) {
+      const byPublicId = await getDocs(
+        query(collection(db, "users"), where("userId", "==", uid), limit(1))
+      );
+      if (!byPublicId.empty) {
+        resolvedSnap = byPublicId.docs[0]!;
+      }
+    }
+
+    if (!resolvedSnap.exists()) {
       toast.error("Không tìm thấy người dùng");
       router.replace("/404");
       return;
     }
 
+    const raw = resolvedSnap.data();
     const data = {
-      uid: userSnap.id,
-      ...userSnap.data(),
+      uid: resolvedSnap.id,
+      ...raw,
+      name: raw.displayName || raw.name || raw.username || "Unknown User",
+      avatar: raw.photoURL || raw.avatar || "",
     } as PublicUser;
 
     setTargetUser(data);
@@ -688,24 +237,21 @@ const fetchUser = useCallback(async () => {
     }
 
   const friendSnap = await getDoc(
-  doc(db, "users", user.uid, "friends", userSnap.id)
+  doc(db, "users", user.uid, "friends", resolvedSnap.id)
 );
 setIsFriend(friendSnap.exists());
 
-// THÊM ĐOẠN NÀY
 if (!friendSnap.exists()) {
-  const reqId = [user.uid, userSnap.id].sort().join('_');
+  const reqId = [user.uid, resolvedSnap.id].sort().join('_');
   const reqSnap = await getDoc(doc(db, "friendRequests", reqId));
   if (reqSnap.exists() && reqSnap.data().from === user.uid) {
     setHasSentRequest(true);
     setRequestId(reqId);
   }
 }
-// HẾT ĐOẠN THÊM
-
 
     try {
-  const friendsCollection = await getDocs(collection(db, "users", uid as string, "friends"));
+  const friendsCollection = await getDocs(collection(db, "users", resolvedSnap.id, "friends"));
   setFriendCount(friendsCollection.size);
 } catch (e) {
   console.warn("Không đọc được số bạn bè:", e);
@@ -724,8 +270,14 @@ if (!friendSnap.exists()) {
   
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      router.replace("/login");
+      return;
+    }
     fetchUser();
-  }, [fetchUser]);
+  }, [fetchUser, authLoading, user, router]);
 
   const handleConnect = async () => {
   if (!user || !targetUser || actionLoading) return;
@@ -943,12 +495,11 @@ const handleMessage = async () => {
     }
   };
 
-  const formatLastSeen = (timestamp?: Timestamp) => {
-    if (!timestamp) {
-      return "Lâu rồi";
-    }
+  const formatLastSeen = (timestamp?: Timestamp | { seconds?: number }) => {
+    const date = toTimestampDate(timestamp);
+    if (!date) return "Lâu rồi";
 
-    return formatDistanceToNow(timestamp.toDate(), {
+    return formatDistanceToNow(date, {
       addSuffix: true,
       locale: vi,
     });
@@ -1444,7 +995,7 @@ return (
     </div>
     <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-bold">
       <span>Tổng XP hiện tại</span>
-      <span>{xp} XP</span>
+      <span>{huhaScore} XP</span>
     </div>
     <div className="text-xs text-blue-700 mt-1">
       Mỗi level cần 300 XP
@@ -1504,14 +1055,14 @@ return (
             </div>
           </div>
           <div className="text-right">
-            <p className="font-bold text-lg">{xp}</p>
+            <p className="font-bold text-lg">{huhaScore}</p>
             <p className="text-xs text-zinc-400">XP</p>
           </div>
         </div>
         <div className="mt-3">
           <div className="flex justify-between text-xs mb-1">
             <span className="text-zinc-400">Tiến trình</span>
-            <span className="text-zinc-300">{currentLevelXP}/300 XP</span>
+            <span className="text-zinc-300">{currentLevelXP}/{nextLevelExp} XP</span>
           </div>
           <div className="h-1.5 rounded-full bg-zinc-700 overflow-hidden">
             <div

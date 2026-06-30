@@ -1,17 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiMessageSquare, FiPhone, FiSend, FiCheckCircle,
-  FiShare2, FiAlertTriangle
+  FiMessageSquare,
+  FiPhone,
+  FiSend,
+  FiCheckCircle,
+  FiShare2,
+  FiAlertTriangle,
+  FiUserPlus,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { useTask } from "@/hooks/useTask";
-import type { FeedTask } from "@/types/task"; // FIX: Task -> FeedTask
+import { joinPlan } from "@/lib/task";
+import { isPlan, type FeedTask } from "@/types/task";
+import { useAuth } from "@/lib/AuthContext";
 
 type UserData = {
   uid: string;
@@ -20,10 +26,11 @@ type UserData = {
 };
 
 type Props = {
-  task: FeedTask; // FIX: Task -> FeedTask
+  task: FeedTask;
   owner: UserData | null;
-  currentUser: any;
+  currentUser: { uid: string; displayName?: string | null; photoURL?: string | null; email?: string | null } | null;
   isApplied: boolean;
+  isParticipant?: boolean;
   isFull: boolean;
   isOwner: boolean;
   onApplied: () => void;
@@ -35,17 +42,23 @@ export default function TaskActionBar({
   owner,
   currentUser,
   isApplied,
+  isParticipant = false,
   isFull,
   isOwner,
   onApplied,
-  onShare
+  onShare,
 }: Props) {
   const router = useRouter();
+  const { user } = useAuth();
   const [showApplyModal, setShowApplyModal] = useState(false);
-  const { handleJoinTask, handleCancelApply, joining } = useTask(task.id, currentUser?.uid);
+  const [joining, setJoining] = useState(false);
+
+  const isPlanMode = isPlan(task);
+  const accent = isPlanMode ? "#30D158" : "#0A84FF";
+  const successColor = isPlanMode ? "#30D158" : "#34C759";
 
   const handleStartChat = async () => {
-    if (!currentUser ||!task?.userId) return;
+    if (!currentUser || !task?.userId) return;
     const db = getFirebaseDB();
     try {
       const chatId = [currentUser.uid, task.userId].sort().join("_");
@@ -55,24 +68,28 @@ export default function TaskActionBar({
       ]);
       const currentData = currentUserDoc.data();
       const ownerData = ownerDoc.data();
-      await setDoc(doc(db, "chats", chatId), {
-        members: [currentUser.uid, task.userId],
-        isGroup: false,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        membersInfo: {
-          [currentUser.uid]: {
-            name: currentData?.name || "User",
-            avatar: currentData?.avatar || "",
-            username: currentData?.username || "",
-          },
-          [task.userId]: {
-            name: ownerData?.name || "User",
-            avatar: ownerData?.avatar || "",
-            username: ownerData?.username || "",
+      await setDoc(
+        doc(db, "chats", chatId),
+        {
+          members: [currentUser.uid, task.userId],
+          isGroup: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          membersInfo: {
+            [currentUser.uid]: {
+              name: currentData?.name || "User",
+              avatar: currentData?.avatar || "",
+              username: currentData?.username || "",
+            },
+            [task.userId]: {
+              name: ownerData?.name || "User",
+              avatar: ownerData?.avatar || "",
+              username: ownerData?.username || "",
+            },
           },
         },
-      }, { merge: true });
+        { merge: true }
+      );
       router.push(`/chat/${chatId}`);
       navigator.vibrate?.(8);
     } catch (err) {
@@ -81,36 +98,77 @@ export default function TaskActionBar({
     }
   };
 
-  const handleApplyClick = async () => {
-    if (isApplied) {
-      await handleCancelApply();
+  const handleJoinPlan = useCallback(async () => {
+    if (!user || joining) return;
+    setJoining(true);
+    try {
+      await joinPlan(task.id, {
+        uid: user.uid,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        email: user.email,
+        onboardingCompleted: true,
+      });
+      toast.success("Tham gia sự kiện thành công!");
+      navigator.vibrate?.(10);
       onApplied();
-    } else {
-      setShowApplyModal(true);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Tham gia thất bại");
+    } finally {
+      setJoining(false);
     }
+  }, [user, joining, task.id, onApplied]);
+
+  const handleApplyClick = async () => {
+    if (isPlanMode) {
+      if (isParticipant) {
+        toast.info("Bạn đã tham gia sự kiện này");
+        return;
+      }
+      setShowApplyModal(true);
+      return;
+    }
+    if (isApplied) {
+      toast.info("Bạn đã ứng tuyển. Vào mục công việc của tôi để hủy.");
+      return;
+    }
+    setShowApplyModal(true);
   };
 
   const confirmApply = async () => {
     setShowApplyModal(false);
-    await handleJoinTask();
-    onApplied();
+    if (isPlanMode) {
+      await handleJoinPlan();
+    } else {
+      try {
+        setJoining(true);
+        const { applyToTask } = await import("@/app/actions/task");
+        if (!currentUser) return;
+        await applyToTask(task.id, currentUser.uid);
+        toast.success("Đã gửi yêu cầu ứng tuyển!");
+        onApplied();
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : "Ứng tuyển thất bại");
+      } finally {
+        setJoining(false);
+      }
+    }
   };
 
-  const canApply =!isApplied &&!isFull && task.status === "open" &&!isOwner;
+  const hasJoined = isPlanMode ? isParticipant : isApplied;
+  const canJoin = !hasJoined && !isFull && task.status === "open" && !isOwner;
 
-  const ActionButton = ({ 
-    icon: Icon, 
-    label, 
-    onClick, 
-    disabled = false, 
-    active = false,
-    color = "text-zinc-500 dark:text-zinc-400"
+  const ActionButton = ({
+    icon: Icon,
+    label,
+    onClick,
+    disabled = false,
+    color = "text-zinc-500 dark:text-zinc-400",
   }: {
-    icon: any;
+    icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
     label: string;
     onClick: () => void;
     disabled?: boolean;
-    active?: boolean;
     color?: string;
   }) => (
     <motion.button
@@ -122,23 +180,19 @@ export default function TaskActionBar({
       disabled={disabled}
       className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
     >
-      <Icon size={22} strokeWidth={active? 2.5 : 2} className={color} />
-      <span className={`text-xs font-semibold leading-none ${color}`}>
-        {label}
-      </span>
+      <Icon size={22} strokeWidth={2} className={color} />
+      <span className={`text-xs font-semibold leading-none ${color}`}>{label}</span>
     </motion.button>
   );
+
+  const JoinIcon = isPlanMode ? FiUserPlus : FiSend;
 
   return (
     <>
       <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-screen -ml-4 my-4" />
-      
+
       <div className="grid grid-cols-5 py-3">
-        <ActionButton
-          icon={FiMessageSquare}
-          label="Nhắn tin"
-          onClick={handleStartChat}
-        />
+        <ActionButton icon={FiMessageSquare} label="Nhắn tin" onClick={handleStartChat} />
 
         <ActionButton
           icon={FiPhone}
@@ -150,32 +204,27 @@ export default function TaskActionBar({
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleApplyClick}
-          disabled={!canApply &&!isApplied || joining}
+          disabled={(!canJoin && !hasJoined) || joining}
           className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
         >
-          {joining? (
-            <div className="w-[22px] h-[22px] border-2 border-[#0A84FF] border-t-transparent rounded-full animate-spin" />
-          ) : isApplied? (
-            <FiCheckCircle size={22} strokeWidth={2.5} className="text-[#34C759]" />
+          {joining ? (
+            <div
+              className="w-[22px] h-[22px] border-2 border-t-transparent rounded-full animate-spin"
+              style={{ borderColor: accent, borderTopColor: "transparent" }}
+            />
+          ) : hasJoined ? (
+            <FiCheckCircle size={22} strokeWidth={2.5} style={{ color: successColor }} />
           ) : (
-            <FiSend size={22} strokeWidth={2.5} className="text-[#0A84FF]" />
+            <JoinIcon size={22} strokeWidth={2.5} style={{ color: accent }} />
           )}
-          <span className={`text-xs font-semibold leading-none ${isApplied? 'text-[#34C759]' : 'text-[#0A84FF]'}`}>
-            {isApplied? "Đã ứng tuyển" : "Ứng tuyển"}
+          <span className="text-xs font-semibold leading-none" style={{ color: hasJoined ? successColor : accent }}>
+            {hasJoined ? (isPlanMode ? "Đã tham gia" : "Đã ứng tuyển") : isPlanMode ? "Tham gia" : "Ứng tuyển"}
           </span>
         </motion.button>
 
-        <ActionButton
-          icon={FiShare2}
-          label="Chia sẻ"
-          onClick={onShare}
-        />
+        <ActionButton icon={FiShare2} label="Chia sẻ" onClick={onShare} />
 
-        <ActionButton
-          icon={FiAlertTriangle}
-          label="Báo cáo"
-          onClick={() => toast.info("Đã gửi báo cáo")}
-        />
+        <ActionButton icon={FiAlertTriangle} label="Báo cáo" onClick={() => toast.info("Đã gửi báo cáo")} />
       </div>
 
       <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-screen -ml-4 my-4" />
@@ -198,10 +247,12 @@ export default function TaskActionBar({
                 className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl p-6 max-w-sm w-full shadow-2xl ring-1 ring-black/5 dark:ring-white/10 pointer-events-auto"
               >
                 <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
-                  Xác nhận ứng tuyển
+                  {isPlanMode ? "Xác nhận tham gia" : "Xác nhận ứng tuyển"}
                 </h3>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">
-                  Bạn có chắc muốn ứng tuyển công việc "{task.title}"?
+                  {isPlanMode
+                    ? `Bạn có chắc muốn tham gia sự kiện "${task.title}"?`
+                    : `Bạn có chắc muốn ứng tuyển công việc "${task.title}"?`}
                 </p>
                 <div className="flex gap-2 mt-5">
                   <motion.button
@@ -210,7 +261,7 @@ export default function TaskActionBar({
                       setShowApplyModal(false);
                       navigator.vibrate?.(5);
                     }}
-                    className="flex-1 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-sm font-semibold text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all"
+                    className="flex-1 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-sm font-semibold text-zinc-900 dark:text-zinc-100"
                   >
                     Hủy
                   </motion.button>
@@ -221,9 +272,10 @@ export default function TaskActionBar({
                       navigator.vibrate?.(5);
                     }}
                     disabled={joining}
-                    className="flex-1 py-2.5 rounded-xl bg-[#0A84FF] text-white text-sm font-semibold active:scale-95 transition-all disabled:opacity-50"
+                    className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
+                    style={{ background: accent }}
                   >
-                    {joining? 'Đang gửi...' : 'Xác nhận'}
+                    {joining ? "Đang gửi..." : "Xác nhận"}
                   </motion.button>
                 </div>
               </motion.div>

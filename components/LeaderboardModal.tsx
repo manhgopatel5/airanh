@@ -1,5 +1,6 @@
 "use client";
 import { checkDailyLoginXP } from "@/lib/xp";
+import { syncAchievementBadges } from "@/lib/gamificationStats";
 import { useEffect, useState, useMemo, memo, useCallback } from "react";
 import { FiX, FiTrendingUp, FiAward } from "react-icons/fi";
 import { getFirebaseDB } from "@/lib/firebase";
@@ -8,17 +9,13 @@ import {
   onSnapshot,
   collection,
   query,
-  
-  
-  
-  
   orderBy,
   limit,
   Timestamp,
 } from "firebase/firestore";
-
 import * as Dialog from "@radix-ui/react-dialog";
-
+import { buildGamificationUser, type GamificationUser } from "@/lib/gamification";
+import { ALL_ACHIEVEMENT_DEFS } from "@/lib/achievements";
 import {
   Zap, Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun,
   Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag,
@@ -33,40 +30,12 @@ const IconMap = {
   TrendingUp, ThumbsUp, BookOpen, ShieldCheck, MapPin, Users, Mail, Star
 } as const;
 
-type IconName = keyof typeof IconMap;
-
-type UserProgress = {
-  uid: string;
+type UserProgress = GamificationUser & {
   name: string;
   avatar: string;
-  level: number;
-  exp: number;
-  nextLevelExp: number;
-  huhaScore: number;
-  streakDays: number;
-  badges: string[];
   rank: number;
-  vip?: { tier: 'free' | 'pro' | 'elite' };
-  stats?: {
-    completed: number;
-    rating: number;
-    totalReviews: number;
-    friendsMade: number;
-    eventsJoined: number;
-    checkins: number;
-    groupsManaged: number;
-    eventsHosted: number;
-  };
+  vip?: { tier: "free" | "pro" | "elite" };
   createdAt?: Timestamp;
-  emailVerified?: boolean;
-  isVerifiedId?: boolean;
-  skills?: string[];
-  portfolio?: any[];
-  location?: string;
-  profileCompletion: number;
-  trustScore: number;
-  joinedDays: number;
-  friendCount: number;
 };
 
 type TopUser = {
@@ -78,120 +47,24 @@ type TopUser = {
   badge: string;
 };
 
-type Achievement = {
-  id: number;
-  iconName: IconName;
-  label: string;
-  desc: string;
-  unlocked: (u: UserProgress) => boolean;
-  condition: string;
-  category: "profile" | "task";
-};
+const ALL_ACHIEVEMENTS = ALL_ACHIEVEMENT_DEFS.map((def) => ({
+  ...def,
+  unlocked: (u: UserProgress) => def.check(u),
+}));
 
-const ALL_ACHIEVEMENTS: Achievement[] = [
-  { id: 1, iconName: 'Users', label: "Bạn bè khắp nơi", desc: "Kết nối 10+ người bạn", unlocked: (u) => u.friendCount >= 10, condition: "Có ≥ 10 bạn bè", category: "profile" },
-  { id: 2, iconName: 'Sparkles', label: "Tân binh", desc: "Thành viên lâu năm", unlocked: (u) => u.joinedDays <= 30, condition: "Tham gia < 30 ngày", category: "profile" },
-  { id: 3, iconName: 'Star', label: "5 sao lấp lánh", desc: "Được crush cho 5 sao", unlocked: (u) => (u.stats?.rating || 0) >= 5.0 && (u.stats?.totalReviews || 0) >= 1, condition: "Rating = 5.0", category: "profile" },
-  { id: 4, iconName: 'Shield', label: "Chính chủ 100%", desc: "Xác minh CCCD xong", unlocked: (u) =>!!u.isVerifiedId, condition: "Xác minh CCCD", category: "profile" },
-  { id: 5, iconName: 'Briefcase', label: "Thợ cày", desc: "Cày 50 job như trâu", unlocked: (u) => (u.stats?.completed || 0) >= 50, condition: "Hoàn thành ≥ 50 job", category: "profile" },
-  { id: 6, iconName: 'Flame', label: "Streak 30 ngày", desc: "Online không nghỉ ngày nào", unlocked: (u) => u.joinedDays >= 30, condition: "Tham gia ≥ 30 ngày", category: "profile" },
-  { id: 7, iconName: 'ShieldCheck', label: "Profile xịn sò", desc: "Điền đủ 100% thông tin", unlocked: (u) => u.profileCompletion >= 100, condition: "Hồ sơ = 100%", category: "profile" },
-  { id: 8, iconName: 'Mail', label: "Email real", desc: "Xác thực email rồi", unlocked: (u) =>!!u.emailVerified, condition: "Xác minh email", category: "profile" },
-  { id: 9, iconName: 'Camera', label: "Nhiếp ảnh gia", desc: "Đăng 5+ ảnh portfolio", unlocked: (u) => (u.portfolio?.length || 0) >= 5, condition: "Portfolio ≥ 5 mục", category: "profile" },
-  { id: 10, iconName: 'Crown', label: "Đại gia", desc: "Cày 100 job không biết mệt", unlocked: (u) => (u.stats?.completed || 0) >= 100, condition: "Hoàn thành ≥ 100 job", category: "profile" },
-  { id: 11, iconName: 'Clock', label: "Lão làng", desc: "Tham gia 365 ngày", unlocked: (u) => u.joinedDays >= 365, condition: "Tham gia ≥ 1 năm", category: "profile" },
-  { id: 12, iconName: 'Globe', label: "Quốc tế hóa", desc: "Đi chơi với bạn nước ngoài", unlocked: () => false, condition: "Có task với user nước ngoài", category: "profile" },
-  { id: 13, iconName: 'Gem', label: "Kim cương", desc: "Đạt level 50", unlocked: (u) => u.level >= 50, condition: "Đạt Lv.50", category: "profile" },
-  { id: 14, iconName: 'ShieldCheck', label: "Uy tín 100%", desc: "Tin được như vàng 9999", unlocked: (u) => u.trustScore >= 100, condition: "Độ uy tín = 100%", category: "profile" },
-  { id: 15, iconName: 'Crown', label: "Top 1%", desc: "Lọt top 1% người dùng", unlocked: (u) => u.trustScore >= 95, condition: "Độ uy tín ≥ 95%", category: "profile" },
-  { id: 16, iconName: 'Heart', label: "Bạn thân 50 người", desc: "Mở rộng vòng kết nối", unlocked: (u) => u.friendCount >= 50, condition: "Có ≥ 50 bạn bè", category: "profile" },
-  { id: 17, iconName: 'TrendingUp', label: "Level 25+", desc: "Chăm cày lên level", unlocked: (u) => u.level >= 25, condition: "Đạt Lv.25", category: "profile" },
-  { id: 18, iconName: 'ThumbsUp', label: "Được yêu thích", desc: "50+ đánh giá tích cực", unlocked: (u) => (u.stats?.totalReviews || 0) >= 50, condition: "Reviews ≥ 50", category: "profile" },
-  { id: 19, iconName: 'BookOpen', label: "Skill master", desc: "Thêm 10+ kỹ năng", unlocked: (u) => (u.skills?.length || 0) >= 10, condition: "Skills ≥ 10", category: "profile" },
-  { id: 20, iconName: 'MapPin', label: "Dân chơi Sài Gòn", desc: "Check-in Ho Chi Minh City", unlocked: (u) => u.location?.includes("Hồ Chí Minh") || false, condition: "Location ở Sài gòn", category: "profile" },
-  { id: 21, iconName: 'Coffee', label: "Trùm cafe", desc: "Tạo 5 kèo đi cafe", unlocked: () => false, condition: "Tạo 5 task cafe", category: "task" },
-  { id: 22, iconName: 'Heart', label: "Ông mai bà mối", desc: "Tạo 10 kèo hẹn hò", unlocked: () => false, condition: "Tạo 10 task hẹn hò", category: "task" },
-  { id: 23, iconName: 'Music', label: "Party king", desc: "Tổ chức 3 buổi nhậu", unlocked: () => false, condition: "Tạo 3 task nhậu/party", category: "task" },
-  { id: 24, iconName: 'Sun', label: "Dậy sớm", desc: "Tạo task buổi sáng 10 lần", unlocked: () => false, condition: "Tạo 10 task buổi sáng", category: "task" },
-  { id: 25, iconName: 'Gamepad2', label: "Game thủ", desc: "Tạo 5 kèo chơi game", unlocked: () => false, condition: "Tạo 5 task game", category: "task" },
-  { id: 26, iconName: 'Utensils', label: "Food reviewer", desc: "Tạo 10 kèo đi ăn", unlocked: () => false, condition: "Tạo 10 task ăn uống", category: "task" },
-  { id: 27, iconName: 'Dumbbell', label: "Gymer", desc: "Rủ 5 người đi tập gym", unlocked: () => false, condition: "Tạo 5 task gym", category: "task" },
-  { id: 28, iconName: 'Film', label: "Mọt phim", desc: "Tạo 5 kèo xem phim", unlocked: () => false, condition: "Tạo 5 task xem phim", category: "task" },
-  { id: 29, iconName: 'Plane', label: "Phượt thủ", desc: "Tổ chức 3 chuyến đi chơi xa", unlocked: () => false, condition: "Tạo 3 task du lịch", category: "task" },
-  { id: 30, iconName: 'Moon', label: "Cú đêm", desc: "Tạo 10 task buổi tối", unlocked: () => false, condition: "Tạo 10 task tối", category: "task" },
-  { id: 31, iconName: 'Gift', label: "Người hào phóng", desc: "Tạo 5 task miễn phí", unlocked: () => false, condition: "Tạo 5 task free", category: "task" },
-  { id: 32, iconName: 'Users', label: "Nhóm trưởng", desc: "Tạo task cho 10+ người", unlocked: () => false, condition: "Task có 10+ người join", category: "task" },
-  { id: 33, iconName: 'Calendar', label: "Siêu bận rộn", desc: "Có task 7 ngày liên tiếp", unlocked: () => false, condition: "Tạo task 7 ngày liên tục", category: "task" },
-  { id: 34, iconName: 'ShoppingBag', label: "Thánh shopping", desc: "Rủ 5 người đi mua sắm", unlocked: () => false, condition: "Tạo 5 task shopping", category: "task" },
-  { id: 35, iconName: 'Mic', label: "Ca sĩ phòng trà", desc: "Tổ chức 3 buổi karaoke", unlocked: () => false, condition: "Tạo 3 task karaoke", category: "task" },
-  { id: 36, iconName: 'Bike', label: "Vận động viên", desc: "Rủ 5 người đi đạp xe/chạy bộ", unlocked: () => false, condition: "Tạo 5 task thể thao", category: "task" },
-  { id: 37, iconName: 'Palette', label: "Nghệ sĩ", desc: "Tổ chức workshop vẽ/nhạc", unlocked: () => false, condition: "Tạo 3 task workshop", category: "task" },
-  { id: 38, iconName: 'Beer', label: "Bợm nhậu", desc: "Tạo 10 kèo nhậu", unlocked: () => false, condition: "Tạo 10 task nhậu", category: "task" },
-  { id: 39, iconName: 'Map', label: "Hướng dẫn viên", desc: "Dẫn 20 người đi chơi", unlocked: () => false, condition: "20+ người join task", category: "task" },
-  { id: 40, iconName: 'PartyPopper', label: "Vua task", desc: "Tạo 100 task đi chơi", unlocked: () => false, condition: "Tạo 100 task", category: "task" },
-];
-
-const getLevelFromXP = (xp: number): { level: number; currentExp: number; nextLevelExp: number } => {
-  let level = 1;
-  let totalXP = 0;
-  
-  while (true) {
-    const nextLevelExp = Math.floor(100 * Math.pow(level, 1.5));
-    if (xp < totalXP + nextLevelExp) break;
-    totalXP += nextLevelExp;
-    level++;
-  }
-  
-  const currentExp = xp - totalXP;
-  const nextLevelExp = Math.floor(100 * Math.pow(level, 1.5));
-  
-  return { level, currentExp, nextLevelExp };
-};
-
-const calcUserData = (d: any, uid: string, rank?: number): UserProgress => {
-  const huhaScore = d.huhaScore || 0;
-  const { level, currentExp, nextLevelExp } = getLevelFromXP(huhaScore);
-  
-  const joinedDays = d.createdAt?.seconds? Math.floor((Date.now() - d.createdAt.seconds * 1000) / 86400000) : 0;
-  const profileFields = [d.avatar, d.bio, d.skills?.length, d.portfolio?.length, d.location, d.title, d.emailVerified, d.isVerifiedId];
-  const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
-  const trustScore = Math.min(100, Math.floor((d.stats?.rating || 0) * 15 + (d.stats?.completed || 0) * 1.2 + (d.stats?.totalReviews || 0)));
-
+const calcUserData = (d: Record<string, unknown>, uid: string, rank?: number): UserProgress => {
+  const base = buildGamificationUser(d, uid);
   return {
-    uid,
-    name: (d.displayName || d.name || d.nameLower || d.username || "User").replace(/^\w/, (c: string) => c.toUpperCase()),
-    avatar: d.photoURL || d.avatar || "",
-    level,
-    exp: currentExp, // XP hiện tại của level này
-    huhaScore, // Tổng XP
-    streakDays: d.stats?.streakDays || 0,
-    badges: d.badges || [],
-    rank: rank?? d.rank?? 0,
-    vip: d.vip || { tier: 'free' },
-    stats: {
-      completed: d.stats?.completed || 0,
-      rating: d.stats?.rating || 0,
-      totalReviews: d.stats?.totalReviews || 0,
-      friendsMade: d.friendCount || 0,
-      eventsJoined: d.stats?.eventsJoined || 0,
-      checkins: d.stats?.checkins || 0,
-      groupsManaged: d.stats?.groupsManaged || 0,
-      eventsHosted: d.stats?.eventsHosted || 0,
-    },
-    createdAt: d.createdAt,
-    emailVerified: d.emailVerified || false,
-    isVerifiedId: d.isVerifiedId || false,
-    skills: d.skills || [],
-    portfolio: d.portfolio || [],
-    location: d.location || "",
-    profileCompletion,
-    trustScore,
-    joinedDays,
-    friendCount: d.friendCount || 0,
-    nextLevelExp, // Thêm field này
+    ...base,
+    name: String(d.displayName || d.name || d.nameLower || d.username || "User").replace(/^\w/, (c: string) => c.toUpperCase()),
+    avatar: String(d.photoURL || d.avatar || ""),
+    rank: rank ?? (d.rank as number) ?? 0,
+    vip: (d.vip as UserProgress["vip"]) || { tier: "free" },
+    createdAt: d.createdAt as Timestamp,
   };
 };
-const OverviewTab = memo(({ userData, topUsers, onShowLevelInfo }: { 
+
+const OverviewTab = memo(({ userData, topUsers, onShowLevelInfo }: {
   userData: UserProgress | null; 
   topUsers: TopUser[];
   onShowLevelInfo: () => void;
@@ -293,8 +166,8 @@ const OverviewTab = memo(({ userData, topUsers, onShowLevelInfo }: {
 const BadgesTab = memo(({ userData }: { userData: UserProgress | null }) => {
   const unlockedIds = useMemo(() => {
     if (!userData) return new Set<number>();
-    return new Set(ALL_ACHIEVEMENTS.filter(a => a.unlocked(userData)).map(a => a.id));
-  }, [userData?.level, userData?.friendCount, userData?.trustScore, userData?.joinedDays, userData?.profileCompletion, userData?.emailVerified, userData?.isVerifiedId, userData?.stats?.rating, userData?.stats?.completed, userData?.stats?.totalReviews, userData?.skills?.length, userData?.portfolio?.length, userData?.location]);
+    return new Set(ALL_ACHIEVEMENTS.filter((a) => a.unlocked(userData)).map((a) => a.id));
+  }, [userData]);
 
   const BADGE_STYLES: Record<number, { from: string; to: string; border: string; icon: string; text: string }> = {
     1: { from: "from-pink-50", to: "to-rose-50", border: "border-pink-300 dark:border-pink-700", icon: "text-pink-600 dark:text-pink-400", text: "text-pink-900 dark:text-pink-100" },
@@ -481,6 +354,7 @@ useEffect(() => {
 useEffect(() => {
     if (!currentUserId) return;
     checkDailyLoginXP(currentUserId);
+    syncAchievementBadges(currentUserId).catch(console.error);
   }, [currentUserId]);
 // 4. TOP 3 VINH DANH - lấy từ rankUsers cho đồng bộ
 useEffect(() => {
@@ -490,7 +364,7 @@ useEffect(() => {
   }
 
   const users = rankUsers.slice(0, 3).map((u, idx) => ({
-    uid: u.uid,
+    uid: u.uid || "",
     name: u.name,
     avatar: u.avatar,
     score: u.huhaScore,
