@@ -1015,13 +1015,13 @@ useEffect(() => {
 )}
 
 
-{/* HEADER - nền trắng chữ đen */}
+{/* HEADER - trắng đặc, đồng bộ */}
 <div
-  className="shrink-0 z-40 border-b border-zinc-200/70 bg-white/85 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/70"
+  className="shrink-0 z-40 bg-white border-b border-[#e5e5e5]"
   style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}
 >
-  <div className="px-3 sm:px-4 h-[60px] flex items-center justify-between">
-    {/* Left: avatar + name - BẤM LÀ MỞ SETTING */}
+  <div className="px-3 h-[56px] flex items-center justify-between">
+    {/* Left */}
     <button
       onClick={() => setShowSettings(true)}
       className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70 transition text-left"
@@ -1029,48 +1029,39 @@ useEffect(() => {
       <div className="relative flex-shrink-0">
         <img
           src={friend.avatar}
-          className="w-10 h-10 rounded-full object-cover ring-2 ring-zinc-200/80"
+          className="w-9 h-9 rounded-full object-cover"
           alt={friend.name}
         />
         {friend.isOnline && (
-          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#31d158] rounded-full ring-2 ring-white grid place-items-center">
-            <div className="absolute inset-0 bg-[#31d158] rounded-full animate-ping opacity-75" />
-            <div className="w-1.5 h-1.5 bg-white rounded-full relative z-10" />
-          </div>
+          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#00c851] rounded-full border-2 border-white" />
         )}
       </div>
 
       <div className="min-w-0">
-        <p className="font-semibold text-zinc-900 text-[16px] leading-tight truncate">
+        <p className="font-semibold text-black text-[17px] leading-tight truncate">
           {friend.name}
         </p>
-        <p className="text-[13px] leading-snug font-medium text-zinc-500">
-          {friend.isOnline? (
-            <span>Đang hoạt động</span>
-          ) : friend.lastSeen? (
-            <span>{formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })}</span>
-          ) : (
-            <span>Offline</span>
-          )}
+        <p className="text-[13px] leading-snug text-[#8e8e93]">
+          {friend.isOnline? "Đang hoạt động" : friend.lastSeen? formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi }) : "Offline"}
         </p>
       </div>
     </button>
 
-{/* Right: chỉ còn Call & Video */}
-<div className="flex items-center gap-2 pl-2">
-  <button
-    onClick={() => toast.info('Gọi thoại')}
-    className="w-8 h-8 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-95 transition"
-  >
-    <Phone size={17} className="text-white" strokeWidth={2.2} />
-  </button>
-  <button
-    onClick={() => toast.info('Gọi video')}
-    className="w-8 h-8 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-95 transition"
-  >
-    <Video size={17} className="text-white" strokeWidth={2.2} />
-  </button>
-</div>
+    {/* Right */}
+    <div className="flex items-center gap-2.5">
+      <button
+        onClick={() => toast.info('Gọi thoại')}
+        className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0a7cff] active:scale-95"
+      >
+        <Phone size={18} className="text-white" strokeWidth={2} />
+      </button>
+      <button
+        onClick={() => toast.info('Gọi video')}
+        className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0a7cff] active:scale-95"
+      >
+        <Video size={18} className="text-white" strokeWidth={2} />
+      </button>
+    </div>
   </div>
 </div>
 {showMedia && (
