@@ -537,8 +537,9 @@ const handleRemoveFriend = async (friend: FriendItem) => {
   if ("vibrate" in navigator) navigator.vibrate(10);
 };
 
-const formatLastSeen = (timestamp?: any): string => {
-  if (!timestamp?.toDate) return "Lâu rồi";
+const formatLastSeen = (timestamp?: any, lastMessage?: string): string => {
+  if (lastMessage?.trim()) return lastMessage;
+  if (!timestamp?.toDate) return "Bấm vào để xem tin nhắn mới";
   return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
 };
 
