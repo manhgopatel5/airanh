@@ -843,43 +843,47 @@ useEffect(() => {
 
   <Toaster richColors position="top-center" />
 {showSearch && (
-  <div className="fixed inset-0 z-[200] bg-white flex flex-col">
+  <div className="fixed inset-0 z-[200] bg-white dark:bg-black flex flex-col">
     {/* HEADER */}
-    <div className="shrink-0 bg-white border-b border-zinc-200" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
-      <div className="flex items-center gap-3 px-3 py-2.5">
+    <div className="shrink-0 bg-white dark:bg-black" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
+      <div className="flex items-center gap-2.5 px-3 py-2.5">
         <div className="flex-1 relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
-       <input
-  ref={searchInputRef}
-  value={searchQuery}
-  onChange={(e) => {
-    setSearchQuery(e.target.value);
-    setCurrentResultIndex(0);
-  }}
-  onKeyDown={(e) => {
-    if (e.key === 'Escape') { setShowSearch(false); setSearchQuery(''); }
-    if (e.key === 'Enter' && searchQuery) { goToNextResult(); }
-  }}
-  placeholder="Tìm trong cuộc trò chuyện"
-  className="w-full h-9 pl-9 pr-8 bg-white dark:bg-zinc-800 text- text-zinc-900 dark:text-white placeholder:text-zinc-400 rounded- border-0 outline-none focus:outline-none focus:ring- focus:ring-[#0A84FF]/30 transition-all"
-  autoFocus
-/>
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+          <input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentResultIndex(0);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { setShowSearch(false); setSearchQuery(''); }
+              if (e.key === 'Enter' && searchQuery) { goToNextResult(); }
+            }}
+            placeholder="Tìm trong cuộc trò chuyện"
+            className="w-full h-9 pl-9 pr-8 bg-zinc-100 dark:bg-zinc-800 text-base text-zinc-900 dark:text-white placeholder:text-zinc-500 rounded-full border-0 outline-none focus:outline-none focus:ring-0"
+            autoFocus
+          />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-zinc-300 flex items-center justify-center active:scale-90"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-zinc-400/90 flex items-center justify-center active:scale-90"
             >
-              <X size={12} className="text-zinc-600" />
+              <X size={12} className="text-white" strokeWidth={2.5} />
             </button>
           )}
         </div>
+
+        {/* NÚT X TRÒN - giống hình nền */}
         <button
           onClick={() => { setShowSearch(false); setSearchQuery(''); }}
-          className="text-[#0A84FF] text-[17px] font-normal active:opacity-60"
+          className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center active:scale-90 transition shrink-0"
+          aria-label="Đóng"
         >
-          Hủy
+          <X size={18} className="text-zinc-600 dark:text-zinc-300" strokeWidth={2.2} />
         </button>
       </div>
+    </div>
 
       {/* THANH ĐẾM */}
       {searchQuery && (
