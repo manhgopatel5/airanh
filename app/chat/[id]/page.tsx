@@ -662,9 +662,7 @@ useEffect(() => {
     }
   };
 
-  const pinMessage = async (_msgId: string) => {
-    toast.info("Tính năng ghim sẽ cập nhật sau");
-  };
+ 
 
   
 
