@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase-admin'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
-import { verifyAdminRequest } from '@/lib/adminAuth'
+import { verifyAdminRequest } from '@/lib/adminAuth.server'
 
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminRequest(req.headers.get('authorization'))

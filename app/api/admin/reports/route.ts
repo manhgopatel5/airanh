@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase-admin'
-import { verifyAdminRequest } from '@/lib/adminAuth'
+import { verifyAdminRequest } from '@/lib/adminAuth.server'
 import {
   type ReportStatus,
   serializeReport,
