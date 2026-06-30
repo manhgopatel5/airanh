@@ -1209,10 +1209,12 @@ useEffect(() => {
                         )}
 
 {(m.type === 'location' || m.location) && (() => {
-  const lat = m.lat?? m.location?.lat;
-  const lng = m.lng?? m.location?.lng;
+  const lat = Number(m.lat?? m.location?.lat?? 0);
+  const lng = Number(m.lng?? m.location?.lng?? 0);
   const address = m.address;
   const isMe = m.senderId === user?.uid;
+
+  if (!lat ||!lng) return null;
 
   return (
     <a
@@ -1222,27 +1224,23 @@ useEffect(() => {
       className="block w-[260px] my-1"
     >
       <div className="overflow-hidden rounded-2xl shadow-lg">
-        {/* BẢN ĐỒ THẬT */}
         <div className="relative h-[150px] w-full bg-zinc-200 dark:bg-zinc-800">
           <iframe
             src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng-0.005},${lat-0.0035},${lng+0.005},${lat+0.0035}&layer=mapnik&marker=${lat},${lng}`}
             className="absolute inset-0 w-full h-full border-0"
             loading="lazy"
           />
-          {/* Pin đỏ giữa */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
             <div className="w-9 h-9 bg-white rounded-full shadow-xl flex items-center justify-center">
               <MapPin size={16} className="text-[#FF3B30]" fill="#FF3B30" />
             </div>
           </div>
         </div>
-
-        {/* INFO GỌN */}
         <div className={isMe? "bg-[#0A84FF] px-3 py-2" : "bg-white dark:bg-zinc-900 px-3 py-2"}>
-          <p className={`text-[14px] font-medium truncate ${isMe? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
+          <p className={`text- font-medium truncate ${isMe? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
             {address || 'Vị trí đã chia sẻ'}
           </p>
-          <p className={`text-[12px] flex items-center gap-1 mt-0.5 ${isMe? 'text-white/70' : 'text-zinc-500 dark:text-zinc-400'}`}>
+          <p className={`text- flex items-center gap-1 mt-0.5 ${isMe? 'text-white/70' : 'text-zinc-500 dark:text-zinc-400'}`}>
             <Navigation size={11} />
             Nhấn để mở bản đồ
           </p>
