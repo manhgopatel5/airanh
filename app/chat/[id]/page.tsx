@@ -1207,7 +1207,7 @@ useEffect(() => {
           <div className="overflow-hidden rounded-2xl shadow-lg">
             <div className="relative h-[150px] w-full bg-zinc-200">
               <img
-                src={`https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=17&size=800x560&markers=${lat},${lng},red-pushpin`}
+src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},16/600x300@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`}
                 className="w-full h-full object-cover"
                 alt=""
               />
