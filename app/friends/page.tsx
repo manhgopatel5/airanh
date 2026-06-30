@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, onSnapshot, doc, orderBy, getDoc, setDoc, deleteDoc, serverTimestamp, query, limit, getDocs, where } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { FiUsers, FiShare2, FiShield, FiSearch, FiMessageCircle, FiUserPlus, FiUserX, FiMapPin, FiRefreshCw, FiX, FiZap } from "react-icons/fi";
+import { FiUsers, FiShare2, FiShield, FiSearch, FiMessageCircle, FiUserPlus, FiUserX, FiX, FiZap } from "react-icons/fi";
 import { RiVipCrownLine } from "react-icons/ri";
 import { IoStatsChart, IoRibbon } from "react-icons/io5";
 import { SlidersHorizontal } from "lucide-react";
@@ -16,14 +16,16 @@ import { getApp } from "firebase/app";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
-import Image from "next/image";
 import {
-  getFriendRequestStatus,
   getMutualFriendCounts,
   getMyFriendIds,
   getUserAvatar,
   saveUserLocation,
+  loadPendingRequestSets,
+  resolveRequestStatus,
 } from "@/lib/friendDiscovery";
+import FriendsDiscoveryPanel from "@/components/friends/FriendsDiscoveryPanel";
+import type { UserSuggestion } from "@/components/friends/types";
 
 type FriendItem = {
   uid: string;
@@ -61,18 +63,6 @@ type RequestItem = {
   avatar: string;
   mutualFriends: number;
   time: any;
-};
-
-type UserSuggestion = {
-  uid: string;
-  username: string;
-  name: string;
-  avatarUrl?: string | undefined;
-  status?: "none" | "friend" | "sent" | "received";
-  distance?: number;
-  age?: number | undefined;
-  gender?: "male" | "female" | "other" | undefined;
-  mutualFriends?: number;
 };
 
 export default function FriendsPage() {
@@ -327,6 +317,26 @@ useEffect(() => {
     return R * c;
   };
 
+  const requestLocation = () => {
+    if (!("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(coords);
+        setLocationDenied(false);
+        if (user?.uid) {
+          try {
+            await saveUserLocation(db, user.uid, coords.lat, coords.lng);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      },
+      () => setLocationDenied(true),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const fetchNearbyUsers = async () => {
     if (!userLocation) return;
     setLoadingNearby(true);
@@ -336,10 +346,12 @@ useEffect(() => {
       const currentUid = auth.currentUser?.uid;
       if (!currentUid) return;
 
-      const myFriendIds = await getMyFriendIds(db, currentUid);
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, limit(150));
-      const snap = await getDocs(q);
+      const [myFriendIds, pending] = await Promise.all([
+        getMyFriendIds(db, currentUid),
+        loadPendingRequestSets(db, currentUid),
+      ]);
+
+      const snap = await getDocs(query(collection(db, "users"), limit(150)));
       const results: UserSuggestion[] = [];
 
       for (const docSnap of snap.docs) {
@@ -351,7 +363,6 @@ useEffect(() => {
         if (lat == null || lng == null) continue;
 
         const distance = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
-
         const maxDist = Number(filters.maxDistance) || 100;
         const minAge = Number(filters.minAge) || 18;
         const maxAge = Number(filters.maxAge) || 100;
@@ -360,8 +371,7 @@ useEffect(() => {
         if (filters.gender !== "all" && data.gender !== filters.gender) continue;
         if (data.age && (data.age < minAge || data.age > maxAge)) continue;
 
-        const status = await getFriendRequestStatus(db, currentUid, docSnap.id);
-        if (status === "friend") continue;
+        const status = resolveRequestStatus(docSnap.id, pending.sent, pending.received);
 
         results.push({
           uid: docSnap.id,
@@ -393,15 +403,8 @@ const fetchSuggestedUsers = async () => {
     if (!currentUid) return;
 
     const myFriendIds = await getMyFriendIds(db, currentUid);
-    const pendingSnap = await getDocs(
-      query(
-        collection(db, "friendRequests"),
-        where("fromUserId", "==", currentUid),
-        where("status", "==", "pending"),
-        limit(50)
-      )
-    );
-    const sentTo = new Set(pendingSnap.docs.map((d) => d.data().toUserId as string));
+    const pending = await loadPendingRequestSets(db, currentUid);
+    const sentTo = pending.sent;
 
     const usersSnap = await getDocs(query(collection(db, "users"), limit(80)));
     const candidates = usersSnap.docs
@@ -416,7 +419,11 @@ const fetchSuggestedUsers = async () => {
 
     for (const u of candidates.slice(0, 30)) {
       const mutualCount = mutualCounts.get(u.uid) || 0;
-      const status = sentTo.has(u.uid) ? "sent" : "none";
+      const status = sentTo.has(u.uid)
+        ? "sent"
+        : pending.received.has(u.uid)
+          ? "received"
+          : "none";
 
       const userData: UserSuggestion = {
         uid: u.uid,
@@ -859,32 +866,28 @@ const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
 
 {tab === 'suggestions' && (
         <div className="space-y-4">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/30">
-                  <FiMapPin className="text-white" size={20} />
-                </div>
-                <div>
-                  <p className="text-base font-[700]">Tìm xung quanh</p>
-                  <p className="text-sm text-[#8e8e93]">Bạn bè gần bạn</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowScanQR(true)}
-                  className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all shadow-sm"
-                >
-                  <FiUsers size={18} />
-                </button>
-                <button
-                  onClick={() => setShowFilter(!showFilter)}
-                  className="w-9 h-9 flex items-center justify-center text-[#0a84ff] bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl active:scale-95 transition-all shadow-sm"
-                >
-                  <SlidersHorizontal size={18} />
-                </button>
-              </div>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-black text-zinc-900 dark:text-white">Khám phá bạn bè</h2>
+              <p className="text-xs text-zinc-500">Gần bạn · Gợi ý kết nối</p>
             </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowScanQR(true)}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-[#0a84ff]"
+              >
+                <FiUsers size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowFilter(!showFilter)}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-[#0a84ff]"
+              >
+                <SlidersHorizontal size={18} />
+              </button>
+            </div>
+          </div>
 
             <AnimatePresence>
               {showFilter && (
@@ -1009,199 +1012,18 @@ const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
                 </motion.div>
               )}
             </AnimatePresence>
-{!loadingNearby && locationDenied && (
-  <div className="py-8 text-center">
-    <div className="w-16 h-16 bg-red-50 dark:bg-red-950/30 rounded-full flex items-center justify-center mx-auto mb-3">
-      <FiMapPin className="text-red-500" size={28} />
-    </div>
-    <p className="text-base font-[600]">Bạn đã từ chối quyền vị trí</p>
-    <p className="text-sm text-[#8e8e93] dark:text-zinc-500 mt-1">
-      Bật quyền vị trí trong cài đặt trình duyệt để tìm bạn bè gần bạn
-    </p>
-    <button
-      onClick={() => window.location.reload()}
-      className="mt-4 px-4 h-10 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] shadow-md shadow-[#0a84ff]/30"
-    >
-      Thử lại
-    </button>
-  </div>
-)}
-              {loadingNearby && (
-                <div className="py-12 text-center text-[#8e8e93]">
-                  <FiRefreshCw className="animate-spin mx-auto mb-2" size={24} />
-                  <p className="text-sm">Đang tìm bạn bè gần bạn...</p>
-                </div>
-              )}
-
-              {!loadingNearby && nearbyUsers.length === 0 && userLocation && (
-                <div className="py-8 text-center">
-                  <div className="w-16 h-16 bg-white/50 dark:bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <FiMapPin className="text-[#8e8e93]" size={28} />
-                  </div>
-                  <p className="text-base font-[600]">Không tìm thấy ai gần bạn</p>
-                  <p className="text-sm text-[#8e8e93] dark:text-zinc-500 mt-1">Thử mở rộng khoảng cách tìm kiếm</p>
-                </div>
-              )}
-
-      {!loadingNearby && nearbyUsers.length > 0 && (
-  <div className="space-y-2 mb-3">
-    {nearbyUsers.map((user) => (
-      <div
-        key={user.uid}
-        className="flex items-center gap-3 p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl shadow-sm hover:shadow-md transition-shadow"
-      >
-        {user.avatarUrl? (
-          <Image src={user.avatarUrl} alt={user.name} width={48} height={48} className="rounded-full" />
-        ) : (
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-            {user.name[0]?.toUpperCase()}
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="font-[600] text-base truncate">{user.name}</p>
-          <div className="flex items-center gap-2 text-sm text-[#8e8e93] dark:text-zinc-500">
-            <span>@{user.username}</span>
-            {user.distance!== undefined && (
-              <>
-                <span>•</span>
-                <span className="flex items-center gap-0.5 font-[600] text-[#0a84ff]">
-                  <FiMapPin size={12} />
-                  {user.distance}km
-                </span>
-              </>
-            )}
-            {user.age && (
-              <>
-                <span>•</span>
-                <span>{user.age}t</span>
-              </>
-            )}
-          </div>
-        </div>
-        {user.status === "sent" && (
-          <div className="px-3 py-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text-sm font-[600]">
-            Đã gửi
-          </div>
-        )}
-        {user.status === "received" && (
-          <div className="px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-[600]">
-            Chờ xác nhận
-          </div>
-        )}
-        {user.status === "none" && (
-          <button
-            onClick={() => handleAddFriend(user.uid, user.username)}
-            className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] active:scale-95 transition-all shadow-md shadow-[#0a84ff]/30"
-          >
-            Kết bạn
-          </button>
-        )}
-      </div>
-    ))}
-  </div>
-)}
-              {userLocation && (
-                <button
-                  onClick={fetchNearbyUsers}
-                  disabled={loadingNearby}
-                  className="w-full h-10 flex items-center justify-center gap-2 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl text-[#0a84ff] font-[600] active:scale-95 transition-all disabled:opacity-40 shadow-sm"
-                >
-                  <FiRefreshCw size={18} className={loadingNearby? "animate-spin" : ""} />
-                  Làm mới
-                </button>
-              )}
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl p-4 border border-black/[0.06] dark:border-white/[0.06] shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-md shadow-purple-500/30">
-                  <FiUsers className="text-white" size={20} />
-                </div>
-                <div>
-                  <p className="text-base font-[700]">
-                    {suggestions.some(u => u.mutualFriends && u.mutualFriends > 0)
-                  ? "Những người bạn có thể biết"
-                      : "Gợi ý cho bạn"}
-                  </p>
-                  <p className="text-sm text-[#8e8e93] dark:text-zinc-500">
-                    {suggestions.some(u => u.mutualFriends && u.mutualFriends > 0)
-                  ? "Dựa trên bạn chung"
-                      : "Người dùng mới"}
-                  </p>
-                </div>
-              </div>
-
-              {loadingSuggested? (
-                <div className="py-12 text-center text-[#8e8e93]">
-                  <FiRefreshCw className="animate-spin mx-auto mb-2" size={24} />
-                  <p className="text-sm">Đang tải gợi ý...</p>
-                </div>
-              ) : suggestions.length === 0? (
-                <div className="py-12 text-center">
-                  <div className="w-16 h-16 bg-white/50 dark:bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <FiUsers className="text-[#8e8e93]" size={28} />
-                  </div>
-                  <p className="text-base font-[600]">Chưa có gợi ý nào</p>
-                  <p className="text-sm text-[#8e8e93] dark:text-zinc-500 mt-1">Hãy thử lại sau</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {suggestions.map((user) => (
-                    <div
-                      key={user.uid}
-                      className="flex items-center gap-3 p-3 bg-white/60 dark:bg-zinc-800/60 backdrop-blur rounded-xl shadow-sm hover:shadow-md transition-shadow"
-                    >
-                      {user.avatarUrl? (
-                        <Image src={user.avatarUrl} alt={user.name} width={48} height={48} className="rounded-full" />
-                      ) : (
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                          {user.name[0]?.toUpperCase()}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-[600] text-base truncate">{user.name}</p>
-                        <div className="flex items-center gap-2 text-sm text-[#8e8e93] dark:text-zinc-500">
-                          <span>@{user.username}</span>
-                          {user.mutualFriends && user.mutualFriends > 0? (
-                            <>
-                              <span>•</span>
-                              <span className="flex items-center gap-0.5 font-[600] text-purple-600 dark:text-purple-400">
-                                <FiUsers size={12} />
-                                {user.mutualFriends} bạn chung
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <span>•</span>
-                              <span className="font-[600] text-green-600 dark:text-green-400">Mới tham gia</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      {(user.status === "sent" || sentRequests.has(user.uid)) && (
-                        <div className="px-3 py-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text-sm font-[600]">
-                          Đã gửi
-                        </div>
-                      )}
-                      {user.status === "received" && (
-                        <div className="px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-[600]">
-                          Chờ xác nhận
-                        </div>
-                      )}
-                      {user.status !== "sent" && !sentRequests.has(user.uid) && user.status !== "received" && (
-                        <button
-                          type="button"
-                          onClick={() => handleAddFriend(user.uid, user.username)}
-                          className="px-4 h-9 bg-[#0a84ff] text-white rounded-xl text-sm font-[600] active:scale-95 transition-all shadow-md shadow-[#0a84ff]/30"
-                        >
-                          Kết bạn
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <FriendsDiscoveryPanel
+              nearbyUsers={nearbyUsers}
+              suggestions={suggestions}
+              loadingNearby={loadingNearby}
+              loadingSuggested={loadingSuggested}
+              locationDenied={locationDenied}
+              userLocation={userLocation}
+              sentRequests={sentRequests}
+              onRefreshNearby={fetchNearbyUsers}
+              onAddFriend={handleAddFriend}
+              onRequestLocation={requestLocation}
+            />
           </div>
         )}
       </div>

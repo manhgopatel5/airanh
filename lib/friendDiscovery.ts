@@ -33,6 +33,45 @@ export async function getMyFriendIds(db: Firestore, uid: string): Promise<Set<st
   return ids;
 }
 
+export async function loadPendingRequestSets(
+  db: Firestore,
+  uid: string
+): Promise<{ sent: Set<string>; received: Set<string> }> {
+  const [sentSnap, receivedSnap] = await Promise.all([
+    getDocs(
+      query(
+        collection(db, "friendRequests"),
+        where("fromUserId", "==", uid),
+        where("status", "==", "pending"),
+        limit(100)
+      )
+    ),
+    getDocs(
+      query(
+        collection(db, "friendRequests"),
+        where("toUserId", "==", uid),
+        where("status", "==", "pending"),
+        limit(100)
+      )
+    ),
+  ]);
+
+  return {
+    sent: new Set(sentSnap.docs.map((d) => d.data().toUserId as string)),
+    received: new Set(receivedSnap.docs.map((d) => d.data().fromUserId as string)),
+  };
+}
+
+export function resolveRequestStatus(
+  uid: string,
+  sent: Set<string>,
+  received: Set<string>
+): FriendRequestStatus {
+  if (sent.has(uid)) return "sent";
+  if (received.has(uid)) return "received";
+  return "none";
+}
+
 export async function getFriendRequestStatus(
   db: Firestore,
   currentUid: string,

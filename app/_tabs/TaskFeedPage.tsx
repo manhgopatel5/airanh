@@ -8,15 +8,17 @@ import { FiInbox, FiRefreshCw, FiSearch } from "react-icons/fi";
 import { HiBolt, HiCalendarDays } from "react-icons/hi2";
 import { toast } from "sonner";
 import ShareTaskModal from "@/components/ShareTaskModal";
-import CustomFilterBar from "@/components/common/CustomFilterBar";
+import FeedSearchPanel from "@/components/feed/FeedSearchPanel";
 import TaskCard from "@/components/task/TaskCard";
 import { useAppStore } from "@/store/app";
 import { useAuth } from "@/lib/AuthContext";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { useProvinces } from "@/lib/useProvinces";
 import {
   buildFeedApiUrl,
   mergeFeedPages,
   hasActiveFilters,
+  getFilterSummary,
   type FeedFilters,
   type FeedPage,
 } from "@/lib/feed";
@@ -24,7 +26,12 @@ import type { FeedTask } from "@/types/task";
 import { isActiveFeedItem } from "@/types/task";
 
 const fetcher = async (url: string): Promise<FeedPage> => {
-  const res = await fetch(url);
+  const headers: HeadersInit = {};
+  const authUser = getFirebaseAuth().currentUser;
+  if (authUser) {
+    headers.Authorization = `Bearer ${await authUser.getIdToken()}`;
+  }
+  const res = await fetch(url, { headers });
   if (!res.ok) throw new Error("Không tải được feed");
   return res.json();
 };
@@ -39,6 +46,7 @@ const DEFAULT_FILTERS: FeedFilters = {
   deadlineRange: "all",
   sortBy: "new",
   query: "",
+  scope: "all",
 };
 
 type TaskFeedPageProps = {
@@ -131,15 +139,11 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     }
   }, [inView, hasMore, isValidating, setSize]);
 
-  const handleApplyFilters = useCallback((newFilters: Partial<FeedFilters> & { category?: string }) => {
-    setFilters({
-      category: newFilters.category || undefined,
-      priceRange: newFilters.priceRange || "all",
-      deadlineRange: newFilters.deadlineRange || "all",
-      sortBy: newFilters.sortBy || "new",
-      query: newFilters.query || "",
-    });
+  const handleApplyFilters = useCallback((newFilters: FeedFilters) => {
+    setFilters(newFilters);
   }, []);
+
+  const filterChips = useMemo(() => getFilterSummary(filters, mode), [filters, mode]);
 
   const filteredTasks = useMemo(() => tasks.filter(isActiveFeedItem), [tasks]);
 
@@ -251,36 +255,26 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
             </div>
           </div>
 
-          <CustomFilterBar
-            onOpenSearch={() => setShowSearchModal(true)}
-            showSearchModal={showSearchModal}
-            onCloseSearch={() => setShowSearchModal(false)}
-            onApplyFilters={handleApplyFilters}
+          <FeedSearchPanel
+            mode={mode}
+            open={showSearchModal}
+            onOpen={() => setShowSearchModal(true)}
+            onClose={() => setShowSearchModal(false)}
+            onApply={handleApplyFilters}
             currentFilters={filters}
+            isLoggedIn={!!user}
           />
 
           {hasActiveFilters(filters) && (
             <div className="mt-2 flex flex-wrap gap-2">
-              {filters.query && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-                  &ldquo;{filters.query}&rdquo;
+              {filterChips.map((chip) => (
+                <span
+                  key={chip}
+                  className="inline-flex rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-600 dark:text-zinc-300"
+                >
+                  {chip}
                 </span>
-              )}
-              {filters.category && (
-                <span className="inline-flex rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ background: accent }}>
-                  {filters.category}
-                </span>
-              )}
-              {filters.priceRange !== "all" && (
-                <span className="inline-flex rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-                  Giá: {filters.priceRange}
-                </span>
-              )}
-              {filters.deadlineRange !== "all" && (
-                <span className="inline-flex rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-                  Hạn: {filters.deadlineRange}
-                </span>
-              )}
+              ))}
               <button
                 type="button"
                 onClick={() => setFilters(DEFAULT_FILTERS)}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { FiAlertCircle, FiInbox, FiRefreshCw } from "react-icons/fi";
+import { FiAlertCircle, FiBookmark, FiInbox, FiPlus, FiRefreshCw, FiSearch } from "react-icons/fi";
 import { HiBolt, HiCalendarDays, HiSparkles } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
@@ -110,6 +110,7 @@ export default function TasksPage() {
   const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const currentTheme = MODE_THEME[mode] || MODE_THEME.task;
   const activeCopy = EMPTY_COPY[subTab];
@@ -137,6 +138,19 @@ export default function TasksPage() {
   const loading = !authReady || (isLoading && tasks.length === 0);
   const refreshing = authReady && isValidating && !loading;
   const hasBlockingError = !!error && tasks.length === 0 && !loading;
+
+  const filteredTasks = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return tasks;
+    return tasks.filter(
+      (t) =>
+        t.title.toLowerCase().includes(q) ||
+        t.description?.toLowerCase().includes(q) ||
+        t.category?.toLowerCase().includes(q)
+    );
+  }, [tasks, searchQuery]);
+
+  const currentUserId = auth.currentUser?.uid;
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -218,7 +232,45 @@ export default function TasksPage() {
     <>
       <div className={`min-h-screen bg-gradient-to-b ${currentTheme.soft} text-zinc-900 dark:text-zinc-100`}>
         <div className="sticky top-0 z-40 border-b border-white/70 bg-white/82 backdrop-blur-2xl dark:border-white/5 dark:bg-zinc-950/82">
-          <div className="mx-auto max-w-[600px] px-4 pt-3 pb-3">
+          <div className="mx-auto max-w-[600px] px-4 pt-3 pb-3 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h1 className="text-xl font-black tracking-tight text-zinc-950 dark:text-white">Quản lý</h1>
+                <p className="text-xs font-semibold text-zinc-500">
+                  {filteredTasks.length} {currentTheme.noun}
+                  {searchQuery ? " khớp" : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => router.push("/bookmarks")}
+                  className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-600 dark:text-zinc-300"
+                  aria-label="Đã lưu"
+                >
+                  <FiBookmark size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={createCurrentMode}
+                  className={`inline-flex h-10 items-center gap-1.5 rounded-xl bg-gradient-to-r ${currentTheme.gradient} px-4 text-sm font-bold text-white shadow-lg ${currentTheme.shadow}`}
+                >
+                  <FiPlus size={16} />
+                  Tạo
+                </button>
+              </div>
+            </div>
+
+            <div className="relative">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={`Tìm trong ${currentTheme.noun} của bạn…`}
+                className="w-full h-11 pl-9 pr-4 rounded-2xl bg-zinc-100/90 dark:bg-zinc-900/90 text-sm font-medium outline-none ring-1 ring-black/[0.04] dark:ring-white/10"
+              />
+            </div>
+
             <div className="relative rounded-[1.35rem] bg-zinc-100/80 p-1.5 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10">
               <motion.div
                 className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[1rem] bg-gradient-to-r ${currentTheme.gradient} ${currentTheme.shadow}`}
@@ -356,6 +408,22 @@ export default function TasksPage() {
                 </div>
               </div>
             </motion.div>
+          ) : filteredTasks.length === 0 ? (
+            <motion.div
+              {...enterMotion}
+              transition={{ duration: 0.24 }}
+              className="rounded-[1.75rem] border border-zinc-200/70 bg-white/82 p-8 text-center dark:border-white/10 dark:bg-zinc-900/72"
+            >
+              <p className="text-lg font-black text-zinc-950 dark:text-white">Không tìm thấy kết quả</p>
+              <p className="mt-2 text-sm text-zinc-500">Thử từ khóa khác hoặc xóa bộ lọc tìm kiếm</p>
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="mt-4 h-11 px-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-sm font-bold"
+              >
+                Xóa tìm kiếm
+              </button>
+            </motion.div>
           ) : (
             <AnimatePresence mode="popLayout">
               <motion.div
@@ -365,7 +433,7 @@ export default function TasksPage() {
                 {...(prefersReducedMotion ? {} : { exit: { opacity: 0 } })}
                 className="space-y-3"
               >
-                {tasks.map((task, idx) => (
+                {filteredTasks.map((task, idx) => (
                   <motion.div
                     key={task.id}
                     initial={prefersReducedMotion ? false : { opacity: 0, y: 18 }}
@@ -376,6 +444,7 @@ export default function TasksPage() {
                     <TaskCard
                       task={task}
                       theme={mode}
+                      currentUserId={currentUserId}
                       onDelete={handleDelete}
                       onShare={handleShare}
                       onTaskUpdate={handleTaskUpdate}

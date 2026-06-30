@@ -4,12 +4,15 @@ export type FeedSortBy = "new" | "views" | "likes" | "price_asc" | "price_desc";
 
 export type FeedTab = "hot" | "near" | "friends" | "new";
 
+export type FeedScope = "all" | FeedTab;
+
 export type FeedFilters = {
   category?: string | undefined;
   priceRange: string;
   deadlineRange: string;
   sortBy: FeedSortBy;
   query: string;
+  scope?: FeedScope | undefined;
   tab?: FeedTab | undefined;
   lat?: number | undefined;
   lng?: number | undefined;
@@ -47,12 +50,27 @@ export function buildFeedApiUrl(
 
 export function hasActiveFilters(filters: FeedFilters): boolean {
   return !!(
+    (filters.scope && filters.scope !== "all") ||
     filters.category ||
     filters.priceRange !== "all" ||
     filters.deadlineRange !== "all" ||
-    filters.sortBy !== "new" ||
+    (filters.sortBy !== "new" && (!filters.scope || filters.scope === "all")) ||
     filters.query.trim()
   );
+}
+
+export function getFilterSummary(filters: FeedFilters, mode: "task" | "plan"): string[] {
+  const chips: string[] = [];
+  const noun = mode === "task" ? "việc" : "sự kiện";
+  if (filters.scope === "near") chips.push(`${noun} gần bạn`);
+  else if (filters.scope === "hot") chips.push("Hot");
+  else if (filters.scope === "new") chips.push("Mới");
+  else if (filters.scope === "friends") chips.push("Bạn bè");
+  if (filters.query.trim()) chips.push(`"${filters.query.trim()}"`);
+  if (filters.category) chips.push(filters.category);
+  if (filters.priceRange !== "all") chips.push(`Giá: ${filters.priceRange}`);
+  if (filters.deadlineRange !== "all") chips.push(`Hạn: ${filters.deadlineRange}`);
+  return chips;
 }
 
 export function mergeFeedPages(pages: FeedPage[]): FeedTask[] {
