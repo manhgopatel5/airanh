@@ -1119,191 +1119,181 @@ useEffect(() => {
 
     const seenAvatars = getSeenAvatars(m);
 
-    return (
-      <div key={m.id} id={`msg-${m.id}`}>
-        {showDate && m.createdAt && (
-          <div className="flex items-center justify-center my-6">
-            <div className="px-4 py-1.5 bg-gray-200/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-full">
-              <p className="text-xs font-bold text-gray-600 dark:text-zinc-400">
-                {formatDateDivider(m.createdAt)}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div 
-          className={`flex items-end gap-1 group ${isMe? "justify-end pl-12 pr-1" : "justify-start pr-12 pl-1"} ${isFirstInGroup? "mt-1.5" : "mt-0.5"}`}
-          onTouchStart={() => {
-            const timer = setTimeout(() => setLongPressMsg(m), 500);
-            setPressTimer(timer);
-          }}
-          onTouchEnd={() => pressTimer && clearTimeout(pressTimer)}
-          onMouseDown={() => {
-            const timer = setTimeout(() => setLongPressMsg(m), 500);
-            setPressTimer(timer);
-          }}
-          onMouseUp={() => pressTimer && clearTimeout(pressTimer)}
-          onMouseLeave={() => pressTimer && clearTimeout(pressTimer)}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setLongPressMsg(m);
-          }}
-        >
-          {!isMe && (
-            <div className="w-7 flex-shrink-0">
-              {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
-            </div>
-          )}
-          <div className={`max-w-[75%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
-            {m.replyTo && (
-              <button
-                onClick={() => scrollToMessage(m.replyTo!.id)}
-                className={`px-3 py-1.5 mb-1 rounded-2xl text-xs ${
-                  isMe? "bg-blue-400/30 text-white/80" : "bg-gray-200/60 dark:bg-zinc-700/60 text-gray-600 dark:text-zinc-300"
-                }`}
-              >
-                <p className="font-bold text-xs">{m.replyTo.senderName}</p>
-                <p className="truncate">{m.replyTo.text}</p>
-              </button>
-            )}
-
-            <div className="relative">
-              {m.type === "task_share"? (
-                <div
-                  onClick={() => router.push(`/task/${m.taskId}`)}
-                  className={`px-4 py-3 shadow-sm cursor-pointer active:scale-95 transition rounded-2xl ${
-                    isMe
-                      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
-                      : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border border-gray-200 dark:border-zinc-700"
-                  }`}
-                >
-                  <p className="text-xs font-bold mb-1 opacity-80">
-                    📋 Đã chia sẻ {m.taskPrice && m.taskPrice > 0? 'công việc' : 'kế hoạch'}
-                  </p>
-                  <p className="font-semibold leading-snug">{m.taskTitle}</p>
-                  <p className={`text-sm font-bold mt-1 ${isMe? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>
-                    {m.taskPrice && m.taskPrice > 0? `${m.taskPrice.toLocaleString()}đ` : 'Miễn phí'}
-                  </p>
-                  <p className={`text-xs mt-2 opacity-70`}>
-                    Nhấn để xem chi tiết →
-                  </p>
-                </div>
-              ) : (
-                <div
-                  className={`px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer rounded-2xl ${
-                    isMe
-                      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
-                      : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                  }`}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setShowEmojiPicker(m.id);
-                  }}
-                >
-                        {m.image && <img src={m.image} className="rounded-2xl max-w-full mb-1" alt="sent" />}
-                        {m.file && (
-                          <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
-                            <Paperclip size={16} />
-                            <span className="text-sm truncate">{m.fileName}</span>
-                          </a>
-                        )}
-
-{(m.type === 'location' || m.location) && (() => {
-  const lat = Number(m.lat?? m.location?.lat?? 0);
-  const lng = Number(m.lng?? m.location?.lng?? 0);
-  const address = m.address;
-  const isMe = m.senderId === user?.uid;
-
-  if (!lat ||!lng) return null;
-
-  return (
-    <a
-      href={`https://www.google.com/maps?q=${lat},${lng}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block w-[260px] my-1"
-    >
-      <div className="overflow-hidden rounded-2xl shadow-lg">
-        <div className="relative h-[150px] w-full bg-zinc-200 dark:bg-zinc-800">
-          <iframe
-            src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng-0.005},${lat-0.0035},${lng+0.005},${lat+0.0035}&layer=mapnik&marker=${lat},${lng}`}
-            className="absolute inset-0 w-full h-full border-0"
-            loading="lazy"
-          />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <div className="w-9 h-9 bg-white rounded-full shadow-xl flex items-center justify-center">
-              <MapPin size={16} className="text-[#FF3B30]" fill="#FF3B30" />
-            </div>
-          </div>
-        </div>
-        <div className={isMe? "bg-[#0A84FF] px-3 py-2" : "bg-white dark:bg-zinc-900 px-3 py-2"}>
-          <p className={`text- font-medium truncate ${isMe? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
-            {address || 'Vị trí đã chia sẻ'}
-          </p>
-          <p className={`text- flex items-center gap-1 mt-0.5 ${isMe? 'text-white/70' : 'text-zinc-500 dark:text-zinc-400'}`}>
-            <Navigation size={11} />
-            Nhấn để mở bản đồ
+return (
+  <div key={m.id} id={`msg-${m.id}`}>
+    {showDate && m.createdAt && (
+      <div className="flex items-center justify-center my-6">
+        <div className="px-4 py-1.5 bg-gray-200/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-full">
+          <p className="text-xs font-bold text-gray-600 dark:text-zinc-400">
+            {formatDateDivider(m.createdAt)}
           </p>
         </div>
       </div>
-    </a>
-  );
-})()}
+    )}
 
-{m.text && (
-  <p className="text-[15px] leading-snug whitespace-pre-wrap break-words">
-    {m.text}
-    {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
-  </p>
-)}
-</div>
-)}
+    <div
+      className={`flex items-end gap-1 group ${isMe? "justify-end pl-12 pr-1" : "justify-start pr-12 pl-1"} ${isFirstInGroup? "mt-1.5" : "mt-0.5"}`}
+      onTouchStart={() => {
+        const timer = setTimeout(() => setLongPressMsg(m), 500);
+        setPressTimer(timer);
+      }}
+      onTouchEnd={() => pressTimer && clearTimeout(pressTimer)}
+      onMouseDown={() => {
+        const timer = setTimeout(() => setLongPressMsg(m), 500);
+        setPressTimer(timer);
+      }}
+      onMouseUp={() => pressTimer && clearTimeout(pressTimer)}
+      onMouseLeave={() => pressTimer && clearTimeout(pressTimer)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setLongPressMsg(m);
+      }}
+    >
+      {!isMe && (
+        <div className="w-7 flex-shrink-0">
+          {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
+        </div>
+      )}
+      <div className={`max-w-[75%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
+        {m.replyTo && (
+          <button
+            onClick={() => scrollToMessage(m.replyTo!.id)}
+            className={`px-3 py-1.5 mb-1 rounded-2xl text-xs ${
+              isMe? "bg-blue-400/30 text-white/80" : "bg-gray-200/60 dark:bg-zinc-700/60 text-gray-600 dark:text-zinc-300"
+            }`}
+          >
+            <p className="font-bold text-xs">{m.replyTo.senderName}</p>
+            <p className="truncate">{m.replyTo.text}</p>
+          </button>
+        )}
 
-                    {m.reactions && m.reactions.length > 0 && (
-                      <div className="flex gap-1 mt-1 px-1">
-                        {m.reactions.map((r) => (
-                          <button
-                            key={r.emoji}
-                            onClick={() => toggleReaction(m.id, r.emoji)}
-                            className={`px-2 py-0.5 rounded-full text-xs ${
-                              r.users.includes(user.uid)
-                               ? "bg-blue-100 dark:bg-blue-900/50"
-                                : "bg-gray-100 dark:bg-zinc-800"
-                            }`}
-                          >
-                            {r.emoji} {r.users.length}
-                          </button>
-                        ))}
+        <div className="relative">
+          {m.type === "task_share"? (
+            <div
+              onClick={() => router.push(`/task/${m.taskId}`)}
+              className={`px-4 py-3 shadow-sm cursor-pointer active:scale-95 transition rounded-2xl ${
+                isMe
+                 ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+                  : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border border-gray-200 dark:border-zinc-700"
+              }`}
+            >
+              <p className="text-xs font-bold mb-1 opacity-80">
+                📋 Đã chia sẻ {m.taskPrice && m.taskPrice > 0? 'công việc' : 'kế hoạch'}
+              </p>
+              <p className="font-semibold leading-snug">{m.taskTitle}</p>
+              <p className={`text-sm font-bold mt-1 ${isMe? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>
+                {m.taskPrice && m.taskPrice > 0? `${m.taskPrice.toLocaleString()}đ` : 'Miễn phí'}
+              </p>
+              <p className={`text-xs mt-2 opacity-70`}>Nhấn để xem chi tiết →</p>
+            </div>
+          ) : (m.type === 'location' || m.location)? (
+            (() => {
+              const lat = Number(m.lat?? m.location?.lat?? 0);
+              const lng = Number(m.lng?? m.location?.lng?? 0);
+              if (!lat ||!lng) return null;
+              return (
+                <a
+                  href={`https://maps.apple.com/?q=${lat},${lng}`}
+                  target="_blank"
+                  className="block w-[240px]"
+                >
+                  <div className="overflow-hidden rounded-2xl shadow-md">
+                    <div className="relative h-[140px] bg-zinc-200">
+                      <img
+                        src={`https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=16&size=480x280&markers=${lat},${lng},red-pushpin`}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <MapPin size={26} fill="#FF3B30" className="drop-shadow-lg" />
                       </div>
-                    )}
-
-                    <div className={`absolute ${isMe? "right-0" : "left-0"} top-0 hidden group-hover:flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1`}>
-                      <button onClick={() => setShowEmojiPicker(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                        <Smile size={16} />
-                      </button>
-                      <button onClick={() => setReplyTo(m)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                        <Reply size={16} />
-                      </button>
-                      {isMe && (
-                        <>
-<button 
-  onClick={() => { setEditingMsg(m); setText(m.text ?? ''); inputRef.current?.focus(); }} 
-  className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded"
->
-  <Pencil size={16} />
-</button>
-                          <button onClick={() => deleteMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded text-red-500">
-                            <Trash2 size={16} />
-                          </button>
-                        </>
-                      )}
-                      <button onClick={() => pinMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                        <Pin size={16} />
-                      </button>
-                      <button onClick={() => { navigator.clipboard.writeText(m.text ?? ''); toast.success("Đã copy"); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                        <Copy size={16} />
-                      </button>
                     </div>
+                    <div className="bg-white dark:bg-zinc-800 px-3 py-2.5">
+                      <p className="text-[14px] font-medium truncate text-zinc-900 dark:text-white">
+                        {m.address || 'Vị trí đã chia sẻ'}
+                      </p>
+                      <p className="text-[12px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mt-0.5">
+                        <Navigation size={12} /> Nhấn để mở bản đồ
+                      </p>
+                    </div>
+                  </div>
+                </a>
+              );
+            })()
+          ) : (
+            <div
+              className={`px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer rounded-2xl ${
+                isMe
+                 ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+                  : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+              }`}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setShowEmojiPicker(m.id);
+              }}
+            >
+              {m.image && <img src={m.image} className="rounded-2xl max-w-full mb-1" alt="sent" />}
+              {m.file && (
+                <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
+                  <Paperclip size={16} />
+                  <span className="text-sm truncate">{m.fileName}</span>
+                </a>
+              )}
+              {m.text && (
+                <p className="text-[15px] leading-snug whitespace-pre-wrap break-words">
+                  {m.text}
+                  {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {m.reactions && m.reactions.length > 0 && (
+          <div className="flex gap-1 mt-1 px-1">
+            {m.reactions.map((r) => (
+              <button
+                key={r.emoji}
+                onClick={() => toggleReaction(m.id, r.emoji)}
+                className={`px-2 py-0.5 rounded-full text-xs ${
+                  r.users.includes(user.uid)
+                  ? "bg-blue-100 dark:bg-blue-900/50"
+                    : "bg-gray-100 dark:bg-zinc-800"
+                }`}
+              >
+                {r.emoji} {r.users.length}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className={`absolute ${isMe? "right-0" : "left-0"} top-0 hidden group-hover:flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1`}>
+          <button onClick={() => setShowEmojiPicker(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+            <Smile size={16} />
+          </button>
+          <button onClick={() => setReplyTo(m)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+            <Reply size={16} />
+          </button>
+          {isMe && (
+            <>
+              <button
+                onClick={() => { setEditingMsg(m); setText(m.text?? ''); inputRef.current?.focus(); }}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded"
+              >
+                <Pencil size={16} />
+              </button>
+              <button onClick={() => deleteMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded text-red-500">
+                <Trash2 size={16} />
+              </button>
+            </>
+          )}
+          <button onClick={() => pinMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+            <Pin size={16} />
+          </button>
+          <button onClick={() => { navigator.clipboard.writeText(m.text?? ''); toast.success("Đã copy"); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+            <Copy size={16} />
+          </button>
+        </div>
 
                     {/* Emoji Picker */}
                     {showEmojiPicker === m.id && (
