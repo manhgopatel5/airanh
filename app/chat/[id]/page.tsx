@@ -1297,7 +1297,10 @@ useEffect(() => {
                 await updateDoc(doc(db, 'chats', chatId), {
                   pinnedMessages: arrayRemove(showUnpinSheet)
                 });
-                setChatData(prev => prev? {...prev, pinnedMessages: prev.pinnedMessages.filter((x:any)=>x.id!==showUnpinSheet.id)} : prev);
+setChatData(prev => prev ? { 
+  ...prev, 
+  pinnedMessages: (prev.pinnedMessages || []).filter((x:any) => x.id !== showUnpinSheet.id) 
+} : prev);
                 setShowUnpinSheet(null);
                 toast.success('Đã bỏ ghim');
               }}
