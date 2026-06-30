@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 
 import { useAppStore } from "@/store/app";
 import { AnimatePresence, motion } from "framer-motion";
@@ -11,42 +11,43 @@ import CustomTabBar from "@/components/CustomTabBar";
 import { useTabBarHeight } from "@/hooks/useTabBarHeight";
 import JobSkeleton from "@/components/JobSkeleton";
 import type { FeedTask } from "@/types/task";
+import { cn } from "@/lib/utils";
 
-const TaskFeedPage = dynamic(() => import('./_tabs/TaskFeedPage'), {
+const TaskFeedPage = dynamic(() => import("./_tabs/TaskFeedPage"), {
   loading: () => <JobSkeleton count={5} />,
-  ssr: true
-})
+  ssr: true,
+});
 
-const ChatClient = dynamic(() => import('./chat/ChatClient'), {
+const ChatClient = dynamic(() => import("./chat/ChatClient"), {
   ssr: false,
-  loading: () => <JobSkeleton count={1} />
-})
-const TasksPage = dynamic(() => import('./_tabs/MyTasksPage'), {
+  loading: () => <JobSkeleton count={1} />,
+});
+const TasksPage = dynamic(() => import("./_tabs/MyTasksPage"), {
   ssr: false,
-  loading: () => <JobSkeleton count={5} />
-})
-const ProfileTabContent = dynamic(() => import('./profile/ProfileTabContent'), {
+  loading: () => <JobSkeleton count={5} />,
+});
+const ProfileTabContent = dynamic(() => import("./profile/ProfileTabContent"), {
   ssr: false,
-  loading: () => <JobSkeleton count={1} />
-})
+  loading: () => <JobSkeleton count={1} />,
+});
 
-const FloatingMenu = dynamic(() => import('@/components/FloatingMenu'), {
-  ssr: false
-})
+const FloatingMenu = dynamic(() => import("@/components/FloatingMenu"), {
+  ssr: false,
+});
 
 type MainTab = "home" | "messages" | "tasks" | "profile" | "plans";
 
-// THÊM TYPE PROPS
 type AppContainerProps = {
-  initialJobs: FeedTask[]
-  initialPlans: FeedTask[]
-}
+  initialJobs: FeedTask[];
+  initialPlans: FeedTask[];
+};
 
 export default function AppContainer({ initialJobs, initialPlans }: AppContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const unreadCount = useAppStore((s) => s.unreadCount);
   const [mounted, setMounted] = useState(false);
+  const [visitedTabs, setVisitedTabs] = useState<Set<MainTab>>(() => new Set(["home"]));
 
   const [currentMainTab, setCurrentMainTab] = useState<MainTab>(
     (searchParams.get("tab") as MainTab) || "home"
@@ -57,15 +58,27 @@ export default function AppContainer({ initialJobs, initialPlans }: AppContainer
 
   useEffect(() => setMounted(true), []);
 
-  const handleChangeTab = useCallback((tab: MainTab) => {
-    setCurrentMainTab(tab);
-    const newUrl = tab === "home"? "/" : `/?tab=${tab}`;
-    router.replace(newUrl, { scroll: false });
-  }, [router]);
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (prev.has(currentMainTab)) return prev;
+      const next = new Set(prev);
+      next.add(currentMainTab);
+      return next;
+    });
+  }, [currentMainTab]);
+
+  const handleChangeTab = useCallback(
+    (tab: MainTab) => {
+      setCurrentMainTab(tab);
+      const newUrl = tab === "home" ? "/" : `/?tab=${tab}`;
+      router.replace(newUrl, { scroll: false });
+    },
+    [router]
+  );
 
   useEffect(() => {
     const tabFromUrl = (searchParams.get("tab") as MainTab) || "home";
-    if (tabFromUrl!== currentMainTab) {
+    if (tabFromUrl !== currentMainTab) {
       setCurrentMainTab(tabFromUrl);
     }
   }, [searchParams, currentMainTab]);
@@ -81,7 +94,7 @@ export default function AppContainer({ initialJobs, initialPlans }: AppContainer
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       const target = e.target as HTMLElement;
-      if (menuRef.current?.contains(target) || target.closest('[data-plus-button]')) return;
+      if (menuRef.current?.contains(target) || target.closest("[data-plus-button]")) return;
       setIsMenuOpen(false);
     };
 
@@ -98,84 +111,105 @@ export default function AppContainer({ initialJobs, initialPlans }: AppContainer
     }
   }, [isMenuOpen]);
 
-  const handleSelectCreate = useCallback((type: "task" | "plan") => {
-    navigator.vibrate?.([15, 30, 15]);
-    setIsMenuOpen(false);
-    router.push(`/create/${type}`);
-  }, [router]);
+  const handleSelectCreate = useCallback(
+    (type: "task" | "plan") => {
+      navigator.vibrate?.([15, 30, 15]);
+      setIsMenuOpen(false);
+      router.push(`/create/${type}`);
+    },
+    [router]
+  );
 
-  const renderCurrentTab = () => {
-    switch (currentMainTab) {
-      case "home":
-      case "plans":
-        // TRUYỀN INITIAL DATA XUỐNG
-        return <TaskFeedPage initialJobs={initialJobs} initialPlans={initialPlans} />
-      case "messages":
-        return <ChatClient />
-      case "tasks":
-        return <TasksPage />
-      case "profile":
-        return <ProfileTabContent />
-      default:
-        return <TaskFeedPage initialJobs={initialJobs} initialPlans={initialPlans} />
-    }
-  }
+  const showHome = currentMainTab === "home" || currentMainTab === "plans";
 
   return (
     <div className="h-dvh flex flex-col font-sans bg-white dark:bg-zinc-950 relative">
       <div
-        className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto [-webkit-overflow-scrolling:touch] overscroll-y-contain"
+        className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] touch-pan-y"
         style={{ paddingBottom: tabBarHeight }}
       >
-        {renderCurrentTab()}
+        {(showHome || visitedTabs.has("home") || visitedTabs.has("plans")) && (
+          <div className={cn(!showHome && "hidden")} aria-hidden={!showHome}>
+            <TaskFeedPage initialJobs={initialJobs} initialPlans={initialPlans} />
+          </div>
+        )}
+
+        {visitedTabs.has("messages") && (
+          <div className={cn(currentMainTab !== "messages" && "hidden")} aria-hidden={currentMainTab !== "messages"}>
+            <ChatClient />
+          </div>
+        )}
+
+        {visitedTabs.has("tasks") && (
+          <div className={cn(currentMainTab !== "tasks" && "hidden")} aria-hidden={currentMainTab !== "tasks"}>
+            <TasksPage />
+          </div>
+        )}
+
+        {visitedTabs.has("profile") && (
+          <div className={cn(currentMainTab !== "profile" && "hidden")} aria-hidden={currentMainTab !== "profile"}>
+            <ProfileTabContent />
+          </div>
+        )}
       </div>
 
-      {mounted && createPortal(
-        <>
-          <AnimatePresence>
-            {isMenuOpen && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="fixed inset-0 z-60 bg-white/60 dark:bg-zinc-950/40 backdrop-blur-sm"
-                onClick={() => setIsMenuOpen(false)}
-              />
-            )}
-          </AnimatePresence>
-
-          <div className="fixed inset-0 z-[70] pointer-events-none flex items-center justify-center p-5">
-            <div ref={menuRef} className="w-full max-w-[500px] pointer-events-auto">
+      {mounted &&
+        createPortal(
+          <>
+            <AnimatePresence>
               {isMenuOpen && (
-                <FloatingMenu
-                  isOpen={isMenuOpen}
-                  onSelect={handleSelectCreate}
-                  onClose={() => setIsMenuOpen(false)}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="fixed inset-0 z-60 bg-white/60 dark:bg-zinc-950/40 backdrop-blur-sm"
+                  onClick={() => setIsMenuOpen(false)}
                 />
               )}
-            </div>
-          </div>
+            </AnimatePresence>
 
-          <CustomTabBar
-            currentTab={currentMainTab === "plans"? "home" : currentMainTab as "home" | "messages" | "tasks" | "profile"}
-            onChangeTab={handleChangeTab}
-            unreadCount={unreadCount}
-            isMenuOpen={isMenuOpen}
-            onCreateClick={() => {
-              navigator.vibrate?.([15, 35, 15]);
-              setIsMenuOpen(true);
-            }}
-          />
-        </>,
-        document.body
-      )}
+            <div className="fixed inset-0 z-[70] pointer-events-none flex items-center justify-center p-5">
+              <div ref={menuRef} className="w-full max-w-[500px] pointer-events-auto">
+                {isMenuOpen && (
+                  <FloatingMenu
+                    isOpen={isMenuOpen}
+                    onSelect={handleSelectCreate}
+                    onClose={() => setIsMenuOpen(false)}
+                  />
+                )}
+              </div>
+            </div>
+
+            <CustomTabBar
+              currentTab={currentMainTab === "plans" ? "home" : (currentMainTab as "home" | "messages" | "tasks" | "profile")}
+              onChangeTab={handleChangeTab}
+              unreadCount={unreadCount}
+              isMenuOpen={isMenuOpen}
+              onCreateClick={() => {
+                navigator.vibrate?.([15, 35, 15]);
+                setIsMenuOpen(true);
+              }}
+            />
+          </>,
+          document.body
+        )}
 
       <style jsx global>{`
-       .scrollbar-hide::-webkit-scrollbar{display:none}
-       .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
-        html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-        body{overscroll-behavior-y:contain}
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        html {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+        body {
+          overscroll-behavior-y: contain;
+        }
       `}</style>
     </div>
   );

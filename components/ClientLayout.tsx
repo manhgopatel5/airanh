@@ -6,6 +6,7 @@ import { useEffect, useMemo } from "react";
 import { Toaster } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { isAuthPublicRoute } from "@/components/auth/authRoutes";
+import { cn } from "@/lib/utils";
 
 type Props = {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ export default function ClientLayout({ children }: Props) {
     () => isAuthPublicRoute(pathname),
     [pathname]
   );
+  const isHomeShell = pathname === "/";
 
   useEffect(() => {
     if (loading) return;
@@ -49,9 +51,16 @@ export default function ClientLayout({ children }: Props) {
     <div className="h-dvh flex flex-col bg-white dark:bg-zinc-950 font-sans">
       {user && <FCMProvider userId={user.uid} />}
 
-  <main className="flex-1 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[calc(56px+env(safe-area-inset-bottom)+16px)]">
-  {children}
-</main>
+  <main
+    className={cn(
+      "flex-1 pt-[env(safe-area-inset-top)]",
+      isHomeShell
+        ? "overflow-hidden flex flex-col min-h-0"
+        : "overflow-y-auto pb-[calc(56px+env(safe-area-inset-bottom)+16px)] [-webkit-overflow-scrolling:touch] overscroll-y-contain"
+    )}
+  >
+    {children}
+  </main>
 
       <Toaster
         richColors

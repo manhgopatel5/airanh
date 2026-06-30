@@ -123,6 +123,8 @@ const nextConfig = {
       'lucide-react',
       'framer-motion',
       'zustand',
+      'swr',
+      'react-intersection-observer',
       'react-icons/fi',
       'react-icons/hi2',
       'react-markdown',

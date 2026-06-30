@@ -23,15 +23,18 @@ import {
 import { HiHeart, HiOutlineHeart } from "react-icons/hi2";
 import { TbCurrencyDong } from "react-icons/tb";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/AuthContext";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { type FeedTask } from "@/types/task";
 import { cn } from "@/lib/utils";
 import { useProvinces } from "@/lib/useProvinces";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 
 type Props = {
   task: FeedTask;
   theme: "task" | "plan";
+  currentUserId?: string | undefined;
+  provinceMap?: Map<string, string>;
   onDelete?: (id: string) => void;
   onShare?: (task: FeedTask) => void;
   onTaskUpdate?: (taskId: string, updates: Partial<FeedTask>) => void;
@@ -106,13 +109,22 @@ const CATEGORY_PLANS = [
   { id: "clubbing", label: "Club", icon: "🪩", color: "#BF5AF2" },
   { id: "other", label: "Khác", icon: "📋", color: "#8E8E93" },
 ] as const;
-function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: Props) {
+function TaskCard({
+  task,
+  theme,
+  currentUserId,
+  provinceMap: provinceMapProp,
+  onDelete,
+  onShare,
+  onTaskUpdate,
+  className,
+}: Props) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
-  const { user } = useAuth();
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
-  const provinceMap = useProvinceMap();
+  const fallbackProvinceMap = useProvinceMap();
+  const provinceMap = provinceMapProp ?? fallbackProvinceMap;
 
   const [isSaved, setIsSaved] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -126,19 +138,20 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
 
   useEffect(() => {
     if (!task?.id) return;
-    setIsSaved(!!user?.uid &&!!task.savedBy?.includes(user.uid));
-    setLiked(!!user?.uid &&!!task.likes?.includes(user.uid));
-  }, [user?.uid, task?.savedBy, task?.likes, task?.id]);
+    setIsSaved(!!currentUserId && !!task.savedBy?.includes(currentUserId));
+    setLiked(!!currentUserId && !!task.likes?.includes(currentUserId));
+  }, [currentUserId, task?.savedBy, task?.likes, task?.id]);
 
   useEffect(() => {
     if (!showMenu) return;
     const handleKey = (e: KeyboardEvent) => e.key === "Escape" && setShowMenu(false);
     const handleClick = (e: MouseEvent) => {
-      if (menuBtnRef.current &&!menuBtnRef.current.contains(e.target as Node)) {
+      if (menuBtnRef.current && !menuBtnRef.current.contains(e.target as Node)) {
         setShowMenu(false);
       }
     };
-    let resizeTimer: NodeJS.Timeout;
+    const handleScroll = () => setShowMenu(false);
+    let resizeTimer: ReturnType<typeof setTimeout>;
     const handleResize = () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => setShowMenu(false), 150);
@@ -146,13 +159,13 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
 
     window.addEventListener("keydown", handleKey);
     window.addEventListener("mousedown", handleClick);
-    window.addEventListener("scroll", () => setShowMenu(false), true);
+    window.addEventListener("scroll", handleScroll, true);
     window.addEventListener("resize", handleResize);
     return () => {
       clearTimeout(resizeTimer);
       window.removeEventListener("keydown", handleKey);
       window.removeEventListener("mousedown", handleClick);
-      window.removeEventListener("scroll", () => setShowMenu(false), true);
+      window.removeEventListener("scroll", handleScroll, true);
       window.removeEventListener("resize", handleResize);
     };
   }, [showMenu]);
@@ -199,35 +212,39 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
   };
 }, [task, provinceMap]);
 
-  if (!task?.id ||!task?.title ||!task?.type ||!task?.status) return null;
-
-  const isOwner = user?.uid === task.userId;
-  const avatarUrl = task.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.userName || "AIR")}&background=0A84FF&color=fff&bold=true&size=96`;
+  const isOwner = currentUserId === task.userId;
 
   const goToTask = useCallback(() => {
     vibrate();
     router.push(`/task/${task.id}`);
   }, [router, task.id]);
 
+  const getAuthToken = useCallback(async () => {
+    const authUser = getFirebaseAuth().currentUser;
+    if (!authUser) return null;
+    return authUser.getIdToken();
+  }, []);
+
   const handleLike = useCallback(async () => {
-    if (!user) return router.push("/login");
+    if (!currentUserId) return router.push("/login");
     if (liking) return;
     vibrate(10);
     setLiking(true);
-    const newLiked =!liked;
+    const newLiked = !liked;
     const oldLikes = task.likes || [];
     const oldCount = task.likeCount || 0;
 
     setLiked(newLiked);
     onTaskUpdate?.(task.id, {
-      likes: newLiked? [...oldLikes, user.uid] : oldLikes.filter((id) => id!== user.uid),
-      likeCount: oldCount + (newLiked? 1 : -1),
+      likes: newLiked ? [...oldLikes, currentUserId] : oldLikes.filter((id) => id !== currentUserId),
+      likeCount: oldCount + (newLiked ? 1 : -1),
     });
 
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
+      if (!token) throw new Error("no auth");
       const res = await fetch(`/api/tasks/${task.id}/like`, {
-        method: newLiked? "POST" : "DELETE",
+        method: newLiked ? "POST" : "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("like failed");
@@ -238,27 +255,30 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     } finally {
       setLiking(false);
     }
-  }, [user, liked, liking, task, router, onTaskUpdate]);
+  }, [currentUserId, liked, liking, task, router, onTaskUpdate, getAuthToken]);
 
   const handleSave = useCallback(async () => {
-    if (!user) return router.push("/login");
+    if (!currentUserId) return router.push("/login");
     if (saving) return;
     vibrate(10);
     setSaving(true);
-    const newSaved =!isSaved;
+    const newSaved = !isSaved;
     const oldSavedBy = task.savedBy || [];
 
     setIsSaved(newSaved);
-    onTaskUpdate?.(task.id, { savedBy: newSaved? [...oldSavedBy, user.uid] : oldSavedBy.filter((id) => id!== user.uid) });
+    onTaskUpdate?.(task.id, {
+      savedBy: newSaved ? [...oldSavedBy, currentUserId] : oldSavedBy.filter((id) => id !== currentUserId),
+    });
 
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
+      if (!token) throw new Error("no auth");
       const res = await fetch(`/api/tasks/${task.id}/save`, {
-        method: newSaved? "POST" : "DELETE",
+        method: newSaved ? "POST" : "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("save failed");
-      toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu");
+      toast.success(newSaved ? "Đã lưu" : "Đã bỏ lưu");
     } catch {
       setIsSaved(!newSaved);
       onTaskUpdate?.(task.id, { savedBy: oldSavedBy });
@@ -266,14 +286,15 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     } finally {
       setSaving(false);
     }
-  }, [user, isSaved, saving, task, router, onTaskUpdate]);
+  }, [currentUserId, isSaved, saving, task, router, onTaskUpdate, getAuthToken]);
 
   const handleDelete = useCallback(async () => {
     if (!isOwner) return;
     if (!confirm("Xóa mục này? Hành động không thể hoàn tác.")) return;
     vibrate(10);
     try {
-      const token = await user?.getIdToken();
+      const token = await getAuthToken();
+      if (!token) throw new Error("no auth");
       const res = await fetch(`/api/tasks/${task.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -284,7 +305,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     } catch {
       toast.error("Xóa thất bại");
     }
-  }, [isOwner, task.id, onDelete, user]);
+  }, [isOwner, task.id, onDelete, getAuthToken]);
 
   const openMenu = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -292,34 +313,26 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     const menuWidth = 188;
     const menuHeight = 120;
     const x = Math.min(Math.max(8, rect.right - menuWidth), window.innerWidth - menuWidth - 8);
-    const y = rect.bottom + 8 + menuHeight > window.innerHeight? rect.top - menuHeight - 8 : rect.bottom + 8;
+    const y = rect.bottom + 8 + menuHeight > window.innerHeight ? rect.top - menuHeight - 8 : rect.bottom + 8;
     setMenuPos({ x, y });
-    setShowMenu((v) =>!v);
+    setShowMenu((v) => !v);
   }, []);
+
+  if (!task?.id || !task?.title || !task?.type || !task?.status) return null;
 
   const ringClass = isTaskTheme
   ? "focus-visible:ring-[#0A84FF]"
     : "focus-visible:ring-[#30D158]";
 
   return (
-    <motion.article
-      initial={reduceMotion? false : { opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      {...(reduceMotion? {} : { whileHover: { y: -3 } })}
-      transition={{ duration: 0.22 }}
-      className={cn("group w-full", className)}
-    >
+    <article className={cn("group w-full", className)}>
       <div className="relative">
-        {/* VIỀN MÀU 4 CẠNH - LUÔN HIỆN */}
         <div
           className="absolute -inset-[1.5px] rounded-2xl"
-          style={{
-            background: accent,
-          }}
+          style={{ background: accent }}
         />
 
-        {/* CARD CHÍNH */}
-        <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-950 shadow-xl shadow-black/[0.08] dark:shadow-black/40 transition-all duration-300 active:scale-[0.992] hover:shadow-2xl">
+        <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-950 shadow-lg shadow-black/[0.06] dark:shadow-black/30 transition-[transform,box-shadow] duration-200 active:scale-[0.992]">
           {/* INNER HIGHLIGHT */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-transparent to-black/[0.02] pointer-events-none" />
           <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/40 dark:ring-white/5 pointer-events-none" />
@@ -332,7 +345,12 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
                   onClick={goToTask}
                   className={cn("relative shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2", ringClass)}
                 >
-                  <img src={avatarUrl} alt={task.userName || "Avatar"} loading="lazy" decoding="async" className="h-10 w-10 rounded-xl object-cover ring-2 ring-white shadow-md dark:ring-zinc-950" />
+                  <UserAvatar
+                    src={task.userAvatar}
+                    name={task.userName || "AIR"}
+                    size={40}
+                    className="rounded-xl ring-2 ring-white shadow-md dark:ring-zinc-950"
+                  />
                   {task.userVerified && <FiCheckCircle className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-white text-[#0A84FF] dark:bg-zinc-950" />}
                 </button>
                 <div className="min-w-0">
@@ -469,7 +487,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
           </Portal>
         )}
       </AnimatePresence>
-    </motion.article>
+    </article>
   );
 }
 

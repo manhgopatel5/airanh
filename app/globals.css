@@ -473,3 +473,10 @@
   transform-origin: 70% 70%;
   display: inline-block;
 }
+
+/* Feed scroll performance */
+.feed-item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 220px;
+  contain: layout style paint;
+}
