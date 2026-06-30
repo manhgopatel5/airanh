@@ -1094,84 +1094,80 @@ useEffect(() => {
 
 {/* Action Menu */}
 {longPressMsg && (
-  <div
-    className="fixed inset-0 z-[90] bg-black/50 backdrop-blur-md"
-    onClick={() => setLongPressMsg(null)}
-  >
+  <div className="fixed inset-0 z-[200] flex items-end justify-center sm:items-center">
+    {/* Backdrop */}
     <div
-      className="absolute left-1/2 -translate-x-1/2 bottom-20 w-[92%] max-w-[360px]"
-      onClick={e => e.stopPropagation()}
-    >
-      {/* THANH REACTION - giống ảnh */}
-      <div className="bg-white rounded-full px-3 py-2.5 flex items-center justify-between shadow-2xl mb-3">
-        <div className="flex items-center gap-1">
-          {["❤️","😆","😮","😢","😡","👍"].map(emoji => (
-            <button
-              key={emoji}
-              onClick={() => { toggleReaction(longPressMsg.id, emoji); setLongPressMsg(null); }}
-              className="w-10 h-10 text-[26px] active:scale-125 transition-transform"
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-1.5 pl-2 border-l border-gray-200">
-          <button className="w-8 h-8 rounded-full bg-[#0084FF] flex items-center justify-center active:scale-90">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 0 0 7zm0-9C7 6.5 2.7 9.4 1 13c1.7 3.6 6 6.5 11 6.5s9.3-2.9 11-6.5c-1.7-3.6-6-6.5-11-6.5z"/></svg>
+      className="absolute inset-0 bg-black/40 backdrop-blur-xl animate-in fade-in duration-200"
+      onClick={() => setLongPressMsg(null)}
+    />
+
+    <div className="relative w-full max-w-[375px] px-4 pb-6 sm:pb-0" onClick={e => e.stopPropagation()}>
+      {/* REACTION BAR - chỉ 6 emoji, bỏ + và nút xanh */}
+      <div className="bg-white rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.15)] px-2 py-2 flex items-center justify-center gap-0.5 mb-3 mx-auto w-fit animate-in zoom-in-95 slide-in-from-bottom-2 duration-250">
+        {["❤️","😆","😮","😢","😡","👍"].map((emoji, i) => (
+          <button
+            key={emoji}
+            onClick={() => { toggleReaction(longPressMsg.id, emoji); setLongPressMsg(null); }}
+            className="w-[48px] h-[48px] flex items-center justify-center text-[28px] active:scale-110 hover:bg-gray-100 rounded-full transition-all duration-150"
+            style={{ animationDelay: `${i * 40}ms` }}
+          >
+            {emoji}
           </button>
-          <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:scale-90">
-            <Plus size={18} />
-          </button>
-        </div>
+        ))}
       </div>
 
-      {/* MENU TRẮNG - y hệt ảnh */}
-      <div className="bg-white rounded-[20px] shadow-2xl overflow-hidden">
-        {longPressMsg.senderId === user?.uid && (
+      {/* MENU - đồng bộ font với ảnh 2-3 */}
+      <div className="bg-white rounded-[14px] shadow-[0_10px_40px_rgba(0,0,0,0.2)] overflow-hidden animate-in slide-in-from-bottom-3 zoom-in-95 duration-300">
+        <div className="divide-y divide-[#e5e5ea]">
+          {longPressMsg.senderId === user?.uid && (
+            <button
+              onClick={() => { setEditingMsg(longPressMsg); setText(longPressMsg.text || ''); setLongPressMsg(null); setTimeout(() => inputRef.current?.focus(), 100); }}
+              className="w-full flex items-center justify-between px-4 h-[48px] active:bg-[#f2f2f7] transition-colors"
+            >
+              <span className="text-[17px] leading-[22px] text-black font-normal tracking-[-0.2px]">Chỉnh sửa</span>
+              <Pencil size={22} className="text-[#8e8e93]" strokeWidth={1.7} />
+            </button>
+          )}
+
           <button
-            onClick={() => { setEditingMsg(longPressMsg); setText(longPressMsg.text); setLongPressMsg(null); inputRef.current?.focus(); }}
-            className="w-full flex items-center justify-between px-5 py-[14px] active:bg-gray-50"
+            onClick={() => { setReplyTo(longPressMsg); setLongPressMsg(null); }}
+            className="w-full flex items-center justify-between px-4 h-[48px] active:bg-[#f2f2f7] transition-colors"
           >
-            <span className="text-[17px] text-black">Chỉnh sửa</span>
-            <Pencil size={22} strokeWidth={1.8} />
+            <span className="text-[17px] leading-[22px] text-black font-normal tracking-[-0.2px]">Trả lời</span>
+            <Reply size={22} className="text-[#8e8e93] scale-x-[-1]" strokeWidth={1.7} />
           </button>
-        )}
 
-        <button
-          onClick={() => { setReplyTo(longPressMsg); setLongPressMsg(null); }}
-          className="w-full flex items-center justify-between px-5 py-[14px] border-t border-gray-100 active:bg-gray-50"
-        >
-          <span className="text-[17px] text-black">Trả lời</span>
-          <Reply size={22} strokeWidth={1.8} className="scale-x-[-1]" />
-        </button>
+          <button
+            onClick={() => { navigator.clipboard.writeText(longPressMsg.text || ''); toast.success('Đã sao chép'); setLongPressMsg(null); }}
+            className="w-full flex items-center justify-between px-4 h-[48px] active:bg-[#f2f2f7] transition-colors"
+          >
+            <span className="text-[17px] leading-[22px] text-black font-normal tracking-[-0.2px]">Sao chép</span>
+            <Copy size={21} className="text-[#8e8e93]" strokeWidth={1.7} />
+          </button>
+        </div>
 
-        <button
-          onClick={() => { navigator.clipboard.writeText(longPressMsg.text || ''); toast.success('Đã sao chép'); setLongPressMsg(null); }}
-          className="w-full flex items-center justify-between px-5 py-[14px] border-t border-gray-100 active:bg-gray-50"
-        >
-          <span className="text-[17px] text-black">Sao chép</span>
-          <Copy size={20} strokeWidth={1.8} />
-        </button>
-
+        {/* Divider dày như ảnh */}
         <div className="h-[8px] bg-[#f2f2f7]" />
 
-        <button
-          onClick={() => handlePinMessage(longPressMsg)}
-          className="w-full flex items-center justify-between px-5 py-[14px] active:bg-gray-50"
-        >
-          <span className="text-[17px] text-black">Ghim</span>
-          <Pin size={22} strokeWidth={1.8} />
-        </button>
-
-        {longPressMsg.senderId === user?.uid && (
+        <div className="divide-y divide-[#e5e5ea]">
           <button
-            onClick={() => handleDeleteMessage(longPressMsg.id)}
-            className="w-full flex items-center justify-between px-5 py-[14px] border-t border-gray-100 active:bg-red-50"
+            onClick={() => handlePinMessage(longPressMsg)}
+            className="w-full flex items-center justify-between px-4 h-[48px] active:bg-[#f2f2f7] transition-colors"
           >
-            <span className="text-[17px] text-[#ff3b30]">Xóa, gỡ</span>
-            <Trash2 size={22} strokeWidth={1.8} className="text-[#ff3b30]" />
+            <span className="text-[17px] leading-[22px] text-black font-normal tracking-[-0.2px]">Ghim</span>
+            <Pin size={22} className="text-[#8e8e93]" strokeWidth={1.7} />
           </button>
-        )}
+
+          {longPressMsg.senderId === user?.uid && (
+            <button
+              onClick={() => handleDeleteMessage(longPressMsg.id)}
+              className="w-full flex items-center justify-between px-4 h-[48px] active:bg-[#ff3b30]/10 transition-colors"
+            >
+              <span className="text-[17px] leading-[22px] text-[#ff3b30] font-normal tracking-[-0.2px]">Xóa, gỡ</span>
+              <Trash2 size={22} className="text-[#ff3b30]" strokeWidth={1.7} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   </div>
@@ -1210,21 +1206,97 @@ useEffect(() => {
 
         <div 
           className={`flex items-end gap-1 group ${isMe? "justify-end pl-12 pr-1" : "justify-start pr-12 pl-1"} ${isFirstInGroup? "mt-1.5" : "mt-0.5"}`}
-          onTouchStart={() => {
-            const timer = setTimeout(() => setLongPressMsg(m), 500);
-            setPressTimer(timer);
-          }}
-          onTouchEnd={() => pressTimer && clearTimeout(pressTimer)}
-          onMouseDown={() => {
-            const timer = setTimeout(() => setLongPressMsg(m), 500);
-            setPressTimer(timer);
-          }}
-          onMouseUp={() => pressTimer && clearTimeout(pressTimer)}
-          onMouseLeave={() => pressTimer && clearTimeout(pressTimer)}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setLongPressMsg(m);
-          }}
+          onTouchStart={(e) => {
+  // Ngăn scroll khi giữ
+  e.currentTarget.style.userSelect = 'none';
+  const el = e.currentTarget;
+  
+  // Hiệu ứng nhấn
+  el.style.transform = 'scale(0.97)';
+  el.style.filter = 'brightness(0.92)';
+  el.style.transition = 'transform 0.15s ease, filter 0.15s ease';
+  
+  const timer = setTimeout(() => {
+    // Rung nhẹ
+    if (navigator.vibrate) navigator.vibrate(12);
+    
+    // Reset visual trước khi mở menu
+    el.style.transform = '';
+    el.style.filter = '';
+    
+    setLongPressMsg(m);
+  }, 480); // 480ms giống iOS
+  
+  setPressTimer(timer);
+}}
+
+onTouchEnd={(e) => {
+  if (pressTimer) {
+    clearTimeout(pressTimer);
+    setPressTimer(null);
+  }
+  // Reset visual
+  const el = e.currentTarget;
+  el.style.transform = '';
+  el.style.filter = '';
+  el.style.userSelect = '';
+}}
+
+onTouchMove={() => {
+  // Hủy nếu di chuyển > 10px
+  if (pressTimer) {
+    clearTimeout(pressTimer);
+    setPressTimer(null);
+  }
+}}
+
+onMouseDown={(e) => {
+  // Chỉ chuột trái
+  if (e.button !== 0) return;
+  
+  const el = e.currentTarget;
+  el.style.transform = 'scale(0.98)';
+  
+  const timer = setTimeout(() => {
+    el.style.transform = '';
+    setLongPressMsg(m);
+  }, 500);
+  
+  setPressTimer(timer);
+}}
+
+onMouseUp={(e) => {
+  if (pressTimer) {
+    clearTimeout(pressTimer);
+    setPressTimer(null);
+  }
+  e.currentTarget.style.transform = '';
+}}
+
+onMouseLeave={(e) => {
+  if (pressTimer) {
+    clearTimeout(pressTimer);
+    setPressTimer(null);
+  }
+  e.currentTarget.style.transform = '';
+}}
+
+onContextMenu={(e) => {
+  e.preventDefault();
+  // Reset mọi timer
+  if (pressTimer) {
+    clearTimeout(pressTimer);
+    setPressTimer(null);
+  }
+  setLongPressMsg(m);
+}}
+
+onClick={(e) => {
+  // Ngăn click nếu vừa long-press
+  if (pressTimer) {
+    e.preventDefault();
+  }
+}}
         >
           {!isMe && (
             <div className="w-7 flex-shrink-0">
