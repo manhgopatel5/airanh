@@ -1761,7 +1761,15 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
           {[
             { icon: Search, label: 'Tìm trong cuộc trò chuyện', action: () => { setShowSettings(false); setShowSearch(true); } },
             { icon: ImageIcon, label: 'Đổi hình nền', value: (chatData as any)?.background? 'Đã đặt' : 'Mặc định', action: () => { setShowSettings(false); setShowBgPicker(true); } },
-            { icon: Pin, label: 'Tin nhắn đã ghim', value: chatData?.pinnedMessage? '1 tin' : 'Không có', action: () => toast.info('Xem tin ghim') },
+{ 
+  icon: Pin, 
+  label: 'Tin nhắn đã ghim', 
+  value: chatData?.pinnedMessage ? '1 tin nhắn' : 'Không có', 
+  action: () => { 
+    setShowSettings(false); 
+    setShowPinned(true); 
+  } 
+},
           ].map((item,i) => (
             <button key={i} onClick={item.action} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/5 active:bg-white/[0.03] transition border-b border-white/5 last:border-0">
               <item.icon size={20} className="text-white/70" />
