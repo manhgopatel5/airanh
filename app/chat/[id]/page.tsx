@@ -1045,9 +1045,15 @@ useEffect(() => {
     {/* Header */}
     <div className="shrink-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
       <div className="flex items-center justify-between px-4 h-12">
-        <button onClick={() => setShowPinned(false)} className="text-[#0084FF] text-base active:opacity-60">Đóng</button>
-        <span className="text-[17px] font-semibold text-zinc-900 dark:text-white">Tin nhắn đã ghim</span>
-        <div className="w-10" />
+        <div className="w-8" />
+        <span className="text- font-semibold text-zinc-900 dark:text-white">Tin nhắn đã ghim</span>
+        {/* NÚT X góc phải giống hình nền */}
+        <button
+          onClick={() => setShowPinned(false)}
+          className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center active:scale-90 transition"
+        >
+          <X size={18} className="text-zinc-600 dark:text-zinc-300" strokeWidth={2.2} />
+        </button>
       </div>
     </div>
 
@@ -1069,12 +1075,11 @@ useEffect(() => {
               setTimeout(() => {
                 const el = document.getElementById(`msg-${(chatData as any).pinnedMessage.id}`);
                 el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                el?.classList.add('animate-pulse');
-                const bubble = el?.querySelector('[class*="rounded-"]');
-                bubble?.classList.add('ring-2','ring-yellow-400','ring-offset-2','dark:ring-offset-zinc-950');
+                // HIGHLIGHT VÀNG ĐÚNG BUBBLE TIN NHẮN
+                const bubble = el?.querySelector('div[class*="bg-"][class*="rounded-3xl"], div[class*="bg-gradient"]');
+                bubble?.classList.add('!bg-yellow-200/80', 'dark:!bg-yellow-400/30', 'transition-colors', 'duration-500');
                 setTimeout(() => {
-                  bubble?.classList.remove('ring-2','ring-yellow-400','ring-offset-2','dark:ring-offset-zinc-950');
-                  el?.classList.remove('animate-pulse');
+                  bubble?.classList.remove('!bg-yellow-200/80', 'dark:!bg-yellow-400/30');
                 }, 2000);
               }, 150);
             }}
@@ -1097,14 +1102,14 @@ useEffect(() => {
             <div className="flex items-start gap-3">
               <img
                 src={(chatData as any).pinnedMessage.senderId === user?.uid
-                 ? (user?.photoURL || '/default-avatar.png')
+                ? (user?.photoURL || '/default-avatar.png')
                   : (friend?.avatar || '/default-avatar.png')}
                 className="w-10 h-10 rounded-full object-cover"
                 alt=""
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[15px] font-semibold text-zinc-900 dark:text-white truncate">
+                  <span className="text- font-semibold text-zinc-900 dark:text-white truncate">
                     {(chatData as any).pinnedMessage.senderId === user?.uid? 'Bạn' : friend?.name}
                   </span>
                   <span className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">
@@ -1112,17 +1117,17 @@ useEffect(() => {
                   </span>
                 </div>
 
-                <p className="text-[14px] text-zinc-600 dark:text-zinc-300 mt-1.5 line-clamp-2 leading-snug">
+                <p className="text- text-zinc-600 dark:text-zinc-300 mt-1.5 line-clamp-2 leading-snug">
                   {(() => {
                     const m = (chatData as any).pinnedMessage;
                     return m.text?.trim()
-                     ? m.text
+                    ? m.text
                       : m.imageUrl || m.image
-                     ? '📷 Hình ảnh'
+                    ? '📷 Hình ảnh'
                       : m.fileUrl || m.file
-                     ? '📎 Tệp đính kèm'
+                    ? '📎 Tệp đính kèm'
                       : m.location
-                     ? '📍 Vị trí'
+                    ? '📍 Vị trí'
                       : 'Tin nhắn';
                   })()}
                 </p>
@@ -1133,16 +1138,20 @@ useEffect(() => {
                     Ghim bởi {(chatData as any).pinnedMessage.by || 'Bạn'}
                   </span>
                 </div>
-              </div>
               <ChevronRight size={16} className="text-zinc-400 mt-1" />
             </div>
           </button>
 
-          <p className="text-xs text-zinc-500 dark:text-zinc-500 text-center mt-4 px-4">
-            Nhấn để đi tới • Nhấn giữ để bỏ ghim
-          </p>
+          {/* 2 DÒNG CĂN GIỮA */}
+          <div className="text-center mt-4 px-4 space-y-0.5">
+            <p className="text-xs text-zinc-500 dark:text-zinc-500">Nhấn để đi tới</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-500">Nhấn giữ để bỏ ghim</p>
+          </div>
         </div>
       )}
+    </div>
+  </div>
+)}
     </div>
 
     {/* Action Sheet đẹp thay confirm */}
