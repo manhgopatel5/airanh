@@ -4,8 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseRTDB } from "@/lib/firebase";
-import { getCityMetaByRoomId, getCityBackgroundUrl } from "@/lib/publicRooms";
-import RoomChatBackground from "@/components/rooms/chat/RoomChatBackground";
+import { getCityMetaByRoomId } from "@/lib/publicRooms";
 import RoomChatHeader from "@/components/rooms/chat/RoomChatHeader";
 import RoomChatInput from "@/components/rooms/chat/RoomChatInput";
 import RoomMembersSheet from "@/components/rooms/chat/RoomMembersSheet";
@@ -27,7 +26,6 @@ type RoomData = {
   tagColor: string;
   desc: string;
   accent: string;
-  backgroundUrl: string;
   members: string[];
   memberCount: number;
   onlineCount: number;
@@ -211,7 +209,6 @@ const deleteMessage = async (msgId: string) => {
         tagColor: cityMeta?.tagColor ?? "",
         desc: cityMeta?.desc ?? "",
         accent: cityMeta?.accent || "#0a84ff",
-        backgroundUrl: cityMeta ? getCityBackgroundUrl(cityMeta) : "",
         members: data.members || [],
         memberCount: data.members?.length || 0,
         onlineCount: prev?.onlineCount || 0,
@@ -676,7 +673,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-zinc-950">
+      <div className="fixed inset-0 flex items-center justify-center bg-white">
         <FiLoader className="animate-spin text-[#0a84ff]" size={32} />
       </div>
     );
@@ -685,9 +682,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
   if (!roomData) return null;
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden">
-      <RoomChatBackground imageUrl={roomData.backgroundUrl || ""} accent={roomData.accent} />
-
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#F7FAFF] dark:bg-zinc-950">
       <RoomChatHeader
         room={roomData}
         accent={roomData.accent}
@@ -710,15 +705,15 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
   {messages.length === 0? (
     <div className="flex h-full flex-col items-center justify-center px-6 py-16 text-center">
       {roomData.imageUrl ? (
-        <div className="relative mb-4 h-28 w-28 overflow-hidden rounded-3xl shadow-2xl ring-4 ring-white/30">
+        <div className="relative mb-4 h-28 w-28 overflow-hidden rounded-3xl shadow-lg ring-4 ring-white">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={roomData.imageUrl} alt={roomData.name} className="h-full w-full object-cover" />
         </div>
       ) : (
         <div className="mb-4 text-6xl">{roomData.emoji}</div>
       )}
-      <h3 className="mb-1 text-[18px] font-bold text-white drop-shadow">Chào mừng đến {roomData.name}!</h3>
-      <p className="text-[14px] text-white/70">{roomData.desc || "Hãy là người đầu tiên gửi tin nhắn"}</p>
+      <h3 className="mb-1 text-[18px] font-semibold text-zinc-900">Chào mừng đến {roomData.name}!</h3>
+      <p className="text-[14px] text-zinc-500">{roomData.desc || "Hãy là người đầu tiên gửi tin nhắn"}</p>
     </div>
   ) : (
     messages.map((msg, idx) => {
@@ -735,13 +730,13 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
           <div key={msg.id}>
             {showTimeDivider && (
               <div className="my-4 flex justify-center">
-                <span className="rounded-full bg-black/35 px-3 py-1 text-[12px] text-white/80 backdrop-blur-sm">
+                <span className="rounded-full bg-zinc-100 px-3 py-1 text-[12px] text-zinc-500">
                   {formatTimeDivider(msg.createdAt)}
                 </span>
               </div>
             )}
             <div className="my-2 flex justify-center px-6">
-              <span className="rounded-full border border-white/10 bg-black/40 px-4 py-1.5 text-center text-[12px] text-white/75 backdrop-blur-md">
+              <span className="rounded-full bg-zinc-100 px-4 py-1.5 text-center text-[12px] text-zinc-500">
                 {msg.text}
               </span>
             </div>
@@ -761,7 +756,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
             {/* Time Divider căn giữa - chỉ hiện khi cách >5 phút */}
             {showTimeDivider && (
               <div className="my-4 flex justify-center">
-                <span className="rounded-full bg-black/35 px-3 py-1 text-[12px] text-white/80 backdrop-blur-sm">
+                <span className="rounded-full bg-zinc-100 px-3 py-1 text-[12px] text-zinc-500">
                   {formatTimeDivider(msg.createdAt)}
                 </span>
               </div>
@@ -797,13 +792,13 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
                     <img
                       src={msg.senderAvatar}
                       alt={msg.senderName}
-                      className="h-8 w-8 cursor-pointer rounded-full border border-white/20 object-cover active:scale-90"
+                      className="h-8 w-8 cursor-pointer rounded-full object-cover bg-zinc-200 active:scale-90"
                       referrerPolicy="no-referrer"
                       onClick={(e) => handleAvatarClick(e, msg.id)}
                     />
                     {activePopupMsgId === msg.id && (
                       <div
-                        className="absolute left-10 top-0 z-50 overflow-hidden rounded-xl border border-white/10 bg-zinc-900/95 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95"
+                        className="absolute left-10 top-0 z-50 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl animate-in fade-in zoom-in-95"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
@@ -811,7 +806,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
                             setActivePopupMsgId(null);
                             router.push(`/profile/${msg.senderId}`);
                           }}
-                          className="flex items-center gap-2.5 whitespace-nowrap px-4 py-2.5 text-white active:bg-white/10"
+                          className="flex items-center gap-2.5 whitespace-nowrap px-4 py-2.5 text-zinc-900 active:bg-zinc-50"
                         >
                           <FiUser className="h-4 w-4" />
                           <span className="text-[15px] font-medium">Thông tin cá nhân</span>
@@ -825,10 +820,10 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
 
               <div className={`max-w-[82%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
                 {isFirstInGroup &&!isMe && (
-                  <span className="mb-0.5 px-3 text-[12px] font-medium text-white/70">{msg.senderName}</span>
+                  <span className="mb-0.5 px-3 text-[12px] font-medium text-zinc-500">{msg.senderName}</span>
                 )}
 
-                <div className={`w-full rounded-[20px] border border-white/10 bg-white/90 px-4 py-3 shadow-lg backdrop-blur-md dark:bg-zinc-900/90 ${
+                <div className={`w-full rounded-[20px] bg-zinc-100 px-4 py-3 dark:bg-zinc-800 ${
                   isLastInGroup? (isMe? 'rounded-br-[6px]' : 'rounded-bl-[6px]') : ''
                 }`}>
                   <div className="flex items-start justify-between mb-3">
@@ -937,7 +932,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
           {/* Time Divider căn giữa - chỉ hiện khi cách >5 phút */}
           {showTimeDivider && (
             <div className="my-4 flex justify-center">
-              <span className="rounded-full bg-black/35 px-3 py-1 text-[12px] text-white/80 backdrop-blur-sm">
+              <span className="rounded-full bg-zinc-100 px-3 py-1 text-[12px] text-zinc-500">
                 {formatTimeDivider(msg.createdAt)}
               </span>
             </div>
@@ -973,7 +968,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
                   <img
                     src={msg.senderAvatar}
                     alt={msg.senderName}
-                    className="h-8 w-8 cursor-pointer rounded-full border border-white/20 object-cover active:scale-90"
+                    className="h-8 w-8 cursor-pointer rounded-full object-cover bg-zinc-200 active:scale-90"
                     referrerPolicy="no-referrer"
                     onClick={(e) => handleAvatarClick(e, msg.id)}
                     onError={(e) => {
@@ -982,7 +977,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
                   />
                   {activePopupMsgId === msg.id && (
                     <div
-                      className="absolute left-10 top-0 z-50 overflow-hidden rounded-xl border border-white/10 bg-zinc-900/95 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95"
+                      className="absolute left-10 top-0 z-50 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl animate-in fade-in zoom-in-95"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
@@ -990,7 +985,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
                           setActivePopupMsgId(null);
                           router.push(`/profile/${msg.senderId}`);
                         }}
-                        className="flex items-center gap-2.5 whitespace-nowrap px-4 py-2.5 text-white active:bg-white/10"
+                        className="flex items-center gap-2.5 whitespace-nowrap px-4 py-2.5 text-zinc-900 active:bg-zinc-50"
                       >
                         <FiUser className="h-4 w-4" />
                         <span className="text-[15px] font-medium">Thông tin cá nhân</span>
@@ -1004,14 +999,14 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
 
             <div className={`max-w-[82%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
               {isFirstInGroup &&!isMe && (
-                <span className="mb-0.5 px-3 text-[12px] font-medium text-white/70">{msg.senderName}</span>
+                <span className="mb-0.5 px-3 text-[12px] font-medium text-zinc-500">{msg.senderName}</span>
               )}
 
               <div
-                className={`px-4 py-2.5 shadow-md ${
+                className={`px-4 py-2.5 ${
                   isMe
                     ? 'rounded-[20px] text-white'
-                    : 'rounded-[20px] border border-white/10 bg-white/90 text-zinc-900 backdrop-blur-md dark:bg-zinc-900/90 dark:text-white'
+                    : 'rounded-[20px] bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white'
                 } ${isLastInGroup? (isMe? 'rounded-br-[6px]' : 'rounded-bl-[6px]') : ''}`}
                 style={isMe ? { backgroundColor: roomData.accent } : undefined}
               >
@@ -1049,7 +1044,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
           <button
             type="button"
             onClick={scrollToBottom}
-            className="absolute bottom-3 right-4 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white shadow-lg backdrop-blur-md active:scale-95"
+            className="absolute bottom-3 right-4 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 shadow-md active:scale-95"
           >
             <FiChevronDown size={20} />
           </button>

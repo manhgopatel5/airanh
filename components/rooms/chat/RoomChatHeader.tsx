@@ -35,12 +35,12 @@ function RoomChatHeader({
   onMenuSelect,
 }: Props) {
   return (
-    <header className="relative z-50 shrink-0 border-b border-white/10 bg-black/30 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+    <header className="relative z-50 shrink-0 border-b border-zinc-200/80 bg-white pt-[env(safe-area-inset-top)] dark:border-zinc-800 dark:bg-white">
       <div className="flex items-center gap-3 px-3 py-2.5">
         <button
           type="button"
           onClick={onBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-white active:bg-white/10"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-900 active:bg-zinc-100"
         >
           <FiArrowLeft size={22} />
         </button>
@@ -50,7 +50,7 @@ function RoomChatHeader({
           onClick={onOpenMembers}
           className="flex min-w-0 flex-1 items-center gap-3 text-left active:opacity-80"
         >
-          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl ring-2 ring-white/30 shadow-lg">
+          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl ring-2 ring-zinc-100 shadow-sm">
             {room.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={room.imageUrl} alt={room.name} className="h-full w-full object-cover" />
@@ -64,16 +64,16 @@ function RoomChatHeader({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="truncate text-[17px] font-bold leading-5 text-white">{room.name}</h1>
+              <h1 className="truncate text-[17px] font-bold leading-5 text-zinc-900">{room.name}</h1>
               {room.tag && (
                 <span
-                  className={`shrink-0 rounded-md bg-gradient-to-r ${room.tagColor || "from-white/20 to-white/10"} px-1.5 py-0.5 text-[9px] font-extrabold text-white`}
+                  className={`shrink-0 rounded-md bg-gradient-to-r ${room.tagColor || "from-zinc-400 to-zinc-500"} px-1.5 py-0.5 text-[9px] font-extrabold text-white`}
                 >
                   {room.tag}
                 </span>
               )}
             </div>
-            <p className="mt-0.5 flex items-center gap-1.5 truncate text-[12px] text-white/70">
+            <p className="mt-0.5 flex items-center gap-1.5 truncate text-[12px] text-zinc-500">
               <FiUsers size={11} />
               <span>{room.memberCount} thành viên</span>
               {room.onlineCount > 0 && (
@@ -90,7 +90,7 @@ function RoomChatHeader({
               )}
             </p>
             {room.desc && (
-              <p className="mt-0.5 truncate text-[11px] italic text-white/50">{room.desc}</p>
+              <p className="mt-0.5 truncate text-[11px] text-zinc-400">{room.desc}</p>
             )}
           </div>
         </button>
@@ -99,7 +99,7 @@ function RoomChatHeader({
           <button
             type="button"
             onClick={onToggleMenu}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-white active:bg-white/10"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-700 active:bg-zinc-100"
           >
             <FiMoreVertical size={20} />
           </button>
@@ -107,7 +107,7 @@ function RoomChatHeader({
           {showMenu && (
             <>
               <div className="fixed inset-0 z-[9998]" onClick={onToggleMenu} />
-              <div className="absolute right-0 top-full z-[9999] mt-1 w-52 overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/95 shadow-2xl backdrop-blur-xl">
+              <div className="absolute right-0 top-full z-[9999] mt-1 w-52 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl">
                 {(
                   [
                     { id: "search" as const, label: "Tìm tin nhắn" },
@@ -123,7 +123,7 @@ function RoomChatHeader({
                       onToggleMenu();
                       onMenuSelect(item.id);
                     }}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-white active:bg-white/10"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-zinc-900 active:bg-zinc-50"
                   >
                     {item.label}
                   </button>
