@@ -20,6 +20,7 @@ import {
   serverTimestamp as rtdbTimestamp,
 } from "firebase/database";
 import { establishSession, clearServerSession } from "@/lib/authSession";
+import { registerDeviceSession, heartbeatDeviceSession } from "@/lib/sessionTracking";
 
 export type AppUser = {
   uid: string;
@@ -195,6 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Tạo session cookie httpOnly cho middleware
         const token = await firebaseUser.getIdToken();
         await establishSession(token);
+        await registerDeviceSession(token);
 
         const userRef = doc(db, "users", firebaseUser.uid);
         userDataUnsub.current = onSnapshot(
@@ -243,6 +245,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       presenceUnsub.current?.();
     };
   }, [auth, db, rtdb, createUserProfile, updateUserLogin]);
+
+  useEffect(() => {
+    if (!auth?.currentUser) return;
+    const tick = async () => {
+      const token = await auth.currentUser?.getIdToken().catch(() => null);
+      if (token) await heartbeatDeviceSession(token);
+    };
+    tick();
+    const interval = setInterval(tick, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [auth, user?.uid]);
 
   const logout = useCallback(async () => {
     if (!auth) return;

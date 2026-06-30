@@ -49,6 +49,7 @@ import { useAvatarUpload } from "@/hooks/useAvatarUpload";
 import type { UserData } from "@/types/user";
 import { buildGamificationUser } from "@/lib/gamification";
 import Image from "next/image";
+import { isAdminUser } from "@/lib/adminAuth";
 
 export default function ProfileTabContent() {
   const db = getFirebaseDB();
@@ -81,8 +82,7 @@ export default function ProfileTabContent() {
   const accentGradient = isPlan
    ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
-const ADMIN_EMAILS = ["justastormyday@gmail.com", "hongann2210@gmail.com"];
-  // Ẩn nav bar khi modal mở - FIX SSR
+  // Ẩn nav bar khi modal mở
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -802,10 +802,18 @@ const handleUpdateName = async () => {
             />
           </div>
 
-          {ADMIN_EMAILS.includes(user?.email || "") && (
+          {isAdminUser(user?.uid, user?.email) && (
             <>
               <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1 pt-2">Quản trị</p>
               <div className="bg-white rounded-2xl overflow-hidden ring-1 ring-zinc-200">
+                <SettingItem
+                  label="Quản lý báo cáo"
+                  subtitle="Xử lý vi phạm và ban người dùng"
+                  icon={Shield}
+                  iconColor="text-red-500"
+                  onClick={() => router.push("/admin/reports")}
+                />
+                <div className="h-px bg-gray-100 ml-14" />
                 <SettingItem
                   label="Quản lý Events"
                   subtitle="Tạo và chỉnh sửa sự kiện"

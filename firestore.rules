@@ -23,7 +23,8 @@ match /users/{userId} {
     &&!request.resource.data.diff(resource.data).changedKeys().hasAny(['vip', 'role', 'banned'])
     && request.resource.data.diff(resource.data).changedKeys()
    .hasOnly(['name', 'avatar', 'bio', 'birthday', 'phone', 'title', 'location',
-               'skills', 'portfolio', 'online', 'lastSeen', 'nameLower', 'huhaScore', 'fcmToken', 'friendCount']);
+               'skills', 'portfolio', 'online', 'lastSeen', 'nameLower', 'huhaScore', 'fcmToken', 'friendCount',
+               'displayName', 'photoURL', 'username', 'settings', 'mutedChats']);
 
   allow create: if isOwner(userId);
   allow delete: if isAdmin();

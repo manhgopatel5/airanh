@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb, adminMessaging } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
+import { isInQuietHours } from "@/lib/notificationPrefs";
 
 // 🔥 Cache chống trùng
 const sentCache = new Map<string, number>();
@@ -118,6 +119,23 @@ export async function POST(req: Request) {
 
     if (!recipientId) {
       return NextResponse.json({ skipped: true });
+    }
+
+    const recipientSnap = await adminDb().doc(`users/${recipientId}`).get();
+    const recipientData = recipientSnap.data();
+    const settings = recipientData?.settings || {};
+
+    if (settings.notiChatAll === false && settings.notiChatMention === false) {
+      return NextResponse.json({ skipped: true, reason: "chat_notifications_disabled" });
+    }
+
+    const mutedBy = (chatData.mutedBy as string[] | undefined) || [];
+    if (mutedBy.includes(recipientId)) {
+      return NextResponse.json({ skipped: true, reason: "chat_muted" });
+    }
+
+    if (isInQuietHours(settings.quietHours)) {
+      return NextResponse.json({ skipped: true, reason: "quiet_hours" });
     }
 
     // ✅ Payload size check

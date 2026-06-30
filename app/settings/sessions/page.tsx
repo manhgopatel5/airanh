@@ -17,6 +17,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { FiLoader, FiArrowLeft } from "react-icons/fi";
 import { Smartphone, Monitor, Laptop, Trash2, MapPin, Shield, LogOut } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import { SESSION_KEY } from "@/lib/sessionTracking";
 
 type Session = {
   id: string;
@@ -31,8 +32,6 @@ type Session = {
   current: boolean;
   userAgent: string;
 };
-
-const SESSION_KEY = "airanh_session_id";
 
 export default function SessionsPage() {
   const db = getFirebaseDB();

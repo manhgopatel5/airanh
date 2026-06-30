@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { ChevronLeft, Bell, Clock, Mail, AtSign, MessageSquare, Zap } from "lucide-react";
+import { ChevronLeft, Bell, Clock, Mail, AtSign, MessageSquare, Zap, Smartphone } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
 type NotificationSettings = {
@@ -31,8 +31,28 @@ export default function NotificationsPage() {
     notiChatMention: true,
     notiChatAll: false,
     emailDigest: "off",
-    quietHours: { enabled: true, from: "22:00", to: "07:00" },
+    quietHours: { enabled: false, from: "22:00", to: "07:00" },
   });
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | "unsupported">("default");
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setPushPermission("unsupported");
+      return;
+    }
+    setPushPermission(Notification.permission);
+  }, []);
+
+  const requestPushPermission = useCallback(async () => {
+    if (!("Notification" in window)) {
+      toast.error("Trình duyệt không hỗ trợ push");
+      return;
+    }
+    const result = await Notification.requestPermission();
+    setPushPermission(result);
+    if (result === "granted") toast.success("Đã bật thông báo đẩy");
+    else if (result === "denied") toast.error("Bạn đã từ chối quyền thông báo");
+  }, []);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -50,13 +70,19 @@ export default function NotificationsPage() {
     value: NotificationSettings[K]
   ) => {
     if (!user) return;
-    const newSettings = {...settings, [key]: value };
+    const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
-    await updateDoc(doc(db, "users", user.uid), {
-      [`settings.${key}`]: value
-    });
-    toast.success("Đã cập nhật");
-    if ("vibrate" in navigator) navigator.vibrate(5);
+    try {
+      await updateDoc(doc(db, "users", user.uid), {
+        [`settings.${key}`]: value,
+      });
+      toast.success("Đã cập nhật");
+      if ("vibrate" in navigator) navigator.vibrate(5);
+    } catch (err) {
+      console.error(err);
+      toast.error("Không lưu được cài đặt");
+      setSettings(settings);
+    }
   };
 
   return (
@@ -76,6 +102,30 @@ export default function NotificationsPage() {
       </div>
 
       <div className="px-4 space-y-7 pt-4">
+        <Section title="THIẾT BỊ">
+          <button
+            type="button"
+            onClick={requestPushPermission}
+            className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 last:border-0 active:bg-white"
+          >
+            <div className="w-9 h-9 rounded-xl bg-[#F1F5F9] flex items-center justify-center flex-shrink-0">
+              <Smartphone className="w-5 h-5 text-[#0F172A]" />
+            </div>
+            <div className="flex-1 text-left min-w-0">
+              <div className="text-sm font-semibold text-[#0F172A]">Quyền thông báo đẩy</div>
+              <div className="text-xs text-zinc-500">
+                {pushPermission === "granted"
+                  ? "Đã bật"
+                  : pushPermission === "denied"
+                    ? "Đã từ chối — bật lại trong cài đặt trình duyệt"
+                    : pushPermission === "unsupported"
+                      ? "Không hỗ trợ"
+                      : "Chưa bật"}
+              </div>
+            </div>
+          </button>
+        </Section>
+
         <Section title="PUSH THÔNG BÁO">
           <ToggleItem
             label="Task được giao cho bạn"
