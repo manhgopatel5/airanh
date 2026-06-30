@@ -17,10 +17,11 @@ const nextConfig = {
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
       { protocol: 'https', hostname: 'ui-avatars.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
-      // THÊM 3 DÒNG NÀY CHO MAP
       { protocol: 'https', hostname: 'image.thum.io' },
       { protocol: 'https', hostname: 'api.mapbox.com' },
       { protocol: 'https', hostname: 'maps.wikimedia.org' },
+      // ✅ THÊM DÒNG NÀY
+      { protocol: 'https', hostname: 'staticmap.openstreetmap.de' },
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
@@ -57,10 +58,11 @@ const nextConfig = {
         'https://lh3.googleusercontent.com',
         'https://ui-avatars.com',
         'https://images.unsplash.com',
-        // THÊM 3 DÒNG NÀY
         'https://image.thum.io',
         'https://api.mapbox.com',
         'https://maps.wikimedia.org',
+        // ✅ THÊM DÒNG NÀY
+        'https://staticmap.openstreetmap.de',
       ].join(' '),
       "font-src 'self' data:",
       [
