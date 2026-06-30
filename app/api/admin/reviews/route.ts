@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import '@/lib/firebase-admin'
 import { adminDb } from '@/lib/firebase-admin'
 import { FieldValue } from 'firebase-admin/firestore'
+import { syncEventStats } from '@/lib/eventsServer'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,6 +51,8 @@ export async function POST(request: Request) {
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
+
+    await syncEventStats(eventId);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

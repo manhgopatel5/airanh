@@ -11,6 +11,7 @@ import CustomTabBar from "@/components/CustomTabBar";
 import { useTabBarHeight } from "@/hooks/useTabBarHeight";
 import JobSkeleton from "@/components/JobSkeleton";
 import type { FeedTask } from "@/types/task";
+import type { EventItem } from "@/data/events";
 import { cn } from "@/lib/utils";
 
 const TaskFeedPage = dynamic(() => import("./_tabs/TaskFeedPage"), {
@@ -40,9 +41,10 @@ type MainTab = "home" | "messages" | "tasks" | "profile" | "plans";
 type AppContainerProps = {
   initialJobs: FeedTask[];
   initialPlans: FeedTask[];
+  initialEvents: EventItem[];
 };
 
-export default function AppContainer({ initialJobs, initialPlans }: AppContainerProps) {
+export default function AppContainer({ initialJobs, initialPlans, initialEvents }: AppContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const unreadCount = useAppStore((s) => s.unreadCount);
@@ -136,7 +138,7 @@ export default function AppContainer({ initialJobs, initialPlans }: AppContainer
 
         {visitedTabs.has("messages") && (
           <div className={cn(currentMainTab !== "messages" && "hidden")} aria-hidden={currentMainTab !== "messages"}>
-            <ChatClient />
+            <ChatClient initialEvents={initialEvents} />
           </div>
         )}
 

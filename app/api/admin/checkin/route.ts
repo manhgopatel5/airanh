@@ -28,6 +28,15 @@ export async function POST(request: Request) {
       timestamp: FieldValue.serverTimestamp(),
     });
 
+    await db.collection('events').doc(eventId).set(
+      {
+        joined: FieldValue.increment(1),
+        checkinCount: FieldValue.increment(1),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: 'Failed', detail: err.message }, { status: 500 });
