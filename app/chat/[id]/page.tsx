@@ -1158,7 +1158,7 @@ useEffect(() => {
               <p className="text-[15px] text-zinc-500">Chưa có liên kết</p>
             </div>
           ) : mediaLinks.map(m => {
-            const url = m.text.match(/(https?:\/\/[^\s]+)/)?.[0] || '';
+const url = (m.text || '').match(/(https?:\/\/[^\s]+)/)?.[0] || '';
             const domain = url? new URL(url).hostname.replace('www.','') : '';
             return (
               <button
