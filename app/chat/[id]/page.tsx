@@ -1170,7 +1170,7 @@ const url = (m.text || '').match(/(https?:\/\/[^\s]+)/)?.[0] || '';
                   <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`} className="w-6 h-6" alt="" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[16px] text-black truncate leading-tight">{m.linkTitle || domain}</p>
+                  <p className="text-[16px] text-black truncate leading-tight">{(m as any).linkTitle || domain}</p>
                   <p className="text-[13px] text-zinc-500 truncate mt-0.5">{url}</p>
                 </div>
               </button>
