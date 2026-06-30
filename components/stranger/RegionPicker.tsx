@@ -4,8 +4,9 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { FiMapPin } from "react-icons/fi";
 import { toast } from "sonner";
-import AddressSearchInput from "@/components/location/AddressSearchInput";
+import StrangerAddressSearch from "@/components/stranger/StrangerAddressSearch";
 import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geolocation";
+import { mapboxReverseGeocode } from "@/lib/mapboxClient";
 import {
   isStrangerRegionValid,
   regionFromMapbox,
@@ -40,10 +41,8 @@ export default function RegionPicker({ value, onChange, className }: Props) {
     setLocating(true);
     try {
       const pos = await getCurrentPosition();
-      const res = await fetch(`/api/places/geocode?lat=${pos.lat}&lng=${pos.lng}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Không xác định được khu vực");
-      applyParsed(data as ParsedMapboxLocation);
+      const parsed = await mapboxReverseGeocode(pos.lat, pos.lng);
+      applyParsed(parsed);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Không lấy được vị trí";
       toast.error(message, { duration: message === GEO_PERMISSION_DENIED_MESSAGE ? 6000 : 4000 });
@@ -71,7 +70,7 @@ export default function RegionPicker({ value, onChange, className }: Props) {
         <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
       </div>
 
-      <AddressSearchInput
+      <StrangerAddressSearch
         value={query}
         onChange={setQuery}
         onSelect={applyParsed}
@@ -80,7 +79,7 @@ export default function RegionPicker({ value, onChange, className }: Props) {
       />
 
       <p className="text-xs leading-relaxed text-zinc-500">
-        Chọn GPS hoặc nhập địa chỉ để tìm người gần khu vực của bạn. Từ chối GPS thì thoát trang rồi vào lại để cấp quyền.
+        Dùng Mapbox để tìm khu vực. Chọn GPS hoặc nhập địa chỉ trước khi tìm người lạ.
       </p>
 
       {isStrangerRegionValid(value) && (

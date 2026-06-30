@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parseMapboxFeature } from "@/lib/mapboxGeocode";
+import { fetchMapboxAutocomplete } from "@/lib/mapboxFetch";
 
 export async function GET(req: NextRequest) {
   const input = req.nextUrl.searchParams.get("input");
@@ -12,17 +12,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Mapbox token not configured" }, { status: 500 });
   }
 
-  const url =
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(input.trim())}.json` +
-    `?access_token=${token}&country=vn&language=vi&limit=6&types=address,poi,place,locality,neighborhood`;
-
   try {
-    const res = await fetch(url);
-    const data = await res.json();
-    const predictions = (data.features ?? [])
-      .map((feature: Parameters<typeof parseMapboxFeature>[0]) => parseMapboxFeature(feature))
-      .filter(Boolean);
-
+    const predictions = await fetchMapboxAutocomplete(input, token);
     return NextResponse.json({ predictions });
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 });

@@ -23,6 +23,7 @@ export function parseMapboxFeature(feature: {
   id?: string;
   place_name?: string;
   text?: string;
+  place_type?: string[];
   center?: [number, number];
   geometry?: { coordinates?: [number, number] };
   context?: MapboxContextItem[];
@@ -33,13 +34,18 @@ export function parseMapboxFeature(feature: {
 
   const [lng, lat] = coords;
   const context = feature.context ?? [];
+  const placeTypes = feature.place_type ?? [];
 
   const ward =
     contextText(context, "neighborhood", "locality") ||
     (feature.id?.startsWith("neighborhood.") || feature.id?.startsWith("locality.") ? feature.text : undefined);
 
   const district = contextText(context, "district", "place");
-  const city = contextText(context, "region");
+  const city =
+    contextText(context, "region") ||
+    contextText(context, "place", "district") ||
+    (feature.id?.startsWith("region.") ? feature.text : undefined) ||
+    (placeTypes.includes("region") || (placeTypes.includes("place") && !district) ? feature.text : undefined);
   const country = contextText(context, "country");
 
   const street = feature.properties?.address || feature.text || "";

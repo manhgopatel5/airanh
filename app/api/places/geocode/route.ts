@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parseMapboxFeature } from "@/lib/mapboxGeocode";
+import { fetchMapboxReverseGeocode } from "@/lib/mapboxFetch";
 
 export async function GET(req: NextRequest) {
   const lat = req.nextUrl.searchParams.get("lat");
@@ -14,23 +14,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Mapbox token not configured" }, { status: 500 });
   }
 
-  const url =
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json` +
-    `?access_token=${token}&language=vi&types=address,poi,neighborhood,locality,place`;
-
   try {
-    const res = await fetch(url);
-    const data = await res.json();
-    const feature = data.features?.[0];
-    if (!feature) {
+    const parsed = await fetchMapboxReverseGeocode(Number(lat), Number(lng), token);
+    if (!parsed) {
       return NextResponse.json({ error: "No results" }, { status: 404 });
     }
-
-    const parsed = parseMapboxFeature(feature);
-    if (!parsed) {
-      return NextResponse.json({ error: "Invalid result" }, { status: 500 });
-    }
-
     return NextResponse.json(parsed);
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 });

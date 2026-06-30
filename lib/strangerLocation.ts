@@ -29,15 +29,17 @@ export function isStrangerRegionValid(region: StrangerRegion): boolean {
 }
 
 export function regionFromMapbox(parsed: ParsedMapboxLocation): StrangerRegion {
-  const province = parsed.city ? normalizeProvinceName(parsed.city) : "";
+  const cityRaw = parsed.city || parsed.district || "";
+  const province = cityRaw ? normalizeProvinceName(cityRaw) : "";
   const displayLabel =
     formatShortLocation({
       ...(parsed.ward ? { ward: parsed.ward } : {}),
       ...(parsed.city ? { city: parsed.city } : {}),
+      ...(parsed.district && !parsed.city ? { city: parsed.district } : {}),
     }) || parsed.address || province;
 
   return {
-    province: parsed.city || province,
+    province: parsed.city || parsed.district || province,
     displayLabel,
     lat: parsed.lat,
     lng: parsed.lng,
