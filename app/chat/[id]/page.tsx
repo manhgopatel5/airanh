@@ -21,7 +21,8 @@ import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
 import SharedTaskMessage from "@/components/chat/SharedTaskMessage";
 import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geolocation";
-import { formatShortLocation } from "@/lib/mapboxGeocode";
+import { formatShortLocation, type ParsedMapboxLocation } from "@/lib/mapboxGeocode";
+import AddressSearchInput from "@/components/location/AddressSearchInput";
 // === LINK PREVIEW ===
 function LinkPreview({ url }: { url: string }) {
   const [data, setData] = useState<any>(null);
@@ -176,6 +177,9 @@ const [showUnpinSheet, setShowUnpinSheet] = useState<any>(null); // thay vì boo
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [locationQuery, setLocationQuery] = useState("");
+  const [locatingGps, setLocatingGps] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
   const [showMedia, setShowMedia] = useState(false);
@@ -632,68 +636,114 @@ const sendFile = async (file: File) => {
 
 
 
-  const sendLocation = async () => {
-  if (!canSendMessage || isBlocked || isDeleted) {
-    toast.error("Không thể nhắn tin");
-    return;
-  }
-  if (!user ||!chatId ||!friendId ||!chatData) {
-    if (!chatData) toast.error("Đang tải dữ liệu chat...");
-    return;
-  }
-
-  setUploading(true);
-  const toastId = toast.loading("Đang lấy vị trí...");
-
-  try {
-    const { lat: latitude, lng: longitude, accuracy } = await getCurrentPosition();
-
-    let address = "Vị trí đã chia sẻ";
-    let ward: string | undefined;
-    let city: string | undefined;
-    try {
-      const res = await fetch(`/api/places/geocode?lat=${latitude}&lng=${longitude}`);
-      const data = await res.json();
-      if (res.ok) {
-        address = data.address || address;
-        ward = data.ward;
-        city = data.city;
-      }
-    } catch {}
+  const postLocationMessage = async (payload: {
+    lat: number;
+    lng: number;
+    address: string;
+    ward?: string;
+    city?: string;
+    accuracy?: number;
+  }) => {
+    if (!user || !chatId || !friendId || !chatData) {
+      if (!chatData) toast.error("Đang tải dữ liệu chat...");
+      return;
+    }
 
     await addDoc(collection(db, "chats", chatId, "messages"), {
       senderId: user.uid,
-      senderName: user.displayName || user.email?.split('@')[0] || 'Bạn',
+      senderName: user.displayName || user.email?.split("@")[0] || "Bạn",
       type: "location",
-      text: '',
-      lat: latitude,
-      lng: longitude,
-      location: { lat: latitude, lng: longitude },
-      address,
-      ward,
-      city,
-      accuracy,
+      text: "",
+      lat: payload.lat,
+      lng: payload.lng,
+      location: { lat: payload.lat, lng: payload.lng },
+      address: payload.address,
+      ...(payload.ward ? { ward: payload.ward } : {}),
+      ...(payload.city ? { city: payload.city } : {}),
+      ...(payload.accuracy != null ? { accuracy: payload.accuracy } : {}),
       createdAt: serverTimestamp(),
       seenBy: [user.uid],
       members: chatData.members,
     });
 
     await updateDoc(doc(db, "chats", chatId), {
-      lastMessage: '📍 Vị trí',
+      lastMessage: "📍 Vị trí",
       lastMessageAt: serverTimestamp(),
     });
+  };
 
-    toast.dismiss(toastId);
-    toast.success("Đã gửi vị trí");
-  } catch (err: unknown) {
-    console.error(err);
-    toast.dismiss(toastId);
-    const message = err instanceof Error ? err.message : "Không lấy được vị trí";
-    toast.error(message, { duration: message === GEO_PERMISSION_DENIED_MESSAGE ? 6000 : 4000 });
-  } finally {
-    setUploading(false);
-  }
-};
+  const sendCurrentLocation = async () => {
+    if (!canSendMessage || isBlocked || isDeleted) {
+      toast.error("Không thể nhắn tin");
+      return;
+    }
+
+    setLocatingGps(true);
+    const toastId = toast.loading("Đang lấy vị trí...");
+
+    try {
+      const { lat, lng, accuracy } = await getCurrentPosition();
+
+      let address = "Vị trí đã chia sẻ";
+      let ward: string | undefined;
+      let city: string | undefined;
+      try {
+        const res = await fetch(`/api/places/geocode?lat=${lat}&lng=${lng}`);
+        const data = await res.json();
+        if (res.ok) {
+          address = data.address || address;
+          ward = data.ward;
+          city = data.city;
+        }
+      } catch {}
+
+      await postLocationMessage({
+        lat,
+        lng,
+        address,
+        ...(ward ? { ward } : {}),
+        ...(city ? { city } : {}),
+        ...(accuracy != null ? { accuracy } : {}),
+      });
+      setShowLocationPicker(false);
+      setLocationQuery("");
+      toast.dismiss(toastId);
+      toast.success("Đã gửi vị trí");
+    } catch (err: unknown) {
+      toast.dismiss(toastId);
+      const message = err instanceof Error ? err.message : "Không lấy được vị trí";
+      toast.error(message, { duration: message === GEO_PERMISSION_DENIED_MESSAGE ? 6000 : 4000 });
+    } finally {
+      setLocatingGps(false);
+    }
+  };
+
+  const sendPickedLocation = async (picked: ParsedMapboxLocation) => {
+    if (!canSendMessage || isBlocked || isDeleted) {
+      toast.error("Không thể nhắn tin");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      await postLocationMessage({
+        lat: picked.lat,
+        lng: picked.lng,
+        address: picked.address,
+        ...(picked.ward ? { ward: picked.ward } : {}),
+        ...(picked.city ? { city: picked.city } : {}),
+      });
+      setShowLocationPicker(false);
+      setLocationQuery(picked.address);
+      toast.success("Đã gửi vị trí");
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error("Lỗi gửi vị trí");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const toggleReaction = async (msgId: string, emoji: string) => {
     if (!user ||!chatId) return;
 
@@ -1924,6 +1974,59 @@ const isColor = bg.url?.startsWith('#');
         </div>
       )}
 
+{/* LOCATION PICKER */}
+{showLocationPicker && !isBlocked && !isDeleted && (
+  <div className="shrink-0 z-30 mx-3 mb-2 rounded-2xl border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="mb-2 flex items-center justify-between">
+      <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Gửi vị trí</p>
+      <button
+        type="button"
+        onClick={() => setShowLocationPicker(false)}
+        className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        aria-label="Đóng"
+      >
+        <X size={16} />
+      </button>
+    </div>
+
+    <button
+      type="button"
+      onClick={sendCurrentLocation}
+      disabled={locatingGps || uploading}
+      className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0084FF] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+    >
+      {locatingGps ? (
+        <>
+          <Loader2 size={16} className="animate-spin" />
+          Đang lấy vị trí...
+        </>
+      ) : (
+        <>
+          <Navigation size={16} />
+          Gửi vị trí hiện tại
+        </>
+      )}
+    </button>
+
+    <div className="relative mb-3 flex items-center gap-2">
+      <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+      <span className="shrink-0 text-[11px] font-semibold text-zinc-500">hoặc bạn dùng địa chỉ khác</span>
+      <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+    </div>
+
+    <AddressSearchInput
+      value={locationQuery}
+      onChange={setLocationQuery}
+      onSelect={sendPickedLocation}
+      placeholder="Nhập địa chỉ..."
+      inputClassName="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm outline-none focus:border-[#0084FF] dark:border-zinc-700 dark:bg-zinc-800"
+    />
+    <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
+      Chọn địa chỉ từ gợi ý để gửi. Nếu từ chối GPS, thoát chat rồi vào lại để cấp quyền.
+    </p>
+  </div>
+)}
+
 {/* INPUT */}
 <div
   className="shrink-0 z-30 px-3 relative"
@@ -1943,11 +2046,13 @@ const isColor = bg.url?.startsWith('#');
 
     {/* 2. Vị trí */}
     <button
-      onClick={sendLocation}
+      onClick={() => setShowLocationPicker((v) => !v)}
       disabled={isBlocked || isDeleted}
-      className={`w-8 h-8 flex items-center justify-center rounded-full active:scale-90 shrink-0 ${isBlocked || isDeleted? 'opacity-40' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+      className={`w-8 h-8 flex items-center justify-center rounded-full active:scale-90 shrink-0 ${
+        showLocationPicker ? "bg-[#0084FF]/15" : ""
+      } ${isBlocked || isDeleted ? "opacity-40" : "hover:bg-zinc-100 dark:hover:bg-zinc-800"}`}
     >
-      <MapPin size={20} className="text-[#0084FF]" strokeWidth={2.2} />
+      <MapPin size={20} className={showLocationPicker ? "text-[#0084FF]" : "text-[#0084FF]"} strokeWidth={2.2} />
     </button>
 
     {/* 3. File desktop */}

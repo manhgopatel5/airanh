@@ -32,6 +32,7 @@ import { createPlan, createTask } from "@/lib/task";
 import { useAuth } from "@/lib/AuthContext";
 import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geolocation";
 import { formatShortLocation, type ParsedMapboxLocation } from "@/lib/mapboxGeocode";
+import AddressSearchInput from "@/components/location/AddressSearchInput";
 
 type Mode = "task" | "plan";
 
@@ -297,10 +298,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const [saving, setSaving] = useState(false);
 
   const [showPreview, setShowPreview] = useState(false);
-  const [placeSuggestions, setPlaceSuggestions] = useState<ParsedMapboxLocation[]>([]);
   const [locating, setLocating] = useState(false);
-
-const debounceRef = useRef<NodeJS.Timeout>();
 
 const isTask = mode === "task";
 const previewTask = useMemo(() => ({
@@ -459,7 +457,6 @@ useEffect(() => {
         lng: parsed.lng,
       },
     }));
-    setPlaceSuggestions([]);
   }, []);
 
   const handleSendLocation = useCallback(async () => {
@@ -480,20 +477,6 @@ useEffect(() => {
     }
   }, [locating, applyParsedLocation]);
 
-  const searchPlaces = useCallback(async (query: string) => {
-    if (query.length < 2) {
-      setPlaceSuggestions([]);
-      return;
-    }
-    try {
-      const res = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      setPlaceSuggestions((data.predictions as ParsedMapboxLocation[]) || []);
-    } catch {
-      setPlaceSuggestions([]);
-    }
-  }, []);
-
   const handleAddressChange = (value: string) => {
     setForm((prev) => {
       const { lat: _lat, lng: _lng, ...rest } = prev.location;
@@ -507,8 +490,6 @@ useEffect(() => {
         },
       };
     });
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => searchPlaces(value), 400);
   };
 
 const handleCategoryChange = (catId: string) => {
@@ -825,32 +806,19 @@ await mutate("/api/tasks?type=plan&limit=20");
           Bấm để dùng GPS. Nếu lỡ từ chối quyền định vị, thoát trang rồi vào lại để cho phép.
         </p>
 
-        <div className="relative">
-          <input
-            value={form.location.address}
-            onChange={(e) => handleAddressChange(e.target.value)}
-            onBlur={() => blur("location")}
-            placeholder="Hoặc tìm địa chỉ cụ thể..."
-            className="input-premium"
-          />
-          {placeSuggestions.length > 0 && (
-            <div className="absolute top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
-              {placeSuggestions.map((s, i) => (
-                <button
-                  key={`${s.lat}-${s.lng}-${i}`}
-                  type="button"
-                  onClick={() => applyParsedLocation(s)}
-                  className="w-full border-b border-zinc-100 px-4 py-3 text-left last:border-0 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
-                >
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{s.address}</p>
-                  <p className="mt-0.5 text-xs text-zinc-500">
-                    {formatShortLocation({ ward: s.ward, city: s.city }) || "Việt Nam"}
-                  </p>
-                </button>
-              ))}
-            </div>
-          )}
+        <div className="relative my-4 flex items-center gap-3">
+          <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+          <span className="shrink-0 text-xs font-bold text-zinc-500">hoặc bạn dùng địa chỉ khác</span>
+          <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
         </div>
+
+        <AddressSearchInput
+          value={form.location.address}
+          onChange={handleAddressChange}
+          onSelect={applyParsedLocation}
+          onBlur={() => blur("location")}
+          placeholder="Nhập địa chỉ cụ thể..."
+        />
 
         {(form.location.wardName || form.location.provinceName) && (
           <div className="mt-3 rounded-xl bg-zinc-50 px-3 py-2.5 text-sm dark:bg-zinc-900/60">
