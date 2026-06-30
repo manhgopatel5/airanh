@@ -135,7 +135,7 @@ const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 const [showBgPicker, setShowBgPicker] = useState(false);
-
+const [showPinned, setShowPinned] = useState(false);
   const handleDeleteMessage = async (msgId: string) => {
   if (!chatId) return;
   await deleteDoc(doc(db, "chats", chatId, "messages", msgId));
@@ -818,23 +818,10 @@ useEffect(() => {
 
   <Toaster richColors position="top-center" />
 {showSearch && (
-  <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center">
-    {/* Backdrop */}
-    <div
-      className="absolute inset-0 bg-black/70 backdrop-blur-md"
-      onClick={() => { setShowSearch(false); setSearchQuery(''); }}
-    />
-
-    {/* Sheet */}
-    <div className="relative w-full sm:max-w-[420px] bg-[#0f0f10] sm:rounded-2xl rounded-t- shadow-2xl animate-in slide-in-from-bottom duration-300 max-h- flex-col border border-white/10">
-
-      {/* Handle */}
-      <div className="flex justify-center pt-2.5 sm:hidden">
-        <div className="w-10 h-1 bg-white/20 rounded-full" />
-      </div>
-
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-3 pb-3 border-b border-white/5">
+  <div className="fixed inset-0 z-[200] bg-black flex flex-col">
+    {/* HEADER */}
+    <div className="shrink-0 bg-[#1c1c1e] border-b border-white/10" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
+      <div className="flex items-center gap-3 px-3 py-2.5">
         <div className="flex-1 relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
           <input
@@ -849,13 +836,13 @@ useEffect(() => {
               if (e.key === 'Enter' && searchQuery) { goToNextResult(); }
             }}
             placeholder="Tìm trong cuộc trò chuyện"
-            className="w-full h-9 pl-9 pr-8 bg-[#1c1c1e] text- text-white placeholder:text-white/40 rounded-lg outline-none border border-transparent focus:border-[#0A84FF]/50 focus:bg-[#1e1e20] transition"
+            className="w-full h-9 pl-9 pr-8 bg-[#2c2c2e] text-[15px] text-white placeholder:text-white/40 rounded-lg outline-none"
             autoFocus
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/15 flex items-center justify-center"
             >
               <X size={12} className="text-white/70" />
             </button>
@@ -863,110 +850,101 @@ useEffect(() => {
         </div>
         <button
           onClick={() => { setShowSearch(false); setSearchQuery(''); }}
-          className="text-[#0A84FF] text- font-medium px-1 active:opacity-60"
+          className="text-[#0A84FF] text-[17px] font-normal active:opacity-60"
         >
           Hủy
         </button>
       </div>
 
-      {/* Thanh kết quả */}
+      {/* THANH ĐẾM */}
       {searchQuery && (
-        <div className="flex items-center justify-between px-4 py-2.5 bg-[#0a0a0b]/50 border-b border-white/5">
-          <span className="text- text-white/55">
+        <div className="flex items-center justify-between px-4 py-2 border-t border-white/5">
+          <span className="text-[14px] text-white/55">
             {filteredMessages.length > 0
             ? `${currentResultIndex + 1} / ${filteredMessages.length}`
               : 'Không tìm thấy'}
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <button
               onClick={goToPrevResult}
               disabled={filteredMessages.length === 0}
-              className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/15 disabled:opacity-30 flex items-center justify-center active:scale-95 transition"
+              className="w-7 h-7 rounded-md bg-white/10 disabled:opacity-30 flex items-center justify-center active:scale-95"
             >
               <ChevronUp size={16} className="text-white/80" />
             </button>
             <button
               onClick={goToNextResult}
               disabled={filteredMessages.length === 0}
-              className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/15 disabled:opacity-30 flex items-center justify-center active:scale-95 transition"
+              className="w-7 h-7 rounded-md bg-white/10 disabled:opacity-30 flex items-center justify-center active:scale-95"
             >
               <ChevronDown size={16} className="text-white/80" />
             </button>
           </div>
         </div>
       )}
+    </div>
 
-      {/* LIST KẾT QUẢ - ĐÃ FIX */}
-      <div className="flex-1 overflow-y-auto min-h-">
-        {!searchQuery? (
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
-              <Search size={20} className="text-white/30" />
-            </div>
-            <p className="text-white/60 text-">Tìm kiếm tin nhắn</p>
-            <p className="text-white/40 text- mt-1">Nhập từ khóa để bắt đầu</p>
+    {/* LIST */}
+    <div className="flex-1 overflow-y-auto bg-black">
+      {!searchQuery? (
+        <div className="flex flex-col items-center justify-center h-full -mt-20 px-4">
+          <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-3">
+            <Search size={24} className="text-white/30" />
           </div>
-        ) : filteredMessages.length === 0? (
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <p className="text-white/40 text-">Không có kết quả cho "{searchQuery}"</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-white/5">
-            {filteredMessages.map((msg, idx) => {
-              const isMe = msg.senderId === user?.uid;
-              const preview = msg.text || (msg.image? '📷 Hình ảnh' : msg.file? '📎 Tệp' : msg.type === 'location'? '📍 Vị trí' : 'Tin nhắn');
+          <p className="text-[15px] text-white/60">Tìm kiếm tin nhắn</p>
+        </div>
+      ) : filteredMessages.length === 0? (
+        <div className="pt-20 text-center px-4">
+          <p className="text-[15px] text-white/40">Không có kết quả cho "{searchQuery}"</p>
+        </div>
+      ) : (
+        <div>
+          {filteredMessages.map((msg, idx) => {
+            const isMe = msg.senderId === user?.uid;
+            const preview = msg.text || (msg.image? '📷 Hình ảnh' : msg.file? '📎 Tệp' : 'Tin nhắn');
 
-              return (
-                <button
-                  key={msg.id}
-                  onClick={() => {
-                    setShowSearch(false);
-                    setSearchQuery('');
-                    // Jump to message
-                    setTimeout(() => {
-                      const el = document.getElementById(`msg-${msg.id}`);
-                      if (el) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        el.classList.add('animate-pulse');
-                        const bubble = el.querySelector('[class*="bg-gradient"], [class*="bg-white"], [class*="bg-zinc"]');
-                        bubble?.classList.add('ring-2', 'ring-[#0A84FF]');
-                        setTimeout(() => {
-                          el.classList.remove('animate-pulse');
-                          bubble?.classList.remove('ring-2', 'ring-[#0A84FF]');
-                        }, 2000);
-                      }
-                    }, 150);
-                  }}
-                  className={`w-full text-left px-4 py-3 hover:bg-white/[0.04] active:bg-white/[0.06] transition ${
-                    idx === currentResultIndex? 'bg-[#0A84FF]/15' : ''
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-<img 
-  src={isMe? (user?.photoURL || '/default-avatar.png') : (friend?.avatar || '/default-avatar.png')} 
-  className="w-8 h-8 rounded-full mt-0.5 flex-shrink-0 object-cover" 
-  alt=""
-/>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text- font-medium text-white/90 truncate">
-                          {isMe? 'Bạn' : friend?.name}
-                        </span>
-                        <span className="text- text-white/40 flex-shrink-0">
-                          {formatTime(msg.createdAt)}
-                        </span>
-                      </div>
-                      <p className="text- text-white/70 mt-0.5 line-clamp-2 break-words">
-                        {preview}
-                      </p>
+            return (
+              <button
+                key={msg.id}
+                onClick={() => {
+                  setShowSearch(false);
+                  setSearchQuery('');
+                  setTimeout(() => {
+                    const el = document.getElementById(`msg-${msg.id}`);
+                    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el?.classList.add('ring-2', 'ring-[#0A84FF]/60');
+                    setTimeout(() => el?.classList.remove('ring-2', 'ring-[#0A84FF]/60'), 1500);
+                  }, 100);
+                }}
+                className={`w-full text-left px-4 py-3 border-b border-white/5 active:bg-white/5 ${
+                  idx === currentResultIndex? 'bg-[#0A84FF]/20' : ''
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <img
+                    src={isMe? (user?.photoURL || '/default-avatar.png') : (friend?.avatar || '/default-avatar.png')}
+                    className="w-9 h-9 rounded-full object-cover mt-0.5"
+                    alt=""
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-[15px] font-medium text-white truncate">
+                        {isMe? 'Bạn' : friend?.name}
+                      </span>
+                      <span className="text-[13px] text-white/40">
+                        {formatTime(msg.createdAt)}
+                      </span>
                     </div>
+                    <p className="text-[14px] text-white/65 mt-1 line-clamp-2">
+                      {preview}
+                    </p>
                   </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   </div>
 )}
@@ -1031,71 +1009,71 @@ useEffect(() => {
   </div>
 </div>
 
-{/* PINNED - Pro UI */}
-{chatData?.pinnedMessage && (
-  <div className="sticky top- z-30 px-3 pt-2">
-    <div className="group relative overflow-hidden rounded-2xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/85 dark:bg-[#1c1405]/70 backdrop-blur-2xl shadow-[0_4px_12px_-4px_rgba(245,158,11,0.2)]">
-      {/* viền trái gradient */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-400 via-amber-500 to-orange-500" />
-
-      <div className="flex items-center gap-2.5 pl-3.5 pr-2 py-2.5">
-        <div className="w-8 h-8 rounded-xl bg-amber-500/15 dark:bg-amber-500/20 flex items-center justify-center shrink-0">
-          <Pin size={15} className="text-amber-600 dark:text-amber-400" strokeWidth={2.5} />
-        </div>
-
-        {/* Bấm để nhảy tới tin nhắn */}
-        <button
-          onClick={() => {
-            const el = document.getElementById(`msg-${(chatData as any).pinnedMessage.id}`);
-            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el?.classList.add('ring-2','ring-amber-400','transition');
-            setTimeout(() => el?.classList.remove('ring-2','ring-amber-400'), 1500);
-          }}
-          className="flex-1 min-w-0 text-left"
-        >
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="text- font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wider">Đã ghim</span>
-            {(chatData as any).pinnedMessage?.by && (
-              <span className="text- text-zinc-500 dark:text-zinc-400">• {(chatData as any).pinnedMessage.by}</span>
-            )}
-          </div>
-
-          <p className="text- text-zinc-800 dark:text-zinc-100 truncate leading-snug group-hover:underline decoration-dotted underline-offset-2">
-            {(chatData as any).pinnedMessage?.text ||
-             (chatData as any).pinnedMessage?.image? '📷 Hình ảnh' :
-             (chatData as any).pinnedMessage?.file? '📎 Tệp đính kèm' : 'Tin nhắn'}
-          </p>
-        </button>
-
-        {/* Actions */}
-        <div className="flex items-center">
-          <button
-            onClick={() => {
-              const el = document.getElementById(`msg-${(chatData as any).pinnedMessage.id}`);
-              el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }}
-            className="w-7 h-7 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center active:scale-90 transition"
-            title="Đi đến tin nhắn"
-          >
-            <ChevronDown size={16} className="text-zinc-500 rotate-[-90deg]" />
-          </button>
-
-          <button
-            onClick={async () => {
-              await updateDoc(doc(db, "chats", chatId), { pinnedMessage: null });
-              toast.success('Đã bỏ ghim');
-            }}
-            className="w-7 h-7 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center active:scale-90 transition"
-            title="Bỏ ghim"
-          >
-            <X size={15} className="text-zinc-500" />
-          </button>
-        </div>
+{showPinned && (
+  <div className="fixed inset-0 z-[200] bg-black flex flex-col">
+    {/* Header */}
+    <div className="shrink-0 bg-[#1c1c1e] border-b border-white/10" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
+      <div className="flex items-center justify-between px-4 h-11">
+        <button onClick={() => setShowPinned(false)} className="text-[#0A84FF] text-">Đóng</button>
+        <span className="text- font-semibold text-white">Tin nhắn đã ghim</span>
+        <div className="w-10" />
       </div>
     </div>
+
+    {/* List */}
+  <div className="flex-1 overflow-y-auto bg-black">
+  {!chatData?.pinnedMessage ? (
+    <div className="pt-20 text-center">
+      <Pin size={32} className="mx-auto text-white/20 mb-3" />
+      <p className="text-white/40 text-sm">Chưa có tin nhắn nào được ghim</p>
+    </div>
+  ) : (
+    <button
+      onClick={() => {
+        setShowPinned(false);
+        setTimeout(() => {
+          const el = document.getElementById(`msg-${(chatData as any).pinnedMessage.id}`);
+          el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el?.classList.add('ring-2','ring-white/30');
+          setTimeout(() => el?.classList.remove('ring-2','ring-white/30'), 1200);
+        }, 100);
+      }}
+      className="w-full text-left px-4 py-3 border-b border-white/5 active:bg-white/5"
+    >
+      <div className="flex items-start gap-3">
+        <img
+          src={(chatData as any).pinnedMessage.senderId === user?.uid 
+            ? (user?.photoURL || '/default-avatar.png') 
+            : (friend?.avatar || '/default-avatar.png')}
+          className="w-9 h-9 rounded-full object-cover mt-0.5"
+          alt=""
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm font-medium text-white">
+              {(chatData as any).pinnedMessage.senderId === user?.uid ? 'Bạn' : friend?.name}
+            </span>
+            <span className="text-xs text-white/40">
+              {formatTime((chatData as any).pinnedMessage.createdAt)}
+            </span>
+          </div>
+          <p className="text-sm text-white/70 mt-1 line-clamp-2">
+            {(chatData as any).pinnedMessage.text || 
+             ((chatData as any).pinnedMessage.image ? '📷 Hình ảnh' : 
+              (chatData as any).pinnedMessage.file ? '📎 Tệp đính kèm' : 'Tin nhắn'))}
+          </p>
+          {(chatData as any).pinnedMessage.by && (
+            <p className="text-xs text-white/40 mt-1">
+              Ghim bởi {(chatData as any).pinnedMessage.by}
+            </p>
+          )}
+        </div>
+      </div>
+    </button>
+  )}
+</div>
   </div>
 )}
-
 {/* Action Menu */}
 {longPressMsg && (
   <div className="fixed inset-0 z-[200] flex items-end justify-center sm:items-center">
@@ -1447,9 +1425,25 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
                           </button>
                         </>
                       )}
-                      <button onClick={() => pinMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                        <Pin size={16} />
-                      </button>
+                   <button
+  onClick={() => handlePinMessage(m)}
+  className={`p-1.5 rounded-full transition ${
+    (chatData as any)?.pinnedMessage?.id === m.id
+      ? 'bg-[#0A84FF]/20 hover:bg-[#0A84FF]/30'
+      : 'hover:bg-white/10 active:bg-white/15'
+  }`}
+  title={(chatData as any)?.pinnedMessage?.id === m.id ? 'Bỏ ghim' : 'Ghim tin nhắn'}
+>
+  <Pin 
+    size={16} 
+    className={`transition ${
+      (chatData as any)?.pinnedMessage?.id === m.id
+        ? 'text-[#0A84FF] fill-[#0A84FF]/30'
+        : 'text-white/60 hover:text-white/90'
+    }`}
+    strokeWidth={2}
+  />
+</button>
                       <button onClick={() => { navigator.clipboard.writeText(m.text ?? ''); toast.success("Đã copy"); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
                         <Copy size={16} />
                       </button>
