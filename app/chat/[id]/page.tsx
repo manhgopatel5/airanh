@@ -41,6 +41,8 @@ type Message = {
   senderId: string;
   senderName?: string; // <-- thêm
   createdAt: Timestamp | null;
+fileUrl?: string;
+ imageUrl?: string;
   seenBy?: string[];
   replyTo?: {
     id: string;
