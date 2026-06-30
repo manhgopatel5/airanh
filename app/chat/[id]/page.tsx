@@ -1581,34 +1581,23 @@ onClick={(e) => {
   </div>
 
 ) : (m.type === 'location' || m.location)? (
-  // === LOCATION: KHÔNG BUBBLE XANH ===
+  // LOCATION - không bubble
   (() => {
     const lat = Number(m.lat?? m.location?.lat?? 0);
     const lng = Number(m.lng?? m.location?.lng?? 0);
     if (!lat ||!lng) return null;
-
     return (
       <div className="relative">
-        <a
-          href={`https://www.google.com/maps?q=${lat},${lng}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-[180px]"
-        >
+        <a href={`https://www.google.com/maps?q=${lat},${lng}`} target="_blank" rel="noopener noreferrer" className="block w-[180px]">
           <div className="overflow-hidden rounded-2xl shadow-md">
             <div className="relative h-[110px] w-full bg-zinc-200">
-              <img
-                src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},16/360x220@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`}
-                className="w-full h-full object-cover"
-                alt=""
-              />
+              <img src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},16/360x220@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`} className="w-full h-full object-cover" alt="" />
             </div>
             <div className="bg-white dark:bg-zinc-900 px-2.5 py-2">
-              {/* BỎ dòng "Vị trí đã chia sẻ" */}
-            <p className="text-[10px] leading-none flex items-center justify-center gap-1 text-zinc-500 dark:text-zinc-400">
-  <Navigation size={10} strokeWidth={2.5} />
-  Nhấn để mở bản đồ
-</p>
+              <p className="text-[10px] leading-none flex items-center justify-center gap-1 text-zinc-500 dark:text-zinc-400">
+                <Navigation size={10} strokeWidth={2.5} />
+                Nhấn để mở bản đồ
+              </p>
             </div>
           </div>
         </a>
@@ -1616,44 +1605,40 @@ onClick={(e) => {
     );
   })()
 
+) : (m.type === 'image' || m.image || m.imageUrl)? (
+  // ẢNH - KHÔNG BUBBLE, giống location
+  <div className="relative">
+    <img
+      src={(m as any).imageUrl || (m as any).image}
+      className="max-w-[260px] max-h-[380px] w-auto h-auto rounded-[18px] object-cover shadow-sm block"
+      alt="sent"
+      loading="lazy"
+      onContextMenu={(e) => { e.preventDefault(); setShowEmojiPicker(m.id); }}
+    />
+  </div>
+
 ) : (
-  // === TIN NHẮN THƯỜNG: giữ bubble ===
+  // TEXT / FILE - giữ bubble
   <div
     className={`px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer rounded-2xl ${
-      isMe
-      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
-        : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+      isMe? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white" : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
     }`}
-    onContextMenu={(e) => {
-      e.preventDefault();
-      setShowEmojiPicker(m.id);
-    }}
+    onContextMenu={(e) => { e.preventDefault(); setShowEmojiPicker(m.id); }}
   >
-   {((m as any).image || (m as any).imageUrl) && (
-  <img
-    src={(m as any).imageUrl || (m as any).image}
-    className="rounded-2xl max-w-[240px] max-h-[320px] w-auto h-auto object-cover mb-1 block"
-    alt="sent"
-    loading="lazy"
-  />
-)}
-
-{m.file && (
-  <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl mb-1">
-    <Paperclip size={16} />
-    <span className="text-sm truncate">{(m as any).fileName || 'Tệp'}</span>
-  </a>
-)}
-
-{m.text && (
-  <p className="text- leading-snug whitespace-pre-wrap break-words">
-    {m.text}
-    {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
-  </p>
-)}
+    {m.file && (
+      <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
+        <Paperclip size={16} />
+        <span className="text-sm truncate">{(m as any).fileName || 'Tệp'}</span>
+      </a>
+    )}
+    {m.text && (
+      <p className="text-[15px] leading-snug whitespace-pre-wrap break-words">
+        {m.text}
+        {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
+      </p>
+    )}
   </div>
 )}
-
                     {m.reactions && m.reactions.length > 0 && (
                       <div className="flex gap-1 mt-1 px-1">
                         {m.reactions.map((r) => (
