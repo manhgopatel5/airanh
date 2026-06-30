@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { adminAuth } from '@/lib/firebase-admin'
 import { getFirestore } from 'firebase-admin/firestore'
+import { isGuestBrowsableRoute } from '@/components/auth/authRoutes'
 
 const PUBLIC_ROUTES = [
   '/login', 
@@ -43,7 +44,7 @@ export async function middleware(request: NextRequest) {
 
   // 2. Chưa login
   if (!token) {
-    if (!isPublicRoute) {
+    if (!isPublicRoute && !isGuestBrowsableRoute(pathname)) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)

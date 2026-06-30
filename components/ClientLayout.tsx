@@ -5,7 +5,7 @@ import FCMProvider from "@/components/FCMProvider";
 import { useEffect, useMemo } from "react";
 import { Toaster } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
-import { isAuthPublicRoute } from "@/components/auth/authRoutes";
+import { isGuestBrowsableRoute } from "@/components/auth/authRoutes";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -18,7 +18,7 @@ export default function ClientLayout({ children }: Props) {
   const { user, userData, loading } = useAuth();
 
   const isPublic = useMemo(
-    () => isAuthPublicRoute(pathname),
+    () => isGuestBrowsableRoute(pathname),
     [pathname]
   );
   const isHomeShell = pathname === "/";
@@ -26,12 +26,15 @@ export default function ClientLayout({ children }: Props) {
   useEffect(() => {
     if (loading) return;
 
-    if (!user &&!isPublic) {
+    if (!user && !isPublic) {
       router.replace("/login");
       return;
     }
 
-    if (user && isPublic && !pathname.startsWith("/verify-email") && pathname !== "/onboarding" && pathname !== "/login" && pathname !== "/register") {
+    if (
+      user &&
+      (pathname === "/login" || pathname === "/register" || pathname === "/forgot-password")
+    ) {
       router.replace("/");
       return;
     }

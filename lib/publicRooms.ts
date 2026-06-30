@@ -10,16 +10,22 @@ export type PublicCityMeta = {
   imageUrl: string;
 };
 
-const bg = {
-  hcm: "b6e3f4",
-  hn: "ffd5dc",
-  dn: "c0f7db",
-  ct: "d1f4d1",
-  hp: "e8d5ff",
-  dl: "ffcce1",
-  nt: "cce7ff",
-  hue: "f0d9ff",
-} as const;
+function avatar(
+  style: "adventurer" | "lorelei" | "micah",
+  seed: string,
+  bg: string,
+  traits = ""
+): string {
+  const q = new URLSearchParams({
+    seed,
+    backgroundColor: bg,
+    radius: "14",
+    size: "256",
+  });
+  const extra = new URLSearchParams(traits);
+  extra.forEach((value, key) => q.set(key, value));
+  return `https://api.dicebear.com/7.x/${style}/png?${q.toString()}`;
+}
 
 export const PUBLIC_CITIES: PublicCityMeta[] = [
   {
@@ -27,11 +33,11 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     name: "SÀI GÒN",
     emoji: "🏙️",
     color: "from-blue-500 to-cyan-500",
-    tag: "SÔI ĐỘNG",
+    tag: "PHỐ SÁNG",
     tagColor: "from-blue-500 to-cyan-400",
     region: "south",
-    desc: "Phòng chat công cộng Sài Gòn — gặp gỡ, trò chuyện và kết nối mọi người.",
-    imageUrl: `https://api.dicebear.com/7.x/lorelei/png?seed=saigon&backgroundColor=${bg.hcm}&radius=12&size=256`,
+    desc: "Năng lượng phố không ngủ",
+    imageUrl: avatar("adventurer", "hcm-saigon", "b6e3f4", "hair=short03&glasses=variant05"),
   },
   {
     id: "hn",
@@ -41,8 +47,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     tag: "THỦ ĐÔ",
     tagColor: "from-orange-500 to-red-400",
     region: "north",
-    desc: "Không gian chat Thủ đô — chia sẻ câu chuyện và tìm bạn mới.",
-    imageUrl: `https://api.dicebear.com/7.x/lorelei/png?seed=hanoi&backgroundColor=${bg.hn}&radius=12&size=256`,
+    desc: "Nghìn năm văn hiến",
+    imageUrl: avatar("lorelei", "hn-thang-long", "fde68a", "hair=variant04&clothing=variant02"),
   },
   {
     id: "dn",
@@ -52,8 +58,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     tag: "BIỂN XANH",
     tagColor: "from-teal-500 to-emerald-400",
     region: "central",
-    desc: "Phòng chat miền Trung — thư giãn và trò chuyện cùng cộng đồng.",
-    imageUrl: `https://api.dicebear.com/7.x/lorelei/png?seed=danang&backgroundColor=${bg.dn}&radius=12&size=256`,
+    desc: "Biển xanh, cầu Vàng",
+    imageUrl: avatar("micah", "dn-cau-rong", "99f6e4", "hair=fonze&glasses=round&shirt=open"),
   },
   {
     id: "ct",
@@ -63,8 +69,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     tag: "MIỀN TÂY",
     tagColor: "from-green-500 to-lime-400",
     region: "south",
-    desc: "Gặp gỡ bạn bè miền Tây sông nước trong phòng chat ấm áp.",
-    imageUrl: `https://api.dicebear.com/7.x/lorelei/png?seed=cantho&backgroundColor=${bg.ct}&radius=12&size=256`,
+    desc: "Chợ nổi, sông nước",
+    imageUrl: avatar("adventurer", "ct-mekong", "bbf7d0", "hair=short01&features=freckles"),
   },
   {
     id: "hp",
@@ -74,19 +80,19 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     tag: "CẢNG BIỂN",
     tagColor: "from-purple-500 to-pink-400",
     region: "north",
-    desc: "Trò chuyện cùng cộng đồng Hải Phòng năng động.",
-    imageUrl: `https://api.dicebear.com/7.x/lorelei/png?seed=haiphong&backgroundColor=${bg.hp}&radius=12&size=256`,
+    desc: "Hoa phượng, cảng biển",
+    imageUrl: avatar("adventurer", "hp-cang", "e9d5ff", "hair=short05&glasses=variant02"),
   },
   {
     id: "dl",
     name: "ĐÀ LẠT",
     emoji: "🌸",
     color: "from-pink-500 to-rose-500",
-    tag: "THƠ MỘNG",
+    tag: "NGÀN HOA",
     tagColor: "from-pink-500 to-rose-400",
     region: "central",
-    desc: "Phòng chat thành phố ngàn hoa — chill và kết bạn.",
-    imageUrl: `https://api.dicebear.com/7.x/lorelei/png?seed=dalat&backgroundColor=${bg.dl}&radius=12&size=256`,
+    desc: "Sương mù, thông reo",
+    imageUrl: avatar("lorelei", "dl-thanh-pho-hoa", "ffcce1", "hair=variant08&clothing=variant03"),
   },
   {
     id: "nt",
@@ -96,8 +102,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     tag: "BIỂN ĐẸP",
     tagColor: "from-sky-500 to-blue-400",
     region: "central",
-    desc: "Chat cùng những người yêu biển và du lịch Nha Trang.",
-    imageUrl: `https://api.dicebear.com/7.x/lorelei/png?seed=nhatrang&backgroundColor=${bg.nt}&radius=12&size=256`,
+    desc: "Cát vàng, nắng ấm",
+    imageUrl: avatar("micah", "nt-bien", "bae6fd", "hair=pixie&mouth=smile&shirt=open"),
   },
   {
     id: "hue",
@@ -107,8 +113,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     tag: "CỐ ĐÔ",
     tagColor: "from-violet-500 to-purple-400",
     region: "central",
-    desc: "Không gian trò chuyện cổ kính và thân thiện tại Huế.",
-    imageUrl: `https://api.dicebear.com/7.x/lorelei/png?seed=hue&backgroundColor=${bg.hue}&radius=12&size=256`,
+    desc: "Cố đô trầm lắng",
+    imageUrl: avatar("lorelei", "hue-imperial", "ddd6fe", "hair=variant06&clothing=variant01"),
   },
 ];
 

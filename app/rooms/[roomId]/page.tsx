@@ -53,7 +53,7 @@ type UserData = {
 
 export default function ChatRoom() {
   const { roomId } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const db = getFirebaseDB();
   const rtdb = getFirebaseRTDB();
   const router = useRouter();
@@ -126,6 +126,13 @@ const deleteMessage = async (msgId: string) => {
     const atBottom = scrollHeight - scrollTop - clientHeight < 150;
     setIsAtBottom(atBottom);
   }, []);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user?.uid && roomId) {
+      router.replace(`/login?redirect=${encodeURIComponent(`/rooms/${roomId}`)}`);
+    }
+  }, [authLoading, user?.uid, roomId, router]);
 
   useEffect(() => {
     if (isAtBottom && messagesContainerRef.current) {
