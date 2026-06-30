@@ -1752,26 +1752,28 @@ onClick={(e) => {
 
    {/* Ô nhập */}
 <div className="flex-1 relative h-full flex items-center">
-  <input
-    ref={inputRef}
-    value={text}
-    onChange={(e) => { setText(e.target.value); handleTyping(); }}
-    onKeyDown={(e) => { 
-      if (e.key === 'Enter' && !e.shiftKey) { 
-        e.preventDefault(); 
-        if (!isBlocked && !isDeleted && text.trim()) sendMessage(); 
-      } 
-    }}
-    disabled={isBlocked || isDeleted}
-    placeholder={
-      isBlocked
+<input
+  ref={inputRef}
+  value={text}
+  onChange={(e) => { setText(e.target.value); handleTyping(); }}
+  onKeyDown={(e) => { 
+    if (e.key === 'Enter' && !e.shiftKey) { 
+      e.preventDefault(); 
+      if (!isBlocked && !isDeleted && text.trim()) sendMessage(); 
+    } 
+  }}
+  disabled={isBlocked || isDeleted}
+  placeholder={
+    isTyping 
+      ? '' // Ẩn "Nhắn tin..." khi đang có người nhắn
+      : isBlocked
         ? 'Bạn không thể nhắn tin'
         : isDeleted
           ? 'Đã xóa'
           : 'Nhắn tin...'
-    }
-    className="w-full h-full bg-transparent outline-none border-0 text- text-zinc-900 dark:text-white placeholder:text-zinc-400 pr-9"
-  />
+  }
+  className="w-full h-full bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus:border-transparent text- text-zinc-900 dark:text-white placeholder:text-zinc-400 pr-9"
+/>
   
   {/* Hiệu ứng đang nhắn chạy từng chữ */}
   {isTyping && !text && (
@@ -1794,33 +1796,61 @@ onClick={(e) => {
   </div>
 </div>
 {/* SETTINGS SHEET */}
-{showSettings && (
-  <div
-    className="fixed inset-0 bg-black/40 backdrop-blur-xl z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4"
-    onClick={() => setShowSettings(false)}
-  >
-    <div
-      className="bg-white w-full sm:max-w-[400px] h-[92vh] sm:h-auto sm:max-h-[85vh] sm:rounded-[28px] rounded-t-[28px] overflow-hidden flex flex-col shadow-2xl border border-zinc-200"
-      onClick={e => e.stopPropagation()}
+{/* PROFILE HEADER */}
+<div className="px-5 pt-5 pb-6 flex flex-col items-center text-center bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800">
+  <div className="relative">
+    <div className="p-[2px] rounded-full bg-gradient-to-tr from-[#0084FF] to-[#00a8ff]">
+      <img
+        src={friend?.avatar}
+        className="w-20 h-20 rounded-full object-cover border-[3px] border-white dark:border-zinc-900"
+        alt={friend?.name}
+      />
+    </div>
+    {friend?.isOnline && (
+      <span className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-[#31d158] rounded-full ring-2 ring-white dark:ring-zinc-900" />
+    )}
+  </div>
+
+  <h2 className="text-zinc-900 dark:text-white text-[22px] font-semibold mt-3.5 leading-tight">
+    {friend?.name}
+  </h2>
+  <p className="text-zinc-500 dark:text-zinc-400 text-[13px] mt-0.5">
+    @{friend?.username || 'user'}
+  </p>
+
+  {/* 3 NÚT NỔI */}
+  <div className="flex gap-2.5 mt-5 w-full max-w-[340px]">
+    <button
+      onClick={() => router.push(`/profile/${friend?.userId}`)}
+      className="flex-1 group flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl bg-[#0084FF]/10 hover:bg-[#0084FF]/15 active:scale-[0.97] transition"
     >
-      {/* Handle */}
-      <div className="w-10 h-1 bg-zinc-300 rounded-full mx-auto mt-3 mb-2 sm:hidden" />
-
-      {/* PROFILE HEADER */}
-      <div className="px-5 pt-3 pb-5 flex flex-col items-center text-center border-b border-zinc-100 bg-gradient-to-b from-white to-zinc-50">
-        <div className="relative">
-          <img src={friend.avatar} className="w-20 h-20 rounded-full object-cover ring-4 ring-white shadow-md" />
-          {friend.isOnline && <div className="absolute bottom-1 right-1 w-4 h-4 bg-[#31d158] rounded-full ring-2 ring-white" />}
-        </div>
-        <h2 className="text-zinc-900 text-[22px] font-semibold mt-3 tracking-tight">{friend.name}</h2>
-        <p className="text-zinc-500 text-[14px]">@{friend.username || 'user'}</p>
-
-        <div className="flex gap-3 mt-4">
-          <button onClick={() => router.push(`/profile/${friend.userId}`)} className="px-4 py-2 bg-zinc-900 text-white rounded-full text-[14px] font-medium active:scale-95 transition shadow-sm hover:bg-black">Trang cá nhân</button>
-          <button onClick={() => { setShowSettings(false); toast.info('Gọi thoại...') }} className="w-9 h-9 bg-zinc-100 hover:bg-zinc-200 rounded-full flex items-center justify-center active:scale-95 transition"><Phone size={18} className="text-zinc-700" /></button>
-          <button onClick={() => { setShowSettings(false); toast.info('Gọi video...') }} className="w-9 h-9 bg-zinc-100 hover:bg-zinc-200 rounded-full flex items-center justify-center active:scale-95 transition"><Video size={18} className="text-zinc-700" /></button>
-        </div>
+      <div className="w-9 h-9 rounded-full bg-[#0084FF] group-hover:bg-[#0073e6] flex items-center justify-center shadow-sm transition">
+        <User size={18} className="text-white" strokeWidth={2.2} />
       </div>
+      <span className="text-[12px] font-medium text-[#0084FF]">Hồ sơ</span>
+    </button>
+
+    <button
+      onClick={() => { setShowSettings(false); toast.info('Gọi thoại...') }}
+      className="flex-1 group flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl bg-[#0084FF]/10 hover:bg-[#0084FF]/15 active:scale-[0.97] transition"
+    >
+      <div className="w-9 h-9 rounded-full bg-[#0084FF] group-hover:bg-[#0073e6] flex items-center justify-center shadow-sm transition">
+        <Phone size={18} className="text-white" strokeWidth={2.2} />
+      </div>
+      <span className="text-[12px] font-medium text-[#0084FF]">Gọi</span>
+    </button>
+
+    <button
+      onClick={() => { setShowSettings(false); toast.info('Gọi video...') }}
+      className="flex-1 group flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl bg-[#0084FF]/10 hover:bg-[#0084FF]/15 active:scale-[0.97] transition"
+    >
+      <div className="w-9 h-9 rounded-full bg-[#0084FF] group-hover:bg-[#0073e6] flex items-center justify-center shadow-sm transition">
+        <Video size={18} className="text-white" strokeWidth={2.2} />
+      </div>
+      <span className="text-[12px] font-medium text-[#0084FF]">Video</span>
+    </button>
+  </div>
+</div>
 
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-zinc-50">
         {/* TÙY CHỈNH */}
