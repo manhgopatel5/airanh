@@ -1048,9 +1048,9 @@ useEffect(() => {
 </div>
 {showMedia && (
   <div className="fixed inset-0 z-[200] bg-white flex flex-col">
-    {/* HEADER */}
+    {/* HEADER - NO BORDER */}
     <div className="shrink-0 bg-white" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
-      <div className="relative flex items-center justify-center h-[44px] border-b border-zinc-200">
+      <div className="relative flex items-center justify-center h-[44px]">
         <span className="text-[17px] font-semibold text-black">Ảnh, file, liên kết</span>
         <button
           onClick={() => setShowMedia(false)}
@@ -1060,8 +1060,8 @@ useEffect(() => {
         </button>
       </div>
 
-      {/* TABS - pill trắng */}
-      <div className="px-3 py-2.5 bg-white">
+      {/* TABS */}
+      <div className="px-3 pt-1 pb-3 bg-white">
         <div className="grid grid-cols-3 gap-1.5 bg-zinc-100 rounded-[10px] p-1">
           {[
             {k:'photos', label:'Ảnh'},
@@ -1073,7 +1073,7 @@ useEffect(() => {
               onClick={() => setMediaTab(t.k as any)}
               className={`h-[32px] rounded-[8px] text-[15px] font-medium transition-all ${
                 mediaTab===t.k
-                ? 'bg-white text-black shadow-[0_1px_2px_rgba(0,0,0,0.08)]'
+                 ? 'bg-white text-black shadow-[0_1px_2px_rgba(0,0,0,0.08)]'
                   : 'text-zinc-500'
               }`}
             >
@@ -1084,7 +1084,7 @@ useEffect(() => {
       </div>
     </div>
 
-    {/* CONTENT - nền trắng 100% */}
+    {/* CONTENT */}
     <div className="flex-1 overflow-y-auto bg-white">
       {/* ẢNH */}
       {mediaTab==='photos' && (
@@ -1097,7 +1097,7 @@ useEffect(() => {
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-[2px] bg-white">
-{mediaPhotos.map((m) => (
+            {mediaPhotos.map((m) => (
               <button
                 key={m.id}
                 onClick={() => {
@@ -1105,14 +1105,14 @@ useEffect(() => {
                   setTimeout(() => {
                     const el = document.getElementById(`msg-${m.id}`);
                     el?.scrollIntoView({behavior:'smooth', block:'center'});
-                    const bubble = el?.querySelector('div[class*="bg-gradient"], div[class*="bg-white"], div[class*="dark:bg-zinc"]');
+                    const bubble = el?.querySelector('div[class*="bg-gradient"], div[class*="bg-white"]');
                     bubble?.classList.add('!bg-yellow-200');
                     setTimeout(() => bubble?.classList.remove('!bg-yellow-200'), 1500);
                   }, 100);
                 }}
                 className="aspect-square bg-zinc-100 overflow-hidden active:opacity-70"
               >
-                <img src={m.imageUrl || m.image} className="w-full h-full object-cover" loading="lazy" alt="" />
+                <img src={(m as any).imageUrl || (m as any).image} className="w-full h-full object-cover" loading="lazy" alt="" />
               </button>
             ))}
           </div>
@@ -1128,12 +1128,12 @@ useEffect(() => {
               <p className="text-[15px] text-zinc-500">Chưa có tệp</p>
             </div>
           ) : mediaFiles.map(m => {
-            const name = m.fileName || 'Tài liệu';
+            const name = (m as any).fileName || 'Tài liệu';
             const ext = name.split('.').pop()?.toUpperCase() || 'FILE';
             return (
               <button
                 key={m.id}
-                onClick={() => window.open(m.fileUrl || m.file, '_blank')}
+                onClick={() => window.open((m as any).fileUrl || (m as any).file, '_blank')}
                 className="w-full flex items-center gap-3 px-4 h-[68px] border-b border-zinc-100 active:bg-zinc-50 text-left"
               >
                 <div className="w-12 h-12 rounded-xl bg-[#007AFF] flex items-center justify-center shrink-0">
@@ -1141,7 +1141,7 @@ useEffect(() => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[16px] text-black truncate leading-tight">{name}</p>
-<p className="text-[13px] text-zinc-500 mt-0.5">{(m as any).fileSize? `${((m as any).fileSize/1024/1024).toFixed(1)} MB` : 'Tệp'}</p>
+                  <p className="text-[13px] text-zinc-500 mt-0.5">{(m as any).fileSize? `${((m as any).fileSize/1024/1024).toFixed(1)} MB` : 'Tệp'}</p>
                 </div>
               </button>
             )
@@ -1158,7 +1158,7 @@ useEffect(() => {
               <p className="text-[15px] text-zinc-500">Chưa có liên kết</p>
             </div>
           ) : mediaLinks.map(m => {
-const url = (m.text || '').match(/(https?:\/\/[^\s]+)/)?.[0] || '';
+            const url = (m.text || '').match(/(https?:\/\/[^\s]+)/)?.[0] || '';
             const domain = url? new URL(url).hostname.replace('www.','') : '';
             return (
               <button
@@ -1612,19 +1612,28 @@ onClick={(e) => {
       setShowEmojiPicker(m.id);
     }}
   >
-    {m.image && <img src={m.image} className="rounded-2xl max-w-full mb-1" alt="sent" />}
-    {m.file && (
-      <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
-        <Paperclip size={16} />
-        <span className="text-sm truncate">{m.fileName}</span>
-      </a>
-    )}
-    {m.text && (
-      <p className="text-[15px] leading-snug whitespace-pre-wrap break-words">
-        {m.text}
-        {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
-      </p>
-    )}
+   {((m as any).image || (m as any).imageUrl) && (
+  <img
+    src={(m as any).imageUrl || (m as any).image}
+    className="rounded-2xl max-w-[240px] max-h-[320px] w-auto h-auto object-cover mb-1 block"
+    alt="sent"
+    loading="lazy"
+  />
+)}
+
+{m.file && (
+  <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl mb-1">
+    <Paperclip size={16} />
+    <span className="text-sm truncate">{(m as any).fileName || 'Tệp'}</span>
+  </a>
+)}
+
+{m.text && (
+  <p className="text- leading-snug whitespace-pre-wrap break-words">
+    {m.text}
+    {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
+  </p>
+)}
   </div>
 )}
 
