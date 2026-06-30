@@ -903,9 +903,7 @@ useEffect(() => {
     </div>
   </div>
 )}
-    </div>
-  </div>
-)}
+
 
 {/* HEADER - nền trắng chữ đen */}
 <div
