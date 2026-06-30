@@ -1043,13 +1043,16 @@ useEffect(() => {
 {showPinned && (
   <div className="fixed inset-0 z-[200] bg-white dark:bg-zinc-950 flex flex-col">
     {/* Header */}
-    <div className="shrink-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800" style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
+    <div
+      className="shrink-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800"
+      style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}
+    >
       <div className="flex items-center justify-between px-4 h-12">
         <div className="w-8" />
         <span className="text-[17px] font-semibold text-zinc-900 dark:text-white">Tin nhắn đã ghim</span>
         <button
           onClick={() => setShowPinned(false)}
-          className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center active:scale-90 transition"
+          className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center active:scale-90"
         >
           <X size={18} className="text-zinc-600 dark:text-zinc-300" strokeWidth={2.2} />
         </button>
@@ -1076,9 +1079,7 @@ useEffect(() => {
                 el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 const bubble = el?.querySelector('div[class*="bg-"][class*="rounded-3xl"], div[class*="bg-gradient"]');
                 bubble?.classList.add('!bg-yellow-200/80', 'dark:!bg-yellow-400/30', 'transition-colors', 'duration-500');
-                setTimeout(() => {
-                  bubble?.classList.remove('!bg-yellow-200/80', 'dark:!bg-yellow-400/30');
-                }, 2000);
+                setTimeout(() => bubble?.classList.remove('!bg-yellow-200/80', 'dark:!bg-yellow-400/30'), 2000);
               }, 150);
             }}
             onContextMenu={(e) => { e.preventDefault(); setShowUnpinSheet(true); }}
@@ -1090,9 +1091,7 @@ useEffect(() => {
             }}
             onTouchEnd={(e) => clearTimeout((e.currentTarget as any)._timer)}
             onTouchMove={(e) => clearTimeout((e.currentTarget as any)._timer)}
-            onMouseDown={(e) => {
-              (e.currentTarget as any)._timer = setTimeout(() => setShowUnpinSheet(true), 500);
-            }}
+            onMouseDown={(e) => { (e.currentTarget as any)._timer = setTimeout(() => setShowUnpinSheet(true), 500); }}
             onMouseUp={(e) => clearTimeout((e.currentTarget as any)._timer)}
             onMouseLeave={(e) => clearTimeout((e.currentTarget as any)._timer)}
             className="w-full text-left bg-white dark:bg-zinc-900 rounded-2xl p-4 shadow-sm border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition"
@@ -1114,7 +1113,6 @@ useEffect(() => {
                     {formatTime((chatData as any).pinnedMessage.createdAt)}
                   </span>
                 </div>
-
                 <p className="text-[14px] text-zinc-600 dark:text-zinc-300 mt-1.5 line-clamp-2 leading-snug">
                   {(() => {
                     const m = (chatData as any).pinnedMessage;
@@ -1129,19 +1127,16 @@ useEffect(() => {
                       : 'Tin nhắn';
                   })()}
                 </p>
-
                 <div className="flex items-center gap-1.5 mt-2.5">
                   <Pin size={12} className="text-[#0084FF]" />
                   <span className="text-xs text-zinc-500 dark:text-zinc-400">
                     Ghim bởi {(chatData as any).pinnedMessage.by || 'Bạn'}
                   </span>
                 </div>
-              </div>
               <ChevronRight size={16} className="text-zinc-400 mt-1 shrink-0" />
             </div>
           </button>
 
-          {/* 2 DÒNG CĂN GIỮA */}
           <div className="text-center mt-4 px-4 space-y-0.5">
             <p className="text-xs text-zinc-500 dark:text-zinc-500">Nhấn để đi tới</p>
             <p className="text-xs text-zinc-500 dark:text-zinc-500">Nhấn giữ để bỏ ghim</p>
@@ -1149,26 +1144,23 @@ useEffect(() => {
         </div>
       )}
     </div>
-  </div>
-)}
 
-
-    {/* Action Sheet đẹp thay confirm */}
+    {/* Action Sheet */}
     {showUnpinSheet && (
       <div className="fixed inset-0 z-[300] flex items-end justify-center p-3" onClick={() => setShowUnpinSheet(false)}>
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-        <div className="relative w-full max-w-sm" onClick={e => e.stopPropagation()}>
+        <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
           <div className="bg-white/95 dark:bg-zinc-800/95 backdrop-blur-2xl rounded-2xl overflow-hidden mb-2 shadow-2xl">
             <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
               <p className="text-[13px] text-zinc-500 dark:text-zinc-400 text-center">Tin nhắn đã ghim</p>
               <p className="text-[15px] font-medium text-zinc-900 dark:text-white text-center mt-0.5 line-clamp-1">
-                {(chatData as any).pinnedMessage?.text?.slice(0,40) || 'Hình ảnh'}
+                {(chatData as any).pinnedMessage?.text?.slice(0, 40) || 'Hình ảnh'}
               </p>
             </div>
             <button
               onClick={async () => {
-                await updateDoc(doc(db, "chats", chatId), { pinnedMessage: deleteField() });
-                setChatData(prev => prev? {...prev, pinnedMessage: null} : prev);
+                await updateDoc(doc(db, 'chats', chatId), { pinnedMessage: deleteField() });
+                setChatData((prev) => (prev? {...prev, pinnedMessage: null } : prev));
                 setShowUnpinSheet(false);
                 toast.success('Đã bỏ ghim');
               }}
