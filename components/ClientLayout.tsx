@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import FCMProvider from "@/components/FCMProvider";
+import StrangerStatusBanners from "@/components/stranger/StrangerStatusBanners";
 import { useEffect, useMemo } from "react";
 import { Toaster } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
@@ -53,6 +54,7 @@ export default function ClientLayout({ children }: Props) {
   return (
     <div className="h-dvh flex flex-col bg-white dark:bg-zinc-950 font-sans">
       {user && <FCMProvider userId={user.uid} />}
+      {user && <StrangerStatusBanners />}
 
   <main
     className={cn(

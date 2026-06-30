@@ -3,7 +3,8 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
+import { getMessaging } from "firebase-admin/messaging";
+import { FirestoreEvent, QueryDocumentSnapshot, Change } from "firebase-functions/v2/firestore";
 import { DocumentSnapshot } from "firebase-admin/firestore";
 
 initializeApp();
@@ -478,6 +479,107 @@ async function getUserPublic(uid: string) {
   };
 }
 
+async function sendPushToUser(
+  uid: string,
+  payload: { title: string; body: string; data: Record<string, string> }
+) {
+  try {
+    const userDoc = await db.doc(`users/${uid}`).get();
+    const rawTokens: string[] = userDoc.data()?.fcmTokens || [];
+    const tokens = [...new Set(rawTokens.filter((t) => typeof t === "string" && t.length > 0))];
+    if (tokens.length === 0) return;
+
+    const link = payload.data.link || payload.data.url || "/";
+    const messaging = getMessaging();
+    await messaging.sendEachForMulticast({
+      tokens,
+      notification: { title: payload.title, body: payload.body },
+      data: payload.data,
+      webpush: {
+        fcmOptions: { link },
+        notification: { icon: "/icon-192.png", badge: "/icon-192.png" },
+      },
+    });
+  } catch (error) {
+    console.error("sendPushToUser error:", error);
+  }
+}
+
+async function notifyStrangerMatch(
+  toUid: string,
+  fromUid: string,
+  chatId: string,
+  fromPublic: { name: string; avatar: string }
+) {
+  try {
+    const link = `/stranger/${chatId}`;
+    await db.collection(`notifications/${toUid}/items`).add({
+      type: "stranger_match",
+      fromUid,
+      fromName: fromPublic.name,
+      fromAvatar: fromPublic.avatar,
+      title: "Tìm thấy bạn mới!",
+      message: `${fromPublic.name} muốn trò chuyện với bạn`,
+      link,
+      actionData: { chatId },
+      read: false,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    await sendPushToUser(toUid, {
+      title: "Tìm thấy bạn mới!",
+      body: `${fromPublic.name} muốn trò chuyện với bạn`,
+      data: {
+        type: "stranger_match",
+        chatId,
+        link,
+        url: link,
+      },
+    });
+  } catch (error) {
+    console.error("notifyStrangerMatch error:", error);
+  }
+}
+
+async function notifyStrangerMessage(
+  toUid: string,
+  fromUid: string,
+  chatId: string,
+  fromPublic: { name: string; avatar: string },
+  preview: string
+) {
+  try {
+    const link = `/stranger/${chatId}`;
+    const body = preview.length > 100 ? `${preview.slice(0, 100)}...` : preview;
+
+    await db.collection(`notifications/${toUid}/items`).add({
+      type: "stranger_message",
+      fromUid,
+      fromName: fromPublic.name,
+      fromAvatar: fromPublic.avatar,
+      title: fromPublic.name,
+      message: body,
+      link,
+      actionData: { chatId },
+      read: false,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    await sendPushToUser(toUid, {
+      title: fromPublic.name,
+      body,
+      data: {
+        type: "stranger_message",
+        chatId,
+        link,
+        url: link,
+      },
+    });
+  } catch (error) {
+    console.error("notifyStrangerMessage error:", error);
+  }
+}
+
 export const findStranger = onCall(
   { region: "asia-southeast1" },
   async (request) => {
@@ -627,6 +729,11 @@ export const findStranger = onCall(
             createdAt: FieldValue.serverTimestamp()
           });
         });
+
+        await Promise.all([
+          notifyStrangerMatch(uid, other.userId, chatId, otherPublic),
+          notifyStrangerMatch(other.userId, uid, chatId, mePublic),
+        ]);
 
         return { matched: true, chatId };
       }
@@ -948,5 +1055,40 @@ export const sendFriendRequest = onCall(
     });
 
     return { success: true, message: "Đã gửi lời mời" };
+  }
+);
+
+// 14. Thông báo tin nhắn người lạ mới
+export const onStrangerChatUpdated = onDocumentUpdated(
+  {
+    document: "stranger_chats/{chatId}",
+    region: "asia-southeast1",
+  },
+  async (event: FirestoreEvent<Change<QueryDocumentSnapshot> | undefined>) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+
+    const lastMessageBefore = before.lastMessage as string | undefined;
+    const lastMessageAfter = after.lastMessage as string | undefined;
+    const lastSenderId = after.lastSenderId as string | undefined;
+
+    if (!lastMessageAfter || lastMessageAfter === lastMessageBefore) return;
+    if (!lastSenderId) return;
+    if (lastMessageAfter === "Đã kết nối. Hãy chào nhau 👋") return;
+
+    const members = (after.members as string[]) || [];
+    const recipientId = members.find((m) => m !== lastSenderId);
+    if (!recipientId) return;
+
+    const chatId = event.params.chatId;
+    const partnerNames = (after.partnerNames as Record<string, string>) || {};
+    const partnerAvatars = (after.partnerAvatars as Record<string, string>) || {};
+    const fromPublic = {
+      name: partnerNames[lastSenderId] || "Người lạ",
+      avatar: partnerAvatars[lastSenderId] || "",
+    };
+
+    await notifyStrangerMessage(recipientId, lastSenderId, chatId, fromPublic, lastMessageAfter);
   }
 );

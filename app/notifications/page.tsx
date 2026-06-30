@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import {
   FiBell, FiUserPlus, FiAtSign, FiUsers, FiHeart, FiMessageCircle,
-  FiInbox, FiTrash2, FiRefreshCw, FiX, FiArrowLeft, FiSettings, FiCheck
+  FiInbox, FiTrash2, FiRefreshCw, FiX, FiArrowLeft, FiSettings, FiCheck, FiZap
 } from "react-icons/fi";
 import { toast, Toaster } from "sonner";
 import { formatDistanceToNow, isToday, isYesterday } from "date-fns";
@@ -188,6 +188,8 @@ export default function NotificationsPage() {
       case "group_invite": return <FiUsers className="text-[#ff9500]" {...props} />;
       case "mention": return <FiAtSign className="text-[#af52de]" {...props} />;
       case "task_apply": return <FiInbox className="text-[#30d158]" {...props} />;
+      case "stranger_match": return <FiZap className="text-[#ff9500]" {...props} />;
+      case "stranger_message": return <FiMessageCircle className="text-[#5856d6]" {...props} />;
       default: return <FiBell className="text-zinc-500" {...props} />;
     }
   };
@@ -266,6 +268,13 @@ export default function NotificationsPage() {
     if (n.type === "friend_request") {
       router.push("/friends");
       return;
+    }
+    if (n.type === "stranger_match" || n.type === "stranger_message") {
+      const chatId = n.actionData?.chatId as string | undefined;
+      if (chatId) {
+        router.push(`/stranger/${chatId}`);
+        return;
+      }
     }
     if (n.link) {
       if (n.link.startsWith("/")) router.push(n.link);
@@ -496,7 +505,7 @@ function EmptyState() {
       </div>
       <h3 className="text-[20px] font-semibold mb-1.5">Chưa có thông báo</h3>
       <p className="text-[15px] text-zinc-500 max-w-[280px] leading-[20px]">
-        Lời mời kết bạn, nhóm và tin nhắn sẽ hiện ở đây
+        Lời mời kết bạn, match người lạ và tin nhắn sẽ hiện ở đây
       </p>
     </div>
   );

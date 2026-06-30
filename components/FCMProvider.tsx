@@ -45,8 +45,10 @@ export default function FCMProvider({ userId }: { userId: string }) {
         // 5. Gửi token lên server. Dùng fetch, không import db
         await fetch('/api/user/fcm-token', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ token }),
-          keepalive: true, // Gửi cả khi user tắt tab
+          keepalive: true,
         });
 
         initialized.current = true;
@@ -54,10 +56,20 @@ export default function FCMProvider({ userId }: { userId: string }) {
         // 6. Lắng nghe foreground message
         onMessage(messaging, (payload) => {
           if (!payload.notification) return;
-          new Notification(payload.notification.title?? "Thông báo mới", {
-            body: payload.notification.body?? "",
-            icon: '/icon-192x192.png', // Thêm icon cho đẹp
+          const data = payload.data || {};
+          const type = data.type || "";
+          const link = data.link || data.url || "/";
+          const notif = new Notification(payload.notification.title ?? "Thông báo mới", {
+            body: payload.notification.body ?? "",
+            icon: '/icon-192x192.png',
+            tag: data.chatId || type || "default",
+            data: { link, type },
           });
+          notif.onclick = () => {
+            window.focus();
+            if (link.startsWith("/")) window.location.href = link;
+            notif.close();
+          };
         });
 
       } catch (error) {

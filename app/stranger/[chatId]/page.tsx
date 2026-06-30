@@ -193,6 +193,7 @@ useEffect(() => {
         messages: arrayUnion(msg),
         lastMessage: text,
         lastMessageTime: serverTimestamp(),
+        lastSenderId: user.uid,
         [`unreadCounts.${partnerId}`]: ((chatData?.unreadCounts || {})[partnerId] || 0) + 1,
       });
     } catch (err: any) {
@@ -215,6 +216,7 @@ useEffect(() => {
         messages: arrayUnion(msg),
         lastMessage: "👋",
         lastMessageTime: serverTimestamp(),
+        lastSenderId: user.uid,
         [`unreadCounts.${partnerId}`]: ((chatData?.unreadCounts || {})[partnerId] || 0) + 1,
       });
     } catch (err: any) {
