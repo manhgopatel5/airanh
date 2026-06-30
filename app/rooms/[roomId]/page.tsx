@@ -4,12 +4,17 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseRTDB } from "@/lib/firebase";
-import { getCityMetaByRoomId } from "@/lib/publicRooms";
+import { getCityMetaByRoomId, getCityBackgroundUrl } from "@/lib/publicRooms";
+import RoomChatBackground from "@/components/rooms/chat/RoomChatBackground";
+import RoomChatHeader from "@/components/rooms/chat/RoomChatHeader";
+import RoomChatInput from "@/components/rooms/chat/RoomChatInput";
+import RoomMembersSheet from "@/components/rooms/chat/RoomMembersSheet";
+import { formatTimeDivider, shouldShowTimeDivider } from "@/components/rooms/chat/roomChatUtils";
 import { doc, getDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, orderBy, limit, writeBatch, where, getDocs } from "firebase/firestore";
 import { ref, onValue, set, onDisconnect } from "firebase/database";
-import { FiArrowLeft, FiUser, FiUsers, FiSend, FiLoader, FiMoreVertical, FiSearch, FiChevronUp, FiTrash2, FiChevronDown, FiUserPlus, FiClipboard, FiX, FiPlus, FiCheck } from "react-icons/fi";
+import { FiUser, FiLoader, FiSearch, FiChevronUp, FiTrash2, FiChevronDown, FiUserPlus, FiX, FiPlus, FiCheck } from "react-icons/fi";
 import { toast } from "sonner";
-import { format, isToday, isYesterday } from "date-fns";
+import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 
 type RoomData = {
@@ -18,6 +23,11 @@ type RoomData = {
   emoji: string;
   color: string;
   imageUrl?: string;
+  tag: string;
+  tagColor: string;
+  desc: string;
+  accent: string;
+  backgroundUrl: string;
   members: string[];
   memberCount: number;
   onlineCount: number;
@@ -30,7 +40,7 @@ type Message = {
   senderName: string;
   senderAvatar: string;
   createdAt: any;
-  type?: 'text' | 'poll';
+  type?: 'text' | 'poll' | 'system';
   pollData?: PollData;
 };
 
@@ -95,6 +105,9 @@ const highlightText = (text: string, query: string) => {
   );
 };
 const [activePopupMsgId, setActivePopupMsgId] = useState<string | null>(null);
+const [showMembers, setShowMembers] = useState(false);
+const [memberProfiles, setMemberProfiles] = useState<UserData[]>([]);
+const [loadingMembers, setLoadingMembers] = useState(false);
 useEffect(() => {
   const handleClickOutside = () => setActivePopupMsgId(null);
   if (activePopupMsgId) {
@@ -194,6 +207,11 @@ const deleteMessage = async (msgId: string) => {
         emoji: data.emoji || cityMeta?.emoji || "💬",
         color: data.color || cityMeta?.color || "from-blue-500 to-cyan-500",
         imageUrl: data.imageUrl || data.groupAvatar || cityMeta?.imageUrl,
+        tag: cityMeta?.tag ?? "",
+        tagColor: cityMeta?.tagColor ?? "",
+        desc: cityMeta?.desc ?? "",
+        accent: cityMeta?.accent || "#0a84ff",
+        backgroundUrl: cityMeta ? getCityBackgroundUrl(cityMeta) : "",
         members: data.members || [],
         memberCount: data.members?.length || 0,
         onlineCount: prev?.onlineCount || 0,
@@ -435,7 +453,63 @@ const inviteUsers = async () => {
   }
 };
 
- 
+const loadMembers = async () => {
+  if (!roomData?.members.length) {
+    setMemberProfiles([]);
+    return;
+  }
+  setLoadingMembers(true);
+  try {
+    const users: UserData[] = [];
+    const chunks = [];
+    for (let i = 0; i < roomData.members.length; i += 10) {
+      chunks.push(roomData.members.slice(i, i + 10));
+    }
+    for (const chunk of chunks) {
+      const q = query(collection(db, "users"), where("__name__", "in", chunk));
+      const snap = await getDocs(q);
+      snap.forEach((userDoc) => {
+        const data = userDoc.data();
+        users.push({
+          uid: userDoc.id,
+          displayName: data.displayName || data.name || data.email?.split("@")[0] || "User",
+          email: data.email || "",
+          photoURL:
+            data.photoURL ||
+            data.avatar ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(data.displayName || "User")}&background=random`,
+        });
+      });
+    }
+    setMemberProfiles(users);
+  } catch {
+    toast.error("Không tải được danh sách thành viên");
+  } finally {
+    setLoadingMembers(false);
+  }
+};
+
+const handleMenuSelect = (action: "search" | "invite" | "poll" | "members") => {
+  if (action === "search") setShowSearch(true);
+  if (action === "invite") {
+    setShowInvite(true);
+    loadAllUsers();
+  }
+  if (action === "poll") setShowPoll(true);
+  if (action === "members") {
+    setShowMembers(true);
+    void loadMembers();
+  }
+};
+
+const scrollToBottom = () => {
+  if (!messagesContainerRef.current) return;
+  messagesContainerRef.current.scrollTo({
+    top: messagesContainerRef.current.scrollHeight,
+    behavior: "smooth",
+  });
+  setIsAtBottom(true);
+};
 
   // Tạo bình chọn
   const createPoll = async () => {
@@ -600,24 +674,9 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
   setActivePopupMsgId(prev => prev === msgId? null : msgId);
 };
 
-const shouldShowTimeDivider = (msg: Message, prevMsg: Message | undefined) => {
-  if (!prevMsg?.createdAt ||!msg.createdAt) return true;
-  const prev = prevMsg.createdAt.toDate();
-  const curr = msg.createdAt.toDate();
-  const diff = curr.getTime() - prev.getTime();
-  return diff > 5 * 60 * 1000; // Cách 5 phút thì hiện time
-};
-
-const formatTimeDivider = (timestamp: any) => {
-  if (!timestamp?.toDate) return "";
-  const date = timestamp.toDate();
-  if (isToday(date)) return format(date, "HH:mm");
-  if (isYesterday(date)) return "Hôm qua " + format(date, "HH:mm");
-  return format(date, "dd/MM/yyyy HH:mm", { locale: vi });
-};
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-black">
+      <div className="fixed inset-0 flex items-center justify-center bg-zinc-950">
         <FiLoader className="animate-spin text-[#0a84ff]" size={32} />
       </div>
     );
@@ -626,103 +685,69 @@ const formatTimeDivider = (timestamp: any) => {
   if (!roomData) return null;
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-[#F7FAFF] via-white to-[#F0F4FA] dark:from-zinc-950 dark:via-black dark:to-zinc-950">
- {/* Header */}
-<div className="relative z-50 flex-shrink-0 border-b border-black/5 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur-xl dark:border-white/5 dark:bg-black/95">
-  <div className="flex items-center gap-3 px-4 py-3">
-          <button onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center active:opacity-60">
-            <FiArrowLeft size={22} />
-          </button>
-          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl ring-2 ring-white shadow-md dark:ring-zinc-800">
-            {roomData.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={roomData.imageUrl} alt={roomData.name} className="h-full w-full object-cover" />
-            ) : (
-              <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${roomData.color} text-xl`}>
-                {roomData.emoji}
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-[17px] font-semibold truncate leading-5">{roomData.name}</h1>
-            <p className="text-[13px] text-[#8e8e93] flex items-center gap-1 mt-0.5">
-              <FiUsers size={12} />
-              {roomData.memberCount} thành viên
-              {roomData.onlineCount > 0 && (
-                <>
-                  <span className="mx-1">•</span>
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                  {roomData.onlineCount} online
-                </>
-              )}
-            </p>
-          </div>
-          
-   {/* Nút... Menu */}
-<div className="relative">
-  <button
-    onClick={() => setShowMenu(!showMenu)}
-    className="w-9 h-9 flex items-center justify-center -mr-2 active:opacity-60"
-  >
-    <FiMoreVertical size={20} />
-  </button>
+    <div className="fixed inset-0 flex flex-col overflow-hidden">
+      <RoomChatBackground imageUrl={roomData.backgroundUrl || ""} accent={roomData.accent} />
 
-  {showMenu && (
-    <>
-      <div className="fixed inset-0 z-[9998]" onClick={() => setShowMenu(false)} />
-      <div className="fixed top-[calc(env(safe-area-inset-top)+60px)] right-4 z-[9999] w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-        <button
-          onClick={() => { setShowSearch(true); setShowMenu(false); }}
-          className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 text-sm"
-        >
-          <FiSearch size={18} /> <span>Tìm tin nhắn</span>
-        </button>
-        <button
-          onClick={() => { setShowInvite(true); setShowMenu(false); loadAllUsers(); }}
-          className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 text-sm"
-        >
-          <FiUserPlus size={18} /> <span>Mời bạn bè</span>
-        </button>
-        <button
-          onClick={() => { setShowPoll(true); setShowMenu(false); }}
-          className="w-full flex items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800 text-sm"
-        >
-          <FiClipboard size={18} /> <span>Tạo bình chọn</span>
-        </button>
-      </div>
-    </>
-  )}
-</div>
-</div>
-</div>
+      <RoomChatHeader
+        room={roomData}
+        accent={roomData.accent}
+        showMenu={showMenu}
+        onBack={() => router.back()}
+        onToggleMenu={() => setShowMenu((v) => !v)}
+        onOpenMembers={() => {
+          setShowMembers(true);
+          void loadMembers();
+        }}
+        onMenuSelect={handleMenuSelect}
+      />
 
-{/* Messages */}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
 <div
   ref={messagesContainerRef}
   onScroll={handleScroll}
-  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-[2px]"
+  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 py-3 space-y-0.5"
 >
   {messages.length === 0? (
-    <div className="flex h-full flex-col items-center justify-center px-6 py-20 text-center">
+    <div className="flex h-full flex-col items-center justify-center px-6 py-16 text-center">
       {roomData.imageUrl ? (
-        <div className="relative mb-4 h-28 w-28 overflow-hidden rounded-3xl shadow-lg ring-4 ring-white dark:ring-zinc-800">
+        <div className="relative mb-4 h-28 w-28 overflow-hidden rounded-3xl shadow-2xl ring-4 ring-white/30">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={roomData.imageUrl} alt={roomData.name} className="h-full w-full object-cover" />
         </div>
       ) : (
         <div className="mb-4 text-6xl">{roomData.emoji}</div>
       )}
-      <h3 className="mb-1 text-[17px] font-semibold">Chào mừng đến {roomData.name}!</h3>
-      <p className="text-[15px] text-[#8e8e93]">Hãy là người đầu tiên gửi tin nhắn 🌸</p>
+      <h3 className="mb-1 text-[18px] font-bold text-white drop-shadow">Chào mừng đến {roomData.name}!</h3>
+      <p className="text-[14px] text-white/70">{roomData.desc || "Hãy là người đầu tiên gửi tin nhắn"}</p>
     </div>
   ) : (
     messages.map((msg, idx) => {
       const isMe = msg.senderId === user?.uid;
+      const isSystem = msg.type === "system" || msg.senderId === "system";
       const prevMsg = messages[idx - 1];
       const nextMsg = messages[idx + 1];
-      const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
-      const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
+      const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId || isSystem;
+      const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId || isSystem;
       const showTimeDivider = shouldShowTimeDivider(msg, prevMsg);
+
+      if (isSystem) {
+        return (
+          <div key={msg.id}>
+            {showTimeDivider && (
+              <div className="my-4 flex justify-center">
+                <span className="rounded-full bg-black/35 px-3 py-1 text-[12px] text-white/80 backdrop-blur-sm">
+                  {formatTimeDivider(msg.createdAt)}
+                </span>
+              </div>
+            )}
+            <div className="my-2 flex justify-center px-6">
+              <span className="rounded-full border border-white/10 bg-black/40 px-4 py-1.5 text-center text-[12px] text-white/75 backdrop-blur-md">
+                {msg.text}
+              </span>
+            </div>
+          </div>
+        );
+      }
 
       // Render Poll
       if (msg.type === 'poll' && msg.pollData) {
@@ -735,8 +760,8 @@ const formatTimeDivider = (timestamp: any) => {
           <div key={msg.id}>
             {/* Time Divider căn giữa - chỉ hiện khi cách >5 phút */}
             {showTimeDivider && (
-              <div className="flex justify-center my-4">
-                <span className="text-[13px] text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+              <div className="my-4 flex justify-center">
+                <span className="rounded-full bg-black/35 px-3 py-1 text-[12px] text-white/80 backdrop-blur-sm">
                   {formatTimeDivider(msg.createdAt)}
                 </span>
               </div>
@@ -744,7 +769,7 @@ const formatTimeDivider = (timestamp: any) => {
 
             <div
               id={`msg-${msg.id}`}
-              className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''} ${isFirstInGroup? 'mt-2' : 'mt-0.5'}`}
+              className={`flex gap-2 ${isMe? "flex-row-reverse" : ""} ${isFirstInGroup? "mt-2" : "mt-0.5"}`}
               onTouchStart={() => {
                 if (!isCreator) return;
                 longPressTimer.current = setTimeout(() => {
@@ -765,19 +790,20 @@ const formatTimeDivider = (timestamp: any) => {
                 }
               }}
             >
-              <div className="w-8 flex-shrink-0 self-end relative">
+              {!isMe && (
+              <div className="w-8 shrink-0 self-end relative">
                 {isFirstInGroup? (
                   <>
                     <img
                       src={msg.senderAvatar}
                       alt={msg.senderName}
-                      className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
+                      className="h-8 w-8 cursor-pointer rounded-full border border-white/20 object-cover active:scale-90"
                       referrerPolicy="no-referrer"
                       onClick={(e) => handleAvatarClick(e, msg.id)}
                     />
                     {activePopupMsgId === msg.id && (
                       <div
-                        className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
+                        className="absolute left-10 top-0 z-50 overflow-hidden rounded-xl border border-white/10 bg-zinc-900/95 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
@@ -785,27 +811,25 @@ const formatTimeDivider = (timestamp: any) => {
                             setActivePopupMsgId(null);
                             router.push(`/profile/${msg.senderId}`);
                           }}
-                          className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
+                          className="flex items-center gap-2.5 whitespace-nowrap px-4 py-2.5 text-white active:bg-white/10"
                         >
-                          <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                          <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
-                            Thông tin cá nhân
-                          </span>
+                          <FiUser className="h-4 w-4" />
+                          <span className="text-[15px] font-medium">Thông tin cá nhân</span>
                         </button>
                       </div>
                     )}
                   </>
                 ) : <div className="w-8" />}
               </div>
+              )}
 
-              <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+              <div className={`max-w-[82%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
                 {isFirstInGroup &&!isMe && (
-                  <span className="text-[13px] text-[#8e8e93] px-3 mb-0.5 font-medium">{msg.senderName}</span>
+                  <span className="mb-0.5 px-3 text-[12px] font-medium text-white/70">{msg.senderName}</span>
                 )}
 
-                {/* Poll bo tròn full giống Messenger */}
-                <div className={`px-4 py-3 bg-zinc-100 dark:bg-zinc-800 w-full rounded-[18px] ${
-                  isLastInGroup? (isMe? 'rounded-br-[4px]' : 'rounded-bl-[4px]') : ''
+                <div className={`w-full rounded-[20px] border border-white/10 bg-white/90 px-4 py-3 shadow-lg backdrop-blur-md dark:bg-zinc-900/90 ${
+                  isLastInGroup? (isMe? 'rounded-br-[6px]' : 'rounded-bl-[6px]') : ''
                 }`}>
                   <div className="flex items-start justify-between mb-3">
                     <p className="text-[15px] font-semibold flex-1">📊 {msg.pollData.question}</p>
@@ -842,13 +866,13 @@ const formatTimeDivider = (timestamp: any) => {
                           className="w-full text-left relative overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700 active:opacity-70 disabled:opacity-60"
                         >
                           <div
-                            className="absolute inset-0 bg-[#0a84ff]/20 transition-all duration-300"
-                            style={{ width: `${percent}%` }}
+                            className="absolute inset-0 transition-all duration-300"
+                            style={{ width: `${percent}%`, backgroundColor: `${roomData.accent}33` }}
                           />
                           <div className="relative px-3 py-2.5">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-[15px] flex items-center gap-2">
-                                {voted && <FiCheck className="text-[#0a84ff]" size={16} />}
+                                {voted && <FiCheck size={16} style={{ color: roomData.accent }} />}
                                 {opt.text}
                               </span>
                               <span className="text-[13px] text-[#8e8e93] font-medium">{percent.toFixed(0)}%</span>
@@ -912,8 +936,8 @@ const formatTimeDivider = (timestamp: any) => {
         <div key={msg.id}>
           {/* Time Divider căn giữa - chỉ hiện khi cách >5 phút */}
           {showTimeDivider && (
-            <div className="flex justify-center my-4">
-              <span className="text-[13px] text-[#8e8e93] bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
+            <div className="my-4 flex justify-center">
+              <span className="rounded-full bg-black/35 px-3 py-1 text-[12px] text-white/80 backdrop-blur-sm">
                 {formatTimeDivider(msg.createdAt)}
               </span>
             </div>
@@ -942,13 +966,14 @@ const formatTimeDivider = (timestamp: any) => {
               }
             }}
           >
-            <div className="w-8 flex-shrink-0 self-end relative">
+            {!isMe && (
+            <div className="w-8 shrink-0 self-end relative">
               {isFirstInGroup? (
                 <>
                   <img
                     src={msg.senderAvatar}
                     alt={msg.senderName}
-                    className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700 cursor-pointer active:scale-90 transition-all"
+                    className="h-8 w-8 cursor-pointer rounded-full border border-white/20 object-cover active:scale-90"
                     referrerPolicy="no-referrer"
                     onClick={(e) => handleAvatarClick(e, msg.id)}
                     onError={(e) => {
@@ -957,7 +982,7 @@ const formatTimeDivider = (timestamp: any) => {
                   />
                   {activePopupMsgId === msg.id && (
                     <div
-                      className="absolute left-10 top-0 z-50 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95"
+                      className="absolute left-10 top-0 z-50 overflow-hidden rounded-xl border border-white/10 bg-zinc-900/95 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
@@ -965,33 +990,32 @@ const formatTimeDivider = (timestamp: any) => {
                           setActivePopupMsgId(null);
                           router.push(`/profile/${msg.senderId}`);
                         }}
-                        className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
+                        className="flex items-center gap-2.5 whitespace-nowrap px-4 py-2.5 text-white active:bg-white/10"
                       >
-                        <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                        <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
-                          Thông tin cá nhân
-                        </span>
+                        <FiUser className="h-4 w-4" />
+                        <span className="text-[15px] font-medium">Thông tin cá nhân</span>
                       </button>
                     </div>
                   )}
                 </>
               ) : <div className="w-8" />}
             </div>
+            )}
 
-            <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+            <div className={`max-w-[82%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
               {isFirstInGroup &&!isMe && (
-                <span className="text-[13px] text-[#8e8e93] px-3 mb-0.5 font-medium">{msg.senderName}</span>
+                <span className="mb-0.5 px-3 text-[12px] font-medium text-white/70">{msg.senderName}</span>
               )}
 
-              {/* Bubble bo tròn full giống Messenger */}
-              <div className={`px-4 py-2.5 ${
-                isMe
-               ? 'bg-[#0a84ff] text-white'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-              } rounded-[18px] ${
-                isLastInGroup? (isMe? 'rounded-br-[4px]' : 'rounded-bl-[4px]') : ''
-              }`}>
-                <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
+              <div
+                className={`px-4 py-2.5 shadow-md ${
+                  isMe
+                    ? 'rounded-[20px] text-white'
+                    : 'rounded-[20px] border border-white/10 bg-white/90 text-zinc-900 backdrop-blur-md dark:bg-zinc-900/90 dark:text-white'
+                } ${isLastInGroup? (isMe? 'rounded-br-[6px]' : 'rounded-bl-[6px]') : ''}`}
+                style={isMe ? { backgroundColor: roomData.accent } : undefined}
+              >
+                <p className="whitespace-pre-wrap break-words text-[15px] leading-[20px]">{msg.text}</p>
               </div>
               {/* Đã xoá time ở đây - Messenger không hiện time dưới mỗi tin */}
             </div>
@@ -1021,34 +1045,40 @@ const formatTimeDivider = (timestamp: any) => {
   )}
 </div>
 
-{/* Input */}
-      <div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-black/5 dark:border-white/5 pb-[env(safe-area-inset-bottom)]">
-        <div className="px-3 py-2">
-          <div className="flex items-end gap-2">
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' &&!e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder="Nhắn tin..."
-              className="flex-1 min-h-[40px] max-h-32 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-[20px] text-[15px] outline-none resize-none placeholder:text-[#8e8e93]"
-              disabled={sending}
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!message.trim() || sending}
-              className="w-10 h-10 bg-[#0a84ff] disabled:opacity-40 text-white rounded-full flex items-center justify-center active:scale-95 transition-all flex-shrink-0"
-            >
-              {sending? <FiLoader className="animate-spin" size={18} /> : <FiSend size={18} />}
-            </button>
-          </div>
-        </div>
+        {!isAtBottom && messages.length > 0 && (
+          <button
+            type="button"
+            onClick={scrollToBottom}
+            className="absolute bottom-3 right-4 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white shadow-lg backdrop-blur-md active:scale-95"
+          >
+            <FiChevronDown size={20} />
+          </button>
+        )}
+
+        <RoomChatInput
+          message={message}
+          sending={sending}
+          accent={roomData.accent}
+          onChange={setMessage}
+          onSend={handleSendMessage}
+          onSearch={() => setShowSearch(true)}
+          onInvite={() => {
+            setShowInvite(true);
+            loadAllUsers();
+          }}
+          onPoll={() => setShowPoll(true)}
+        />
       </div>
+
+      <RoomMembersSheet
+        open={showMembers}
+        accent={roomData.accent}
+        roomName={roomData.name}
+        members={memberProfiles}
+        onlineCount={roomData.onlineCount}
+        loading={loadingMembers}
+        onClose={() => setShowMembers(false)}
+      />
 
       {/* Modal Tìm tin nhắn */}
  {showSearch && (

@@ -1,3 +1,5 @@
+import { getBgUrl, type BgId } from "@/lib/backgrounds";
+
 export type PublicCityMeta = {
   id: string;
   name: string;
@@ -8,7 +10,13 @@ export type PublicCityMeta = {
   region: "north" | "central" | "south";
   desc: string;
   imageUrl: string;
+  backgroundId: BgId;
+  accent: string;
 };
+
+export function getCityBackgroundUrl(city: Pick<PublicCityMeta, "backgroundId">): string {
+  return getBgUrl(city.backgroundId, 1600);
+}
 
 function avatar(
   style: "adventurer" | "lorelei" | "micah",
@@ -38,6 +46,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     region: "south",
     desc: "Năng lượng phố không ngủ",
     imageUrl: avatar("adventurer", "hcm-saigon", "b6e3f4", "hair=short03&glasses=variant05"),
+    backgroundId: "saigon",
+    accent: "#0a84ff",
   },
   {
     id: "hn",
@@ -49,6 +59,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     region: "north",
     desc: "Nghìn năm văn hiến",
     imageUrl: avatar("lorelei", "hn-thang-long", "fde68a", "hair=variant04&clothing=variant02"),
+    backgroundId: "kyoto",
+    accent: "#f97316",
   },
   {
     id: "dn",
@@ -60,6 +72,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     region: "central",
     desc: "Biển xanh, cầu Vàng",
     imageUrl: avatar("micah", "dn-cau-rong", "99f6e4", "hair=fonze&glasses=round&shirt=open"),
+    backgroundId: "tropical",
+    accent: "#14b8a6",
   },
   {
     id: "ct",
@@ -71,6 +85,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     region: "south",
     desc: "Chợ nổi, sông nước",
     imageUrl: avatar("adventurer", "ct-mekong", "bbf7d0", "hair=short01&features=freckles"),
+    backgroundId: "lagoon",
+    accent: "#22c55e",
   },
   {
     id: "hp",
@@ -82,6 +98,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     region: "north",
     desc: "Hoa phượng, cảng biển",
     imageUrl: avatar("adventurer", "hp-cang", "e9d5ff", "hair=short05&glasses=variant02"),
+    backgroundId: "hongkong",
+    accent: "#a855f7",
   },
   {
     id: "dl",
@@ -93,6 +111,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     region: "central",
     desc: "Sương mù, thông reo",
     imageUrl: avatar("lorelei", "dl-thanh-pho-hoa", "ffcce1", "hair=variant08&clothing=variant03"),
+    backgroundId: "mistyforest",
+    accent: "#ec4899",
   },
   {
     id: "nt",
@@ -104,6 +124,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     region: "central",
     desc: "Cát vàng, nắng ấm",
     imageUrl: avatar("micah", "nt-bien", "bae6fd", "hair=pixie&mouth=smile&shirt=open"),
+    backgroundId: "maldives",
+    accent: "#0ea5e9",
   },
   {
     id: "hue",
@@ -115,6 +137,8 @@ export const PUBLIC_CITIES: PublicCityMeta[] = [
     region: "central",
     desc: "Cố đô trầm lắng",
     imageUrl: avatar("lorelei", "hue-imperial", "ddd6fe", "hair=variant06&clothing=variant01"),
+    backgroundId: "venice",
+    accent: "#8b5cf6",
   },
 ];
 
