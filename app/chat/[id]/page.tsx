@@ -1141,7 +1141,7 @@ useEffect(() => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[16px] text-black truncate leading-tight">{name}</p>
-                  <p className="text-[13px] text-zinc-500 mt-0.5">{m.fileSize? `${(m.fileSize/1024/1024).toFixed(1)} MB` : 'Tệp'}</p>
+<p className="text-[13px] text-zinc-500 mt-0.5">{(m as any).fileSize? `${((m as any).fileSize/1024/1024).toFixed(1)} MB` : 'Tệp'}</p>
                 </div>
               </button>
             )
