@@ -1391,22 +1391,20 @@ onClick={(e) => {
           href={`https://www.google.com/maps?q=${lat},${lng}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="block w-[240px]"
+          className="block w-[180px]"
         >
-          <div className="overflow-hidden rounded-2xl shadow-lg">
-            <div className="relative h-[150px] w-full bg-zinc-200">
+          <div className="overflow-hidden rounded-2xl shadow-md">
+            <div className="relative h-[110px] w-full bg-zinc-200">
               <img
-src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},16/600x300@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`}
+                src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},16/360x220@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`}
                 className="w-full h-full object-cover"
                 alt=""
               />
             </div>
-            <div className="bg-white dark:bg-zinc-900 px-3 py-2.5">
-              <p className="text-sm font-medium truncate text-zinc-900 dark:text-white">
-                {m.address || 'Vị trí đã chia sẻ'}
-              </p>
-              <p className="text-xs flex items-center gap-1 mt-0.5 text-zinc-500 dark:text-zinc-400">
-                <Navigation size={12} />
+            <div className="bg-white dark:bg-zinc-900 px-2.5 py-2">
+              {/* BỎ dòng "Vị trí đã chia sẻ" */}
+              <p className="text- flex items-center justify-center gap-1 text-zinc-500 dark:text-zinc-400">
+                <Navigation size={11} />
                 Nhấn để mở bản đồ
               </p>
             </div>
