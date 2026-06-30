@@ -397,7 +397,7 @@ function TaskCard({
                     Đầy
                   </span>
                 )}
-                {derived.isNearDeadline && !derived.isUrgent && (
+                {derived.isNearDeadline && !derived.isUrgent && isTaskTheme && (
                   <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
                     <FiClock className="h-2.5 w-2.5" /> Sắp hết hạn
                   </span>
@@ -405,11 +405,6 @@ function TaskCard({
                 {derived.isRemote && (
                   <span className="inline-flex items-center gap-0.5 rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-bold text-sky-600 dark:text-sky-400">
                     <FiWifi className="h-2.5 w-2.5" /> Từ xa
-                  </span>
-                )}
-                {!isTaskTheme && (
-                  <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: accent }}>
-                    Kế hoạch
                   </span>
                 )}
               </div>
@@ -505,6 +500,11 @@ function TaskCard({
             </div>
 
             <div className="flex min-w-0 items-center justify-end gap-1">
+              {!isTaskTheme && derived.isNearDeadline && (
+                <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 shrink-0">
+                  <FiClock className="h-2.5 w-2.5" /> Sắp hết hạn
+                </span>
+              )}
               {derived.categoryLabel && (
                 <div
                   className="flex max-w-[72px] items-center gap-0.5 rounded-md px-1.5 py-1 text-[10px] font-bold text-white shadow-sm"

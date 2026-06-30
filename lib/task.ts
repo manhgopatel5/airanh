@@ -619,7 +619,8 @@ export async function joinTask(taskId: string, user: User): Promise<void> {
     transaction.set(participantRef, participant);
     transaction.update(taskRef, {
       joined: increment(1),
-      status: task.joined + 1 >= task.totalSlots? "full" : "open",
+      assignees: arrayUnion(user.uid),
+      status: "doing",
       updatedAt: serverTimestamp(),
     });
   });
