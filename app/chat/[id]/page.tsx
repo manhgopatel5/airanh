@@ -285,30 +285,7 @@ const handlePinMessage = async (msg: any) => {
 
     return () => unsub();
   }, [chatId, user, authLoading, router, db]);
-{(() => {
-  const bgId = (chatData?.backgroundId || 'default') as BgId;
-  const bg = BACKGROUNDS[bgId];
-  if (!bg ||!bg.url) return null;
 
-  return isGradient(bgId)? (
-    <div
-      className="fixed inset-0 -z-10"
-      style={{ background: bg.url.replace('gradient:', '') }}
-    />
-  ) : (
-    <>
-      <img
-        src={getBgUrl(bgId, 1600)}
-        srcSet={getBgSrcSet(bgId)}
-        className="fixed inset-0 -z-10 w-full h-full object-cover"
-        alt=""
-        fetchPriority="high"
-      />
-      {/* lớp mờ nhẹ như Messenger */}
-      <div className="fixed inset-0 -z-10 bg-black/5 dark:bg-black/20 pointer-events-none" />
-    </>
-  );
-})()}
   /* ================= REALTIME FRIEND STATUS ================= */
   useEffect(() => {
     if (!friendId) return;
@@ -788,27 +765,39 @@ useEffect(() => {
 
 
   return (
-<div className="fixed inset-0 flex flex-col bg-black">
+<div className="fixed inset-0 flex flex-col bg-transparent">
 {/* NỀN ẢNH CHUẨN RETINA - KHÔNG MỜ */}
-{(chatData as any)?.background ? (
-  <>
-    <img
-      src={`${(chatData as any).background}?w=1600&q=80&auto=format&fit=crop`}
-      srcSet={`
-        ${(chatData as any).background}?w=1600&q=80&auto=format&fit=crop 1x,
-        ${(chatData as any).background}?w=2400&q=90&auto=format&fit=crop 2x,
-        ${(chatData as any).background}?w=3200&q=90&auto=format&fit=crop 3x
-      `}
-      className="fixed inset-0 -z-10 w-full h-full object-cover select-none pointer-events-none"
-      alt=""
-      draggable={false}
-    />
-    {/* overlay cực mỏng thôi */}
-    <div className="fixed inset-0 -z-10 bg-black/[0.02] dark:bg-black/15 pointer-events-none" />
-  </>
-) : (
-  <div className="fixed inset-0 -z-10 bg-white dark:bg-zinc-950" />
-)}
+{/* NỀN MỚI - dùng backgroundId */}
+{(() => {
+  const bgId = (chatData?.backgroundId || 'default') as BgId;
+  const bg = BACKGROUNDS[bgId];
+
+  if (!bg?.url) {
+    return <div className="fixed inset-0 -z-10 bg-white dark:bg-zinc-950" />;
+  }
+
+  if (isGradient(bgId)) {
+    return (
+      <div
+        className="fixed inset-0 -z-10"
+        style={{ background: bg.url.replace('gradient:', '') }}
+      />
+    );
+  }
+
+  return (
+    <>
+      <img
+        src={getBgUrl(bgId, 2000)}
+        srcSet={getBgSrcSet(bgId)}
+        className="fixed inset-0 -z-10 w-full h-full object-cover"
+        alt=""
+        draggable={false}
+      />
+      <div className="fixed inset-0 -z-10 bg-black/10 dark:bg-black/30 pointer-events-none" />
+    </>
+  );
+})()}
 
   <Toaster richColors position="top-center" />
     {showSearch && (
