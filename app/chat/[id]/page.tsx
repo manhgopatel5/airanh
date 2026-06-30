@@ -1142,35 +1142,21 @@ useEffect(() => {
 </div>
 {showMedia && (
   <div className="fixed inset-0 z-[200] bg-white flex flex-col">
-    {/* HEADER - NO BORDER */}
+    {/* HEADER */}
     <div className="shrink-0 bg-white" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
-      <div className="relative flex items-center justify-center h-[44px]">
-        <span className="text-[17px] font-semibold text-black">Ảnh, file, liên kết</span>
-        <button
-          onClick={() => setShowMedia(false)}
-          className="absolute right-3 w-7 h-7 rounded-full bg-zinc-200/80 flex items-center justify-center active:scale-90"
-        >
+      <div className="relative flex items-center justify-center h-">
+        <span className="text- font-semibold text-black">Ảnh, file, liên kết</span>
+        <button onClick={() => setShowMedia(false)} className="absolute right-3 w-7 h-7 rounded-full bg-zinc-200/80 flex items-center justify-center active:scale-90">
           <X size={16} className="text-zinc-700" strokeWidth={2.5} />
         </button>
       </div>
 
       {/* TABS */}
       <div className="px-3 pt-1 pb-3 bg-white">
-        <div className="grid grid-cols-3 gap-1.5 bg-zinc-100 rounded-[10px] p-1">
-          {[
-            {k:'photos', label:'Ảnh'},
-            {k:'files', label:'File'},
-            {k:'links', label:'Liên kết'},
-          ].map(t => (
-            <button
-              key={t.k}
-              onClick={() => setMediaTab(t.k as any)}
-              className={`h-[32px] rounded-[8px] text-[15px] font-medium transition-all ${
-                mediaTab===t.k
-                 ? 'bg-white text-black shadow-[0_1px_2px_rgba(0,0,0,0.08)]'
-                  : 'text-zinc-500'
-              }`}
-            >
+        <div className="grid grid-cols-3 gap-1.5 bg-zinc-100 rounded- p-1">
+          {[{k:'photos',label:'Ảnh'},{k:'files',label:'File'},{k:'links',label:'Liên kết'}].map(t => (
+            <button key={t.k} onClick={() => setMediaTab(t.k as any)}
+              className={`h- rounded-[8px] text- font-medium transition-all ${mediaTab===t.k? 'bg-white text-black shadow-[0_1px_2px_rgba(0,0,0,0.08)]' : 'text-zinc-500'}`}>
               {t.label}
             </button>
           ))}
@@ -1183,17 +1169,16 @@ useEffect(() => {
       {/* ẢNH */}
       {mediaTab==='photos' && (
         mediaPhotos.length===0? (
-          <div className="flex flex-col items-center justify-center h-[60vh]">
+          <div className="flex flex-col items-center justify-center h-">
             <div className="w-20 h-20 mb-3">
               <svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="40" fill="#F2F2F7"/><path d="M30 35a5 5 0 110-10 5 5 0 010 10zM52 54H28c-1.1 0-2-.9-2-2V32c0-1.1.9-2 2-2h24c1.1 0 2.9 2 2v20c0 1.1-.9 2-2 2z" stroke="#AEAEB2" strokeWidth="2"/></svg>
             </div>
-            <p className="text-[15px] text-zinc-500">Chưa có ảnh</p>
+            <p className="text- text-zinc-500">Chưa có ảnh</p>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-[2px] bg-white">
             {mediaPhotos.map((m) => (
-              <button
-                key={m.id}
+              <button key={m.id}
                 onClick={() => {
                   setShowMedia(false);
                   setTimeout(() => {
@@ -1204,8 +1189,7 @@ useEffect(() => {
                     setTimeout(() => bubble?.classList.remove('!bg-yellow-200'), 1500);
                   }, 100);
                 }}
-                className="aspect-square bg-zinc-100 overflow-hidden active:opacity-70"
-              >
+                className="aspect-square bg-zinc-100 overflow-hidden active:opacity-70">
                 <img src={(m as any).imageUrl || (m as any).image} className="w-full h-full object-cover" loading="lazy" alt="" />
               </button>
             ))}
@@ -1217,25 +1201,31 @@ useEffect(() => {
       {mediaTab==='files' && (
         <div>
           {mediaFiles.length===0? (
-            <div className="flex flex-col items-center justify-center h-[60vh]">
+            <div className="flex flex-col items-center justify-center h-">
               <FileText size={48} className="text-zinc-300 mb-3" strokeWidth={1.5} />
-              <p className="text-[15px] text-zinc-500">Chưa có tệp</p>
+              <p className="text- text-zinc-500">Chưa có tệp</p>
             </div>
           ) : mediaFiles.map(m => {
             const name = (m as any).fileName || 'Tài liệu';
             const ext = name.split('.').pop()?.toUpperCase() || 'FILE';
             return (
-              <button
-                key={m.id}
-                onClick={() => window.open((m as any).fileUrl || (m as any).file, '_blank')}
-                className="w-full flex items-center gap-3 px-4 h-[68px] border-b border-zinc-100 active:bg-zinc-50 text-left"
-              >
+              <button key={m.id}
+                onClick={() => {
+                  // NHẢY VỀ TIN NHẮN FILE
+                  setShowMedia(false);
+                  setTimeout(() => {
+                    const el = document.getElementById(`msg-${m.id}`);
+                    el?.scrollIntoView({behavior:'smooth', block:'center'});
+                  }, 100);
+                }}
+                onDoubleClick={() => window.open((m as any).fileUrl || (m as any).file, '_blank')}
+                className="w-full flex items-center gap-3 px-4 h- border-b border-zinc-100 active:bg-zinc-50 text-left">
                 <div className="w-12 h-12 rounded-xl bg-[#007AFF] flex items-center justify-center shrink-0">
-                  <span className="text-[11px] font-bold text-white">{ext.slice(0,4)}</span>
+                  <span className="text- font-bold text-white">{ext.slice(0,4)}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[16px] text-black truncate leading-tight">{name}</p>
-                  <p className="text-[13px] text-zinc-500 mt-0.5">{(m as any).fileSize? `${((m as any).fileSize/1024/1024).toFixed(1)} MB` : 'Tệp'}</p>
+                  <p className="text- text-black truncate leading-tight">{name}</p>
+                  <p className="text- text-zinc-500 mt-0.5">{(m as any).fileSize? `${((m as any).fileSize/1024/1024).toFixed(1)} MB` : 'Tệp'}</p>
                 </div>
               </button>
             )
@@ -1243,29 +1233,40 @@ useEffect(() => {
         </div>
       )}
 
-      {/* LINK */}
+      {/* LINK - ĐÃ SỬA NHẬN www/http/huha.online */}
       {mediaTab==='links' && (
         <div>
           {mediaLinks.length===0? (
-            <div className="flex flex-col items-center justify-center h-[60vh]">
+            <div className="flex flex-col items-center justify-center h-">
               <Link2 size={48} className="text-zinc-300 mb-3" strokeWidth={1.5} />
-              <p className="text-[15px] text-zinc-500">Chưa có liên kết</p>
+              <p className="text- text-zinc-500">Chưa có liên kết</p>
             </div>
           ) : mediaLinks.map(m => {
-            const url = (m.text || '').match(/(https?:\/\/[^\s]+)/)?.[0] || '';
-            const domain = url? new URL(url).hostname.replace('www.','') : '';
+            const match = (m.text || '').match(/((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/i);
+            const raw = match?.[0] || '';
+            const url = raw? (raw.startsWith('http')? raw : `https://${raw.replace(/^www\./i,'')}`) : '';
+            const domain = url? (()=>{ try { return new URL(url).hostname.replace('www.','') } catch { return '' } })() : '';
+
             return (
-              <button
-                key={m.id}
-                onClick={() => window.open(url, '_blank')}
-                className="w-full flex items-center gap-3 px-4 h-[72px] border-b border-zinc-100 active:bg-zinc-50 text-left"
-              >
+              <button key={m.id}
+                onClick={() => {
+                  // NHẢY VỀ TIN NHẮN CHỨA LINK
+                  setShowMedia(false);
+                  setTimeout(() => {
+                    const el = document.getElementById(`msg-${m.id}`);
+                    el?.scrollIntoView({behavior:'smooth', block:'center'});
+                    const bubble = el?.querySelector('div');
+                    bubble?.classList.add('ring-2','ring-blue-400');
+                    setTimeout(()=> bubble?.classList.remove('ring-2','ring-blue-400'),1500);
+                  }, 100);
+                }}
+                className="w-full flex items-center gap-3 px-4 h- border-b border-zinc-100 active:bg-zinc-50 text-left">
                 <div className="w-12 h-12 rounded-xl bg-zinc-100 flex items-center justify-center overflow-hidden shrink-0">
-                  <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`} className="w-6 h-6" alt="" />
+                  <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`} className="w-6 h-6" alt="" onError={(e)=>(e.currentTarget.style.display='none')} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[16px] text-black truncate leading-tight">{(m as any).linkTitle || domain}</p>
-                  <p className="text-[13px] text-zinc-500 truncate mt-0.5">{url}</p>
+                  <p className="text- text-black truncate leading-tight">{(m as any).linkTitle || m.text?.slice(0,50) || domain}</p>
+                  <p className="text- text-zinc-500 truncate mt-0.5">{url}</p>
                 </div>
               </button>
             )
