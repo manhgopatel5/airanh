@@ -1773,9 +1773,7 @@ className={isLinkOnly
 
         
                 </div>
-              </div>
 
-}
          {/* GIỜ Ở GIỮA */}
 {isLastInGroup && filteredMessages.length > 0 && i === filteredMessages.length - 1 && m.createdAt && (
   <div className="flex w-full justify-center items-center gap-1.5 my-2">
