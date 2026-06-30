@@ -810,14 +810,43 @@ useEffect(() => {
 })()}
 
   <Toaster richColors position="top-center" />
-    {showSearch && (
-  <div className="sticky top-0 z-40 animate-in slide-in-from-top">
-    <div className="px-3 pt-2.5 pb-3 bg-[#0a0a0b]/85 backdrop-blur-2xl border-b border-white/[0.06]">
-      {/* Ô tìm */}
-      <div className="flex items-center gap-2.5">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none" />
+{showSearch && (
+  <div className="fixed inset-0 z-[100] flex items-end justify-center">
+    {/* Backdrop */}
+    <div
+      className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      onClick={() => { setShowSearch(false); setSearchQuery(''); }}
+    />
 
+    {/* Bottom Sheet */}
+    <div className="relative w-full max-w-[640px] bg-[#1c1c1e] rounded-t-[28px] animate-in slide-in-from-bottom duration-300 max-h-[85vh] flex flex-col shadow-2xl">
+      {/* Handle */}
+      <div className="flex justify-center pt-2.5 pb-1">
+        <div className="w-9 h-1 rounded-full bg-white/20" />
+      </div>
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+            <Search size={18} className="text-white/80" />
+          </div>
+          <div>
+            <h2 className="text-[17px] font-semibold text-white leading-tight">Tìm kiếm</h2>
+            <p className="text-[13px] text-white/50 leading-tight">Trong cuộc trò chuyện này</p>
+          </div>
+        <button
+          onClick={() => { setShowSearch(false); setSearchQuery(''); }}
+          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center transition"
+        >
+          <X size={18} className="text-white/70" />
+        </button>
+      </div>
+
+      {/* Ô tìm */}
+      <div className="px-4 pb-3">
+        <div className="relative">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
           <input
             ref={searchInputRef}
             value={searchQuery}
@@ -827,57 +856,75 @@ useEffect(() => {
               if (e.key === 'Enter' && searchQuery) { goToNextResult(); }
             }}
             placeholder="Tìm trong cuộc trò chuyện"
-            className="w-full h-[36px] pl-[30px] pr-8 bg-white/[0.08] hover:bg-white/[0.12] focus:bg-white/[0.12] text-[14px] text-white placeholder:text-white/40 rounded-full outline-none border border-white/10 focus:border-[#0A84FF]/50 transition-all"
+            className="w-full h-[40px] pl-10 pr-9 bg-white/[0.08] text-[15px] text-white placeholder:text-white/40 rounded-xl outline-none border border-white/10 focus:border-[#0A84FF]/50 focus:bg-white/[0.1] transition-all"
             autoFocus
           />
-
-          {/* Nút xóa */}
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center active:scale-90 transition"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center"
             >
-              <X size={12} className="text-white/80" strokeWidth={2.5} />
+              <X size={13} className="text-white/80" strokeWidth={2.5} />
             </button>
           )}
         </div>
-
-        {/* Nút Hủy */}
-        <button
-          onClick={() => { setShowSearch(false); setSearchQuery(''); }}
-          className="text-[#0A84FF] text-[15px] font-[450] px-1 active:opacity-60 transition"
-        >
-          Hủy
-        </button>
       </div>
 
-      {/* Thanh kết quả */}
-      {searchQuery && (
-        <div className="flex items-center justify-between mt-2.5 px-1">
-          <span className="text-[12px] text-white/50">
-            {filteredMessages.length > 0
-             ? `${currentResultIndex + 1} / ${filteredMessages.length} kết quả`
-              : 'Không tìm thấy'}
-          </span>
+      {/* Kết quả */}
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
+        {searchQuery? (
+          <>
+            <div className="flex items-center justify-between py-2 mb-1">
+              <span className="text-[12px] uppercase tracking-wider text-white/40 font-medium">
+                {filteredMessages.length > 0
+                 ? `${filteredMessages.length} kết quả`
+                  : 'Không tìm thấy'}
+              </span>
+              {filteredMessages.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] text-white/50">
+                    {currentResultIndex + 1}/{filteredMessages.length}
+                  </span>
+                  <div className="flex gap-1">
+                    <button onClick={goToPrevResult} className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/15 flex items-center justify-center">
+                      <ChevronUp size={16} className="text-white/70" />
+                    </button>
+                    <button onClick={goToNextResult} className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/15 flex items-center justify-center">
+                      <ChevronDown size={16} className="text-white/70" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
-          <div className="flex items-center gap-1">
-            <button
-              onClick={goToPrevResult}
-              disabled={filteredMessages.length === 0}
-              className="w-6 h-6 rounded-md hover:bg-white/10 disabled:opacity-30 flex items-center justify-center transition"
-            >
-              <ChevronUp size={14} className="text-white/70" />
-            </button>
-            <button
-              onClick={goToNextResult}
-              disabled={filteredMessages.length === 0}
-              className="w-6 h-6 rounded-md hover:bg-white/10 disabled:opacity-30 flex items-center justify-center transition"
-            >
-              <ChevronDown size={14} className="text-white/70" />
-            </button>
+            {/* List kết quả mẫu - bạn thay bằng map filteredMessages */}
+            <div className="space-y-1">
+              {filteredMessages.map((msg, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => goToResult(idx)}
+                  className={`w-full text-left p-3 rounded-xl transition ${
+                    idx === currentResultIndex
+                     ? 'bg-[#0A84FF]/20 border-[#0A84FF]/30'
+                      : 'hover:bg-white/[0.06] active:bg-white/[0.08]'
+                  }`}
+                >
+                  <p className="text-[14px] text-white/90 line-clamp-2">{msg.text}</p>
+                  <p className="text-[12px] text-white/40 mt-1">{msg.time}</p>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-3">
+              <Search size={24} className="text-white/30" />
+            </div>
+            <p className="text-[15px] text-white/60">Nhập từ khóa để tìm</p>
+            <p className="text-[13px] text-white/40 mt-1">Tin nhắn, hình ảnh, liên kết</p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   </div>
 )}
