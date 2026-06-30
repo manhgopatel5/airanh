@@ -1058,9 +1058,9 @@ useEffect(() => {
             </span>
           </div>
           <p className="text-sm text-white/70 mt-1 line-clamp-2">
-            {(chatData as any).pinnedMessage.text || 
-             ((chatData as any).pinnedMessage.image ? '📷 Hình ảnh' : 
-              (chatData as any).pinnedMessage.file ? '📎 Tệp đính kèm' : 'Tin nhắn'))}
+{(chatData as any).pinnedMessage.text || 
+ (chatData as any).pinnedMessage.image ? '📷 Hình ảnh' : 
+ (chatData as any).pinnedMessage.file ? '📎 Tệp đính kèm' : 'Tin nhắn'}
           </p>
           {(chatData as any).pinnedMessage.by && (
             <p className="text-xs text-white/40 mt-1">
