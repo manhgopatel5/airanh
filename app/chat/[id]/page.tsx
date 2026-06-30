@@ -1097,7 +1097,7 @@ useEffect(() => {
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-[2px] bg-white">
-            {mediaPhotos.map((m, i) => (
+{mediaPhotos.map((m) => (
               <button
                 key={m.id}
                 onClick={() => {
