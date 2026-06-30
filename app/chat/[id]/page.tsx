@@ -1211,38 +1211,30 @@ useEffect(() => {
 {(m.type === 'location' || m.location) && (() => {
   const lat = Number(m.lat?? m.location?.lat?? 0);
   const lng = Number(m.lng?? m.location?.lng?? 0);
-  const address = m.address;
-  const isMe = m.senderId === user?.uid;
-
   if (!lat ||!lng) return null;
 
   return (
     <a
       href={`https://www.google.com/maps?q=${lat},${lng}`}
       target="_blank"
-      rel="noopener noreferrer"
-      className="block w-[260px] my-1"
+      className="block w-[240px]"
     >
-      <div className="overflow-hidden rounded-2xl shadow-lg">
-        <div className="relative h-[150px] w-full bg-zinc-200 dark:bg-zinc-800">
-     <img
-  src={`https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=16&size=600x300&markers=${lat},${lng},red-pushpin`}
-  className="absolute inset-0 w-full h-full object-cover"
-  alt="map"
-/>
+      <div className="overflow-hidden rounded-2xl">
+        <div className="relative h-[150px] bg-gray-100">
+          <img
+            src={`https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=16&l=map&size=450,300&pt=${lng},${lat},pm2rdm`}
+            className="w-full h-full object-cover"
+            alt=""
+          />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <div className="w-9 h-9 bg-white rounded-full shadow-xl flex items-center justify-center">
-              <MapPin size={16} className="text-[#FF3B30]" fill="#FF3B30" />
+            <div className="w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center">
+              <MapPin size={16} fill="#FF3B30" />
             </div>
           </div>
-        </div>
-        <div className={isMe? "bg-[#0A84FF] px-3 py-2" : "bg-white dark:bg-zinc-900 px-3 py-2"}>
-          <p className={`text- font-medium truncate ${isMe? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
-            {address || 'Vị trí đã chia sẻ'}
-          </p>
-          <p className={`text- flex items-center gap-1 mt-0.5 ${isMe? 'text-white/70' : 'text-zinc-500 dark:text-zinc-400'}`}>
-            <Navigation size={11} />
-            Nhấn để mở bản đồ
+        <div className="bg-white/95 dark:bg-zinc-800/95 px-3 py-2 backdrop-blur">
+          <p className="text-[14px] font-medium truncate">{m.address || 'Vị trí đã chia sẻ'}</p>
+          <p className="text-[12px] text-zinc-500 flex items-center gap-1 mt-0.5">
+            <Navigation size={11} /> Nhấn để mở
           </p>
         </div>
       </div>
