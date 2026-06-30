@@ -138,7 +138,8 @@ useEffect(() => {
     setTypingDisplay("");
     return;
   }
-  const fullText = `${friend.name} đang nhắn...`;
+  const name = friend?.name || 'Bạn';
+  const fullText = `${name} đang nhắn...`;
   let i = 0;
   setTypingDisplay("");
   
@@ -146,9 +147,8 @@ useEffect(() => {
     if (i <= fullText.length) {
       setTypingDisplay(fullText.slice(0, i));
       i++;
-      setTimeout(type, 45); // tốc độ từng chữ
+      setTimeout(type, 45);
     } else {
-      // pause rồi lặp lại
       setTimeout(() => {
         i = 0;
         setTypingDisplay("");
@@ -157,7 +157,7 @@ useEffect(() => {
     }
   };
   type();
-}, [isTyping, friend.name]);
+}, [isTyping, friend?.name]);
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1019,21 +1019,21 @@ className="w-full h-9 pl-9 pr-8 bg-white text-[15px] text-zinc-900 placeholder:t
       </div>
     </button>
 
-    {/* Right: chỉ còn Call & Video */}
-    <div className="flex items-center gap-1.5 pl-2">
-      <button
-        onClick={() => toast.info('Gọi thoại')}
-        className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-90 shadow-md shadow-blue-500/20 transition"
-      >
-        <Phone size={18} className="text-white" strokeWidth={2.3} />
-      </button>
-      <button
-        onClick={() => toast.info('Gọi video')}
-        className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-90 shadow-md shadow-blue-500/20 transition"
-      >
-        <Video size={18} className="text-white" strokeWidth={2.3} />
-      </button>
-    </div>
+{/* Right: chỉ còn Call & Video */}
+<div className="flex items-center gap-2 pl-2">
+  <button
+    onClick={() => toast.info('Gọi thoại')}
+    className="w-8 h-8 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-95 transition"
+  >
+    <Phone size={17} className="text-white" strokeWidth={2.2} />
+  </button>
+  <button
+    onClick={() => toast.info('Gọi video')}
+    className="w-8 h-8 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-95 transition"
+  >
+    <Video size={17} className="text-white" strokeWidth={2.2} />
+  </button>
+</div>
   </div>
 </div>
 
