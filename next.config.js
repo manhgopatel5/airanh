@@ -5,38 +5,22 @@ const nextConfig = {
   output: 'standalone',
   poweredByHeader: false,
 
-  // Thêm đoạn này để tắt ESLint khi build prod
   eslint: {
     ignoreDuringBuilds: true,
   },
 
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'qr.sepay.vn', // Thêm dòng này
-      },
-      {
-        protocol: 'https',
-        hostname: 'firebasestorage.googleapis.com',
-        pathname: '/v0/b/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'storage.googleapis.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'ui-avatars.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
+      { protocol: 'https', hostname: 'qr.sepay.vn' },
+      { protocol: 'https', hostname: 'firebasestorage.googleapis.com', pathname: '/v0/b/**' },
+      { protocol: 'https', hostname: 'storage.googleapis.com' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'https', hostname: 'ui-avatars.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      // THÊM 3 DÒNG NÀY CHO MAP
+      { protocol: 'https', hostname: 'image.thum.io' },
+      { protocol: 'https', hostname: 'api.mapbox.com' },
+      { protocol: 'https', hostname: 'maps.wikimedia.org' },
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
@@ -67,12 +51,16 @@ const nextConfig = {
         "'self'",
         'data:',
         'blob:',
-        'https://qr.sepay.vn', // Thêm dòng này
+        'https://qr.sepay.vn',
         'https://firebasestorage.googleapis.com',
         'https://storage.googleapis.com',
         'https://lh3.googleusercontent.com',
         'https://ui-avatars.com',
         'https://images.unsplash.com',
+        // THÊM 3 DÒNG NÀY
+        'https://image.thum.io',
+        'https://api.mapbox.com',
+        'https://maps.wikimedia.org',
       ].join(' '),
       "font-src 'self' data:",
       [
@@ -128,19 +116,9 @@ const nextConfig = {
   serverExternalPackages: ['firebase-admin', 'sharp'],
 
   experimental: {
-    optimizePackageImports: [
-      'date-fns',
-      'lucide-react',
-      'framer-motion',
-      'zustand',
-    ],
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
-    staleTimes: {
-      dynamic: 30,
-      static: 180,
-    },
+    optimizePackageImports: ['date-fns', 'lucide-react', 'framer-motion', 'zustand'],
+    serverActions: { bodySizeLimit: '2mb' },
+    staleTimes: { dynamic: 30, static: 180 },
   },
 
   webpack: (config, { isServer }) => {
@@ -149,11 +127,7 @@ const nextConfig = {
       issuer: /\.[jt]sx?$/,
       use: ['@svgr/webpack'],
     });
-
-    if (isServer) {
-      config.output.globalObject = 'self';
-    }
-
+    if (isServer) config.output.globalObject = 'self';
     return config;
   },
 };
