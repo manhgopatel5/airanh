@@ -910,7 +910,7 @@ useEffect(() => {
   className="shrink-0 z-40 border-b border-zinc-200/70 bg-white/85 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/70"
   style={{ paddingTop: 'max(8px, env(safe-area-inset-top))' }}
 >
-  <div className="px-3 sm:px-4 h- flex items-center justify-between">
+  <div className="px-3 sm:px-4 h-[60px] flex items-center justify-between">
     {/* Left: avatar + name - BẤM LÀ MỞ SETTING */}
     <button
       onClick={() => setShowSettings(true)}
@@ -931,22 +931,13 @@ useEffect(() => {
       </div>
 
       <div className="min-w-0">
-        <p className="font-semibold text-zinc-900 text- leading-tight truncate">
+        <p className="font-semibold text-zinc-900 text-[16px] leading-tight truncate">
           {friend.name}
         </p>
-        <p className="text- leading-snug font-medium text-zinc-500">
-          {chatData?.typing?.[friendId || ""] ? (
-            <span className="text-[#0084FF] flex items-center gap-1">
-              <span className="flex gap-0.5">
-                <span className="w-1 h-1 bg-[#0084FF] rounded-full animate-bounce" style={{animationDelay:'0ms'}}/>
-                <span className="w-1 h-1 bg-[#0084FF] rounded-full animate-bounce" style={{animationDelay:'150ms'}}/>
-                <span className="w-1 h-1 bg-[#0084FF] rounded-full animate-bounce" style={{animationDelay:'300ms'}}/>
-              </span>
-              Đang nhập...
-            </span>
-          ) : friend.isOnline ? (
+        <p className="text-[13px] leading-snug font-medium text-zinc-500">
+          {friend.isOnline? (
             <span>Đang hoạt động</span>
-          ) : friend.lastSeen ? (
+          ) : friend.lastSeen? (
             <span>{formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })}</span>
           ) : (
             <span>Offline</span>
@@ -957,13 +948,13 @@ useEffect(() => {
 
     {/* Right: chỉ còn Call & Video */}
     <div className="flex items-center gap-1.5 pl-2">
-      <button 
+      <button
         onClick={() => toast.info('Gọi thoại')}
         className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-90 shadow-md shadow-blue-500/20 transition"
       >
         <Phone size={18} className="text-white" strokeWidth={2.3} />
       </button>
-      <button 
+      <button
         onClick={() => toast.info('Gọi video')}
         className="w-9 h-9 flex items-center justify-center rounded-full bg-[#0084FF] hover:bg-[#0073e6] active:scale-90 shadow-md shadow-blue-500/20 transition"
       >
@@ -1372,6 +1363,23 @@ src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${
             </div>
           );
         })}
+
+        {chatData?.typing?.[friendId || ""] && (
+          <div className="flex items-end gap-2 px-3 mb-2 animate-in fade-in duration-200">
+            <img
+              src={friend.avatar || '/default-avatar.png'}
+              className="w-6 h-6 rounded-full object-cover"
+              alt=""
+            />
+            <div className="bg-[#303030] px-3 py-2 rounded-[18px] rounded-bl-[4px]">
+              <span className="flex gap-1 items-center">
+                <span className="w-1.5 h-1.5 bg-[#8e8e93] rounded-full animate-bounce" style={{animationDelay:'0ms'}}/>
+                <span className="w-1.5 h-1.5 bg-[#8e8e93] rounded-full animate-bounce" style={{animationDelay:'150ms'}}/>
+                <span className="w-1.5 h-1.5 bg-[#8e8e93] rounded-full animate-bounce" style={{animationDelay:'300ms'}}/>
+              </span>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
