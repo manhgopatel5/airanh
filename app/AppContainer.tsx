@@ -11,14 +11,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import CustomTabBar from "@/components/CustomTabBar";
 import { useTabBarHeight } from "@/hooks/useTabBarHeight";
 import JobSkeleton from "@/components/JobSkeleton";
+import TaskFeedPage from "./_tabs/TaskFeedPage";
 import type { FeedTask } from "@/types/task";
 import type { EventItem } from "@/data/events";
 import { cn } from "@/lib/utils";
-
-const TaskFeedPage = dynamic(() => import("./_tabs/TaskFeedPage"), {
-  loading: () => <JobSkeleton count={5} />,
-  ssr: true,
-});
 
 const ChatClient = dynamic(() => import("./chat/ChatClient"), {
   ssr: false,
@@ -137,7 +133,7 @@ export default function AppContainer({ initialJobs, initialPlans, initialEvents 
     <div className="h-dvh flex flex-col font-sans bg-white dark:bg-zinc-950 relative">
       <div
         className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] touch-pan-y"
-        style={{ paddingBottom: tabBarHeight }}
+        style={{ paddingBottom: mounted ? tabBarHeight : 0 }}
       >
         {(showHome || visitedTabs.has("home") || visitedTabs.has("plans")) && (
           <div className={cn(!showHome && "hidden")} aria-hidden={!showHome}>

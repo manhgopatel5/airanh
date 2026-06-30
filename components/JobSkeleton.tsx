@@ -1,64 +1,49 @@
 interface JobSkeletonProps {
   count?: number;
-  theme?: 'task' | 'plan';
+  theme?: "task" | "plan";
 }
 
-export default function JobSkeleton({ count = 3, theme = 'task' }: JobSkeletonProps) {
-  const colors = {
-    task: {
-      primary: 'bg-blue-200 dark:bg-blue-900/50',
-      secondary: 'bg-zinc-200 dark:bg-zinc-800',
-    },
-    plan: {
-      primary: 'bg-green-200 dark:bg-green-900/50', 
-      secondary: 'bg-zinc-200 dark:bg-zinc-800',
-    }
-  };
-
-  const c = colors[theme];
+export default function JobSkeleton({ count = 3, theme = "task" }: JobSkeletonProps) {
+  const accent =
+    theme === "task"
+      ? "bg-blue-200/80 dark:bg-blue-900/40"
+      : "bg-green-200/80 dark:bg-green-900/40";
+  const block = "bg-zinc-200/90 dark:bg-zinc-800/80";
 
   return (
-    <div className="space-y-3 p-4" aria-label="Đang tải dữ liệu" role="status">
+    <div className="space-y-3 px-4 pt-3 pb-2" aria-label="Đang tải dữ liệu" role="status">
       {[...Array(count)].map((_, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800"
+          className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_6px_20px_-6px_rgba(0,0,0,0.12)] dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-black/30"
           aria-hidden="true"
         >
-          <div className="flex gap-3">
-            {/* Avatar + Badge */}
-            <div className="relative flex-shrink-0">
-              <div className={`w-12 h-12 ${c.secondary} rounded-xl animate-pulse`} />
-              <div className={`absolute -bottom-1 -right-1 w-5 h-5 ${c.primary} rounded-full border-2 border-white dark:border-zinc-900 animate-pulse`} />
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 min-w-0 space-y-2.5">
-              {/* Title 2 dòng */}
-              <div className="space-y-2">
-                <div className={`h-4 w-4/5 ${c.secondary} rounded-lg animate-pulse`} />
-                <div className={`h-4 w-2/3 ${c.secondary} rounded-lg animate-pulse`} />
-              </div>
-
-              {/* Tags row */}
-              <div className="flex gap-2">
-                <div className={`h-5 w-16 ${c.secondary} rounded-md animate-pulse`} />
-                <div className={`h-5 w-20 ${c.secondary} rounded-md animate-pulse`} />
-              </div>
-
-              {/* Bottom row: price + stats */}
-              <div className="flex items-center justify-between pt-1">
-                <div className={`h-6 w-24 ${c.primary} rounded-lg animate-pulse`} />
-                <div className="flex gap-3">
-                  <div className={`h-4 w-10 ${c.secondary} rounded-md animate-pulse`} />
-                  <div className={`h-4 w-10 ${c.secondary} rounded-md animate-pulse`} />
-                </div>
+          <div className="p-2.5">
+            <div className="mb-2 flex items-center gap-2">
+              <div className={`h-9 w-9 shrink-0 rounded-xl ${block} animate-pulse`} />
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className={`h-3 w-24 rounded-md ${block} animate-pulse`} />
+                <div className={`h-2.5 w-16 rounded-md ${block} animate-pulse`} />
               </div>
             </div>
+            <div className={`mb-2 h-3.5 w-4/5 rounded-md ${block} animate-pulse`} />
+            <div className="grid grid-cols-3 gap-1.5">
+              <div className={`h-10 rounded-lg ${block} animate-pulse`} />
+              <div className={`h-10 rounded-lg ${block} animate-pulse`} />
+              <div className={`h-10 rounded-lg ${block} animate-pulse`} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between border-t border-zinc-100 px-2 py-1.5 dark:border-zinc-800">
+            <div className="flex gap-1">
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className={`h-8 w-8 rounded-lg ${block} animate-pulse`} />
+              ))}
+            </div>
+            <div className={`h-6 w-16 rounded-md ${accent} animate-pulse`} />
           </div>
         </div>
       ))}
-      <span className="sr-only">Đang tải danh sách công việc...</span>
+      <span className="sr-only">Đang tải danh sách...</span>
     </div>
   );
 }

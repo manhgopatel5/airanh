@@ -358,7 +358,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
             </div>
           </div>
         ) : (
-          <div key={mode} className="space-y-4">
+          <div key={mode} className="space-y-3">
             {filteredTasks.map((task) => (
               <div key={task.id} className="feed-item">
                 <TaskCard
