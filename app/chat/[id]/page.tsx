@@ -173,9 +173,6 @@ const [showUnpinSheet, setShowUnpinSheet] = useState<any>(null); // thay vì boo
   const [showMedia, setShowMedia] = useState(false);
 const [mediaTab, setMediaTab] = useState<'photos'|'files'|'links'>('photos');
 
-const LINK_REGEX = /((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/i;
-const linkMatch = m.text?.match(LINK_REGEX);
-  const isLinkOnly =!!linkMatch &&!m.image &&!m.file && m.text.trim() === linkMatch[0];
 
 const mediaPhotos = messages.filter(m => m.imageUrl || m.image);
 const mediaFiles = messages.filter(m => m.fileUrl || m.file);
@@ -1595,103 +1592,116 @@ onClick={(e) => {
     </p>
   </div>
 
-) : (m.type === 'location' || m.location)? (
-  // LOCATION - không bubble
-  (() => {
-    const lat = Number(m.lat?? m.location?.lat?? 0);
-    const lng = Number(m.lng?? m.location?.lng?? 0);
-    if (!lat ||!lng) return null;
-    return (
-      <div className="relative">
-        <a href={`https://www.google.com/maps?q=${lat},${lng}`} target="_blank" rel="noopener noreferrer" className="block w-[180px]">
-          <div className="overflow-hidden rounded-2xl shadow-md">
-            <div className="relative h-[110px] w-full bg-zinc-200">
-              <img src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},16/360x220@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`} className="w-full h-full object-cover" alt="" />
+{messages.map((m) => {
+  const isMe = m.senderId === currentUserId;
+  const LINK_REGEX = /((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/i;
+  const linkMatch = m.text?.match(LINK_REGEX);
+  const isLinkOnly =!!linkMatch &&!m.image &&!m.imageUrl &&!m.file &&!m.location && m.text.trim() === linkMatch[0];
+
+  return (
+    <div key={m.id} id={`msg-${m.id}`} className={`flex ${isMe? 'justify-end' : 'justify-start'} mb-2`}>
+
+      {(m.type === 'location' || m.location)? (
+        // LOCATION - không bubble
+        (() => {
+          const lat = Number(m.lat?? m.location?.lat?? 0);
+          const lng = Number(m.lng?? m.location?.lng?? 0);
+          if (!lat ||!lng) return null;
+          return (
+            <div className="relative">
+              <a href={`https://www.google.com/maps?q=${lat},${lng}`} target="_blank" rel="noopener noreferrer" className="block w-[180px]">
+                <div className="overflow-hidden rounded-2xl shadow-md">
+                  <div className="relative h-[110px] w-full bg-zinc-200">
+                    <img src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},16/360x220@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`} className="w-full h-full object-cover" alt="" />
+                  </div>
+                  <div className="bg-white dark:bg-zinc-900 px-2.5 py-2">
+                    <p className="text-[10px] leading-none flex items-center justify-center gap-1 text-zinc-500 dark:text-zinc-400">
+                      <Navigation size={10} strokeWidth={2.5} />
+                      Nhấn để mở bản đồ
+                    </p>
+                  </div>
+                </div>
+              </a>
             </div>
-            <div className="bg-white dark:bg-zinc-900 px-2.5 py-2">
-              <p className="text-[10px] leading-none flex items-center justify-center gap-1 text-zinc-500 dark:text-zinc-400">
-                <Navigation size={10} strokeWidth={2.5} />
-                Nhấn để mở bản đồ
-              </p>
-            </div>
-          </div>
-        </a>
-      </div>
-    );
-  })()
+          );
+        })()
 
-) : (m.type === 'image' || m.image || m.imageUrl)? (
-  // ẢNH - KHÔNG BUBBLE, giống location
-  <div className="relative">
-    <img
-      src={(m as any).imageUrl || (m as any).image}
-      className="max-w-[260px] max-h-[380px] w-auto h-auto rounded-[18px] object-cover shadow-sm block"
-      alt="sent"
-      loading="lazy"
-      onContextMenu={(e) => { e.preventDefault(); setShowEmojiPicker(m.id); }}
-    />
-  </div>
+      ) : (m.type === 'image' || m.image || m.imageUrl)? (
+        // ẢNH - không bubble
+        <div className="relative">
+          <img
+            src={(m as any).imageUrl || (m as any).image}
+            className="max-w-[260px] max-h-[380px] w-auto h-auto rounded-[18px] object-cover shadow-sm block"
+            alt="sent"
+            loading="lazy"
+            onContextMenu={(e) => { e.preventDefault(); setShowEmojiPicker(m.id); }}
+          />
+        </div>
 
-) : (
-  // TEXT / FILE - giữ bubble
-  <div
-    className={`px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer rounded-2xl ${
-      isMe? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white" : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-    }`}
-    onContextMenu={(e) => { e.preventDefault(); setShowEmojiPicker(m.id); }}
-  >
-    {m.file && (
-      <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
-        <Paperclip size={16} />
-        <span className="text-sm truncate">{(m as any).fileName || 'Tệp'}</span>
-      </a>
-    )}
- {m.text && (
-        <div className={`text-[15px] leading-snug whitespace-pre-wrap break-words ${isLinkOnly? 'w-[260px]' : ''}`}>
-          {/* Nếu không phải link-only thì render text bình thường */}
-          {!isLinkOnly && (
-            <p className="inline">
-              {m.text.split(LINK_REGEX).map((part, i) => {
-                if (!part) return null;
-                const isLink = LINK_REGEX.test(part);
-                if (isLink) {
-                  let href = part;
-                  if (!/^https?:\/\//i.test(href)) href = 'https://' + href.replace(/^www\./i, '');
-                  return (
-                    <a key={i} href={href} target="_blank" rel="noopener noreferrer"
-                       className="underline text-[#0A84FF] break-all"
-                       onClick={e => e.stopPropagation()}>
-                      {part}
-                    </a>
-                  );
-                }
-                return <span key={i}>{part}</span>;
-              })}
-              {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
-            </p>
-          )}
-
-          {/* Nếu là link-only: chỉ hiện chữ link nhỏ phía trên preview */}
-          {isLinkOnly && (
-            <a href={linkMatch[0].startsWith('http')? linkMatch[0] : `https://${linkMatch[0].replace(/^www\./i,'')}`}
-               target="_blank" rel="noopener noreferrer"
-               className="text-[13px] text-[#0A84FF] underline block mb-1 px-1"
-               onClick={e => e.stopPropagation()}>
-              {linkMatch[0]}
+      ) : (
+        // TEXT / FILE
+        <div
+          className={`${
+            isLinkOnly
+             ? 'p-0 bg-transparent shadow-none'
+              : `px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer rounded-2xl ${
+                  isMe
+                   ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+                    : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                }`
+          }`}
+          onContextMenu={(e) => { e.preventDefault(); setShowEmojiPicker(m.id); }}
+        >
+          {m.file && (
+            <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
+              <Paperclip size={16} />
+              <span className="text-sm truncate">{(m as any).fileName || 'Tệp'}</span>
             </a>
           )}
 
-          {/* Preview */}
-          {(() => {
-            if (!linkMatch || m.image || m.file) return null;
-            const link = linkMatch[0].startsWith('http')? linkMatch[0] : `https://${linkMatch[0].replace(/^www\./i,'')}`;
-            return <LinkPreview url={link} />;
-          })()}
+          {m.text && (
+            <div className={`text-[15px] leading-snug whitespace-pre-wrap break-words ${isLinkOnly? 'w-[260px]' : ''}`}>
+              {!isLinkOnly && (
+                <p className="inline">
+                  {m.text.split(LINK_REGEX).map((part, i) => {
+                    if (!part) return null;
+                    const isLink = LINK_REGEX.test(part);
+                    if (isLink) {
+                      let href = part;
+                      if (!/^https?:\/\//i.test(href)) href = 'https://' + href.replace(/^www\./i, '');
+                      return (
+                        <a key={i} href={href} target="_blank" rel="noopener noreferrer"
+                           className="underline text-[#0A84FF] break-all"
+                           onClick={e => e.stopPropagation()}>
+                          {part}
+                        </a>
+                      );
+                    }
+                    return <span key={i}>{part}</span>;
+                  })}
+                  {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
+                </p>
+              )}
+
+              {isLinkOnly && (
+                <a href={linkMatch[0].startsWith('http')? linkMatch[0] : `https://${linkMatch[0].replace(/^www\./i,'')}`}
+                   target="_blank" rel="noopener noreferrer"
+                   className="text-[13px] text-[#0A84FF] underline block mb-1 px-1"
+                   onClick={e => e.stopPropagation()}>
+                  {linkMatch[0]}
+                </a>
+              )}
+
+              {linkMatch &&!m.image &&!m.file && (
+                <LinkPreview url={linkMatch[0].startsWith('http')? linkMatch[0] : `https://${linkMatch[0].replace(/^www\./i,'')}`} />
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
-})()}
+})}
                     {m.reactions && m.reactions.length > 0 && (
                       <div className="flex gap-1 mt-1 px-1">
                         {m.reactions.map((r) => (
