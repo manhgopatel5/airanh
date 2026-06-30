@@ -1634,7 +1634,14 @@ onClick={(e) => {
 ) : (
   // TEXT / FILE - giữ bubble
   <div
-    className={`${isLinkOnly? 'p-0 bg-transparent shadow-none' : `px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer rounded-2xl ${isMe? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white" : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"}`}`}
+className={isLinkOnly
+  ? 'p-0 bg-transparent shadow-none'
+  : `px-3.5 py-2 min-w-[36px] min-h-[36px] flex items-center justify-center shadow-sm cursor-pointer rounded-2xl ${
+      isMe
+        ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+        : "bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+    }`
+}
     onContextMenu={(e) => { e.preventDefault(); setShowEmojiPicker(m.id); }}
   >
     {m.file && (
