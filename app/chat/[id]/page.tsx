@@ -115,7 +115,7 @@ export default function ChatDetailPage() {
   const [friendId, setFriendId] = useState<string | null>(null);
   const [isFriend, setIsFriend] = useState(true);
   const [chatData, setChatData] = useState<ChatData | null>(null);
-
+  const [failedBg, setFailedBg] = useState<string[]>([]);
 
   const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
   const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
@@ -787,13 +787,23 @@ useEffect(() => {
 
   return (
     <>
-      <img
-        src={getBgUrl(bgId, 2000)}
-        srcSet={getBgSrcSet(bgId)}
-        className="fixed inset-0 -z-10 w-full h-full object-cover"
-        alt=""
-        draggable={false}
-      />
+  <img
+  src={getBgUrl(bgId, 2000)}
+  srcSet={getBgSrcSet(bgId)}
+  className="fixed inset-0 -z-10 w-full h-full object-cover"
+  alt=""
+  draggable={false}
+  onError={(e) => {
+    // 1. ẩn ảnh hỏng
+    e.currentTarget.style.display = 'none';
+    // 2. tự động reset về nền mặc định
+    if (bgId !== 'default') {
+      setChatData(prev => prev ? { ...prev, backgroundId: '' } : prev);
+      // optional: cập nhật Firestore luôn
+      updateDoc(doc(db, "chats", chatId), { backgroundId: '' }).catch(()=>{});
+    }
+  }}
+/>
       <div className="fixed inset-0 -z-10 bg-black/10 dark:bg-black/30 pointer-events-none" />
     </>
   );
@@ -1424,7 +1434,7 @@ useEffect(() => {
           <div key={group.id} className="mb-7">
             <h4 className="text-white/60 text-[12px] font-semibold mb-3 uppercase tracking-widest">{group.title}</h4>
             <div className="grid grid-cols-3 gap-3">
-              {group.ids.map((id) => {
+{group.ids.filter(id => !failedBg.includes(id)).map((id) => {
                 const bg = BACKGROUNDS[id];
                 const currentId = (chatData as any)?.backgroundId as BgId || 'default';
                 const isSelected = id === currentId;
