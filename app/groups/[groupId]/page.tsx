@@ -16,6 +16,7 @@ import GroupMembersModal from "@/components/groups/GroupMembersModal";
 import PinDeadlineModal from "@/components/groups/PinDeadlineModal";
 import PinnedDeadlineBanner from "@/components/groups/PinnedDeadlineBanner";
 import { MessageWithMentions } from "@/components/groups/MessageWithMentions";
+import PushPermissionPrompt from "@/components/PushPermissionPrompt";
 import { findMentionedMemberIds, mentionSuggestions } from "@/lib/mentions";
 import { Timestamp } from "firebase/firestore";
 
@@ -586,6 +587,8 @@ return (
       )}
     </div>
   </div>
+
+  <PushPermissionPrompt message="Bật thông báo để nhận tin nhắn nhóm khi bạn offline" />
 
   {/* Pinned Message — căn giữa */}
   {group.pinnedMessage && (

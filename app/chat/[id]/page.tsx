@@ -23,7 +23,7 @@ import SharedTaskMessage from "@/components/chat/SharedTaskMessage";
 import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geolocation";
 import { formatShortLocation, type ParsedMapboxLocation } from "@/lib/mapboxGeocode";
 import AddressSearchInput from "@/components/location/AddressSearchInput";
-import { requestFcmReregister } from "@/components/FCMProvider";
+import PushPermissionPrompt from "@/components/PushPermissionPrompt";
 import { dispatchOfflinePush } from "@/lib/pushNotifyClient";
 import {
   shouldShowChatDateDivider,
@@ -228,21 +228,6 @@ useEffect(() => {
   };
   type();
 }, [isTyping, friend?.name]);
-
-  useEffect(() => {
-    if (!user?.uid || loadingFriend || !friend) return;
-    if (typeof window === "undefined" || !("Notification" in window)) return;
-
-    if (Notification.permission === "granted") {
-      requestFcmReregister();
-      return;
-    }
-    if (Notification.permission !== "default") return;
-
-    Notification.requestPermission().then((result) => {
-      if (result === "granted") requestFcmReregister();
-    });
-  }, [user?.uid, loadingFriend, friend]);
 
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
@@ -1173,6 +1158,7 @@ useEffect(() => {
       </button>
     </div>
   </div>
+  <PushPermissionPrompt />
 </div>
 {showMedia && (
   <div className="fixed inset-0 z-[200] bg-white flex flex-col">
