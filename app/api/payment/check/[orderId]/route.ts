@@ -34,7 +34,7 @@ export async function GET(
     }
 
     const sepayToken = process.env.SEPAY_API_TOKEN;
-    const sepayAccountId = process.env.SEPAY_ACCOUNT_ID;
+    const sepayAccountId = process.env.SEPAY_ACCOUNT_ID || process.env.SEPAY_BANK_ACCOUNT_ID;
 
     if (!sepayToken ||!sepayAccountId) {
       return NextResponse.json({ status: 'pending' });

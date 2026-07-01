@@ -11,8 +11,11 @@ async function registerFcmToken(): Promise<boolean> {
   const supported = await isSupported();
   if (!supported) return false;
 
-  const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
-  if (!vapidKey) return false;
+  const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY?.trim();
+  if (!vapidKey) {
+    console.warn("[FCM] Thiếu NEXT_PUBLIC_FIREBASE_VAPID_KEY — không đăng ký được push token");
+    return false;
+  }
 
   let swReg: ServiceWorkerRegistration | undefined;
   if ("serviceWorker" in navigator) {
