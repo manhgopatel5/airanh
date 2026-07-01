@@ -311,6 +311,8 @@ const previewTask = useMemo(() => ({
   userName: user?.displayName || "Bạn",
   userAvatar: user?.photoURL || "",
   userVerified: false,
+  authorVipTier: (user as any)?.vip?.tier || null,
+authorVipExpiresAt: (user as any)?.vip?.expiresAt || null,
   createdAt: new Date().toISOString(),
   category: form.category,
   tags: form.tags.split(",").map(t => t.trim()).filter(Boolean),
@@ -514,17 +516,21 @@ const handleCategoryChange = (catId: string) => {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(3)) {
-      toast.error("Vui lòng điền đầy đủ thông tin");
-      return;
-    }
-    if (!user) {
-      toast.error("Bạn cần đăng nhập");
-      return;
-    }
+  if (!validateStep(3)) {
+    toast.error("Vui lòng điền đầy đủ thông tin");
+    return;
+  }
+  if (!user) {
+    toast.error("Bạn cần đăng nhập");
+    return;
+  }
 
-    setSaving(true);
-    try {
+  setSaving(true);
+  try {
+    // LẤY VIP TỪ USER (đúng field trong ảnh Firestore)
+    const vipTier = (user as any)?.vip?.tier || null; // 'pro' | 'elite'
+    const vipExpiresAt = (user as any)?.vip?.expiresAt || null;
+
       const location = {
         address: form.location.address.trim(),
         city: form.location.provinceName,
@@ -554,6 +560,8 @@ const handleCategoryChange = (catId: string) => {
           startDate: Timestamp.now(),
           urgency: form.durationHours <= 8 ? "urgent" : "flexible",
           needApproval: form.requireApproval,
+  authorVipTier: vipTier,
+  authorVipExpiresAt: vipExpiresAt,
         }, user as any);
 await mutate("/api/tasks?type=task&limit=20");
         toast.success("Đã tạo task thành công");
@@ -578,6 +586,8 @@ await mutate("/api/tasks?type=task&limit=20");
           allowInvite: form.allowInvite,
           requireApproval: form.requireApproval,
           autoAccept: !form.requireApproval,
+authorVipTier: vipTier,
+  authorVipExpiresAt: vipExpiresAt,
         }, user as any);
 await mutate("/api/tasks?type=plan&limit=20");
         toast.success("Đã tạo plan thành công");
