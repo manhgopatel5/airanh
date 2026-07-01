@@ -6,7 +6,7 @@ export type AppNotification = {
   fromUserId: string
   fromUserName: string
   fromUserAvatar: string
-  type: 'like' | 'comment' | 'friend_request' | 'friend_accepted' | 'task_apply' | 'system' | 'group_invite' | 'mention' | 'stranger_match' | 'stranger_message'
+  type: 'like' | 'comment' | 'friend_request' | 'friend_accepted' | 'task_apply' | 'system' | 'group_invite' | 'mention' | 'stranger_match' | 'stranger_message' | 'message' | 'group_message'
   content: string
   isRead: boolean
   createdAt: Timestamp
@@ -51,6 +51,12 @@ export function mapSubcollectionNotification(
     if (type === 'friend_accepted' && actionData?.chatId) link = `/chat/${actionData.chatId}`
     if ((type === 'stranger_match' || type === 'stranger_message') && actionData?.chatId) {
       link = `/stranger/${actionData.chatId}`
+    }
+    if ((type === 'message') && actionData?.chatId) {
+      link = `/chat/${actionData.chatId}`
+    }
+    if ((type === 'group_message' || type === 'mention' || type === 'group_invite') && actionData?.groupId) {
+      link = `/groups/${actionData.groupId}`
     }
   }
 

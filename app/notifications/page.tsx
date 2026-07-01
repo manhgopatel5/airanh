@@ -190,6 +190,8 @@ export default function NotificationsPage() {
       case "task_apply": return <FiInbox className="text-[#30d158]" {...props} />;
       case "stranger_match": return <FiZap className="text-[#ff9500]" {...props} />;
       case "stranger_message": return <FiMessageCircle className="text-[#5856d6]" {...props} />;
+      case "message":
+      case "group_message": return <FiMessageCircle className="text-[#0a84ff]" {...props} />;
       default: return <FiBell className="text-zinc-500" {...props} />;
     }
   };
@@ -273,6 +275,20 @@ export default function NotificationsPage() {
       const chatId = n.actionData?.chatId as string | undefined;
       if (chatId) {
         router.push(`/stranger/${chatId}`);
+        return;
+      }
+    }
+    if (n.type === "message") {
+      const chatId = n.actionData?.chatId as string | undefined;
+      if (chatId) {
+        router.push(`/chat/${chatId}`);
+        return;
+      }
+    }
+    if (n.type === "group_message" || n.type === "mention" || n.type === "group_invite") {
+      const groupId = n.actionData?.groupId as string | undefined;
+      if (groupId) {
+        router.push(`/groups/${groupId}`);
         return;
       }
     }

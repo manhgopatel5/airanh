@@ -6,6 +6,7 @@ import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { FirestoreEvent, QueryDocumentSnapshot, Change } from "firebase-functions/v2/firestore";
 import { DocumentSnapshot } from "firebase-admin/firestore";
+import { createNotificationAndPush, extractMentionedUids } from "./notificationService";
 
 initializeApp();
 const db = getFirestore();
@@ -27,17 +28,20 @@ export const onFriendRequestCreated = onDocumentCreated(
       const fromUserDoc = await db.doc(`users/${fromUserId}`).get();
       const fromUser = fromUserDoc.data();
 
-      await db.collection(`notifications/${toUserId}/items`).add({
-        type: "friend_request",
-        fromUid: fromUserId,
-        fromName: fromUser?.displayName || fromUser?.name || "Người dùng",
-        fromAvatar: fromUser?.photoURL || fromUser?.avatar || "",
-        title: "Lời mời kết bạn",
-        message: "đã gửi lời mời kết bạn",
-        actionData: { requesterId: fromUserId },
-        read: false,
-        createdAt: FieldValue.serverTimestamp(),
-      });
+      await createNotificationAndPush(
+        toUserId,
+        {
+          type: "friend_request",
+          fromUid: fromUserId,
+          fromName: fromUser?.displayName || fromUser?.name || "Người dùng",
+          fromAvatar: fromUser?.photoURL || fromUser?.avatar || "",
+          title: "Lời mời kết bạn",
+          message: "đã gửi lời mời kết bạn",
+          link: "/friends",
+          actionData: { requesterId: fromUserId, requestId: event.params.requestId },
+        },
+        { settingKey: "notiFriendRequest" }
+      );
     } catch (error) {
       console.error("onFriendRequestCreated error:", error);
     }
@@ -63,17 +67,20 @@ export const onFriendAccepted = onDocumentCreated(
       const userDoc = await db.doc(`users/${userId}`).get();
       const userData = userDoc.data();
 
-      await db.collection(`notifications/${friendId}/items`).add({
-        type: "friend_accepted",
-        fromUid: userId,
-        fromName: userData?.displayName || userData?.name || "Người dùng",
-        fromAvatar: userData?.photoURL || userData?.avatar || "",
-        title: "Đã chấp nhận kết bạn",
-        message: "đã chấp nhận lời mời kết bạn của bạn",
-        actionData: { chatId: [userId, friendId].sort().join("_") },
-        read: false,
-        createdAt: FieldValue.serverTimestamp(),
-      });
+      await createNotificationAndPush(
+        friendId,
+        {
+          type: "friend_accepted",
+          fromUid: userId,
+          fromName: userData?.displayName || userData?.name || "Người dùng",
+          fromAvatar: userData?.photoURL || userData?.avatar || "",
+          title: "Đã chấp nhận kết bạn",
+          message: "đã chấp nhận lời mời kết bạn của bạn",
+          link: `/chat/${[userId, friendId].sort().join("_")}`,
+          actionData: { chatId: [userId, friendId].sort().join("_") },
+        },
+        { settingKey: "notiFriendAccepted" }
+      );
 
       await db.doc(`friendRequests/${requestId}`).delete();
     } catch (error) {
@@ -1092,5 +1099,225 @@ export const onStrangerChatUpdated = onDocumentUpdated(
     };
 
     await notifyStrangerMessage(recipientId, lastSenderId, chatId, fromPublic, lastMessageAfter);
+  }
+);
+
+// 15. Tin nhắn DM → thông báo + push
+export const onChatMessageCreated = onDocumentCreated(
+  {
+    document: "chats/{chatId}/messages/{messageId}",
+    region: "asia-southeast1",
+  },
+  async (event: FirestoreEvent<QueryDocumentSnapshot | undefined>) => {
+    const msg = event.data?.data();
+    if (!msg) return;
+
+    const chatId = event.params.chatId;
+    const senderId = msg.senderId as string;
+    const text = (msg.text as string) || (msg.content as string) || "Đã gửi tin nhắn";
+    if (!senderId) return;
+
+    const chatSnap = await db.doc(`chats/${chatId}`).get();
+    if (!chatSnap.exists) return;
+
+    const chat = chatSnap.data()!;
+    const members: string[] = chat.members || [];
+    const recipientId = members.find((m) => m !== senderId);
+    if (!recipientId) return;
+
+    const mutedBy: string[] = chat.mutedBy || [];
+    if (mutedBy.includes(recipientId)) return;
+
+    const senderSnap = await db.doc(`users/${senderId}`).get();
+    const sender = senderSnap.data();
+    const senderName = msg.senderName || sender?.displayName || sender?.name || "Người dùng";
+    const senderAvatar = msg.senderAvatar || sender?.photoURL || sender?.avatar || "";
+    const preview = String(text).slice(0, 120);
+
+    await createNotificationAndPush(
+      recipientId,
+      {
+        type: "message",
+        fromUid: senderId,
+        fromName: senderName,
+        fromAvatar: senderAvatar,
+        title: senderName,
+        message: preview,
+        link: `/chat/${chatId}`,
+        actionData: { chatId },
+      },
+      { isMention: false }
+    );
+  }
+);
+
+// 16. Tin nhắn nhóm → thông báo + push (mention ưu tiên)
+export const onGroupMessageCreated = onDocumentCreated(
+  {
+    document: "groups/{groupId}/messages/{messageId}",
+    region: "asia-southeast1",
+  },
+  async (event: FirestoreEvent<QueryDocumentSnapshot | undefined>) => {
+    const msg = event.data?.data();
+    if (!msg) return;
+
+    const groupId = event.params.groupId;
+    const senderId = msg.senderId as string;
+    const text = (msg.text as string) || (msg.imageUrl ? "📷 Đã gửi ảnh" : msg.audioUrl ? "🎤 Voice" : "Tin nhắn mới");
+    if (!senderId) return;
+
+    const groupSnap = await db.doc(`groups/${groupId}`).get();
+    if (!groupSnap.exists) return;
+
+    const group = groupSnap.data()!;
+    const members: string[] = group.members || [];
+    const membersInfo = (group.membersInfo as Record<string, { name?: string; username?: string }>) || {};
+    const mentionedUids = extractMentionedUids(String(text), members, membersInfo);
+    const mentionUids: string[] = msg.mentions || mentionedUids;
+
+    const senderName = msg.senderName || "Thành viên";
+    const senderAvatar = msg.senderAvatar || "";
+    const preview = String(text).slice(0, 120);
+
+    for (const memberId of members) {
+      if (memberId === senderId) continue;
+      const isMention = mentionUids.includes(memberId);
+      const type = isMention ? "mention" : "group_message";
+
+      await createNotificationAndPush(
+        memberId,
+        {
+          type,
+          fromUid: senderId,
+          fromName: senderName,
+          fromAvatar: senderAvatar,
+          title: isMention ? `${senderName} đã nhắc bạn` : group.name || "Nhóm",
+          message: isMention ? preview : `${senderName}: ${preview}`,
+          link: `/groups/${groupId}`,
+          actionData: { groupId, chatId: groupId },
+        },
+        { isMention }
+      );
+    }
+  }
+);
+
+// 17. Ứng tuyển task/plan → thông báo chủ
+export const onApplicationCreated = onDocumentCreated(
+  {
+    document: "applications/{appId}",
+    region: "asia-southeast1",
+  },
+  async (event: FirestoreEvent<QueryDocumentSnapshot | undefined>) => {
+    const app = event.data?.data();
+    if (!app || app.status !== "pending") return;
+
+    const taskId = (app.taskId || app.planId) as string;
+    const ownerId = (app.taskOwnerId || app.planOwnerId) as string;
+    const applicantId = app.userId as string;
+    if (!taskId || !ownerId || !applicantId) return;
+
+    const taskSnap = await db.doc(`tasks/${taskId}`).get();
+    const task = taskSnap.data();
+    const isPlan = task?.type === "plan";
+
+    await createNotificationAndPush(
+      ownerId,
+      {
+        type: "task_apply",
+        fromUid: applicantId,
+        fromName: app.userName || "Ứng viên",
+        fromAvatar: app.userAvatar || "",
+        title: isPlan ? "Ứng viên kế hoạch mới" : "Ứng viên task mới",
+        message: `muốn tham gia "${task?.title || "công việc"}"`,
+        link: `/task/${taskId}`,
+        actionData: { taskId },
+      },
+      { settingKey: isPlan ? "notiPlanInvite" : "notiTaskAssigned" }
+    );
+  }
+);
+
+// 18. Nhắc deadline plan + ghim nhóm
+export const checkDeadlineReminders = onSchedule(
+  {
+    schedule: "every 1 hours",
+    timeZone: "Asia/Ho_Chi_Minh",
+    region: "asia-southeast1",
+  },
+  async () => {
+    const now = Date.now();
+    const in24h = now + 24 * 60 * 60 * 1000;
+
+    const plansSnap = await db
+      .collection("tasks")
+      .where("type", "==", "plan")
+      .where("status", "in", ["open", "doing", "in_progress"])
+      .limit(200)
+      .get();
+
+    for (const docSnap of plansSnap.docs) {
+      const d = docSnap.data();
+      const eventMs = d.eventDate?.toMillis?.() || 0;
+      if (!eventMs || eventMs < now || eventMs > in24h) continue;
+      if (d.deadlineNotifiedAt) continue;
+
+      const members: string[] = [d.userId, ...(d.assignees || [])];
+      const hoursLeft = Math.ceil((eventMs - now) / 3600000);
+      const title = d.title || "Kế hoạch";
+
+      for (const uid of [...new Set(members)]) {
+        if (!uid) continue;
+        await createNotificationAndPush(
+          uid,
+          {
+            type: "system",
+            fromUid: "system",
+            fromName: "Huha",
+            fromAvatar: "",
+            title: "Sắp đến hạn kế hoạch",
+            message: `"${title}" còn khoảng ${hoursLeft} giờ`,
+            link: `/task/${docSnap.id}`,
+            actionData: { taskId: docSnap.id },
+          },
+          { settingKey: "notiPlanDeadline", force: false }
+        );
+      }
+
+      await docSnap.ref.update({ deadlineNotifiedAt: FieldValue.serverTimestamp() });
+    }
+
+    const groupsSnap = await db.collection("groups").limit(300).get();
+    for (const gDoc of groupsSnap.docs) {
+      const g = gDoc.data();
+      const pinned = g.pinnedMessage as { deadline?: { toMillis?: () => number }; deadlineNotified?: boolean; text?: string } | undefined;
+      if (!pinned?.deadline?.toMillis) continue;
+      const deadlineMs = pinned.deadline.toMillis();
+      if (deadlineMs < now || deadlineMs > in24h || pinned.deadlineNotified) continue;
+
+      const members: string[] = g.members || [];
+      const hoursLeft = Math.ceil((deadlineMs - now) / 3600000);
+
+      for (const uid of members) {
+        await createNotificationAndPush(
+          uid,
+          {
+            type: "system",
+            fromUid: g.ownerId || g.createdBy || "system",
+            fromName: g.name || "Nhóm",
+            fromAvatar: g.avatar || "",
+            title: "Sắp đến hạn ghim",
+            message: `${pinned.text || "Mục ghim"} — còn ${hoursLeft} giờ`,
+            link: `/groups/${gDoc.id}`,
+            actionData: { groupId: gDoc.id },
+          },
+          { settingKey: "notiPlanDeadline" }
+        );
+      }
+
+      await gDoc.ref.update({
+        "pinnedMessage.deadlineNotified": true,
+      });
+    }
   }
 );

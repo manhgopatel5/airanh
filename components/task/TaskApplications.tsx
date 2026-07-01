@@ -11,6 +11,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import type { FeedTask } from "@/types/task";
 
 import { onHotTaskCreated, onPlanCompleted } from "@/lib/xp";
+import { ensurePlanGroup } from "@/lib/planGroup";
 import { submitTaskUserReport } from "@/lib/taskChat";
 import { getFirebaseAuth } from "@/lib/firebase";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -84,6 +85,8 @@ export default function TaskApplications({ applications, item, currentUserId, on
       return;
     }
 
+    const app = applications.find((a) => a.id === appId);
+
     const db = getFirebaseDB();
     try {
       await updateDoc(doc(db, 'applications', appId), {
@@ -113,7 +116,21 @@ export default function TaskApplications({ applications, item, currentUserId, on
         createdAt: serverTimestamp(),
       }, { merge: true });
 
-      toast.success("Đã duyệt ứng viên");
+      if (isPlan) {
+        const groupId = await ensurePlanGroup(db, itemId, itemTitle, currentUserId, {
+          uid: applicantId,
+          name: app?.userName || "Thành viên",
+          avatar: app?.userAvatar || "",
+        });
+        toast.success("Đã duyệt và thêm vào nhóm kế hoạch", {
+          action: {
+            label: "Vào nhóm",
+            onClick: () => window.location.assign(`/groups/${groupId}`),
+          },
+        });
+      } else {
+        toast.success("Đã duyệt ứng viên");
+      }
       navigator.vibrate?.(10);
       onUpdate();
     } catch {

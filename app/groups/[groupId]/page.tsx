@@ -8,11 +8,16 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
 import { FiImage, FiChevronLeft, FiSend, FiMoreVertical, FiTrash2, FiUsers, FiCopy, FiLogOut, FiMic } from "react-icons/fi";
-import { RiPushpinFill } from "react-icons/ri";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import { vi } from "date-fns/locale";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import GroupMembersModal from "@/components/groups/GroupMembersModal";
+import PinDeadlineModal from "@/components/groups/PinDeadlineModal";
+import PinnedDeadlineBanner from "@/components/groups/PinnedDeadlineBanner";
+import { MessageWithMentions } from "@/components/groups/MessageWithMentions";
+import { findMentionedMemberIds, mentionSuggestions } from "@/lib/mentions";
+import { Timestamp } from "firebase/firestore";
 
 type Group = {
   name: string;
@@ -24,7 +29,13 @@ type Group = {
   lastMessage: string;
   updatedAt: any;
   membersInfo?: { [uid: string]: { name: string; avatar: string; username: string } };
-  pinnedMessage?: { id: string; text: string; senderName: string };
+  pinnedMessage?: {
+    id: string;
+    text: string;
+    senderName: string;
+    deadline?: Timestamp | null;
+    deadlineNotified?: boolean;
+  };
   typing?: { [uid: string]: string };
 };
 
@@ -63,6 +74,9 @@ const editAvatarInputRef = useRef<HTMLInputElement>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showMentions, setShowMentions] = useState(false);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [pinModalMsg, setPinModalMsg] = useState<Message | null>(null);
+  const [mentionQuery, setMentionQuery] = useState("");
   const [recording, setRecording] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -243,6 +257,7 @@ const handleEditAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         senderName: user.displayName || "User",
         senderAvatar: user.photoURL || "",
         createdAt: serverTimestamp(),
+        mentions: findMentionedMemberIds(msgText, group.members, group.membersInfo || {}),
         replyTo: replyTo? {
           id: replyTo.id,
           text: replyTo.text || "[Ảnh]",
@@ -343,20 +358,27 @@ const handleEditAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if ("vibrate" in navigator) navigator.vibrate(50);
   };
 
-  const handlePinMessage = async (msg: Message) => {
+  const handlePinMessage = (msg: Message) => {
+    setPinModalMsg(msg);
+    setLongPressMsg(null);
+  };
+
+  const confirmPinMessage = async (deadline: Date | null) => {
+    if (!pinModalMsg) return;
     try {
       await updateDoc(doc(db, "groups", groupId), {
         pinnedMessage: {
-          id: msg.id,
-          text: msg.text || "[Ảnh]",
-          senderName: msg.senderName
-        }
+          id: pinModalMsg.id,
+          text: pinModalMsg.text || "[Ảnh]",
+          senderName: pinModalMsg.senderName,
+          ...(deadline ? { deadline: Timestamp.fromDate(deadline), deadlineNotified: false } : {}),
+        },
       });
-      toast.success("Đã ghim tin nhắn");
+      toast.success(deadline ? "Đã ghim kèm deadline" : "Đã ghim tin nhắn");
     } catch {
       toast.error("Lỗi ghim tin");
     }
-    setLongPressMsg(null);
+    setPinModalMsg(null);
   };
 
   const handleUnpinMessage = async () => {
@@ -451,14 +473,24 @@ const formatTimeDivider = (timestamp: any) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setText(val);
-    setShowMentions(val.endsWith("@"));
+    const match = val.match(/@([^@\s]*)$/);
+    setShowMentions(!!match);
+    setMentionQuery(match?.[1] || "");
   };
 
   const selectMention = (name: string) => {
-    setText(text + name + " ");
+    const newText = text.replace(/@([^@\s]*)$/, `@${name} `);
+    setText(newText);
     setShowMentions(false);
+    setMentionQuery("");
     inputRef.current?.focus();
   };
+
+  const memberList = (group?.members || []).map((uid) => ({
+    uid,
+    name: group?.membersInfo?.[uid]?.name || "Thành viên",
+    avatar: group?.membersInfo?.[uid]?.avatar || "",
+  }));
 
   if (loading) {
     return (
@@ -523,7 +555,7 @@ return (
             </button>
 
             <button
-              onClick={() => { setShowMenu(false); toast.info("Sắp ra mắt"); }}
+              onClick={() => { setShowMenu(false); setShowMembersModal(true); }}
               className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-black/5 dark:hover:bg-white/5 text-left"
             >
               <FiUsers size={18} />
@@ -555,18 +587,9 @@ return (
     </div>
   </div>
 
-  {/* Pinned Message */}
+  {/* Pinned Message — căn giữa */}
   {group.pinnedMessage && (
-    <button
-      onClick={handleUnpinMessage}
-      className="flex items-center gap-2 px-4 py-2 bg-[#0a84ff]/10 border-t border-[#0a84ff]/20 text-left w-full hover:bg-[#0a84ff]/15"
-    >
-      <RiPushpinFill className="text-[#0a84ff] flex-shrink-0" size={16} />
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-[#0a84ff]">{group.pinnedMessage.senderName}</p>
-        <p className="text-xs text-[#8e8e93] truncate">{group.pinnedMessage.text}</p>
-      </div>
-    </button>
+    <PinnedDeadlineBanner pinned={group.pinnedMessage} onUnpin={handleUnpinMessage} />
   )}
 </div>
 
@@ -652,7 +675,7 @@ const isSingle = isFirstInGroup && isLastInGroup;
           ? 'rounded-[18px] rounded-tl-[4px]'
           : 'rounded-[18px] rounded-tl-[4px] rounded-bl-[4px]'
 } ${longPressMsg === msg.id? 'ring-2 ring-[#0a84ff] ring-offset-2' : ''}`}
-                  onPointerDown={() => isMe && handleLongPressStart(msg.id)}
+                  onPointerDown={() => handleLongPressStart(msg.id)}
                   onPointerUp={handleLongPressEnd}
                   onPointerLeave={handleLongPressEnd}
                 >
@@ -661,10 +684,10 @@ const isSingle = isFirstInGroup && isLastInGroup;
                   ) : msg.imageUrl? (
                     <img src={msg.imageUrl} alt="Ảnh" className="rounded-xl max-w-[240px] max-h-[240px] object-cover" />
                   ) : (
-                    <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
+                    <p className="text-[15px] leading-[20px]"><MessageWithMentions text={msg.text || ""} isMe={isMe} /></p>
                   )}
 
-                  {longPressMsg === msg.id && isMe && (
+                  {longPressMsg === msg.id && (
                     <div className="absolute -top-10 right-0 flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1 z-10">
                       <button
                         onClick={() => { setReplyTo(msg); setLongPressMsg(null); }}
@@ -672,18 +695,22 @@ const isSingle = isFirstInGroup && isLastInGroup;
                       >
                         Trả lời
                       </button>
-                      <button
-                        onClick={() => handlePinMessage(msg)}
-                        className="px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 rounded"
-                      >
-                        Ghim
-                      </button>
-                      <button
-                        onClick={() => handleDeleteMsg(msg.id)}
-                        className="px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 rounded"
-                      >
-                        Xóa
-                      </button>
+                      {(isMe || isOwner) && (
+                        <button
+                          onClick={() => handlePinMessage(msg)}
+                          className="px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 rounded"
+                        >
+                          Ghim
+                        </button>
+                      )}
+                      {isMe && (
+                        <button
+                          onClick={() => handleDeleteMsg(msg.id)}
+                          className="px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 rounded"
+                        >
+                          Xóa
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -721,26 +748,20 @@ const isSingle = isFirstInGroup && isLastInGroup;
     </div>
   )}
 
-  {showMentions && group?.membersInfo && (
+  {showMentions && group && (
     <div className="absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 py-1 max-h-40 overflow-y-auto z-20">
-      {group.members.map(uid => {
-        const info = group.membersInfo?.[uid];
-        if (!info || uid === user?.uid) return null;
-        return (
-          <button
-            key={uid}
-            type="button"
-            onClick={() => selectMention(info.name)}
-            className="flex items-center gap-2 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 w-full text-left"
-          >
-            <img src={info.avatar} alt="" className="w-7 h-7 rounded-full" />
-            <div>
-              <p className="text-sm font-medium">{info.name}</p>
-              <p className="text-xs text-[#8e8e93]">@{info.username}</p>
-            </div>
-          </button>
-        );
-      })}
+      {mentionSuggestions(mentionQuery, group.members, group.membersInfo || {}, user?.uid).map((m) => (
+        <button
+          key={m.uid}
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => selectMention(m.name)}
+          className="flex items-center gap-2 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 w-full text-left"
+        >
+          <img src={m.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}`} alt="" className="w-7 h-7 rounded-full" />
+          <p className="text-sm font-medium">@{m.name}</p>
+        </button>
+      ))}
     </div>
   )}
 
@@ -865,6 +886,21 @@ const isSingle = isFirstInGroup && isLastInGroup;
     </div>
   </div>
 )}
+    <GroupMembersModal
+      open={showMembersModal}
+      onClose={() => setShowMembersModal(false)}
+      groupId={groupId}
+      groupName={group.name}
+      members={memberList}
+      ownerId={group.createdBy}
+      currentUid={user?.uid || ""}
+    />
+    <PinDeadlineModal
+      open={!!pinModalMsg}
+      onClose={() => setPinModalMsg(null)}
+      messagePreview={pinModalMsg?.text || "[Tin nhắn]"}
+      onConfirm={confirmPinMessage}
+    />
     </div>
   );
 }

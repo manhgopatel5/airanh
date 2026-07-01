@@ -117,6 +117,9 @@ function getActions(data) {
   if (data.type === "stranger_match" || data.type === "stranger_message") {
     return [{ action: "view", title: "💬 Vào phòng" }];
   }
+  if (data.type === "message" || data.type === "group_message" || data.type === "mention") {
+    return [{ action: "view", title: "💬 Xem tin" }];
+  }
   return [];
 }
 

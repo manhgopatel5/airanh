@@ -215,7 +215,7 @@ match /friends/{friendId} {
         (
           request.auth.uid in request.resource.data.members &&
           request.resource.data.diff(resource.data).changedKeys()
-           .hasOnly(['members', 'memberCount', 'unreadCount', 'lastMessage', 'lastSenderId', 'updatedAt', 'seen', 'typing'])
+           .hasOnly(['members', 'memberCount', 'unreadCount', 'lastMessage', 'lastSenderId', 'lastSenderName', 'updatedAt', 'seen', 'typing'])
         )
       );
       allow delete: if isSignedIn() && request.auth.uid == resource.data.ownerId;
