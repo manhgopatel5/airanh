@@ -3,6 +3,7 @@
 import { getFirebaseApp } from "@/lib/firebase";
 import { saveFcmTokenToServer } from "@/lib/fcmClient";
 import { requestBrowserPushPermission, readPushPermission } from "@/lib/pushPermissions";
+import { resolveVapidKeyClient } from "@/lib/vapidKey";
 
 export type FcmRegisterResult =
   | { ok: true; token: string }
@@ -51,9 +52,14 @@ export async function registerFcmToken(): Promise<FcmRegisterResult> {
     return { ok: false, reason: "Trình duyệt không hỗ trợ FCM push" };
   }
 
-  const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY?.trim();
+  const { key: vapidKey, error: vapidError } = await resolveVapidKeyClient();
   if (!vapidKey) {
-    return { ok: false, reason: "Thiếu cấu hình VAPID (NEXT_PUBLIC_FIREBASE_VAPID_KEY)" };
+    return {
+      ok: false,
+      reason:
+        vapidError ||
+        "VAPID key sai — vào Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → copy Key pair",
+    };
   }
 
   if (!("serviceWorker" in navigator)) {
