@@ -1494,7 +1494,7 @@ setChatData(prev => prev ? {
 
 >
 {messages.map((m, i) => {
-    const isMe = m.senderId === user.uid;
+    const isMe = Boolean(user?.uid && (m.senderId === user.uid || (m as { sender?: string }).sender === user.uid));
 const prev = messages[i - 1];
 const next = messages[i + 1];
 const showAvatar =!isMe && (!next || next.senderId!== m.senderId);
@@ -1827,9 +1827,10 @@ className={isLinkOnly
 
         
                 </div>
+        </div>
 
         {isLastInGroup && isMe && i === messages.length - 1 && (
-          <div className="flex w-full justify-end items-center gap-1.5 pr-2 mt-0.5 mb-1">
+          <div className="flex justify-end items-center gap-1.5 pr-2 mt-0.5 mb-1">
             {seenAvatars.length > 0 ? (
               <div className="flex -space-x-1">
                 {seenAvatars.slice(0, 3).map((u, idx) => (
@@ -1846,7 +1847,6 @@ className={isLinkOnly
             ) : null}
           </div>
         )}
-        </div>
       </div>
     );
 })}

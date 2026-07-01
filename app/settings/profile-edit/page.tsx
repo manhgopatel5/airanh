@@ -200,7 +200,9 @@ export default function ProfileEditPage() {
       if (name.trim()!== currentData.name) {
         const trimmedName = name.trim();
         updateData.name = trimmedName;
-        updateData.searchKeywords = trimmedName.toLowerCase().split(" ");
+        updateData.displayName = trimmedName;
+        updateData.nameLower = trimmedName.toLowerCase();
+        updateData.searchKeywords = trimmedName.toLowerCase().split(/\s+/).filter(Boolean);
         await updateProfile(auth.currentUser, { displayName: trimmedName });
       }
       if (dob!== currentData.dob) updateData.dob = dob;

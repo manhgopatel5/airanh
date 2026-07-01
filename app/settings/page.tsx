@@ -6,12 +6,12 @@ import { useAuth } from "@/lib/AuthContext";
 
 import { doc, updateDoc, onSnapshot, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
-import { signOut, deleteUser } from "firebase/auth";
+import { signOut, deleteUser, updateProfile } from "firebase/auth";
 import {
   ChevronLeft, Moon, Sun, Palette,
   Eye, EyeOff, UserX, Shield, Lock, Smartphone, Trash2,
   Globe, DollarSign, Zap, Info, LogOut,
-  ChevronRight, Mail, Monitor, Languages, MapPin, Calendar, Users
+  ChevronRight, Mail, Monitor, Languages, MapPin, Calendar, Users, User2, X
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
@@ -64,6 +64,9 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -71,10 +74,11 @@ export default function SettingsPage() {
       if (snap.exists()) {
         const data = snap.data();
         setSettings({...DEFAULT_SETTINGS,...data.settings });
+        setDisplayName(data.displayName || data.name || user.displayName || "");
       }
     });
     return () => unsub();
-  }, [user?.uid]);
+  }, [user?.uid, user?.displayName]);
 
   const updateSetting = async <K extends keyof Settings>(key: K, value: Settings[K]) => {
     if (!user) return;
@@ -118,6 +122,37 @@ export default function SettingsPage() {
     await updateDoc(doc(db, "users", user.uid), { sessions: [] });
     await signOut(auth);
     window.location.href = "/login";
+  };
+
+  const saveDisplayName = async () => {
+    if (!user) return;
+    const trimmed = displayName.trim();
+    if (trimmed.length < 2) {
+      toast.error("Tên phải có ít nhất 2 ký tự");
+      return;
+    }
+    if (trimmed.length > 30) {
+      toast.error("Tên không quá 30 ký tự");
+      return;
+    }
+    setSavingName(true);
+    try {
+      await updateProfile(user, { displayName: trimmed });
+      await updateDoc(doc(db, "users", user.uid), {
+        displayName: trimmed,
+        name: trimmed,
+        nameLower: trimmed.toLowerCase(),
+        searchKeywords: trimmed.toLowerCase().split(/\s+/).filter(Boolean),
+        updatedAt: serverTimestamp(),
+      });
+      toast.success("Đã cập nhật tên hiển thị");
+      setShowNameModal(false);
+      if ("vibrate" in navigator) navigator.vibrate(5);
+    } catch {
+      toast.error("Không lưu được tên");
+    } finally {
+      setSavingName(false);
+    }
   };
 
   return (
@@ -291,6 +326,17 @@ export default function SettingsPage() {
 
         <Section title="TÀI KHOẢN">
           <SettingItem
+            label="Tên hiển thị"
+            icon={User2}
+            value={displayName || "Chưa đặt"}
+            onClick={() => setShowNameModal(true)}
+          />
+          <SettingItem
+            label="Chỉnh sửa hồ sơ"
+            icon={User2}
+            onClick={() => router.push("/settings/profile-edit")}
+          />
+          <SettingItem
             label="Đăng xuất tất cả thiết bị"
             icon={LogOut}
             onClick={logoutAllDevices}
@@ -339,6 +385,38 @@ export default function SettingsPage() {
 
       {showDeleteModal && (
         <Modal title="Xóa tài khoản?" desc="Hành động này không thể hoàn tác. Toàn bộ dữ liệu sẽ bị xóa vĩnh viễn." onClose={() => setShowDeleteModal(false)} onConfirm={handleDeleteAccount} confirmText="Xóa vĩnh viễn" danger />
+      )}
+
+      {showNameModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50" onClick={() => setShowNameModal(false)}>
+          <div className="bg-white w-full max-w-xl rounded-t-3xl p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#0F172A]">Đổi tên hiển thị</h3>
+              <button onClick={() => setShowNameModal(false)} className="p-2 rounded-full hover:bg-gray-100">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={30}
+              placeholder="Nhập tên hiển thị"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-blue-500/30 mb-4"
+              autoFocus
+            />
+            <button
+              onClick={saveDisplayName}
+              disabled={savingName}
+              className="w-full h-12 rounded-2xl font-semibold bg-blue-500 text-white mb-3 active:scale-95 transition disabled:opacity-50"
+            >
+              {savingName ? "Đang lưu..." : "Lưu"}
+            </button>
+            <button onClick={() => setShowNameModal(false)} className="w-full h-12 bg-[#F1F5F9] text-[#0F172A] rounded-2xl font-semibold active:scale-95 transition">
+              Hủy
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
