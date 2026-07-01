@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       messageId,
       recipientId,
       senderName,
-      message: messageBody || "",
+      preview: messageBody || "",
       senderAvatar,
       isSystem: type === "system",
       type,

@@ -1,6 +1,6 @@
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
-import { buildPushDisplayPayload } from "./pushFormat";
+import { buildPushDisplayPayload, inferPushContentKind, type PushContentKind } from "./pushFormat";
 
 function db() {
   return getFirestore();
@@ -27,6 +27,7 @@ export type NotifyPayload = {
   message: string;
   link?: string;
   actionData?: Record<string, unknown>;
+  contentKind?: PushContentKind;
 };
 
 export type NotifyOptions = {
@@ -76,8 +77,9 @@ async function sendPushToUser(
   uid: string,
   payload: {
     senderName: string;
-    message: string;
+    preview?: string;
     senderAvatar?: string | null;
+    contentKind?: PushContentKind;
     isSystem?: boolean;
     type?: string;
     data: Record<string, string>;
@@ -100,9 +102,14 @@ async function sendPushToUser(
 
   const display = buildPushDisplayPayload({
     senderName: payload.senderName,
-    message: payload.message,
-    senderAvatar: payload.senderAvatar,
-    isSystem: payload.isSystem,
+    preview: payload.preview,
+    contentKind:
+      payload.contentKind ??
+      inferPushContentKind(payload.type || payload.data.type || "message", {
+        text: payload.preview,
+      }),
+    ...(payload.senderAvatar != null ? { senderAvatar: payload.senderAvatar } : {}),
+    ...(payload.isSystem != null ? { isSystem: payload.isSystem } : {}),
     type: payload.type || payload.data.type,
     link: payload.data.link,
     messageId,
@@ -187,8 +194,9 @@ export async function createNotificationAndPush(
     await sendPushToUser(
       toUid,
       {
-        senderName: payload.title || payload.fromName,
-        message: payload.message,
+        senderName: payload.fromName,
+        preview: payload.message,
+        ...(payload.contentKind ? { contentKind: payload.contentKind } : {}),
         senderAvatar: payload.fromAvatar,
         isSystem: payload.type === "system",
         type: payload.type,

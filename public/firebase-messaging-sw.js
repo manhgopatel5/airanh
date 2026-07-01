@@ -13,7 +13,7 @@ const firebaseConfig = {
   databaseURL: "https://airanh-ba64c-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
-const VERSION = "v2.2.0";
+const VERSION = "v2.3.0";
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 

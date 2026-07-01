@@ -7,6 +7,7 @@ import { FirestoreEvent, QueryDocumentSnapshot, Change } from "firebase-function
 import { DocumentSnapshot } from "firebase-admin/firestore";
 import { db } from "./admin";
 import { createNotificationAndPush, extractMentionedUids } from "./notificationService";
+import { inferPushContentKind } from "./pushFormat";
 
 // 1. Khi có lời mời kết bạn mới → tạo thông báo cho người nhận
 export const onFriendRequestCreated = onDocumentCreated(
@@ -1111,7 +1112,6 @@ export const onChatMessageCreated = onDocumentCreated(
 
     const chatId = event.params.chatId;
     const senderId = msg.senderId as string;
-    const text = (msg.text as string) || (msg.content as string) || "Đã gửi tin nhắn";
     if (!senderId) return;
 
     const chatSnap = await db.doc(`chats/${chatId}`).get();
@@ -1129,7 +1129,8 @@ export const onChatMessageCreated = onDocumentCreated(
     const sender = senderSnap.data();
     const senderName = msg.senderName || sender?.displayName || sender?.name || "Người dùng";
     const senderAvatar = msg.senderAvatar || sender?.photoURL || sender?.avatar || "";
-    const preview = String(text).slice(0, 120);
+    const preview = String((msg.text as string) || (msg.content as string) || "").trim();
+    const contentKind = inferPushContentKind("message", msg as Record<string, unknown>);
 
     await createNotificationAndPush(
       recipientId,
@@ -1139,9 +1140,10 @@ export const onChatMessageCreated = onDocumentCreated(
         fromName: senderName,
         fromAvatar: senderAvatar,
         title: senderName,
-        message: preview,
+        message: preview || (contentKind === "image" ? "đã gửi hình ảnh" : contentKind === "file" ? "đã gửi tệp" : "đã gửi tin nhắn"),
         link: `/chat/${chatId}`,
         actionData: { chatId },
+        contentKind,
       },
       { isMention: false, messageId: event.params.messageId }
     );

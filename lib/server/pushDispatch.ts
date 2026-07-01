@@ -1,12 +1,13 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb, sendNotification } from "@/lib/firebase-admin";
-import { buildPushDisplayPayload } from "@/lib/pushFormat";
+import { buildPushDisplayPayload, type PushContentKind } from "@/lib/pushFormat";
 
 type PushPayload = {
   messageId: string;
   recipientId: string;
   senderName: string;
-  message: string;
+  preview?: string;
+  contentKind?: PushContentKind;
   senderAvatar?: string | null;
   isSystem?: boolean;
   type: string;
@@ -40,7 +41,8 @@ export async function dispatchPushOnce(payload: PushPayload): Promise<{
 
   const display = buildPushDisplayPayload({
     senderName: payload.senderName,
-    message: payload.message,
+    ...(payload.preview ? { preview: payload.preview } : {}),
+    ...(payload.contentKind ? { contentKind: payload.contentKind } : {}),
     ...(payload.senderAvatar != null ? { senderAvatar: payload.senderAvatar } : {}),
     ...(payload.isSystem != null ? { isSystem: payload.isSystem } : {}),
     type: payload.type,

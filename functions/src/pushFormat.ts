@@ -1,11 +1,94 @@
 const APP_ICON = "/icon-192.PNG";
 const BASE_URL = "https://airanh.vercel.app";
 
-export function formatMessagePreview(text: string, maxLen = 100): string {
+export type PushContentKind =
+  | "text"
+  | "image"
+  | "file"
+  | "location"
+  | "audio"
+  | "friend_request"
+  | "friend_accepted"
+  | "mention"
+  | "group_text"
+  | "system"
+  | "other";
+
+function truncatePreview(text?: string, maxLen = 120): string {
   const t = (text || "").trim().replace(/\s+/g, " ");
-  if (!t) return "Tin nhắn mới";
+  if (!t) return "";
   if (t.length <= maxLen) return t;
   return `${t.slice(0, maxLen).trimEnd()}…`;
+}
+
+export function formatPushBody(
+  senderName: string,
+  kind: PushContentKind,
+  preview?: string
+): string {
+  const name = senderName.trim() || "Ai đó";
+
+  switch (kind) {
+    case "friend_request":
+      return `${name} đã gửi lời mời kết bạn.`;
+    case "friend_accepted":
+      return `${name} đã chấp nhận lời mời kết bạn.`;
+    case "image":
+      return `${name} đã gửi hình ảnh.`;
+    case "file":
+      return `${name} đã gửi tệp đính kèm.`;
+    case "location":
+      return `${name} đã gửi vị trí.`;
+    case "audio":
+      return `${name} đã gửi tin nhắn thoại.`;
+    case "mention": {
+      const p = truncatePreview(preview);
+      return p
+        ? `${name} đã nhắc đến bạn:\n- ${p}`
+        : `${name} đã nhắc đến bạn trong nhóm.`;
+    }
+    case "group_text": {
+      const p = truncatePreview(preview);
+      return p
+        ? `${name} đã gửi tin nhắn trong nhóm:\n- ${p}`
+        : `${name} đã gửi tin nhắn trong nhóm.`;
+    }
+    case "system":
+      return truncatePreview(preview) || "Bạn có thông báo mới.";
+    case "text":
+    default: {
+      const p = truncatePreview(preview);
+      return p ? `${name} đã gửi tin nhắn:\n- ${p}` : `${name} đã gửi tin nhắn.`;
+    }
+  }
+}
+
+export function inferPushContentKind(
+  type: string,
+  msg?: {
+    type?: string;
+    text?: string;
+    image?: string;
+    imageUrl?: string;
+    file?: string;
+    fileUrl?: string;
+    fileName?: string;
+    location?: unknown;
+    lat?: unknown;
+    audioUrl?: string;
+  }
+): PushContentKind {
+  const msgType = msg?.type;
+  if (msgType === "image" || msg?.image || msg?.imageUrl) return "image";
+  if (msgType === "file" || msg?.file || msg?.fileUrl || msg?.fileName) return "file";
+  if (msgType === "location" || msg?.location || msg?.lat != null) return "location";
+  if (msg?.audioUrl) return "audio";
+  if (type === "friend_request") return "friend_request";
+  if (type === "friend_accepted") return "friend_accepted";
+  if (type === "mention") return "mention";
+  if (type === "group_message") return "group_text";
+  if (type === "system") return "system";
+  return "text";
 }
 
 export function resolvePushIcon(avatar?: string | null, isSystem = false): string {
@@ -16,8 +99,9 @@ export function resolvePushIcon(avatar?: string | null, isSystem = false): strin
 
 export function buildPushDisplayPayload(params: {
   senderName: string;
-  message: string;
+  preview?: string;
   senderAvatar?: string | null;
+  contentKind?: PushContentKind;
   isSystem?: boolean;
   type?: string;
   link?: string;
@@ -25,9 +109,13 @@ export function buildPushDisplayPayload(params: {
   extraData?: Record<string, string>;
 }) {
   const type = params.type || "message";
-  const isSystem = params.isSystem ?? type === "system";
-  const title = (params.senderName || "Thông báo").trim();
-  const body = formatMessagePreview(params.message);
+  const contentKind =
+    params.contentKind ??
+    inferPushContentKind(type, params.preview ? { text: params.preview } : undefined);
+  const isSystem = params.isSystem ?? contentKind === "system";
+  const senderName = isSystem ? "Hệ thống" : (params.senderName || "Ai đó").trim();
+  const title = senderName;
+  const body = formatPushBody(senderName, contentKind, params.preview);
   const icon = resolvePushIcon(params.senderAvatar, isSystem);
   const link = params.link || "/";
   const absoluteLink = link.startsWith("http") ? link : `${BASE_URL}${link.startsWith("/") ? link : `/${link}`}`;
@@ -40,6 +128,7 @@ export function buildPushDisplayPayload(params: {
       title,
       body,
       icon,
+      contentKind,
       isSystem: isSystem ? "true" : "false",
       type,
       link,
