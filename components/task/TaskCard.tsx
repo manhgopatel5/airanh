@@ -487,9 +487,9 @@ function TaskCard({
             />
           )}
 
-    <div className="flex items-center justify-between gap-2 border-t border-zinc-100 px-2 py-1 dark:border-zinc-800/80">
-  <div className="flex items-center gap-0">
-    {/* LIKE - không còn số */}
+  <div className="flex items-center justify-between gap-2 border-t border-zinc-100 px-2 py-1 dark:border-zinc-800/80">
+  <div className="flex items-center gap-3">
+    {/* TIM */}
     <button
       type="button"
       aria-label={liked? "Bỏ thích" : "Thích"}
@@ -501,15 +501,11 @@ function TaskCard({
       {liked? <HiHeart className="h-4 w-4 text-red-500" /> : <HiOutlineHeart className="h-4 w-4" />}
     </button>
 
-    {/* COMMENT - không còn số */}
-    <button
-      type="button"
-      aria-label="Bình luận"
-      onClick={goToTask}
-      className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
-    >
-      <FiMessageCircle className="h-4 w-4" />
-    </button>
+    {/* MẮT - MỚI CHUYỂN QUA ĐÂY */}
+    <div className="flex items-center gap-1 text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
+      <FiEye className="h-3.5 w-3.5" />
+      <span>{task.viewCount || 0}</span>
+    </div>
   </div>
 
   <div className="flex min-w-0 items-center justify-end gap-1">
@@ -539,9 +535,7 @@ function TaskCard({
         <span className="truncate">{derived.provinceName}</span>
       </div>
     )}
-    <div className="flex shrink-0 items-center gap-0.5 pr-0.5 text-[10px] font-bold text-zinc-400">
-      <FiEye className="h-2.5 w-2.5" /> {task.viewCount || 0}
-    </div>
+
   </div>
 </div>
         </div>
