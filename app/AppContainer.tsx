@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 const ChatClient = dynamic(() => import("./chat/ChatClient"), {
   ssr: false,
-  loading: () => <JobSkeleton count={1} />,
+  loading: () => null,
 });
 const TasksPage = dynamic(() => import("./_tabs/MyTasksPage"), {
   ssr: false,
