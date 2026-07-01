@@ -81,7 +81,7 @@ type PublicUser = {
   title?: string;
   location?: string;
   online?: boolean;
-  lastSeen?: Timestamp;
+  lastSeen?: Timestamp | string;
   emailVerified?: boolean;
   isVerifiedId?: boolean;
   skills?: string[];
@@ -99,7 +99,7 @@ type PublicUser = {
     taskCategories?: Record<string, number>;
   };
   huhaScore?: number;
-  createdAt?: Timestamp;
+  createdAt?: Timestamp | string;
   vip?: VipInfo | null;
 };
 
@@ -109,6 +109,88 @@ type RankData = {
   gradient: string;
   glow: string;
 };
+
+function InfoRow({
+  icon,
+  label,
+  value,
+  verified,
+  empty,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  verified?: boolean;
+  empty?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between px-4 py-4 active:bg-zinc-50 transition-colors">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className={`${empty ? "text-zinc-300" : "text-zinc-400"}`}>{icon}</div>
+        <span className="text- text-zinc-700">{label}</span>
+      </div>
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        <span className={`text- ${empty ? "text-zinc-400" : "text-zinc-900 font-medium"}`}>{value}</span>
+        {verified && (
+          <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+            <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Divider() {
+  return <div className="h-px bg-zinc-100 ml-[52px]" />;
+}
+
+function normalizePublicUser(u: Record<string, unknown>): PublicUser {
+  const skills = Array.isArray(u.skills) ? u.skills.filter((s): s is string => typeof s === "string") : [];
+  const portfolio = Array.isArray(u.portfolio)
+    ? u.portfolio
+        .filter((p): p is { title: string; url: string } => {
+          return !!p && typeof p === "object" && typeof (p as { title?: unknown }).title === "string";
+        })
+        .map((p) => ({ title: p.title, url: typeof p.url === "string" ? p.url : "" }))
+    : [];
+
+  const user: PublicUser = {
+    uid: String(u.uid || ""),
+    name: typeof u.name === "string" ? u.name : "Unknown User",
+    userId: typeof u.userId === "string" ? u.userId : "",
+    avatar: typeof u.avatar === "string" ? u.avatar : "",
+    online: !!u.online,
+    emailVerified: !!u.emailVerified,
+    isVerifiedId: !!u.isVerifiedId,
+    skills,
+    portfolio,
+    stats:
+      u.stats && typeof u.stats === "object"
+        ? (u.stats as NonNullable<PublicUser["stats"]>)
+        : { completed: 0, rating: 0, totalReviews: 0 },
+    huhaScore: typeof u.huhaScore === "number" ? u.huhaScore : Number(u.huhaScore) || 0,
+    vip: (u.vip as PublicUser["vip"]) ?? null,
+  };
+
+  if (typeof u.username === "string" && u.username) user.username = u.username;
+  if (typeof u.bio === "string" && u.bio) user.bio = u.bio;
+  if (typeof u.birthday === "string" && u.birthday) user.birthday = u.birthday;
+  if (u.phone != null) user.phone = typeof u.phone === "string" ? u.phone : String(u.phone);
+  if (typeof u.title === "string" && u.title) user.title = u.title;
+  if (typeof u.location === "string" && u.location) user.location = u.location;
+  if (u.lastSeen != null) user.lastSeen = u.lastSeen as NonNullable<PublicUser["lastSeen"]>;
+  if (u.createdAt != null) user.createdAt = u.createdAt as NonNullable<PublicUser["createdAt"]>;
+
+  return user;
+}
+
+function maskPhone(phone?: string) {
+  if (!phone) return "Chưa cập nhật";
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 3) return "••••••";
+  return `••••••${digits.slice(-3)}`;
+}
 
 export default function PublicProfile() {
   const params = useParams();
@@ -137,42 +219,6 @@ export default function PublicProfile() {
 const touchEndX = useRef(0);
   const [showAchievementInfo, setShowAchievementInfo] = useState(false);
   const [showCompletedInfo, setShowCompletedInfo] = useState(false);
-// Component hàng thông tin
-const InfoRow = ({
-  icon,
-  label,
-  value,
-  verified,
-  empty
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  verified?: boolean; // giữ nguyên
-  empty?: boolean; // giữ nguyên
-}) => (
-  <div className="flex items-center justify-between px-4 py-4 active:bg-zinc-50 transition-colors">
-    <div className="flex items-center gap-3 flex-1 min-w-0">
-      <div className={`${empty? 'text-zinc-300' : 'text-zinc-400'}`}>
-        {icon}
-      </div>
-      <span className="text- text-zinc-700">{label}</span>
-    </div>
-    <div className="flex items-center gap-1.5 flex-shrink-0">
-      <span className={`text- ${empty? 'text-zinc-400' : 'text-zinc-900 font-medium'}`}>
-        {value}
-      </span>
-      {verified && (
-        <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-          <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
-        </div>
-      )}
-    </div>
-  </div>
-);
-
-
-const Divider = () => <div className="h-px bg-zinc-100 ml-[52px]" />;
 
   const gamUser = useMemo(
     () => buildGamificationUser((targetUser || {}) as Record<string, unknown>, targetUser?.uid, friendCount),
@@ -181,7 +227,7 @@ const Divider = () => <div className="h-px bg-zinc-100 ml-[52px]" />;
 
   const completed = gamUser.stats.completed || 0;
   const reviews = gamUser.stats.totalReviews || 0;
-  const rating = gamUser.stats.rating || 0;
+  const rating = Number(gamUser.stats.rating) || 0;
   const huhaScore = gamUser.huhaScore;
   const level = gamUser.level;
   const trustScore = gamUser.trustScore;
@@ -226,13 +272,7 @@ const fetchUser = useCallback(async () => {
     }
 
     const body = await res.json();
-    const u = body.user;
-    const data = {
-      uid: u.uid,
-      ...u,
-      name: u.name || "Unknown User",
-      avatar: u.avatar || "",
-    } as PublicUser;
+    const data = normalizePublicUser(body.user as Record<string, unknown>);
 
     setTargetUser(data);
     setFriendCount(body.friendCount ?? 0);
@@ -241,7 +281,7 @@ const fetchUser = useCallback(async () => {
     setRequestId(body.requestId ?? null);
 
     try {
-      const reviewsRes = await fetch(`/api/users/${u.uid}/reviews?limit=8`);
+      const reviewsRes = await fetch(`/api/users/${data.uid}/reviews?limit=8`);
       if (reviewsRes.ok) {
         const reviewsBody = await reviewsRes.json();
         setProfileReviews(reviewsBody.reviews || []);
@@ -444,7 +484,7 @@ const handleMessage = async () => {
     }
   };
 
-  const formatLastSeen = (timestamp?: Timestamp | { seconds?: number }) => {
+  const formatLastSeen = (timestamp?: Timestamp | string | { seconds?: number }) => {
     const date = toTimestampDate(timestamp);
     if (!date) return "Lâu rồi";
 
@@ -1108,7 +1148,7 @@ return (
           <InfoRow
             icon={<Phone className="w-5 h-5" />}
             label="Số điện thoại"
-            value={targetUser?.phone? "••••••" + targetUser.phone.slice(-3) : "Chưa cập nhật"}
+            value={maskPhone(targetUser?.phone)}
             empty={!targetUser?.phone}
           />
         </div>

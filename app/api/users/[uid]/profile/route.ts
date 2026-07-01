@@ -92,8 +92,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ uid:
         isVerifiedId: !!(d.isVerifiedId || d.verified),
         skills: d.skills || [],
         portfolio: d.portfolio || [],
-        stats: d.stats || {},
-        huhaScore: d.huhaScore || 0,
+        stats: d.stats && typeof d.stats === "object" ? d.stats : {},
+        huhaScore: typeof d.huhaScore === "number" ? d.huhaScore : Number(d.huhaScore) || 0,
         createdAt: d.createdAt?.toDate?.()?.toISOString?.() || null,
         vip: vip
           ? { tier: vip.tier || null, expiresAt: serializeVipExpiresAt(vip.expiresAt) }

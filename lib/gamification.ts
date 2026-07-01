@@ -41,22 +41,33 @@ export type GamificationUser = {
   badges: string[];
 };
 
+export function coerceNumber(value: unknown, fallback = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
 export function getLevelFromXP(xp: number): {
   level: number;
   currentExp: number;
   nextLevelExp: number;
 } {
+  const safeXp = coerceNumber(xp, 0);
   let level = 1;
   let totalXP = 0;
+  const maxLevel = 999;
 
-  while (true) {
+  while (level < maxLevel) {
     const nextLevelExp = Math.floor(100 * Math.pow(level, 1.5));
-    if (xp < totalXP + nextLevelExp) break;
+    if (safeXp < totalXP + nextLevelExp) break;
     totalXP += nextLevelExp;
     level++;
   }
 
-  const currentExp = xp - totalXP;
+  const currentExp = Math.max(0, safeXp - totalXP);
   const nextLevelExp = Math.floor(100 * Math.pow(level, 1.5));
 
   return { level, currentExp, nextLevelExp };
@@ -94,9 +105,9 @@ export type TrustScoreInput = {
 
 export function calcTrustBreakdown(input: TrustScoreInput): TrustBreakdown {
   const { stats, emailVerified, isVerifiedId, joinedDays = 0 } = input;
-  const rating = Math.min(Math.floor((stats.rating || 0) * 15), 75);
-  const completed = Math.min(Math.floor((stats.completed || 0) * 1.2), 30);
-  const reviews = Math.min(stats.totalReviews || 0, 20);
+  const rating = Math.min(Math.floor(coerceNumber(stats.rating) * 15), 75);
+  const completed = Math.min(Math.floor(coerceNumber(stats.completed) * 1.2), 30);
+  const reviews = Math.min(coerceNumber(stats.totalReviews), 20);
   const verification = (emailVerified ? 5 : 0) + (isVerifiedId ? 5 : 0);
   const tenure = Math.min(Math.floor(joinedDays / 30), 5);
   const total = Math.min(100, rating + completed + reviews + verification + tenure);
@@ -135,14 +146,48 @@ export function calcJoinedDays(
   return Math.floor((Date.now() - ms) / 86400000);
 }
 
+function normalizeStats(raw: unknown): GamificationStats {
+  const s = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const stats: GamificationStats = {
+    completed: coerceNumber(s.completed),
+    rating: coerceNumber(s.rating),
+    totalReviews: coerceNumber(s.totalReviews),
+    streakDays: coerceNumber(s.streakDays),
+    eventsJoined: coerceNumber(s.eventsJoined),
+    checkins: coerceNumber(s.checkins),
+    groupsManaged: coerceNumber(s.groupsManaged),
+    eventsHosted: coerceNumber(s.eventsHosted),
+    tasksCreated: coerceNumber(s.tasksCreated),
+    plansCreated: coerceNumber(s.plansCreated),
+    maxTaskJoins: coerceNumber(s.maxTaskJoins),
+    freeTasksCreated: coerceNumber(s.freeTasksCreated),
+    consecutiveTaskDays: coerceNumber(s.consecutiveTaskDays),
+    morningTasks: coerceNumber(s.morningTasks),
+    eveningTasks: coerceNumber(s.eveningTasks),
+    internationalTasks: coerceNumber(s.internationalTasks),
+  };
+
+  if (typeof s.lastTaskCreatedDate === "string") {
+    stats.lastTaskCreatedDate = s.lastTaskCreatedDate;
+  }
+  if (s.taskCategories && typeof s.taskCategories === "object" && !Array.isArray(s.taskCategories)) {
+    stats.taskCategories = s.taskCategories as Record<string, number>;
+  }
+
+  return stats;
+}
+
 export function buildGamificationUser(
   d: Record<string, unknown>,
   uid?: string,
   friendCountOverride?: number
 ): GamificationUser {
-  const huhaScore = (d.huhaScore as number) || 0;
+  const huhaScore = coerceNumber(d.huhaScore);
   const { level, currentExp, nextLevelExp } = getLevelFromXP(huhaScore);
-  const stats = (d.stats as GamificationStats) || {};
+  const stats = normalizeStats(d.stats);
+  const joinedDays = calcJoinedDays(d.createdAt as Timestamp);
+  const skills = Array.isArray(d.skills) ? d.skills.filter((s): s is string => typeof s === "string") : [];
+  const portfolio = Array.isArray(d.portfolio) ? d.portfolio : [];
 
   const user: GamificationUser = {
     ...(uid ? { uid } : {}),
@@ -151,21 +196,21 @@ export function buildGamificationUser(
     exp: currentExp,
     nextLevelExp,
     streakDays: stats.streakDays || 0,
-    friendCount: friendCountOverride ?? ((d.friendCount as number) || 0),
-    joinedDays: calcJoinedDays(d.createdAt as Timestamp),
-    profileCompletion: calcProfileCompletion(d),
+    friendCount: friendCountOverride ?? coerceNumber(d.friendCount),
+    joinedDays,
+    profileCompletion: calcProfileCompletion({ ...d, skills, portfolio }),
     trustScore: calcTrustScore(stats, {
       emailVerified: !!(d.emailVerified),
       isVerifiedId: !!(d.isVerifiedId),
-      joinedDays: calcJoinedDays(d.createdAt as Timestamp),
+      joinedDays,
     }),
     emailVerified: !!(d.emailVerified),
     isVerifiedId: !!(d.isVerifiedId),
-    skills: (d.skills as string[]) || [],
-    portfolio: (d.portfolio as unknown[]) || [],
-    location: (d.location as string) || "",
+    skills,
+    portfolio,
+    location: typeof d.location === "string" ? d.location : "",
     stats,
-    badges: (d.badges as string[]) || [],
+    badges: Array.isArray(d.badges) ? d.badges.filter((b): b is string => typeof b === "string") : [],
   };
 
   return user;

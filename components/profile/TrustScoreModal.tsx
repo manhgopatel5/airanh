@@ -31,9 +31,9 @@ export default function TrustScoreModal({
     isVerifiedId: !!isVerifiedId,
     joinedDays,
   });
-  const rating = stats.rating || 0;
-  const completed = stats.completed || 0;
-  const totalReviews = stats.totalReviews || 0;
+  const rating = Number(stats.rating) || 0;
+  const completed = Number(stats.completed) || 0;
+  const totalReviews = Number(stats.totalReviews) || 0;
 
   const rows = [
     {
