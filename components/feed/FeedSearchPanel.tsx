@@ -103,6 +103,8 @@ type Props = {
   currentFilters: FeedFilters;
   onApply: (filters: FeedFilters) => void;
   isLoggedIn?: boolean;
+  /** When true, trigger sits flush in a parent row (e.g. beside reload). */
+  inline?: boolean;
 };
 
 const haptics = {
@@ -118,6 +120,7 @@ export default function FeedSearchPanel({
   currentFilters,
   onApply,
   isLoggedIn,
+  inline = false,
 }: Props) {
   const themes = {
     task: { bg: "#0A84FF", gradient: "linear-gradient(135deg, #0A84FF 0%, #0066CC 100%)" },
@@ -533,7 +536,9 @@ export default function FeedSearchPanel({
       <button
         type="button"
         onClick={onOpen}
-        className="mt-3 w-full h-12 px-4 flex items-center gap-3 rounded-2xl bg-zinc-100/90 dark:bg-zinc-900/90 ring-1 ring-black/[0.06] dark:ring-white/10 active:scale-[0.99] transition-transform text-left"
+        className={`w-full h-12 px-4 flex items-center gap-3 rounded-2xl bg-zinc-100/90 dark:bg-zinc-900/90 ring-1 ring-black/[0.06] dark:ring-white/10 active:scale-[0.99] transition-transform text-left ${
+          inline ? "" : "mt-3"
+        }`}
       >
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
