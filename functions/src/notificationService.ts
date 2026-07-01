@@ -1,7 +1,9 @@
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 
-const db = getFirestore();
+function db() {
+  return getFirestore();
+}
 
 export type UserSettings = {
   notiTaskAssigned?: boolean;
@@ -71,7 +73,7 @@ async function sendPushToUser(
   uid: string,
   payload: { title: string; body: string; data: Record<string, string> }
 ) {
-  const userDoc = await db.doc(`users/${uid}`).get();
+  const userDoc = await db().doc(`users/${uid}`).get();
   const rawTokens: string[] = userDoc.data()?.fcmTokens || [];
   const tokens = [...new Set(rawTokens.filter((t) => typeof t === "string" && t.length > 0))];
   if (tokens.length === 0) return;
@@ -93,7 +95,7 @@ async function sendPushToUser(
     if (!resp.success && tokens[i]) deadTokens.push(tokens[i]!);
   });
   if (deadTokens.length > 0) {
-    await db.doc(`users/${uid}`).update({
+    await db().doc(`users/${uid}`).update({
       fcmTokens: FieldValue.arrayRemove(...deadTokens),
     });
   }
@@ -108,11 +110,11 @@ export async function createNotificationAndPush(
   if (!toUid || toUid === payload.fromUid) return;
 
   try {
-    const userDoc = await db.doc(`users/${toUid}`).get();
+    const userDoc = await db().doc(`users/${toUid}`).get();
     const settings: UserSettings = userDoc.data()?.settings || {};
 
     if (!options.force && isInQuietHours(settings.quietHours)) {
-      await db.collection(`notifications/${toUid}/items`).add({
+      await db().collection(`notifications/${toUid}/items`).add({
         type: payload.type,
         fromUid: payload.fromUid,
         fromName: payload.fromName,
@@ -127,7 +129,7 @@ export async function createNotificationAndPush(
       return;
     }
 
-    await db.collection(`notifications/${toUid}/items`).add({
+    await db().collection(`notifications/${toUid}/items`).add({
       type: payload.type,
       fromUid: payload.fromUid,
       fromName: payload.fromName,
