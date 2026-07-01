@@ -555,60 +555,66 @@ const goToTask = useCallback(async () => {
 
   </div>
 </div>
-        </div>
-      </div>
+      </div> {/* đóng relative */}
+    </div> {/* đóng overflow-wrapper */}
 
-     <AnimatePresence>
-  {showMenu && isOwner && (
-    <Portal>
-      <div className="fixed inset-0 z-50" onClick={() => setShowMenu(false)} />
-      <motion.div
-        id={menuId}
-        ref={menuPanelRef}
-        role="menu"
-        initial={reduceMotion? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -8 }}
-        animate={reduceMotion? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-        exit={reduceMotion? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -8 }}
-        transition={{ duration: 0.15 }}
-        className="fixed z-50 w-[188px] overflow-hidden rounded-2xl border border-zinc-200 bg-white/95 py-2 shadow-2xl shadow-black/15 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/95"
-        style={{ top: `${menuPos.y}px`, left: `${menuPos.x}px` }}
-      >
-        {/* MỚI: Share */}
-        <button
-          role="menuitem"
-          type="button"
-          onClick={(e) => { e.stopPropagation(); setShowMenu(false); vibrate(8); onShare?.(task); }}
-          className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900"
-        >
-          <FiShare2 /> Chia sẻ
-        </button>
+    <AnimatePresence>
+      {showMenu && isOwner && (
+        <Portal>
+          <div className="fixed inset-0 z-50" onClick={() => setShowMenu(false)} />
+          <motion.div
+            id={menuId}
+            ref={menuPanelRef}
+            role="menu"
+            initial={reduceMotion? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -8 }}
+            animate={reduceMotion? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+            exit={reduceMotion? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -8 }}
+            transition={{ duration: 0.15 }}
+            className="fixed z-50 w-[188px] overflow-hidden rounded-2xl border border-zinc-200 bg-white/95 py-2 shadow-2xl shadow-black/15 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/95"
+            style={{ top: `${menuPos.y}px`, left: `${menuPos.x}px` }}
+          >
+            <button
+              role="menuitem"
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowMenu(false); vibrate(8); onShare?.(task); }}
+              className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900"
+            >
+              <FiShare2 /> Chia sẻ
+            </button>
 
-        {/* MỚI: Lưu / Bỏ lưu */}
-        <button
-          role="menuitem"
-          type="button"
-          onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleSave(); }}
-          className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900"
-        >
-          <FiBookmark className={cn(isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
-          {isSaved? "Bỏ lưu" : "Lưu"}
-        </button>
+            <button
+              role="menuitem"
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleSave(); }}
+              className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900"
+            >
+              <FiBookmark className={cn(isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
+              {isSaved? "Bỏ lưu" : "Lưu"}
+            </button>
 
-        {/* CŨ: Sửa */}
-        <button role="menuitem" type="button" onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }} className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900">
-          <FiEdit2 /> Sửa mục này
-        </button>
+            <button
+              role="menuitem"
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }}
+              className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900"
+            >
+              <FiEdit2 /> Sửa mục này
+            </button>
 
-        {/* CŨ: Xóa */}
-        <button role="menuitem" type="button" onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }} className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-red-500 transition hover:bg-red-50 focus-visible:outline-none focus-visible:bg-red-50 dark:hover:bg-red-500/10 dark:focus-visible:bg-red-500/10">
-          <FiTrash2 /> Xóa
-        </button>
-      </motion.div>
-    </Portal>
-  )}
-</AnimatePresence>
-    </article>
-  );
+            <button
+              role="menuitem"
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }}
+              className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-red-500 transition hover:bg-red-50 focus-visible:outline-none focus-visible:bg-red-50 dark:hover:bg-red-500/10 dark:focus-visible:bg-red-500/10"
+            >
+              <FiTrash2 /> Xóa
+            </button>
+          </motion.div>
+        </Portal>
+      )}
+    </AnimatePresence>
+  </article>
+);
 }
 
 export const TaskCardSkeleton = memo(() => (
