@@ -340,14 +340,9 @@ const getAuthToken = useCallback(async () => {
 
   return (
     <article className={cn("group w-full mb-3", className)}>
-      <div className="relative">
-        <div
-          className="absolute -inset-px rounded-[18px] opacity-90"
-          style={{ background: accent }}
-        />
-
-        <div className="relative overflow-hidden rounded-[18px] border border-zinc-200/90 bg-white shadow-[0_10px_32px_-10px_rgba(0,0,0,0.18)] ring-1 ring-black/[0.06] transition-[transform,box-shadow] duration-200 active:scale-[0.99] dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-black/50 dark:ring-white/[0.08]">
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-black/[0.02] dark:from-white/[0.03]" />
+  <div className="relative">
+  <div className="relative overflow-hidden rounded-[20px] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] transition-all duration-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] active:scale-[0.99] dark:bg-zinc-900">
+l
 
           <div className="relative p-2.5 pb-2">
             <div className="mb-2 flex items-start justify-between gap-2">
