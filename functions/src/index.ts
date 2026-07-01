@@ -1,15 +1,12 @@
 import { onDocumentCreated, onDocumentUpdated, onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { initializeApp } from "firebase-admin/app";
-import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { FirestoreEvent, QueryDocumentSnapshot, Change } from "firebase-functions/v2/firestore";
 import { DocumentSnapshot } from "firebase-admin/firestore";
+import { db } from "./admin";
 import { createNotificationAndPush, extractMentionedUids } from "./notificationService";
-
-initializeApp();
-const db = getFirestore();
 
 // 1. Khi có lời mời kết bạn mới → tạo thông báo cho người nhận
 export const onFriendRequestCreated = onDocumentCreated(
