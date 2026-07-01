@@ -40,12 +40,22 @@ export default function RegionPicker({ value, onChange, className }: Props) {
     if (locating) return;
     setLocating(true);
     try {
-      const pos = await getCurrentPosition();
+      let pos;
+      try {
+        pos = await getCurrentPosition({ enableHighAccuracy: true, timeout: 12000 });
+      } catch (firstErr: unknown) {
+        const code = (firstErr as { code?: number })?.code;
+        if (code === 2 || code === 3) {
+          pos = await getCurrentPosition({ enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 });
+        } else {
+          throw firstErr;
+        }
+      }
       const parsed = await mapboxReverseGeocode(pos.lat, pos.lng);
       applyParsed(parsed);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Không lấy được vị trí";
-      toast.error(message, { duration: message === GEO_PERMISSION_DENIED_MESSAGE ? 6000 : 4000 });
+      toast.error(message, { duration: message === GEO_PERMISSION_DENIED_MESSAGE ? 6000 : 5000 });
     } finally {
       setLocating(false);
     }

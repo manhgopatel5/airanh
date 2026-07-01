@@ -79,6 +79,7 @@ const nextConfig = {
         'https://asia-southeast1-airanh-ba64c.cloudfunctions.net',
         'https://cdn.jsdelivr.net',
         'https://unpkg.com',
+        'https://api.mapbox.com',
       ].join(' '),
       "worker-src 'self' blob:",
       "media-src 'self' blob:",

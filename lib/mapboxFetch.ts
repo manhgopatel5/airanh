@@ -26,8 +26,15 @@ export async function fetchMapboxAutocomplete(
 
   const res = await fetch(url);
   if (!res.ok) {
-    const err = await res.text().catch(() => "");
-    throw new Error(err || `Mapbox autocomplete failed (${res.status})`);
+    let message = `Mapbox lỗi (${res.status})`;
+    try {
+      const body = (await res.json()) as { message?: string };
+      if (body.message) message = body.message;
+    } catch {
+      const text = await res.text().catch(() => "");
+      if (text) message = text.slice(0, 200);
+    }
+    throw new Error(message);
   }
 
   const data = (await res.json()) as { features?: MapboxFeature[] };
@@ -47,8 +54,15 @@ export async function fetchMapboxReverseGeocode(
 
   const res = await fetch(url);
   if (!res.ok) {
-    const err = await res.text().catch(() => "");
-    throw new Error(err || `Mapbox reverse geocode failed (${res.status})`);
+    let message = `Mapbox lỗi (${res.status})`;
+    try {
+      const body = (await res.json()) as { message?: string };
+      if (body.message) message = body.message;
+    } catch {
+      const text = await res.text().catch(() => "");
+      if (text) message = text.slice(0, 200);
+    }
+    throw new Error(message);
   }
 
   const data = (await res.json()) as { features?: MapboxFeature[] };

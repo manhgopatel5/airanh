@@ -1,28 +1,34 @@
-import {
-  fetchMapboxAutocomplete,
-  fetchMapboxReverseGeocode,
-} from "@/lib/mapboxFetch";
 import type { ParsedMapboxLocation } from "@/lib/mapboxGeocode";
 
-export function getMapboxToken(): string {
-  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-  if (!token?.trim()) {
-    throw new Error("Mapbox chưa cấu hình (NEXT_PUBLIC_MAPBOX_TOKEN)");
+async function apiGet<T>(url: string): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(url);
+  } catch {
+    throw new Error("Không kết nối được máy chủ. Kiểm tra mạng và thử lại.");
   }
-  return token.trim();
+
+  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
+  if (!res.ok) {
+    throw new Error(data.error || `Lỗi máy chủ (${res.status})`);
+  }
+  return data;
 }
 
+/** Gọi Mapbox qua API route — token NEXT_PUBLIC_MAPBOX_TOKEN xử lý phía server */
 export async function mapboxSearchPlaces(query: string): Promise<ParsedMapboxLocation[]> {
-  return fetchMapboxAutocomplete(query, getMapboxToken());
+  const data = await apiGet<{ predictions?: ParsedMapboxLocation[] }>(
+    `/api/places/autocomplete?input=${encodeURIComponent(query.trim())}`
+  );
+  return data.predictions ?? [];
 }
 
 export async function mapboxReverseGeocode(
   lat: number,
   lng: number
 ): Promise<ParsedMapboxLocation> {
-  const result = await fetchMapboxReverseGeocode(lat, lng, getMapboxToken());
-  if (!result) {
-    throw new Error("Không xác định được khu vực từ GPS");
-  }
-  return result;
+  const data = await apiGet<ParsedMapboxLocation>(
+    `/api/places/geocode?lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lng))}`
+  );
+  return data;
 }
