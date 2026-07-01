@@ -63,6 +63,7 @@ authorVipTier?: 'pro' | 'elite' | null;
   banned?: boolean;
   hidden?: boolean;
   featured?: boolean;
+  allowedViewerIds?: string[];
   featuredUntil?: Timestamp;
 
   // Time
@@ -220,7 +221,9 @@ authorVipTier?: 'pro' | 'elite' | null;
   nda?: boolean;
   invites?: string[];
   needApproval?: boolean;
+  allowInvite?: boolean;
   recurring?: string;
+  allowedViewerIds?: string[];
 };
 
 export type CreatePlanInput = {
@@ -248,6 +251,7 @@ authorVipTier?: 'pro' | 'elite' | null;
   location?: BaseItem["location"];
   milestones?: Omit<PlanMilestone, "id" | "completedAt" | "order">[];
   featured?: boolean;
+  allowedViewerIds?: string[];
 };
 
 export type CreateItemInput = CreateTaskInput | CreatePlanInput;

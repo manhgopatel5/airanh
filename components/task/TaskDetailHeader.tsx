@@ -14,6 +14,8 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { getTaskAuthorName, getTaskAuthorAvatar } from "@/lib/task/author";
+import { publishTask } from "@/lib/task";
+import VipDisplayName from "@/components/vip/VipDisplayName";
 import type { FeedTask } from "@/types/task";
 
 type UserData = {
@@ -91,9 +93,24 @@ export default function TaskDetailHeader({
     }
   };
 
+  const handlePublish = async () => {
+    if (!currentUser?.uid || !task.hidden) return;
+    try {
+      await publishTask(task.id, currentUser.uid);
+      toast.success("Đã hiện công khai trên feed");
+      setShowMenu(false);
+    } catch {
+      toast.error("Không thể hiện công khai");
+    }
+  };
+
   const ownerName = owner?.name || getTaskAuthorName(task);
   const ownerAvatar = owner?.avatar || getTaskAuthorAvatar(task);
   const profileUid = task.userId;
+  const authorVip = {
+    tier: (task as FeedTask & { authorVipTier?: string | null }).authorVipTier ?? null,
+    expiresAt: (task as FeedTask & { authorVipExpiresAt?: unknown }).authorVipExpiresAt ?? null,
+  };
 
   return (
     <div className="bg-white dark:bg-zinc-950">
@@ -113,14 +130,12 @@ export default function TaskDetailHeader({
                 {profileUid ? (
                   <Link
                     href={`/profile/${profileUid}`}
-                    className="font-semibold text-base text-zinc-900 dark:text-zinc-100 truncate leading-5 active:opacity-70"
+                    className="text-base leading-5 active:opacity-70"
                   >
-                    {ownerName}
+                    <VipDisplayName name={ownerName} vip={authorVip} />
                   </Link>
                 ) : (
-                  <p className="font-semibold text-base text-zinc-900 dark:text-zinc-100 truncate leading-5">
-                    {ownerName}
-                  </p>
+                  <VipDisplayName name={ownerName} vip={authorVip} className="text-base leading-5" />
                 )}
 
                 <div className="flex items-center gap-1 mt-0.5">
@@ -220,8 +235,19 @@ export default function TaskDetailHeader({
                             className="fixed z-50 min-w-[200px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
                             style={{ top: `${menuPos.y}px`, left: `${menuPos.x}px` }}
                           >
+                            {task.hidden && (
+                              <>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); void handlePublish(); }}
+                                  className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[#0A84FF] hover:bg-zinc-100 dark:hover:bg-zinc-800 w-full transition-all active:scale-95"
+                                >
+                                  <FiCheck size={18} />
+                                  Hiện công khai
+                                </button>
+                                <div className="h-px bg-zinc-200 dark:bg-zinc-800 mx-2" />
+                              </>
+                            )}
                             <button
-                              onClick={(e) => { e.stopPropagation(); handleSave(); setShowMenu(false); }}
                               className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 w-full transition-all active:scale-95"
                             >
                               {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}

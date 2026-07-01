@@ -33,6 +33,8 @@ import { useAuth } from "@/lib/AuthContext";
 import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geolocation";
 import { formatShortLocation, type ParsedMapboxLocation } from "@/lib/mapboxGeocode";
 import AddressSearchInput from "@/components/location/AddressSearchInput";
+import FriendPicker from "@/components/create/FriendPicker";
+import { extractAuthorVip } from "@/lib/vip";
 
 type Mode = "task" | "plan";
 
@@ -63,6 +65,7 @@ type FormState = {
   costAmount: number;
   allowInvite: boolean;
   requireApproval: boolean;
+  allowedViewerIds: string[];
 };
 
 type FormErrors = Partial<Record<keyof FormState | "location.address" | "location.coords", string>>;
@@ -142,6 +145,7 @@ const initialForm = (mode: Mode): FormState => ({
   costAmount: 0,
   allowInvite: true,
   requireApproval: false,
+  allowedViewerIds: [],
 });
 const toTimestamp = (value: string) => Timestamp.fromDate(new Date(value));
 function TagsInput({
@@ -289,7 +293,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
     mutate("/api/location/province", undefined, { revalidate: true });
   }, []);
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, userData, loading: authLoading } = useAuth();
 
   const [form, setForm] = useState<FormState>(() => initialForm(mode));
   const [errors, setErrors] = useState<FormErrors>({});
@@ -301,6 +305,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const [locating, setLocating] = useState(false);
 
 const isTask = mode === "task";
+const previewVip = extractAuthorVip(userData as Record<string, unknown> | undefined);
 const previewTask = useMemo(() => ({
   id: "preview",
   type: mode,
@@ -311,8 +316,8 @@ const previewTask = useMemo(() => ({
   userName: user?.displayName || "Bạn",
   userAvatar: user?.photoURL || "",
   userVerified: false,
-  authorVipTier: (user as any)?.vip?.tier || null,
-authorVipExpiresAt: (user as any)?.vip?.expiresAt || null,
+  authorVipTier: previewVip.authorVipTier,
+  authorVipExpiresAt: previewVip.authorVipExpiresAt,
   createdAt: new Date().toISOString(),
   category: form.category,
   tags: form.tags.split(",").map(t => t.trim()).filter(Boolean),
@@ -430,7 +435,13 @@ useEffect(() => {
       } else {
         newErrors.eventDate = validateField("eventDate", form.eventDate);
         newErrors.maxParticipants = validateField("maxParticipants", form.maxParticipants);
+        if (form.costType !== "free" && form.costAmount <= 0) {
+          newErrors.price = "Nhập chi phí dự kiến";
+        }
       }
+    }
+    if (stepIdx === 3 && form.visibility === "friends" && form.allowedViewerIds.length === 0) {
+      newErrors.title = "Chọn ít nhất một người bạn";
     }
     setErrors(newErrors);
     return !Object.values(newErrors).some(Boolean);
@@ -527,10 +538,6 @@ const handleCategoryChange = (catId: string) => {
 
   setSaving(true);
   try {
-    // LẤY VIP TỪ USER (đúng field trong ảnh Firestore)
-    const vipTier = (user as any)?.vip?.tier || null; // 'pro' | 'elite'
-    const vipExpiresAt = (user as any)?.vip?.expiresAt || null;
-
       const location = {
         address: form.location.address.trim(),
         city: form.location.provinceName,
@@ -560,8 +567,8 @@ const handleCategoryChange = (catId: string) => {
           startDate: Timestamp.now(),
           urgency: form.durationHours <= 8 ? "urgent" : "flexible",
           needApproval: form.requireApproval,
-  authorVipTier: vipTier,
-  authorVipExpiresAt: vipExpiresAt,
+          allowInvite: form.allowInvite,
+          allowedViewerIds: form.visibility === "friends" ? form.allowedViewerIds : [],
         }, user as any);
 await mutate("/api/tasks?type=task&limit=20");
         toast.success("Đã tạo task thành công");
@@ -579,15 +586,21 @@ await mutate("/api/tasks?type=task&limit=20");
           totalSlots: form.maxParticipants,
           costType: form.costType,
           ...(form.costType !== "free" && { costAmount: form.costAmount }),
-          costDescription: form.costType === "share" ? "Chia đều chi phí" : "",
+          costDescription:
+            form.costType === "share"
+              ? "Chia đều cho mọi người tham gia"
+              : form.costType === "host"
+                ? "Chủ sự kiện chi trả toàn bộ"
+                : form.costType === "ticket"
+                  ? "Bán vé — thu phí từng người"
+                  : "Miễn phí tham gia",
           visibility: form.visibility,
           tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
           location,
           allowInvite: form.allowInvite,
           requireApproval: form.requireApproval,
           autoAccept: !form.requireApproval,
-authorVipTier: vipTier,
-  authorVipExpiresAt: vipExpiresAt,
+          allowedViewerIds: form.visibility === "friends" ? form.allowedViewerIds : [],
         }, user as any);
 await mutate("/api/tasks?type=plan&limit=20");
         toast.success("Đã tạo plan thành công");
@@ -687,8 +700,8 @@ await mutate("/api/tasks?type=plan&limit=20");
       </div>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-2xl px-4 py-6 pb-32">
-        <AnimatePresence mode="wait">
+      <main className="mx-auto min-h-[50vh] max-w-2xl px-4 py-6 pb-32">
+        <AnimatePresence mode="wait" initial={false}>
           {step === 0 && (
             <StepContent key="step0">
               <Card>
@@ -874,7 +887,11 @@ await mutate("/api/tasks?type=plan&limit=20");
                         ))}
                       </div>
                     </Field>
-                    <Field label="Ngân sách" error={errors.price} icon={FiDollarSign}>
+                    <Field
+                      label={form.budgetType === "hourly" ? "Mức giá theo giờ" : "Ngân sách"}
+                      error={errors.price}
+                      icon={FiDollarSign}
+                    >
                       <div className="relative">
                         <input
                           type="number"
@@ -882,13 +899,19 @@ await mutate("/api/tasks?type=plan&limit=20");
                           disabled={form.budgetType === "negotiable"}
                           onChange={(e) => update("price", Number(e.target.value) || 0)}
                           onBlur={() => blur("price")}
-                          className="input-premium pr-16"
-                          placeholder="0"
+                          className="input-premium pr-20"
+                          placeholder={form.budgetType === "hourly" ? "50000" : "0"}
                         />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400">
-                          VNĐ
+                          {form.budgetType === "hourly" ? "VNĐ/h" : "VNĐ"}
                         </span>
                       </div>
+                      {form.budgetType === "hourly" && form.price > 0 && form.durationHours > 0 && (
+                        <p className="mt-2 rounded-xl bg-blue-50 px-3 py-2 text-xs font-semibold text-[#0A84FF] dark:bg-blue-950/40">
+                          Ước tính tổng: {(form.price * form.durationHours).toLocaleString("vi-VN")} VNĐ
+                          {" "}({form.durationHours} giờ × {form.price.toLocaleString("vi-VN")}/h)
+                        </p>
+                      )}
                       {form.budgetType === "negotiable" && (
                         <p className="flex items-center gap-2 text-xs text-zinc-400">
                           <FiAlertCircle /> Thương lượng trực tiếp với người nhận
@@ -982,9 +1005,15 @@ await mutate("/api/tasks?type=plan&limit=20");
                           </motion.button>
                         ))}
                       </div>
+                      <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                        {form.costType === "free" && "Miễn phí — không thu phí người tham gia."}
+                        {form.costType === "share" && "Chia đều — tổng chi phí chia cho số người tham gia."}
+                        {form.costType === "host" && "Chủ bao — bạn chi trả toàn bộ cho nhóm."}
+                        {form.costType === "ticket" && "Bán vé — mỗi người trả một khoản cố định."}
+                      </p>
                     </Field>
                     {form.costType !== "free" && (
-                      <Field label="Chi phí dự kiến" icon={FiDollarSign}>
+                      <Field label="Chi phí dự kiến" error={errors.price} icon={FiDollarSign}>
                         <div className="relative">
                           <input
                             type="number"
@@ -1031,6 +1060,21 @@ await mutate("/api/tasks?type=plan&limit=20");
                     ))}
                   </div>
                 </Field>
+                {form.visibility === "public" && (
+                  <p className="rounded-2xl bg-amber-50 px-4 py-3 text-xs font-medium leading-relaxed text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                    Công khai sẽ lưu ở mục <b>Ẩn</b> trong Task của bạn. Sau khi sẵn sàng, bấm <b>Hiện công khai</b> để đưa lên feed.
+                  </p>
+                )}
+                {form.visibility === "friends" && user?.uid && (
+                  <Field label="Chọn bạn được xem" required error={errors.title} icon={FiUsers}>
+                    <FriendPicker
+                      userId={user.uid}
+                      selectedIds={form.allowedViewerIds}
+                      onChange={(ids) => update("allowedViewerIds", ids)}
+                      accent={accent}
+                    />
+                  </Field>
+                )}
                 <Toggle
                   label="Cần duyệt người tham gia"
                   description="Bạn sẽ xem xét trước khi ai đó tham gia"
@@ -1041,7 +1085,16 @@ await mutate("/api/tasks?type=plan&limit=20");
                 {!isTask && (
                   <Toggle
                     label="Cho phép mời thêm người"
-                    description="Người tham gia có thể mời bạn bè"
+                    description="Người tham gia có thể mời bạn bè vào nhóm"
+                    checked={form.allowInvite}
+                    onChange={(value) => update("allowInvite", value)}
+                    icon={FiUsers}
+                  />
+                )}
+                {isTask && (
+                  <Toggle
+                    label="Cho phép mời thêm người"
+                    description="Người nhận việc có thể mời thêm"
                     checked={form.allowInvite}
                     onChange={(value) => update("allowInvite", value)}
                     icon={FiUsers}

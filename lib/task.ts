@@ -45,6 +45,7 @@ import {
   User,
   TaskStatus,
 } from "@/types/task";
+import { extractAuthorVip } from "@/lib/vip";
 
 class TaskError extends Error {
   constructor(message: string, public code?: string) {
@@ -141,6 +142,9 @@ export async function createTask(
   const tags = cleanTags(data.tags || [], data.title, category);
 
   const { displayName, photoURL, username, userShortId } = getUserDisplayInfo(user, userData);
+  const vipFields = extractAuthorVip(userData);
+  const visibility = data.visibility || "public";
+  const isPublicDraft = visibility === "public";
 
   const taskData: Omit<TaskItem, "id"> = {
     type: "task",
@@ -158,9 +162,9 @@ export async function createTask(
     userUsername: username,
     userShortId: userShortId,
     status: "open",
-    visibility: data.visibility || "public",
-banned: false, 
-    hidden: false, 
+    visibility,
+    banned: false,
+    hidden: isPublicDraft,
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
 ...(data.location && { location: data.location }),
@@ -195,8 +199,10 @@ banned: false,
     invites: data.invites || [],
     needApproval: data.needApproval ?? true,
     recurring: data.recurring || "once",
-authorVipTier: (data as any).authorVipTier ?? null,
-    authorVipExpiresAt: (data as any).authorVipExpiresAt ?? null,
+    ...vipFields,
+    ...((data as CreateTaskInput & { allowedViewerIds?: string[] }).allowedViewerIds?.length
+      ? { allowedViewerIds: (data as CreateTaskInput & { allowedViewerIds?: string[] }).allowedViewerIds }
+      : {}),
   };
 
   const batch = writeBatch(db);
@@ -263,6 +269,9 @@ export async function createPlan(
   }));
 
   const { displayName, photoURL, username, userShortId } = getUserDisplayInfo(user, userData);
+  const vipFields = extractAuthorVip(userData);
+  const visibility = data.visibility || "public";
+  const isPublicDraft = visibility === "public";
 
   const ownerParticipant: PlanParticipant = {
     userId: user.uid,
@@ -297,7 +306,9 @@ export async function createPlan(
     userUsername: username,
     userShortId: userShortId,
     status: "open",
-    visibility: data.visibility || "public",
+    visibility,
+    hidden: isPublicDraft,
+    banned: false,
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
 ...(data.location && { location: data.location }),
@@ -329,8 +340,10 @@ export async function createPlan(
     autoAccept: data.autoAccept?? false,
     requireApproval: data.requireApproval?? false,
     featured: data.featured || false,
-authorVipTier: (data as any).authorVipTier ?? null,
-    authorVipExpiresAt: (data as any).authorVipExpiresAt ?? null,
+    ...vipFields,
+    ...((data as CreatePlanInput & { allowedViewerIds?: string[] }).allowedViewerIds?.length
+      ? { allowedViewerIds: (data as CreatePlanInput & { allowedViewerIds?: string[] }).allowedViewerIds }
+      : {}),
   };
 
   const batch = writeBatch(db);
@@ -350,7 +363,14 @@ authorVipTier: (data as any).authorVipTier ?? null,
   return { id: planRef.id, slug };
 }
 
-/* ================= UPDATE TASK ================= */
+export async function publishTask(taskId: string, userId: string): Promise<void> {
+  const db = getFirebaseDB();
+  const ref = doc(db, "tasks", taskId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new TaskError("Không tìm thấy");
+  if (snap.data()?.userId !== userId) throw new TaskError("Không có quyền");
+  await updateDoc(ref, { hidden: false, updatedAt: serverTimestamp() });
+}
 export async function updateTask(
   taskId: string,
   userId: string,
@@ -666,7 +686,36 @@ export async function joinPlan(taskId: string, user: User, inviteCode?: string):
     }
 
     if (plan.requireApproval) {
-      throw new TaskError("Kế hoạch cần duyệt, chưa hỗ trợ");
+      const appId = `${taskId}_${user.uid}`;
+      const appRef = doc(db, "applications", appId);
+      const appSnap = await transaction.get(appRef);
+      if (appSnap.exists()) {
+        const st = appSnap.data()?.status;
+        if (st === "pending") throw new TaskError("Bạn đã gửi yêu cầu tham gia");
+        if (st === "accepted") throw new TaskError("Bạn đã tham gia");
+      }
+
+      const displayName = user.displayName || user.email?.split('@')[0] || `User${user.uid.slice(0,4)}`;
+      const photoURL = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0A84FF&color=fff&bold=true`;
+
+      transaction.set(appRef, {
+        taskId,
+        planId: taskId,
+        taskOwnerId: plan.userId,
+        planOwnerId: plan.userId,
+        userId: user.uid,
+        userName: displayName,
+        userAvatar: photoURL,
+        status: "pending",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      transaction.update(planRef, {
+        applicants: arrayUnion(user.uid),
+        appliedCount: increment(1),
+        updatedAt: serverTimestamp(),
+      });
+      return;
     }
 
     const displayName = user.displayName || user.email?.split('@')[0] || `User${user.uid.slice(0,4)}`;

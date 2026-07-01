@@ -8,6 +8,7 @@ import { DocumentSnapshot } from "firebase-admin/firestore";
 import { db } from "./admin";
 import { createNotificationAndPush, extractMentionedUids } from "./notificationService";
 import { buildPushDisplayPayload, inferPushContentKind } from "./pushFormat";
+import { shouldSendChatNotification } from "./chatNotificationThrottle";
 
 // 1. Khi có lời mời kết bạn mới → tạo thông báo cho người nhận
 export const onFriendRequestCreated = onDocumentCreated(
@@ -570,6 +571,9 @@ async function notifyStrangerMessage(
   preview: string
 ) {
   try {
+    const allowed = await shouldSendChatNotification(toUid, chatId);
+    if (!allowed) return;
+
     const link = `/stranger/${chatId}`;
     const body = preview.length > 100 ? `${preview.slice(0, 100)}...` : preview;
 

@@ -42,7 +42,8 @@ export type AppUser = {
   createdAt?: Timestamp | string;
   updatedAt?: Timestamp | string;
   onboardingCompleted: boolean;
-  huhaScore?: number; // THÊM DÒNG NÀY
+  huhaScore?: number;
+  vip?: { tier?: 'free' | 'pro' | 'elite'; expiresAt?: Timestamp | string };
 };
 
 type AuthContextType = {

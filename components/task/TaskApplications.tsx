@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiCheck, FiX, FiStar, FiUsers, FiFlag } from "react-icons/fi";
-import { doc, updateDoc, setDoc, serverTimestamp, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, updateDoc, setDoc, serverTimestamp, arrayUnion, arrayRemove, Timestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -96,13 +96,32 @@ export default function TaskApplications({ applications, item, currentUserId, on
 
       const newJoined = acceptedApps.length + 1;
 
-      await updateDoc(doc(db, "tasks", itemId), {
+      const taskUpdates: Record<string, unknown> = {
         joined: newJoined,
         currentParticipants: newJoined,
         assignees: arrayUnion(applicantId),
         applicants: arrayRemove(applicantId),
         status: "doing",
-      });
+      };
+
+      if (isPlan) {
+        taskUpdates.participants = arrayUnion({
+          userId: applicantId,
+          userName: app?.userName || "Thành viên",
+          userAvatar: app?.userAvatar || "",
+          role: "member",
+          joinedAt: Timestamp.now(),
+          permissions: {
+            canEdit: false,
+            canInvite: (item as FeedTask & { allowInvite?: boolean }).allowInvite ?? true,
+            canManageTasks: false,
+            canManageMembers: false,
+          },
+          status: "active",
+        });
+      }
+
+      await updateDoc(doc(db, "tasks", itemId), taskUpdates);
 
       if (newJoined >= 5) {
         await onHotTaskCreated(itemOwnerId, itemId, type);

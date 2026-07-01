@@ -87,3 +87,27 @@ export async function ensurePlanGroup(
 
   return groupId;
 }
+
+/** Mời bạn bè vào nhóm gắn với plan */
+export async function inviteFriendToPlanGroup(
+  db: Firestore,
+  groupId: string,
+  friendUid: string
+): Promise<void> {
+  const groupRef = doc(db, "groups", groupId);
+  const groupSnap = await getDoc(groupRef);
+  if (!groupSnap.exists()) throw new Error("Nhóm không tồn tại");
+
+  const group = groupSnap.data();
+  if (group.members?.includes(friendUid)) {
+    throw new Error("Người này đã trong nhóm");
+  }
+
+  const memberInfo = await fetchMemberInfo(db, friendUid);
+  await updateDoc(groupRef, {
+    members: arrayUnion(friendUid),
+    memberCount: increment(1),
+    [`membersInfo.${friendUid}`]: memberInfo,
+    updatedAt: serverTimestamp(),
+  });
+}

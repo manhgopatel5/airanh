@@ -45,6 +45,7 @@ export default function AppContainer({ initialJobs, initialPlans, initialEvents 
   const router = useRouter();
   const searchParams = useSearchParams();
   const unreadCount = useAppStore((s) => s.unreadCount);
+  const hideTabBar = useAppStore((s) => s.hideTabBar);
   const [mounted, setMounted] = useState(false);
   const [visitedTabs, setVisitedTabs] = useState<Set<MainTab>>(() => new Set(["home"]));
 
@@ -188,6 +189,7 @@ export default function AppContainer({ initialJobs, initialPlans, initialEvents 
               </div>
             </div>
 
+            {!hideTabBar && (
             <CustomTabBar
               currentTab={currentMainTab === "plans" ? "home" : (currentMainTab as "home" | "messages" | "tasks" | "profile")}
               onChangeTab={handleChangeTab}
@@ -198,6 +200,7 @@ export default function AppContainer({ initialJobs, initialPlans, initialEvents 
                 setIsMenuOpen(true);
               }}
             />
+            )}
           </>,
           document.body
         )}

@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { useAppStore } from "@/store/app";
 import { getCategoryLabel, matchesExpandedQuery } from "@/lib/taskCategories";
 
-type SubTab = "mine" | "saved" | "doing" | "applied" | "expired" | "completed" | "cancelled";
+type SubTab = "mine" | "saved" | "doing" | "applied" | "expired" | "completed" | "cancelled" | "hidden";
 
 const SUB_TABS: { key: SubTab; label: string; short: string }[] = [
   { key: "mine", label: "Của tôi", short: "Tạo" },
@@ -25,6 +25,7 @@ const SUB_TABS: { key: SubTab; label: string; short: string }[] = [
   { key: "completed", label: "Hoàn thành", short: "Xong" },
   { key: "expired", label: "Đã hết hạn", short: "Hết hạn" },
   { key: "cancelled", label: "Đã hủy", short: "Hủy" },
+  { key: "hidden", label: "Ẩn", short: "Ẩn" },
 ];
 
 const EMPTY_COPY: Record<SubTab, { title: string; body: string }> = {
@@ -35,6 +36,7 @@ const EMPTY_COPY: Record<SubTab, { title: string; body: string }> = {
   completed: { title: "Chưa hoàn thành", body: "Những việc đã xong sẽ được lưu lại như một lịch sử gọn gàng." },
   expired: { title: "Không có mục hết hạn", body: "Các task quá hạn gần đây sẽ được gom ở đây để bạn xử lý nhanh." },
   cancelled: { title: "Không có mục đã hủy", body: "Những mục bị hủy sẽ được tách riêng để danh sách chính luôn sạch." },
+  hidden: { title: "Không có mục ẩn", body: "Các bài công khai mới sẽ nằm đây trước khi bạn hiện lên feed." },
 };
 
 const MODE_THEME = {

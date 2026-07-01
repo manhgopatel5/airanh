@@ -1,6 +1,7 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb, sendNotification } from "@/lib/firebase-admin";
 import { buildPushDisplayPayload, type PushContentKind } from "@/lib/pushFormat";
+import { CHAT_NOTIFICATION_TYPES, shouldSendChatNotification } from "@/lib/server/chatNotificationThrottle";
 
 type PushPayload = {
   messageId: string;
@@ -26,6 +27,20 @@ export async function dispatchPushOnce(payload: PushPayload): Promise<{
   const existing = await logRef.get();
   if (existing.exists) {
     return { sent: false, reason: "already_sent" };
+  }
+
+  if (CHAT_NOTIFICATION_TYPES.has(payload.type)) {
+    const chatKey =
+      payload.actionData?.chatId ||
+      payload.actionData?.groupId ||
+      payload.messageId.split("_")[0] ||
+      "";
+    if (chatKey) {
+      const allowed = await shouldSendChatNotification(adminDb(), payload.recipientId, chatKey);
+      if (!allowed) {
+        return { sent: false, reason: "chat_throttled" };
+      }
+    }
   }
 
   const userDoc = await db.doc(`users/${payload.recipientId}`).get();

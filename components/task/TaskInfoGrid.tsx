@@ -72,11 +72,23 @@ export default function TaskInfoGrid({ task, applications, theme }: Props) {
       ? "Miễn phí"
       : task.costType === "share"
         ? task.costAmount
-          ? `${task.costAmount.toLocaleString("vi-VN")}đ/người`
+          ? `~${Math.ceil(task.costAmount / Math.max(task.maxParticipants ?? task.totalSlots ?? 1, 1)).toLocaleString("vi-VN")}đ/người (chia đều)`
           : "Chia đều"
-        : task.costAmount
-          ? `${task.costAmount.toLocaleString("vi-VN")}đ`
-          : "Linh hoạt"
+        : task.costType === "host"
+          ? "Chủ bao"
+          : task.costType === "ticket"
+            ? task.costAmount
+              ? `${task.costAmount.toLocaleString("vi-VN")}đ/vé`
+              : "Bán vé"
+            : task.costAmount
+              ? `${task.costAmount.toLocaleString("vi-VN")}đ`
+              : "Linh hoạt"
+    : "";
+
+  const taskPriceLabel = isTask(task) && task.price > 0
+    ? task.budgetType === "hourly"
+      ? `${task.price.toLocaleString("vi-VN")} đ/giờ`
+      : `${task.price.toLocaleString("vi-VN")} đ`
     : "";
 
   const slotLabel = isPlan(task)
@@ -136,8 +148,8 @@ export default function TaskInfoGrid({ task, applications, theme }: Props) {
           {isTask(task) && task.price > 0 && (
             <InfoItem
               icon={FiDollarSign}
-              label="Tiền công"
-              value={`${task.price.toLocaleString("vi-VN")} đ`}
+              label={task.budgetType === "hourly" ? "Tiền công / giờ" : "Tiền công"}
+              value={taskPriceLabel}
               highlight
             />
           )}

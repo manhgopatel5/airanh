@@ -15,6 +15,7 @@ import { onEventCheckin } from "@/lib/xp";
 import { type PublicRoomItem } from "@/lib/publicRooms";
 import { joinPublicRoom } from "@/lib/joinPublicRoom";
 import { useAppStore } from "@/store/app";
+import VipDisplayName from "@/components/vip/VipDisplayName";
 import {
   collection,
   query,
@@ -74,6 +75,7 @@ type ChatItem = {
   members?: string[];
   blockedUsers?: string[];
   deletedFor?: string[];
+  partnerVip?: { tier?: string; expiresAt?: Timestamp } | null;
 };
 
 
@@ -196,9 +198,13 @@ const [activeTab, setActiveTab] = useState<"all" | "unread">("all"); // Bỏ "no
 
 
 
-const [userVip, setUserVip] = useState<{tier: 'free' | 'pro' | 'elite', expiresAt?: Timestamp} | null>(null);
-
 const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
+const setHideTabBar = useAppStore((s) => s.setHideTabBar);
+
+useEffect(() => {
+  setHideTabBar(!!selectedEvent);
+  return () => setHideTabBar(false);
+}, [selectedEvent, setHideTabBar]);
 
 
 
@@ -232,18 +238,6 @@ const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   }, []);
 
   
-useEffect(() => {
-  if (!user?.uid) return;
-  const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
-    if (snap.exists()) {
-      const data = snap.data();
-      setUserVip(data.vip || { tier: 'free' });
-    }
-  });
-  return () => unsub();
-}, [user?.uid, db]);
-  
-
 useEffect(() => {
   if (authLoading || !user?.uid) return;
   let retryCount = 0;
@@ -307,22 +301,23 @@ useEffect(() => {
               isGroup: true, members: chatData.members || [], isOnline: false,
               blockedUsers: chatData.blockedUsers || [],
               deletedFor: chatData.deletedFor || [],
-            };
-          } else {
-            const userData = usersMap[raw.other || ""] || {};
-            return {
-              uid: raw.other || "", chatId: raw.id, name: userData.name || "User", username: userData.username || "",
-              avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || "U")}&background=random`,
-              userId: userData.userId || "",
-              lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
-              lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
-              lastSenderName: "",
-              updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
-              isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
-              blockedUsers: chatData.blockedUsers || [],
-              deletedFor: chatData.deletedFor || [],
+              partnerVip: null,
             };
           }
+          const userData = usersMap[raw.other || ""] || {};
+          return {
+            uid: raw.other || "", chatId: raw.id, name: userData.name || "User", username: userData.username || "",
+            avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || "U")}&background=random`,
+            userId: userData.userId || "",
+            lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
+            lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
+            lastSenderName: "",
+            updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
+            isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
+            blockedUsers: chatData.blockedUsers || [],
+            deletedFor: chatData.deletedFor || [],
+            partnerVip: userData.vip || null,
+          };
         });
 
         const visibleChats = chatList.filter(chat => 
@@ -587,9 +582,11 @@ return (
               <div className="flex-1 min-w-0 py-1">
                 <div className="flex items-baseline justify-between gap-2 mb-0.5">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <p className="text-base leading-[22px] font-[550] text-black dark:text-white truncate">{chat.name}</p>
-                    {userVip?.tier === 'pro' && <span className="text-sm">💎</span>}
-                    {userVip?.tier === 'elite' && <span className="text-sm animate-pulse">👑</span>}
+                    <VipDisplayName
+                      name={chat.name}
+                      vip={chat.partnerVip ?? null}
+                      className="min-w-0 text-base leading-[22px] font-[550]"
+                    />
                     {pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">

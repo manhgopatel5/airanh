@@ -6,6 +6,7 @@ import { getFeedItemDueMillis, isActiveFeedItem, generateTaskSearchKeywords } fr
 import { haversineKm } from '@/lib/geo';
 import { matchesExpandedQuery, getCategoryLabel } from '@/lib/taskCategories';
 import type { FeedTask } from '@/types/task';
+import { canViewInPublicFeed, canUserViewItem } from '@/lib/feedVisibility';
 
 const getPriceRange = (price: number): number => {
   if (price === 0) return 0;
@@ -95,16 +96,20 @@ export async function GET(request: NextRequest) {
 
   const query = searchParams.get('query') || undefined;
 
+  let viewerUid: string | undefined;
+  const authHeader = request.headers.get('authorization');
+  const authToken = authHeader?.split('Bearer ')[1];
+  if (authToken) {
+    const decoded = await adminAuth().verifyIdToken(authToken).catch(() => null);
+    if (decoded) viewerUid = decoded.uid;
+  }
+
   let friendIds: string[] = [];
   if (tab === 'friends') {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split('Bearer ')[1];
-    if (token) {
-      const decoded = await adminAuth().verifyIdToken(token).catch(() => null);
-      if (decoded) {
-        friendIds = await getFriendIdsForUser(decoded.uid);
-      }
+    if (!viewerUid) {
+      return NextResponse.json({ tasks: [], nextCursor: null });
     }
+    friendIds = await getFriendIdsForUser(viewerUid);
     if (!friendIds.length) {
       return NextResponse.json({ tasks: [], nextCursor: null });
     }
@@ -124,6 +129,10 @@ export async function GET(request: NextRequest) {
     });
 
     let tasks = data.tasks.filter(isActiveFeedItem);
+
+    tasks = viewerUid
+      ? tasks.filter((t) => canUserViewItem(t, viewerUid))
+      : tasks.filter((t) => canViewInPublicFeed(t));
 
     if (query) {
       tasks = tasks.filter((t) => matchesQuery(t, query));

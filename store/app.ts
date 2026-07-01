@@ -7,6 +7,8 @@ interface AppStore {
   setMode: (mode: AppMode) => void
   unreadCount: number
   setUnreadCount: (count: number) => void
+  hideTabBar: boolean
+  setHideTabBar: (hide: boolean) => void
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -14,4 +16,6 @@ export const useAppStore = create<AppStore>((set) => ({
   setMode: (mode) => set({ mode }),
   unreadCount: 0,
   setUnreadCount: (count) => set({ unreadCount: count }),
+  hideTabBar: false,
+  setHideTabBar: (hide) => set({ hideTabBar: hide }),
 }))

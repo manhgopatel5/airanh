@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { incrementTaskView } from "@/lib/task";
 import { applyToTask, cancelToTask } from "@/app/actions/task";
 import type { FeedTask } from "@/types/task";
+import { canUserViewItem } from "@/lib/feedVisibility";
 
 import { mapFirestoreUserToOwner } from "@/lib/task/author";
 
@@ -55,6 +56,24 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
       const d = snap.data();
       if (d.banned) {
         toast.error("Công việc này đã bị khóa");
+        router.replace("/");
+        return;
+      }
+      if (currentUserId && !canUserViewItem(
+        { visibility: d.visibility, hidden: d.hidden, userId: d.userId, allowedViewerIds: d.allowedViewerIds },
+        currentUserId
+      )) {
+        toast.error("Bạn không có quyền xem nội dung này");
+        router.replace("/");
+        return;
+      }
+      if (!currentUserId && d.visibility && d.visibility !== "public") {
+        toast.error("Vui lòng đăng nhập để xem");
+        router.replace("/login");
+        return;
+      }
+      if (!currentUserId && d.hidden === true) {
+        toast.error("Nội dung không khả dụng");
         router.replace("/");
         return;
       }
@@ -112,7 +131,10 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
           participants: Array.isArray(d.participants) ? d.participants : [],
           costType: d.costType || "free",
         ...(d.costAmount !== undefined && { costAmount: d.costAmount }),
+          requireApproval: d.requireApproval ?? false,
+          allowInvite: d.allowInvite ?? true,
         }),
+      ...(d.allowedViewerIds && { allowedViewerIds: d.allowedViewerIds }),
       };
 
       setTask(taskData);
@@ -151,7 +173,8 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
       setApplications([]);
       return;
     }
-    const q = query(collection(db, 'applications'), where('taskId', '==', task.id));
+    const field = task.type === "plan" ? "planId" : "taskId";
+    const q = query(collection(db, 'applications'), where(field, '==', task.id));
     const snap = await getDocs(q);
     const apps = snap.docs.map(d => ({ id: d.id,...d.data() } as Application));
     setApplications(apps);

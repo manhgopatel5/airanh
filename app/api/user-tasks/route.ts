@@ -9,7 +9,7 @@ import { enrichTasksWithUserDataAdmin } from '@/lib/task/enrichTasks'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-type UserTaskTab = 'mine' | 'saved' | 'doing' | 'applied' | 'expired' | 'completed' | 'cancelled'
+type UserTaskTab = 'mine' | 'saved' | 'doing' | 'applied' | 'expired' | 'completed' | 'cancelled' | 'hidden'
 
 const USER_TASK_TABS = new Set<UserTaskTab>([
   'mine',
@@ -19,6 +19,7 @@ const USER_TASK_TABS = new Set<UserTaskTab>([
   'expired',
   'completed',
   'cancelled',
+  'hidden',
 ])
 
 const isUserTaskTab = (tab: string | null): tab is UserTaskTab => {
@@ -85,7 +86,10 @@ const matchesTab = (data: DocumentData, tab: UserTaskTab, nowMillis: number): bo
     }
     case 'cancelled':
       return data.status === 'cancelled'
+    case 'hidden':
+      return data.hidden === true
     case 'mine':
+      return data.hidden !== true
     case 'saved':
     default:
       return true
@@ -148,7 +152,7 @@ export async function GET(request: NextRequest) {
       } as FeedTask
     }).filter(task => {
       const data = task as FeedTask & DocumentData
-      return data.type === type && data.banned !== true && data.hidden !== true && matchesTab(data, tab, nowMillis)
+      return data.type === type && data.banned !== true && matchesTab(data, tab, nowMillis)
     }).sort((a, b) => taskSortValue(b, tab) - taskSortValue(a, tab)).slice(0, 20)
 
     tasks = await enrichTasksWithUserData(tasks)

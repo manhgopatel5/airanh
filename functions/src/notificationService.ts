@@ -1,6 +1,7 @@
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { buildPushDisplayPayload, inferPushContentKind, type PushContentKind } from "./pushFormat";
+import { CHAT_NOTIFICATION_TYPES, shouldSendChatNotification } from "./chatNotificationThrottle";
 
 function db() {
   return getFirestore();
@@ -155,6 +156,16 @@ export async function createNotificationAndPush(
   if (!toUid || toUid === payload.fromUid) return;
 
   try {
+    if (CHAT_NOTIFICATION_TYPES.has(payload.type)) {
+      const chatKey = String(
+        payload.actionData?.chatId || payload.actionData?.groupId || ""
+      );
+      if (chatKey) {
+        const allowed = await shouldSendChatNotification(toUid, chatKey);
+        if (!allowed) return;
+      }
+    }
+
     const userDoc = await db().doc(`users/${toUid}`).get();
     const settings: UserSettings = userDoc.data()?.settings || {};
 

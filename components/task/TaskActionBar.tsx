@@ -11,6 +11,7 @@ import {
   FiShare2,
   FiAlertTriangle,
   FiUserPlus,
+  FiClock,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -109,7 +110,8 @@ export default function TaskActionBar({
         email: user.email,
         onboardingCompleted: true,
       });
-      toast.success("Tham gia sự kiện thành công!");
+      const needsApproval = (task as FeedTask & { requireApproval?: boolean }).requireApproval;
+      toast.success(needsApproval ? "Đã gửi yêu cầu tham gia!" : "Tham gia sự kiện thành công!");
       navigator.vibrate?.(10);
       onApplied();
     } catch (err: unknown) {
@@ -123,6 +125,10 @@ export default function TaskActionBar({
     if (isPlanMode) {
       if (isParticipant) {
         toast.info("Bạn đã tham gia sự kiện này");
+        return;
+      }
+      if (isApplied) {
+        toast.info("Yêu cầu tham gia đang chờ duyệt");
         return;
       }
       setShowApplyModal(true);
@@ -155,8 +161,9 @@ export default function TaskActionBar({
     }
   };
 
+  const isPendingApproval = isPlanMode && isApplied && !isParticipant;
   const hasJoined = isPlanMode ? isParticipant : isApplied;
-  const canJoin = !hasJoined && !isFull && task.status === "open" && !isOwner;
+  const canJoin = !hasJoined && !isPendingApproval && !isFull && task.status === "open" && !isOwner;
 
   const ActionButton = ({
     icon: Icon,
@@ -204,7 +211,7 @@ export default function TaskActionBar({
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleApplyClick}
-          disabled={(!canJoin && !hasJoined) || joining}
+          disabled={(!canJoin && !hasJoined && !isPendingApproval) || joining}
           className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
         >
           {joining ? (
@@ -214,11 +221,19 @@ export default function TaskActionBar({
             />
           ) : hasJoined ? (
             <FiCheckCircle size={22} strokeWidth={2.5} style={{ color: successColor }} />
+          ) : isPendingApproval ? (
+            <FiClock size={22} strokeWidth={2.5} style={{ color: "#FF9F0A" }} />
           ) : (
             <JoinIcon size={22} strokeWidth={2.5} style={{ color: accent }} />
           )}
-          <span className="text-xs font-semibold leading-none" style={{ color: hasJoined ? successColor : accent }}>
-            {hasJoined ? (isPlanMode ? "Đã tham gia" : "Đã ứng tuyển") : isPlanMode ? "Tham gia" : "Ứng tuyển"}
+          <span className="text-xs font-semibold leading-none" style={{ color: hasJoined ? successColor : isPendingApproval ? "#FF9F0A" : accent }}>
+            {hasJoined
+              ? (isPlanMode ? "Đã tham gia" : "Đã ứng tuyển")
+              : isPendingApproval
+                ? "Chờ duyệt"
+                : isPlanMode
+                  ? "Tham gia"
+                  : "Ứng tuyển"}
           </span>
         </motion.button>
 

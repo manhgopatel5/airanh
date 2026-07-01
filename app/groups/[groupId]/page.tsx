@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { getFirebaseDB } from "@/lib/firebase";
 import {
   doc, onSnapshot, collection, query, orderBy, limit, addDoc,
-  serverTimestamp, updateDoc, deleteDoc, arrayRemove, deleteField
+  serverTimestamp, updateDoc, deleteDoc, arrayRemove, deleteField, getDoc
 } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
 import { FiImage, FiChevronLeft, FiSend, FiMoreVertical, FiTrash2, FiUsers, FiCopy, FiLogOut, FiMic } from "react-icons/fi";
@@ -28,6 +28,7 @@ type Group = {
   groupCode: string;
   lastMessage: string;
   updatedAt: any;
+  linkedTaskId?: string;
   membersInfo?: { [uid: string]: { name: string; avatar: string; username: string } };
   pinnedMessage?: {
     id: string;
@@ -78,6 +79,7 @@ const editAvatarInputRef = useRef<HTMLInputElement>(null);
   const [pinModalMsg, setPinModalMsg] = useState<Message | null>(null);
   const [mentionQuery, setMentionQuery] = useState("");
   const [recording, setRecording] = useState(false);
+  const [planAllowInvite, setPlanAllowInvite] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -140,6 +142,20 @@ const editAvatarInputRef = useRef<HTMLInputElement>(null);
         return;
       }
       setGroup(data);
+
+      if (data.linkedTaskId) {
+        getDoc(doc(db, "tasks", data.linkedTaskId))
+          .then((taskSnap) => {
+            if (taskSnap.exists()) {
+              setPlanAllowInvite(taskSnap.data().allowInvite === true);
+            } else {
+              setPlanAllowInvite(false);
+            }
+          })
+          .catch(() => setPlanAllowInvite(false));
+      } else {
+        setPlanAllowInvite(false);
+      }
 
       // Typing users
       if (data.typing) {
@@ -894,6 +910,7 @@ const isSingle = isFirstInGroup && isLastInGroup;
       members={memberList}
       ownerId={group.createdBy}
       currentUid={user?.uid || ""}
+      allowInvite={planAllowInvite}
     />
     <PinDeadlineModal
       open={!!pinModalMsg}

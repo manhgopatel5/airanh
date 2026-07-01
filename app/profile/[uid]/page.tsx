@@ -56,8 +56,10 @@ import { evaluateAchievements, getAchievementColor } from "@/lib/achievements";
 import { AchievementIcon } from "@/components/achievements/AchievementIcon";
 
 import { formatDistanceToNow } from "date-fns";
-import { toTimestampDate } from "@/lib/notifications";
 import { vi } from "date-fns/locale";
+import { toTimestampDate } from "@/lib/notifications";
+import VipDisplayName from "@/components/vip/VipDisplayName";
+import type { VipInfo } from "@/lib/vip";
 
 
 type PublicUser = {
@@ -90,6 +92,7 @@ type PublicUser = {
   };
   huhaScore?: number;
   createdAt?: Timestamp;
+  vip?: VipInfo | null;
 };
 
 type RankData = {
@@ -649,9 +652,11 @@ return (
     </div>
 
   <div className="flex items-center justify-center gap-1.5 mt-1.5">
-  <h1 className="text-xl font-bold text-zinc-900 tracking-tight">
-    {targetUser?.name || "Unknown User"}
-  </h1>
+  <VipDisplayName
+    name={targetUser?.name || "Unknown User"}
+    vip={targetUser?.vip ?? null}
+    className="text-xl justify-center"
+  />
   {targetUser?.emailVerified && (
     <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
       <Check className="w-3 h-3 text-white stroke-[3]" />

@@ -147,11 +147,15 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
 
   const filteredTasks = useMemo(() => tasks.filter(isActiveFeedItem), [tasks]);
 
-  const handleRefresh = useCallback(() => {
-    vibrate(10);
+  const handleReloadFeed = useCallback(() => {
+    vibrate([8, 12, 8]);
+    setFilters(DEFAULT_FILTERS);
     setSize(1);
-    mutate();
-  }, [mutate, setSize]);
+    void mutate(undefined, { revalidate: true });
+    toast.success(`Đang tải ${isTaskMode ? "việc" : "sự kiện"} mới`, { id: "feed-reload" });
+  }, [isTaskMode, mutate, setSize]);
+
+  const handleRefresh = handleReloadFeed;
 
   const updateTasksInCache = useCallback(
     (updater: (items: FeedTask[]) => FeedTask[]) => {
@@ -255,15 +259,28 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
             </div>
           </div>
 
-          <FeedSearchPanel
-            mode={mode}
-            open={showSearchModal}
-            onOpen={() => setShowSearchModal(true)}
-            onClose={() => setShowSearchModal(false)}
-            onApply={handleApplyFilters}
-            currentFilters={filters}
-            isLoggedIn={!!user}
-          />
+          <div className="mt-3 flex items-stretch gap-2">
+            <div className="min-w-0 flex-1">
+              <FeedSearchPanel
+                mode={mode}
+                open={showSearchModal}
+                onOpen={() => setShowSearchModal(true)}
+                onClose={() => setShowSearchModal(false)}
+                onApply={handleApplyFilters}
+                currentFilters={filters}
+                isLoggedIn={!!user}
+              />
+            </div>
+            <button
+              type="button"
+              aria-label="Tải lại feed"
+              onClick={handleReloadFeed}
+              disabled={isValidating}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-zinc-100/90 ring-1 ring-black/[0.06] transition active:scale-95 disabled:opacity-60 dark:bg-zinc-900/90 dark:ring-white/10"
+            >
+              <FiRefreshCw className={`h-5 w-5 ${isValidating ? "animate-spin text-zinc-500" : ""}`} style={{ color: isValidating ? undefined : accent }} />
+            </button>
+          </div>
 
           {hasActiveFilters(filters) && (
             <div className="mt-2 flex flex-wrap gap-2">

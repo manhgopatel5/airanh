@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { FiX, FiUserMinus } from "react-icons/fi";
+import { useEffect, useState } from "react";
+import { FiX, FiUserMinus, FiUserPlus } from "react-icons/fi";
 import { doc, updateDoc, arrayRemove, increment, serverTimestamp, deleteField } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import FriendPicker from "@/components/create/FriendPicker";
+import { inviteFriendToPlanGroup } from "@/lib/planGroup";
 
 type Member = {
   uid: string;
@@ -21,6 +23,7 @@ type Props = {
   members: Member[];
   ownerId: string;
   currentUid: string;
+  allowInvite?: boolean;
   onUpdated?: () => void;
 };
 
@@ -32,11 +35,24 @@ export default function GroupMembersModal({
   members,
   ownerId,
   currentUid,
+  allowInvite = false,
   onUpdated,
 }: Props) {
   const db = getFirebaseDB();
   const [removing, setRemoving] = useState<string | null>(null);
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteIds, setInviteIds] = useState<string[]>([]);
+  const [inviting, setInviting] = useState(false);
   const isOwner = currentUid === ownerId;
+  const memberSet = new Set(members.map((m) => m.uid));
+  const canInvite = allowInvite && currentUid && memberSet.has(currentUid);
+
+  useEffect(() => {
+    if (!open) {
+      setShowInvite(false);
+      setInviteIds([]);
+    }
+  }, [open]);
 
   const handleRemove = async (uid: string, name: string) => {
     if (!isOwner) return;
@@ -58,6 +74,25 @@ export default function GroupMembersModal({
       toast.error("Không xóa được thành viên");
     } finally {
       setRemoving(null);
+    }
+  };
+
+  const handleInvite = async () => {
+    if (!inviteIds.length || inviting) return;
+    setInviting(true);
+    try {
+      const toInvite = inviteIds.filter((id) => !memberSet.has(id));
+      for (const friendUid of toInvite) {
+        await inviteFriendToPlanGroup(db, groupId, friendUid);
+      }
+      toast.success(`Đã mời ${toInvite.length} người vào nhóm`);
+      setInviteIds([]);
+      setShowInvite(false);
+      onUpdated?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Mời thất bại");
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -87,6 +122,50 @@ export default function GroupMembersModal({
                 <FiX size={18} />
               </button>
             </div>
+
+            {canInvite && (
+              <div className="px-3 pt-3">
+                {!showInvite ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowInvite(true)}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0A84FF]/10 px-4 py-3 text-sm font-bold text-[#0A84FF]"
+                  >
+                    <FiUserPlus size={16} />
+                    Mời bạn vào nhóm
+                  </button>
+                ) : (
+                  <div className="space-y-3 rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
+                    <FriendPicker
+                      userId={currentUid}
+                      selectedIds={inviteIds}
+                      onChange={setInviteIds}
+                      accent="#0A84FF"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowInvite(false);
+                          setInviteIds([]);
+                        }}
+                        className="flex-1 rounded-xl bg-zinc-100 py-2.5 text-sm font-semibold dark:bg-zinc-800"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!inviteIds.length || inviting}
+                        onClick={handleInvite}
+                        className="flex-1 rounded-xl bg-[#0A84FF] py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                      >
+                        {inviting ? "Đang mời..." : "Mời"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="overflow-y-auto p-3 space-y-1">
               {members.map((m) => (

@@ -1,8 +1,9 @@
 import type { Firestore } from 'firebase-admin/firestore'
 import type { FeedTask } from '@/types/task'
 import { resolveTaskAuthorFields } from './author'
+import { extractAuthorVip } from '@/lib/vip'
 
-type UserProfile = { name: string; avatar: string | null }
+type UserProfile = { name: string; avatar: string | null; vip?: { tier?: string; expiresAt?: unknown } }
 
 export async function enrichTasksWithUserDataAdmin(
   adminDb: Firestore,
@@ -23,6 +24,7 @@ export async function enrichTasksWithUserDataAdmin(
       userMap.set(snap.id, {
         name: u.displayName || u.name || u.username || '',
         avatar: u.photoURL || u.avatar || null,
+        ...(u.vip ? { vip: u.vip as NonNullable<UserProfile['vip']> } : {}),
       })
     })
   }
@@ -33,6 +35,12 @@ export async function enrichTasksWithUserDataAdmin(
       task as FeedTask & Record<string, unknown>,
       fromUser
     )
-    return { ...task, userName, userAvatar }
+    const vipFields = extractAuthorVip(fromUser as Record<string, unknown> | undefined)
+    return {
+      ...task,
+      userName,
+      userAvatar,
+      ...vipFields,
+    }
   })
 }

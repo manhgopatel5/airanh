@@ -6,6 +6,7 @@ import { getStorage, Storage } from "firebase-admin/storage"; // THÊM
 import type { FeedTask, TaskListItem } from "@/types/task";
 import { isActiveFeedItem } from "@/types/task";
 import { enrichTasksWithUserDataAdmin } from "@/lib/task/enrichTasks";
+import { canViewInPublicFeed } from "@/lib/feedVisibility";
 
 /* ================= CATEGORY MAP ================= */
 const CATEGORY_MAP: Record<string, string> = {
@@ -157,7 +158,7 @@ export async function getJobsFromFirebaseAdmin(
   const { db } = getFirebaseAdmin();
 
   const selectedFields = [
-    'slug', 'shortId', 'title', 'description', 'type', 'status', 'visibility',
+    'slug', 'shortId', 'title', 'description', 'type', 'status', 'visibility', 'allowedViewerIds',
     'userId', 'userName', 'userAvatar', 'userShortId', 'userUsername', 'userVerified',
     'price', 'currency', 'totalSlots', 'joined', 'budgetType', 'paymentMethod',
     'isRemote', 'category', 'tags', 'images', 'viewCount', 'likeCount', 'hotScore', 'priceRange', 'urgency',
@@ -293,12 +294,9 @@ export async function getJobsFromFirebaseAdmin(
     };
 
     return taskData as FeedTask;
-  }).filter((task) =>
-    task.visibility !== "private" &&
-    task.banned !== true &&
-    task.hidden !== true &&
-    isActiveFeedItem(task)
-  );
+  }).filter((task) => {
+    return canViewInPublicFeed(task) && task.banned !== true && isActiveFeedItem(task);
+  });
 
   // FIX: Sort lại ở client nếu có filter giá + sortBy không phải price
   if (hasPriceFilter && sortBy === 'new') {
