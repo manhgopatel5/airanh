@@ -12,6 +12,9 @@ import {
 import { buildGamificationUser, type GamificationUser } from "@/lib/gamification";
 import { AchievementIcon } from "@/components/achievements/AchievementIcon";
 import { useAppStore } from "@/store/app";
+import HuhaLevelModal from "@/components/profile/HuhaLevelModal";
+import { summarizeLevel } from "@/lib/huhaLevel";
+import { Crown } from "lucide-react";
 
 type AchievementsModalProps = {
   open: boolean;
@@ -85,6 +88,7 @@ export default function AchievementsModal({ open, onOpenChange, gamUser }: Achie
       onOpenChange={onOpenChange}
       allAchievements={allAchievements}
       unlockedCount={unlockedCount}
+      gamUser={gamUser}
     />
   );
 }
@@ -111,25 +115,30 @@ function AchievementsModalInner({
   onOpenChange,
   allAchievements,
   unlockedCount,
+  gamUser,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   allAchievements: EvaluatedAchievement[];
   unlockedCount: number;
+  gamUser: GamificationUser;
 }) {
   const setHideTabBar = useAppStore((s) => s.setHideTabBar);
   const [selected, setSelected] = useState<EvaluatedAchievement | null>(null);
+  const [showLevelModal, setShowLevelModal] = useState(false);
+  const levelSummary = summarizeLevel(gamUser.huhaScore);
 
   useEffect(() => {
-    setHideTabBar(open);
+    setHideTabBar(open || showLevelModal);
     return () => setHideTabBar(false);
-  }, [open, setHideTabBar]);
+  }, [open, showLevelModal, setHideTabBar]);
 
   useEffect(() => {
     if (!open) setSelected(null);
   }, [open]);
 
   return (
+    <>
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 z-[80] backdrop-blur-sm" />
@@ -171,9 +180,42 @@ function AchievementsModalInner({
           ) : (
             <>
               <Dialog.Title className="text-xl font-bold text-zinc-900 mb-1">Tất cả thành tựu</Dialog.Title>
-              <p className="text-xs text-zinc-500 mb-4">
+              <p className="text-xs text-zinc-500 mb-3">
                 Đã mở khóa {unlockedCount}/{allAchievements.length} thành tựu
               </p>
+
+              <button
+                type="button"
+                onClick={() => setShowLevelModal(true)}
+                className="w-full mb-4 p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-sky-500 text-white text-left active:scale-[0.98] transition-transform"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                      <Crown className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs opacity-90">{levelSummary.tier.name}</p>
+                      <p className="text-lg font-black">Lv.{levelSummary.level}</p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-[10px] opacity-80">Tổng XP</p>
+                    <p className="text-sm font-bold">{levelSummary.huhaScore.toLocaleString("vi-VN")}</p>
+                  </div>
+                </div>
+                <div className="mt-2.5">
+                  <div className="flex justify-between text-[10px] mb-1 opacity-90">
+                    <span>Tiến trình cấp</span>
+                    <span>{levelSummary.currentExp}/{levelSummary.nextLevelExp} XP</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/30 overflow-hidden">
+                    <div className="h-full bg-white rounded-full" style={{ width: `${levelSummary.progress}%` }} />
+                  </div>
+                </div>
+                <p className="text-[11px] mt-2 opacity-90">Bấm để xem hệ thống cấp HuHa</p>
+              </button>
+
               <div className="grid grid-cols-3 gap-3">
                 {allAchievements.map((item) => (
                   <AchievementBadge key={item.id} item={item} size="sm" onClick={() => setSelected(item)} />
@@ -187,6 +229,13 @@ function AchievementsModalInner({
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+    <HuhaLevelModal
+      open={showLevelModal}
+      onOpenChange={setShowLevelModal}
+      huhaScore={gamUser.huhaScore}
+      isOwnProfile
+    />
+    </>
   );
 }
 

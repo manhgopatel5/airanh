@@ -111,7 +111,8 @@ type RankData = {
 };
 
 export default function PublicProfile() {
-  const { uid } = useParams();
+  const params = useParams();
+  const uid = typeof params.uid === "string" ? params.uid : params.uid?.[0];
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const db = getFirebaseDB();
@@ -191,7 +192,7 @@ const Divider = () => <div className="h-px bg-zinc-100 ml-[52px]" />;
 
 
   
-  const isOwnProfile = user?.uid === uid;
+  const isOwnProfile = user?.uid === (targetUser?.uid ?? uid);
 
 const fetchUser = useCallback(async () => {
   if (!uid || typeof uid !== "string" || uid === "undefined") {
@@ -885,7 +886,7 @@ return (
 
 
 {/* SKILLS */}
-{targetUser?.skills && targetUser?.skills.length > 0 && (
+{Array.isArray(targetUser?.skills) && targetUser.skills.length > 0 && (
   <div className="mt-5">
     <div className="flex items-center justify-between mb-2.5">
       <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 px-1">
@@ -894,7 +895,7 @@ return (
       <ChevronRight className="w-4 h-4 text-zinc-400" />
     </div>
     <div className="flex flex-wrap gap-2">
-      {targetUser?.skills.map((skill) => (
+      {targetUser.skills.map((skill) => (
         <div
           key={skill}
           className="px-3.5 py-2 rounded-2xl border border-zinc-200/80 bg-white text-sm font-medium text-zinc-700 shadow-sm"
@@ -907,7 +908,7 @@ return (
 )}
 
 {/* PORTFOLIO */}
-{targetUser?.portfolio && targetUser?.portfolio.length > 0 && (
+{Array.isArray(targetUser?.portfolio) && targetUser.portfolio.length > 0 && (
   <div className="mt-6">
     <div className="flex items-center justify-between mb-2.5">
       <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 px-1">

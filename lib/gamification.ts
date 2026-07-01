@@ -107,14 +107,32 @@ export function calcTrustScore(stats: GamificationStats, extras?: Omit<TrustScor
   return calcTrustBreakdown({ stats, ...extras }).total;
 }
 
-export function calcJoinedDays(createdAt?: Timestamp | { seconds: number }): number {
+export function calcJoinedDays(
+  createdAt?: Timestamp | { seconds: number } | string | Date | null
+): number {
   if (!createdAt) return 0;
-  const seconds =
-    "seconds" in createdAt
-      ? createdAt.seconds
-      : (createdAt as Timestamp).toDate().getTime() / 1000;
-  if (!seconds) return 0;
-  return Math.floor((Date.now() - seconds * 1000) / 86400000);
+
+  let ms: number | null = null;
+
+  if (typeof createdAt === "string") {
+    const parsed = new Date(createdAt);
+    ms = Number.isNaN(parsed.getTime()) ? null : parsed.getTime();
+  } else if (createdAt instanceof Date) {
+    ms = createdAt.getTime();
+  } else if (typeof createdAt === "object" && "seconds" in createdAt) {
+    const seconds = Number(createdAt.seconds);
+    ms = Number.isNaN(seconds) ? null : seconds * 1000;
+  } else if (
+    typeof createdAt === "object" &&
+    createdAt !== null &&
+    "toDate" in createdAt &&
+    typeof (createdAt as Timestamp).toDate === "function"
+  ) {
+    ms = (createdAt as Timestamp).toDate().getTime();
+  }
+
+  if (!ms) return 0;
+  return Math.floor((Date.now() - ms) / 86400000);
 }
 
 export function buildGamificationUser(
