@@ -168,15 +168,15 @@ const handleSend = async () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
         onClick={onClose}
       >
- <motion.div
-  initial={{ y: "100%" }}
-  animate={{ y: 0 }}
-  exit={{ y: "100%" }}
+<motion.div
+  initial={{ y: 20, opacity: 0 }}
+  animate={{ y: 0, opacity: 1 }}
+  exit={{ y: 20, opacity: 0 }}
   transition={{ type: "spring", damping: 25, stiffness: 300 }}
-  className="fixed inset-x-0 bottom-0 bg-white dark:bg-zinc-950 rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl pb-[env(safe-area-inset-bottom)]"
+  className="relative w-full max-w-[420px] bg-white dark:bg-zinc-950 rounded-3xl max-h-[85vh] flex flex-col shadow-2xl"
   onClick={(e) => e.stopPropagation()}
 >
           <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
