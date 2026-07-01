@@ -206,6 +206,8 @@ export type CreateTaskInput = {
   requirements?: string;
   location?: BaseItem["location"];
   isRemote?: boolean;
+authorVipTier?: 'pro' | 'elite' | null;
+  authorVipExpiresAt?: any; // Firestore Timestamp
   applicationDeadline?: Timestamp | null;
   deadline?: Timestamp | null;
   startDate?: Timestamp | null;
@@ -232,6 +234,8 @@ export type CreatePlanInput = {
   costType: CostType;
   costAmount?: number;
   costDescription?: string;
+authorVipTier?: 'pro' | 'elite' | null;
+  authorVipExpiresAt?: any;
   paymentMethod?: PaymentMethod; 
   allowInvite?: boolean;
   autoAccept?: boolean;
@@ -354,6 +358,8 @@ export type FeedTask = (TaskListItem | PlanListItem) & {
   eventDate?: string | null;
   endDate?: string | null;
   startDate?: string | null;
+authorVipTier?: 'pro' | 'elite' | null;
+  authorVipExpiresAt?: any;
   applicationDeadline?: string | null;
   visibility?: 'public' | 'private' | 'friends'
   shortId?: string;
