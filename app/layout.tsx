@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro, Comfortaa } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
+import SettingsProvider from "@/components/SettingsProvider";
 import { AuthProvider } from "@/lib/AuthContext";
 import { cn } from "@/lib/utils";
 import { getProvinces } from "@/lib/provinces";
@@ -131,9 +132,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     >
       <body className="min-h-screen bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased tracking-tight font-sans">
         <AuthProvider>
-          <ClientLayout>
-            {children}
-          </ClientLayout>
+          <SettingsProvider>
+            <ClientLayout>
+              {children}
+            </ClientLayout>
+          </SettingsProvider>
         </AuthProvider>
       </body>
     </html>
