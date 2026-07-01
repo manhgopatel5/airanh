@@ -216,10 +216,21 @@ function TaskCard({
   const authorName = getTaskAuthorName(task);
   const authorAvatar = getTaskAuthorAvatar(task);
 
-  const goToTask = useCallback(() => {
-    vibrate();
-    router.push(`/task/${task.id}`);
-  }, [router, task.id]);
+const goToTask = useCallback(async () => {
+  vibrate();
+  // update UI ngay
+  onTaskUpdate?.(task.id, { viewCount: (task.viewCount || 0) + 1 });
+  // gọi API (không cần đợi)
+  try {
+    const token = await getAuthToken();
+    fetch(`/api/tasks/${task.id}/view`, {
+      method: "POST",
+      headers: token? { Authorization: `Bearer ${token}` } : {},
+      keepalive: true,
+    }).catch(()=>{});
+  } catch {}
+  router.push(`/task/${task.id}`);
+}, [router, task.id, task.viewCount, onTaskUpdate, getAuthToken]);
 
   const goToProfile = useCallback(
     (e: React.MouseEvent) => {
@@ -502,7 +513,13 @@ function TaskCard({
     </button>
 
     {/* MẮT - MỚI CHUYỂN QUA ĐÂY */}
-    <div className="flex items-center gap-1 text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
+<div
+  onClick={(e) => e.stopPropagation()}
+  className="flex items-center gap-1 text-[11px] font-bold text-zinc-500 dark:text-zinc-400 cursor-default select-none"
+>
+  <FiEye className="h-3.5 w-3.5" />
+  <span>{task.viewCount?? 0}</span>
+</div>
       <FiEye className="h-3.5 w-3.5" />
       <span>{task.viewCount || 0}</span>
     </div>
