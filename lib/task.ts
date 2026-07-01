@@ -195,6 +195,8 @@ banned: false,
     invites: data.invites || [],
     needApproval: data.needApproval ?? true,
     recurring: data.recurring || "once",
+authorVipTier: (data as any).authorVipTier ?? null,
+    authorVipExpiresAt: (data as any).authorVipExpiresAt ?? null,
   };
 
   const batch = writeBatch(db);
@@ -327,6 +329,8 @@ export async function createPlan(
     autoAccept: data.autoAccept?? false,
     requireApproval: data.requireApproval?? false,
     featured: data.featured || false,
+authorVipTier: (data as any).authorVipTier ?? null,
+    authorVipExpiresAt: (data as any).authorVipExpiresAt ?? null,
   };
 
   const batch = writeBatch(db);
