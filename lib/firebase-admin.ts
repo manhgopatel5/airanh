@@ -27,13 +27,20 @@ const requiredEnvs = [
   "FIREBASE_PRIVATE_KEY",
 ] as const;
 
-/** Chuẩn hóa PEM key — xử lý \\n, quote thừa, key một dòng trên Vercel */
+/** Chuẩn hóa PEM key — xử lý \\n, quote thừa, key một dòng, hoặc sai format Vercel */
 export function parseFirebasePrivateKey(raw?: string): string {
   if (!raw?.trim()) {
     throw new Error("Missing FIREBASE_PRIVATE_KEY");
   }
 
   let key = raw.trim();
+
+  // Fix paste sai: value có thể bắt đầu bằng :" hoặc :
+  if (key.startsWith(':"')) {
+    key = key.slice(2);
+  } else if (key.startsWith(":")) {
+    key = key.slice(1).trim();
+  }
 
   while (
     (key.startsWith('"') && key.endsWith('"')) ||
