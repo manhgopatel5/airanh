@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { adminAuth, adminDb, adminMessaging } from "@/lib/firebase-admin";
+import { adminAuth, adminDb, sendNotification } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { isInQuietHours } from "@/lib/notificationPrefs";
+import { buildPushDisplayPayload } from "@/lib/pushFormat";
 
 // 🔥 Cache chống trùng
 const sentCache = new Map<string, number>();
@@ -165,42 +166,38 @@ export async function POST(req: Request) {
     }
 
     try {
-      await adminMessaging().send({
-        token,
-        notification: {
-          title: senderName,
-          body: message || "Đã gửi tin nhắn",
-        },
-        data: {
-          type: "chat",
+      const senderSnap = await adminDb().doc(`users/${senderUid}`).get();
+      const senderData = senderSnap.data();
+      const displayName =
+        senderName ||
+        senderData?.displayName ||
+        senderData?.name ||
+        decoded.name ||
+        "User";
+      const senderAvatar = senderData?.photoURL || senderData?.avatar || null;
+
+      const display = buildPushDisplayPayload({
+        senderName: displayName,
+        preview: message,
+        senderAvatar,
+        type: "message",
+        link: `/chat/${chatId}`,
+        messageId,
+        extraData: {
           chatId: String(chatId),
-          messageId: String(messageId),
-          click_action: "FLUTTER_NOTIFICATION_CLICK",
-          link: `/chat/${chatId}`,
+          type: "message",
         },
-        android: {
-          priority: "high",
-          ttl: 3600 * 1000,
-          collapseKey: chatId,
-          notification: {
-            sound: "default",
-            channelId: "chat_messages",
-            clickAction: "FLUTTER_NOTIFICATION_CLICK",
-          },
-        },
-        apns: {
-          payload: {
-            aps: {
-              sound: "default",
-              badge: 1,
-              "thread-id": chatId,
-            },
-          },
-        },
-        webpush: {
-          fcmOptions: { link: `/chat/${chatId}` },
-          notification: { icon: "/icon-192.png" },
-        },
+      });
+
+      await sendNotification({
+        token,
+        title: display.title,
+        body: display.body,
+        iconUrl: display.icon,
+        dataOnly: true,
+        link: display.data.url || `/chat/${chatId}`,
+        data: display.data,
+        priority: "high",
       });
 
       return NextResponse.json({ success: true });

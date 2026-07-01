@@ -43,22 +43,18 @@ export function formatPushBody(
       return `${name} đã gửi tin nhắn thoại.`;
     case "mention": {
       const p = truncatePreview(preview);
-      return p
-        ? `${name} đã nhắc đến bạn:\n- ${p}`
-        : `${name} đã nhắc đến bạn trong nhóm.`;
+      return p ? `${name} đã nhắc đến bạn:\n${p}` : `${name} đã nhắc đến bạn trong nhóm.`;
     }
     case "group_text": {
       const p = truncatePreview(preview);
-      return p
-        ? `${name} đã gửi tin nhắn trong nhóm:\n- ${p}`
-        : `${name} đã gửi tin nhắn trong nhóm.`;
+      return p ? `${name} đã gửi tin nhắn trong nhóm:\n${p}` : `${name} đã gửi tin nhắn trong nhóm.`;
     }
     case "system":
       return truncatePreview(preview) || "Bạn có thông báo mới.";
     case "text":
     default: {
       const p = truncatePreview(preview);
-      return p ? `${name} đã gửi tin nhắn:\n- ${p}` : `${name} đã gửi tin nhắn.`;
+      return p ? `${name} đã gửi tin nhắn:\n${p}` : `${name} đã gửi tin nhắn.`;
     }
   }
 }
@@ -91,10 +87,21 @@ export function inferPushContentKind(
   return "text";
 }
 
-export function resolvePushIcon(avatar?: string | null, isSystem = false): string {
-  if (isSystem || !avatar?.trim()) return `${BASE_URL}${APP_ICON}`;
-  if (avatar.startsWith("http")) return avatar;
-  return `${BASE_URL}${avatar.startsWith("/") ? avatar : `/${avatar}`}`;
+export function resolvePushIcon(
+  senderName: string,
+  avatar?: string | null,
+  isSystem = false
+): string {
+  if (isSystem) return `${BASE_URL}${APP_ICON}`;
+
+  const trimmed = avatar?.trim();
+  if (trimmed) {
+    if (trimmed.startsWith("http")) return trimmed;
+    return `${BASE_URL}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
+  }
+
+  const initials = encodeURIComponent((senderName || "U").trim().slice(0, 2) || "U");
+  return `https://ui-avatars.com/api/?name=${initials}&background=0a84ff&color=fff&size=128&bold=true`;
 }
 
 export function buildPushDisplayPayload(params: {
@@ -114,11 +121,11 @@ export function buildPushDisplayPayload(params: {
     inferPushContentKind(type, params.preview ? { text: params.preview } : undefined);
   const isSystem = params.isSystem ?? contentKind === "system";
   const senderName = isSystem ? "Hệ thống" : (params.senderName || "Ai đó").trim();
-  const title = senderName;
   const body = formatPushBody(senderName, contentKind, params.preview);
-  const icon = resolvePushIcon(params.senderAvatar, isSystem);
+  const icon = resolvePushIcon(senderName, params.senderAvatar, isSystem);
   const link = params.link || "/";
   const absoluteLink = link.startsWith("http") ? link : `${BASE_URL}${link.startsWith("/") ? link : `/${link}`}`;
+  const title = isSystem ? "Hệ thống" : "";
 
   return {
     title,
@@ -128,6 +135,8 @@ export function buildPushDisplayPayload(params: {
       title,
       body,
       icon,
+      senderName,
+      senderAvatar: params.senderAvatar?.trim() || icon,
       contentKind,
       isSystem: isSystem ? "true" : "false",
       type,
