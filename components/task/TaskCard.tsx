@@ -341,8 +341,7 @@ const getAuthToken = useCallback(async () => {
   return (
     <article className={cn("group w-full mb-3", className)}>
   <div className="relative">
-  <div className="relative overflow-hidden rounded-[20px] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] transition-all duration-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] active:scale-[0.99] dark:bg-zinc-900">
-l
+<div className="relative overflow-hidden rounded-[20px] bg-white border border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800 transition-all duration-200 active:scale-[0.99]">
 
           <div className="relative p-2.5 pb-2">
             <div className="mb-2 flex items-start justify-between gap-2">
@@ -352,12 +351,12 @@ l
                   onClick={goToProfile}
                   className={cn("relative shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2", ringClass)}
                 >
-                  <UserAvatar
-                    src={authorAvatar}
-                    name={authorName}
-                    size={34}
-                    className="rounded-lg ring-2 ring-white shadow-sm dark:ring-zinc-950"
-                  />
+           <UserAvatar
+  src={authorAvatar}
+  name={authorName}
+  size={34}
+  className="rounded-lg"
+/>
                   {task.userVerified && <FiCheckCircle className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-white dark:bg-zinc-950" style={{ color: accent }} />}
                 </button>
                 <div className="min-w-0">
