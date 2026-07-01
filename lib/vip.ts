@@ -32,11 +32,26 @@ export function vipNameClass(tier: VipTier): string {
   return "text-zinc-950 dark:text-white";
 }
 
+/** Serialize VIP expiry for JSON/RSC (Firestore Timestamp is not serializable) */
+export function serializeVipExpiresAt(raw: unknown): string | null {
+  if (!raw) return null;
+  if (typeof raw === "string") return raw;
+  if (raw instanceof Date) return raw.toISOString();
+  if (typeof raw === "object" && raw !== null && "toDate" in raw && typeof raw.toDate === "function") {
+    try {
+      return raw.toDate().toISOString();
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export function extractAuthorVip(userData?: Record<string, unknown> | null) {
   const vip = (userData?.vip as VipInfo | undefined) ?? null;
   const tier = getEffectiveVipTier(vip);
   return {
     authorVipTier: tier === "free" ? null : tier,
-    authorVipExpiresAt: (vip?.expiresAt as Timestamp | null) ?? null,
+    authorVipExpiresAt: serializeVipExpiresAt(vip?.expiresAt),
   };
 }

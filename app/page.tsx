@@ -31,7 +31,10 @@ export default async function HomePage() {
     const [jobsData, plansData, events] = await Promise.all([
       getJobsFromFirebaseAdmin({ type: 'task' }),
       getJobsFromFirebaseAdmin({ type: 'plan' }),
-      getActiveEvents(),
+      getActiveEvents().catch((err) => {
+        console.error('Failed to prefetch events:', err)
+        return [] as EventItem[]
+      }),
     ])
     initialJobs = jobsData.tasks
     initialPlans = plansData.tasks
