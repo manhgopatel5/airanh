@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const recipientSnap = await adminDb().doc(`users/${recipientId}`).get();
     const settings = recipientSnap.data()?.settings || {};
 
-    if (type === "message" || type === "group_message") {
+    if (type === "group_message") {
       const chatAll = settings.notiChatAll !== false;
       if (!chatAll) {
         return NextResponse.json({ skipped: true, reason: "settings_disabled" });

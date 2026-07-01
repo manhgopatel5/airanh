@@ -59,7 +59,7 @@ function shouldSendPush(settings: UserSettings, type: string, options: NotifyOpt
     if (val === false) return false;
   }
 
-  if (type === "message" || type === "group_message") {
+  if (type === "group_message") {
     const chatAll = settings.notiChatAll !== false;
     const chatMention = settings.notiChatMention !== false;
     if (!chatAll && !isMention) return false;

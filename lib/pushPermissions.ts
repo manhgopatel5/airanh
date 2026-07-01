@@ -12,8 +12,10 @@ export function isStandalonePwa(): boolean {
 
 export function isIOS(): boolean {
   if (typeof navigator === "undefined") return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
 }
 
 export function readPushPermission(): PushPermissionState {
@@ -24,7 +26,10 @@ export function readPushPermission(): PushPermissionState {
   return Notification.permission;
 }
 
-/** Xin quyền thông báo trình duyệt — phải gọi từ click/tap của user */
+/**
+ * Xin quyền thông báo — PHẢI gọi requestPermission() ngay, không await gì trước đó
+ * (iOS/Safari hủy user gesture nếu có await trước requestPermission).
+ */
 export async function requestBrowserPushPermission(): Promise<{
   state: PushPermissionState;
   message?: string;
@@ -58,19 +63,7 @@ export async function requestBrowserPushPermission(): Promise<{
     };
   }
 
-  try {
-    const { isSupported } = await import("firebase/messaging");
-    const fcmOk = await isSupported();
-    if (!fcmOk) {
-      return {
-        state: "unsupported",
-        message: "Trình duyệt không hỗ trợ Firebase Cloud Messaging.",
-      };
-    }
-  } catch {
-    /* tiếp tục thử requestPermission */
-  }
-
+  // Không await trước dòng này — giữ user gesture cho popup hệ thống
   try {
     const result = await Notification.requestPermission();
     if (result === "granted") return { state: "granted" };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Bell, X, Smartphone } from "lucide-react";
+import { Bell, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { enablePushNotifications } from "@/lib/fcmRegister";
 import { requestFcmReregister } from "@/components/FCMProvider";
@@ -35,6 +35,8 @@ export default function PushPermissionPrompt({
   );
   const [dismissed, setDismissed] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [statusOk, setStatusOk] = useState<boolean | null>(null);
 
   useEffect(() => {
     setDismissed(isDismissed());
@@ -45,21 +47,27 @@ export default function PushPermissionPrompt({
     }
   }, []);
 
-  const handleEnable = useCallback(async () => {
+  const handleEnable = useCallback(() => {
     setRequesting(true);
-    try {
-      const result = await enablePushNotifications();
+    setStatusMsg("Đang xin quyền thông báo…");
+    setStatusOk(null);
+
+    // Gọi enablePushNotifications — requestPermission chạy ngay bên trong, không await trước
+    void enablePushNotifications().then((result) => {
       const next = readPushPermission();
       setPermission(next);
+      setRequesting(false);
+      setStatusOk(result.success);
+      setStatusMsg(result.message);
+
       if (result.success) {
         toast.success(result.message);
         requestFcmReregister();
+        setTimeout(() => setDismissed(true), 2500);
       } else {
-        toast.error(result.message, { duration: 5000 });
+        toast.error(result.message, { duration: 8000 });
       }
-    } finally {
-      setRequesting(false);
-    }
+    });
   }, []);
 
   const handleDismiss = useCallback(() => {
@@ -73,7 +81,8 @@ export default function PushPermissionPrompt({
     setDismissed(true);
   }, []);
 
-  if (dismissed) return null;
+  if (dismissed && permission === "granted") return null;
+  if (dismissed && permission !== "granted" && !statusMsg) return null;
 
   const shellClass =
     variant === "fixed"
@@ -88,23 +97,13 @@ export default function PushPermissionPrompt({
   if (permission === "ios-install") {
     return (
       <div className={shellClass} style={innerStyle}>
-        <div className="rounded-2xl border border-violet-200 dark:border-violet-800/60 bg-violet-50 dark:bg-violet-950/50 px-3.5 py-3 shadow-lg shadow-black/5">
-          <div className="flex items-start gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center shrink-0">
-              <Smartphone size={16} className="text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-medium text-violet-950 dark:text-violet-100 leading-snug">
-                iPhone: bấm Share → <b>Thêm vào Màn hình chính</b>, mở app từ icon đó, rồi bấm Cho phép thông báo.
-              </p>
-              <button type="button" onClick={handleDismiss} className="mt-2 text-[12px] font-medium text-violet-700">
-                Đã hiểu
-              </button>
-            </div>
-            <button type="button" onClick={handleDismiss} className="text-violet-500 p-1" aria-label="Đóng">
-              <X size={16} />
-            </button>
-          </div>
+        <div className="rounded-2xl border border-violet-200 bg-violet-50 px-3.5 py-3 shadow-lg">
+          <p className="text-[13px] font-medium text-violet-950 leading-snug">
+            iPhone: Share → <b>Thêm vào Màn hình chính</b> → mở app từ icon → bấm Cho phép.
+          </p>
+          <button type="button" onClick={handleDismiss} className="mt-2 text-[12px] font-medium text-violet-700">
+            Đã hiểu
+          </button>
         </div>
       </div>
     );
@@ -114,26 +113,33 @@ export default function PushPermissionPrompt({
     return (
       <div className={shellClass} style={innerStyle}>
         <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-3.5 py-3 shadow-lg">
-          <p className="text-[13px] text-zinc-800 leading-snug">
-            Trình duyệt này không hỗ trợ push. Dùng Chrome trên Android hoặc cài app PWA trên iPhone.
-          </p>
+          <p className="text-[13px] text-zinc-800">Trình duyệt không hỗ trợ push. Dùng Chrome Android hoặc PWA trên iPhone.</p>
         </div>
       </div>
     );
   }
 
-  if (permission === "granted") return null;
-
   if (permission === "denied") {
     return (
       <div className={shellClass} style={innerStyle}>
-        <div className="relative rounded-2xl border border-amber-200/80 bg-amber-50 px-3.5 py-3 shadow-lg">
-          <p className="text-[13px] text-amber-900 leading-snug pr-6">
-            Thông báo bị chặn. Vào cài đặt trình duyệt → Quyền / Thông báo → cho phép trang <b>airanh.vercel.app</b>.
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-3 shadow-lg">
+          <p className="text-[13px] text-amber-900 pr-6">
+            Thông báo bị chặn. Vào cài đặt trình duyệt → Thông báo → cho phép <b>airanh.vercel.app</b>.
           </p>
-          <button type="button" onClick={handleDismiss} className="absolute top-2 right-2 text-amber-600 p-1" aria-label="Đóng">
-            <X size={16} />
+          <button type="button" onClick={handleDismiss} className="mt-2 text-[12px] text-amber-700">
+            Đóng
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (permission === "granted" && statusOk) {
+    return (
+      <div className={shellClass} style={innerStyle}>
+        <div className="rounded-2xl border border-green-200 bg-green-50 px-3.5 py-3 shadow-lg flex items-center gap-2">
+          <CheckCircle2 size={18} className="text-green-600 shrink-0" />
+          <p className="text-[13px] text-green-900 font-medium">{statusMsg || "Đã bật thông báo đẩy"}</p>
         </div>
       </div>
     );
@@ -141,26 +147,48 @@ export default function PushPermissionPrompt({
 
   return (
     <div className={shellClass} style={innerStyle}>
-      <div className="rounded-2xl border border-[#0a84ff]/30 bg-[#0a84ff] px-3.5 py-3 shadow-lg shadow-[#0a84ff]/25">
+      <div className="rounded-2xl border border-[#0a84ff]/30 bg-[#0a84ff] px-3.5 py-3 shadow-lg">
         <div className="flex items-start gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
-            <Bell size={16} className="text-white" strokeWidth={2.2} />
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            {requesting ? (
+              <Loader2 size={16} className="text-white animate-spin" />
+            ) : (
+              <Bell size={16} className="text-white" />
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-semibold text-white leading-snug">{message}</p>
-            <div className="flex items-center gap-2 mt-2.5">
-              <button
-                type="button"
-                onClick={handleEnable}
-                disabled={requesting}
-                className="px-4 py-2 rounded-full bg-white text-[#0a84ff] text-[13px] font-bold active:scale-95 disabled:opacity-60"
+
+            {statusMsg && (
+              <div
+                className={`mt-2 flex items-start gap-1.5 text-[12px] leading-snug rounded-lg px-2.5 py-2 ${
+                  statusOk === true
+                    ? "bg-white/20 text-white"
+                    : statusOk === false
+                      ? "bg-red-500/30 text-white"
+                      : "bg-white/15 text-white/90"
+                }`}
               >
-                {requesting ? "Đang xử lý..." : "Cho phép thông báo"}
-              </button>
-              <button type="button" onClick={handleDismiss} className="px-3 py-2 text-[13px] font-medium text-white/85">
-                Để sau
-              </button>
-            </div>
+                {statusOk === false && <AlertCircle size={14} className="shrink-0 mt-0.5" />}
+                {statusOk === true && <CheckCircle2 size={14} className="shrink-0 mt-0.5" />}
+                <span>{statusMsg}</span>
+              </div>
+            )}
+
+            {!requesting && statusOk !== true && (
+              <div className="flex items-center gap-2 mt-2.5">
+                <button
+                  type="button"
+                  onClick={handleEnable}
+                  className="px-4 py-2 rounded-full bg-white text-[#0a84ff] text-[13px] font-bold active:scale-95"
+                >
+                  Cho phép thông báo
+                </button>
+                <button type="button" onClick={handleDismiss} className="px-3 py-2 text-[13px] text-white/85">
+                  Để sau
+                </button>
+              </div>
+            )}
           </div>
           <button type="button" onClick={handleDismiss} className="text-white/80 p-1" aria-label="Đóng">
             <X size={16} />
