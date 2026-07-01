@@ -168,15 +168,15 @@ const handleSend = async () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z- bg-black/50 backdrop-blur-sm"
+className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       >
-   <motion.div
-  initial={{ y: "-100%" }}
+ <motion.div
+  initial={{ y: "100%" }}
   animate={{ y: 0 }}
-  exit={{ y: "-100%" }}
+  exit={{ y: "100%" }}
   transition={{ type: "spring", damping: 25, stiffness: 300 }}
-  className="fixed inset-x-0 top-0 bg-white dark:bg-zinc-950 rounded-b-3xl max-h-[85vh] flex flex-col shadow-2xl"
+  className="fixed inset-x-0 bottom-0 bg-white dark:bg-zinc-950 rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl pb-[env(safe-area-inset-bottom)]"
   onClick={(e) => e.stopPropagation()}
 >
           <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
