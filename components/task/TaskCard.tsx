@@ -326,7 +326,7 @@ function TaskCard({
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
     const menuWidth = 188;
-    const menuHeight = 120;
+    const menuHeight = 180;
     const x = Math.min(Math.max(8, rect.right - menuWidth), window.innerWidth - menuWidth - 8);
     const y = rect.bottom + 8 + menuHeight > window.innerHeight ? rect.top - menuHeight - 8 : rect.bottom + 8;
     setMenuPos({ x, y });
@@ -374,20 +374,47 @@ function TaskCard({
                 </div>
               </div>
 
-              {isOwner && (
-                <button
-                  ref={menuBtnRef}
-                  type="button"
-                  aria-label="Mở menu"
-                  aria-expanded={showMenu}
-                  aria-haspopup="menu"
-                  aria-controls={showMenu? menuId : undefined}
-                  onClick={openMenu}
-                  className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
-                >
-                  <FiMoreHorizontal className="h-4 w-4" />
-                </button>
-              )}
+          <div className="flex items-center gap-1 shrink-0">
+  {/* Không phải chủ: hiện Share + Save ở trên */}
+  {!isOwner && (
+    <>
+      <button
+        type="button"
+        aria-label="Chia sẻ"
+        onClick={(e) => { e.stopPropagation(); vibrate(8); onShare?.(task); }}
+        className={cn("flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100 active:scale-95 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
+      >
+        <FiShare2 className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        aria-label={isSaved? "Bỏ lưu" : "Lưu"}
+        aria-pressed={isSaved}
+        onClick={(e) => { e.stopPropagation(); handleSave(); }}
+        disabled={saving}
+        className={cn("flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100 active:scale-95 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
+      >
+        <FiBookmark className={cn("h-4 w-4", isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
+      </button>
+    </>
+  )}
+
+  {/* Chủ bài: chỉ hiện nút... */}
+  {isOwner && (
+    <button
+      ref={menuBtnRef}
+      type="button"
+      aria-label="Mở menu"
+      aria-expanded={showMenu}
+      aria-haspopup="menu"
+      aria-controls={showMenu? menuId : undefined}
+      onClick={openMenu}
+      className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
+    >
+      <FiMoreHorizontal className="h-4 w-4" />
+    </button>
+  )}
+</div>
             </div>
 
             <button type="button" onClick={goToTask} className={cn("block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 rounded-lg", ringClass)}>
@@ -537,31 +564,55 @@ function TaskCard({
         </div>
       </div>
 
-      <AnimatePresence>
-        {showMenu && isOwner && (
-          <Portal>
-            <div className="fixed inset-0 z-50" onClick={() => setShowMenu(false)} />
-            <motion.div
-              id={menuId}
-              ref={menuPanelRef}
-              role="menu"
-              initial={reduceMotion? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -8 }}
-              animate={reduceMotion? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-              exit={reduceMotion? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -8 }}
-              transition={{ duration: 0.15 }}
-              className="fixed z-50 w-[188px] overflow-hidden rounded-2xl border border-zinc-200 bg-white/95 py-2 shadow-2xl shadow-black/15 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/95"
-              style={{ top: `${menuPos.y}px`, left: `${menuPos.x}px` }}
-            >
-              <button role="menuitem" type="button" onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }} className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900">
-                <FiEdit2 /> Sửa mục này
-              </button>
-              <button role="menuitem" type="button" onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }} className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-red-500 transition hover:bg-red-50 focus-visible:outline-none focus-visible:bg-red-50 dark:hover:bg-red-500/10 dark:focus-visible:bg-red-500/10">
-                <FiTrash2 /> Xóa
-              </button>
-            </motion.div>
-          </Portal>
-        )}
-      </AnimatePresence>
+     <AnimatePresence>
+  {showMenu && isOwner && (
+    <Portal>
+      <div className="fixed inset-0 z-50" onClick={() => setShowMenu(false)} />
+      <motion.div
+        id={menuId}
+        ref={menuPanelRef}
+        role="menu"
+        initial={reduceMotion? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -8 }}
+        animate={reduceMotion? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+        exit={reduceMotion? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -8 }}
+        transition={{ duration: 0.15 }}
+        className="fixed z-50 w-[188px] overflow-hidden rounded-2xl border border-zinc-200 bg-white/95 py-2 shadow-2xl shadow-black/15 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/95"
+        style={{ top: `${menuPos.y}px`, left: `${menuPos.x}px` }}
+      >
+        {/* MỚI: Share */}
+        <button
+          role="menuitem"
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setShowMenu(false); vibrate(8); onShare?.(task); }}
+          className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900"
+        >
+          <FiShare2 /> Chia sẻ
+        </button>
+
+        {/* MỚI: Lưu / Bỏ lưu */}
+        <button
+          role="menuitem"
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleSave(); }}
+          className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900"
+        >
+          <FiBookmark className={cn(isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
+          {isSaved? "Bỏ lưu" : "Lưu"}
+        </button>
+
+        {/* CŨ: Sửa */}
+        <button role="menuitem" type="button" onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }} className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900">
+          <FiEdit2 /> Sửa mục này
+        </button>
+
+        {/* CŨ: Xóa */}
+        <button role="menuitem" type="button" onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }} className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-red-500 transition hover:bg-red-50 focus-visible:outline-none focus-visible:bg-red-50 dark:hover:bg-red-500/10 dark:focus-visible:bg-red-500/10">
+          <FiTrash2 /> Xóa
+        </button>
+      </motion.div>
+    </Portal>
+  )}
+</AnimatePresence>
     </article>
   );
 }
