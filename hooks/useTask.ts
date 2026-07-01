@@ -93,6 +93,8 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
         userAvatar: d.userAvatar || d.photoURL || d.avatar || null,
       ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
       ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
+      ...(d.authorVipTier !== undefined && { authorVipTier: d.authorVipTier }),
+      ...(d.authorVipExpiresAt !== undefined && { authorVipExpiresAt: d.authorVipExpiresAt }),
         price: d.price?? 0,
         currency: d.currency || "VND",
         budgetType: d.budgetType || "fixed",

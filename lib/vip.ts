@@ -62,3 +62,18 @@ export function extractAuthorVip(userData?: Record<string, unknown> | null) {
     authorVipExpiresAt: serializeVipExpiresAt(vip?.expiresAt),
   };
 }
+
+/** Prefer live owner VIP, fallback to snapshot on task doc */
+export function resolveAuthorVip(
+  task?: { authorVipTier?: string | null; authorVipExpiresAt?: unknown } | null,
+  ownerData?: Record<string, unknown> | null
+): VipInfo {
+  const fromOwner = extractAuthorVip(ownerData);
+  if (fromOwner.authorVipTier) {
+    return { tier: fromOwner.authorVipTier, expiresAt: fromOwner.authorVipExpiresAt };
+  }
+  return {
+    tier: task?.authorVipTier ?? null,
+    expiresAt: (task?.authorVipExpiresAt as VipInfo["expiresAt"]) ?? null,
+  };
+}

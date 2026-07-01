@@ -71,5 +71,6 @@ export function mapFirestoreUserToOwner(data: Record<string, unknown>, uid: stri
     reviewCount: (data.stats as { totalReviews?: number } | undefined)?.totalReviews,
     verified: !!(data.emailVerified || data.isVerifiedId || data.verified),
     isNewUser: false,
+    ...(data.vip ? { vip: data.vip as { tier?: string; expiresAt?: unknown } } : {}),
   }
 }

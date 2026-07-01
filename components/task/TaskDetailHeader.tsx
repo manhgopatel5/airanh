@@ -16,6 +16,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { getTaskAuthorName, getTaskAuthorAvatar } from "@/lib/task/author";
 import { publishTask } from "@/lib/task";
 import VipDisplayName from "@/components/vip/VipDisplayName";
+import { resolveAuthorVip } from "@/lib/vip";
 import type { FeedTask } from "@/types/task";
 
 type UserData = {
@@ -27,6 +28,7 @@ type UserData = {
   reviewCount?: number | undefined;
   verified?: boolean;
   isNewUser?: boolean;
+  vip?: { tier?: string; expiresAt?: unknown };
 };
 
 type Props = {
@@ -107,10 +109,10 @@ export default function TaskDetailHeader({
   const ownerName = owner?.name || getTaskAuthorName(task);
   const ownerAvatar = owner?.avatar || getTaskAuthorAvatar(task);
   const profileUid = task.userId;
-  const authorVip = {
-    tier: (task as FeedTask & { authorVipTier?: string | null }).authorVipTier ?? null,
-    expiresAt: (task as FeedTask & { authorVipExpiresAt?: unknown }).authorVipExpiresAt ?? null,
-  };
+  const authorVip = resolveAuthorVip(
+    task as FeedTask & { authorVipTier?: string | null; authorVipExpiresAt?: unknown },
+    owner as Record<string, unknown> | null
+  );
 
   return (
     <div className="bg-white dark:bg-zinc-950">
@@ -132,10 +134,10 @@ export default function TaskDetailHeader({
                     href={`/profile/${profileUid}`}
                     className="text-base leading-5 active:opacity-70"
                   >
-                    <VipDisplayName name={ownerName} vip={authorVip} />
+                    <VipDisplayName name={ownerName} vip={authorVip ?? null} />
                   </Link>
                 ) : (
-                  <VipDisplayName name={ownerName} vip={authorVip} className="text-base leading-5" />
+                  <VipDisplayName name={ownerName} vip={authorVip ?? null} className="text-base leading-5" />
                 )}
 
                 <div className="flex items-center gap-1 mt-0.5">

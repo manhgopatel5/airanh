@@ -360,27 +360,13 @@ const gradient = isTask ? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#2
 const categories = isTask ? CATEGORY_TASKS : CATEGORY_PLANS;
 const draftKey = `create_${mode}_draft_v6`;
 
-
-// Auto-save draft - chỉ load 1 lần khi mount
+// Không lưu draft — xóa dữ liệu cũ khi vào/trang thoát
 useEffect(() => {
-  const saved = localStorage.getItem(draftKey);
-  if (!saved) return;
-  try {
-    const parsed = JSON.parse(saved);
-    // Merge với initialForm để có default field mới
-    setForm((prev) => ({...initialForm(mode),...prev,...parsed }));
-  } catch {
+  localStorage.removeItem(draftKey);
+  return () => {
     localStorage.removeItem(draftKey);
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [draftKey]); // Bỏ mode khỏi deps để không reset khi đổi mode
-
-useEffect(() => {
-  const timer = setTimeout(() => {
-    localStorage.setItem(draftKey, JSON.stringify(form));
-  }, 500);
-  return () => clearTimeout(timer);
-}, [draftKey, form]);
+  };
+}, [draftKey]);
 
 
 
