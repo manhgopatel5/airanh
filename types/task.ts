@@ -75,9 +75,11 @@ export type BaseItem = {
   location?: {
     country?: string;
     city?: string;
+    district?: string;
+    ward?: string;
     address?: string;
-    lat?: number; 
-    lng?: number; 
+    lat?: number;
+    lng?: number;
   };
 
   // Search
@@ -289,7 +291,8 @@ export type TaskListItem = Pick<
   | "deadline"
   | "startDate"
   | "savedBy"     
-  | "applicants"  
+  | "applicants"
+  | "assignees"
   | "appliedCount"
   | "banned"
   | "hidden"
@@ -335,7 +338,8 @@ export type PlanListItem = Pick<
   | "milestones"
   | "participants"
   | "savedBy"      
-  | "applicants"  
+  | "applicants"
+  | "assignees"
   | "banned"
   | "hidden"
 >;

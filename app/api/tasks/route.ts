@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getFeedItemDueMillis, isActiveFeedItem, generateTaskSearchKeywords } from '@/types/task';
 import { haversineKm } from '@/lib/geo';
+import { matchesExpandedQuery, getCategoryLabel } from '@/lib/taskCategories';
 import type { FeedTask } from '@/types/task';
 
 const getPriceRange = (price: number): number => {
@@ -15,24 +16,19 @@ const getPriceRange = (price: number): number => {
 };
 
 function matchesQuery(task: FeedTask, rawQuery: string): boolean {
-  const tokens = rawQuery
-    .toLowerCase()
-    .trim()
-    .split(/\s+/)
-    .filter((t) => t.length > 0);
-  if (!tokens.length) return true;
+  if (!rawQuery.trim()) return true;
 
-  const haystack = [
-    task.title,
-    task.description,
-    task.category,
-    ...(task.tags || []),
-    ...((task as FeedTask & { searchKeywords?: string[] }).searchKeywords || []),
-  ]
-    .join(' ')
-    .toLowerCase();
-
-  return tokens.every((token) => haystack.includes(token));
+  return matchesExpandedQuery(
+    [
+      task.title,
+      task.description,
+      task.category,
+      getCategoryLabel(task.category, task.type),
+      ...(task.tags || []),
+      ...((task as FeedTask & { searchKeywords?: string[] }).searchKeywords || []),
+    ],
+    rawQuery
+  );
 }
 
 async function getFriendIdsForUser(uid: string): Promise<string[]> {
@@ -272,8 +268,12 @@ export async function POST(request: Request) {
         requireApproval: body.requireApproval || false,
         autoAccept:!body.requireApproval,
       }),
-    ...(body.location?.lat && body.location?.lng && {
+    ...(body.location?.lat != null && body.location?.lng != null && {
         location: {
+          address: body.location.address,
+          city: body.location.city,
+          ward: body.location.ward,
+          district: body.location.district,
           lat: body.location.lat,
           lng: body.location.lng,
         },

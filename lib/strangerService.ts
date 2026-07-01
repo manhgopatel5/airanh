@@ -68,11 +68,11 @@ const isMatch = (
   }
 
   // Check location 2 chiều
-  if (filters1.province && filters1.province!== "Toàn quốc") {
-    if (user2.location && user2.location!== filters1.province) return false;
+  if (filters1.province) {
+    if (user2.location && user2.location !== filters1.province) return false;
   }
-  if (filters2.province && filters2.province!== "Toàn quốc") {
-    if (user1.location && user1.location!== filters2.province) return false;
+  if (filters2.province) {
+    if (user1.location && user1.location !== filters2.province) return false;
   }
 
   // Check interests: ít nhất 1 interest trùng

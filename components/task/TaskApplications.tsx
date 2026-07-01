@@ -3,14 +3,17 @@
 import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiCheck, FiX, FiStar, FiUsers } from "react-icons/fi";
-import { doc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { FiCheck, FiX, FiStar, FiUsers, FiFlag } from "react-icons/fi";
+import { doc, updateDoc, setDoc, serverTimestamp, arrayUnion, arrayRemove } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import type { FeedTask } from "@/types/task";
 
-import { onJobCompleted, onHotTaskCreated, onPlanCompleted } from "@/lib/xp";
+import { onHotTaskCreated, onPlanCompleted } from "@/lib/xp";
+import { ensurePlanGroup } from "@/lib/planGroup";
+import { submitTaskUserReport } from "@/lib/taskChat";
+import { getFirebaseAuth } from "@/lib/firebase";
 import * as Dialog from "@radix-ui/react-dialog";
 
 type Application = {
@@ -39,6 +42,8 @@ export default function TaskApplications({ applications, item, currentUserId, on
   const [showAllApps, setShowAllApps] = useState(false);
   const [completingApp, setCompletingApp] = useState<Application | null>(null);
   const [rating, setRating] = useState(5);
+  const [feedback, setFeedback] = useState("");
+  const [reportingApp, setReportingApp] = useState<Application | null>(null);
   const [loading, setLoading] = useState(false);
   const appsRef = useRef<HTMLDivElement>(null);
 
@@ -80,6 +85,8 @@ export default function TaskApplications({ applications, item, currentUserId, on
       return;
     }
 
+    const app = applications.find((a) => a.id === appId);
+
     const db = getFirebaseDB();
     try {
       await updateDoc(doc(db, 'applications', appId), {
@@ -92,7 +99,9 @@ export default function TaskApplications({ applications, item, currentUserId, on
       await updateDoc(doc(db, "tasks", itemId), {
         joined: newJoined,
         currentParticipants: newJoined,
-        status: newJoined >= itemSlots ? "full" : "open",
+        assignees: arrayUnion(applicantId),
+        applicants: arrayRemove(applicantId),
+        status: "doing",
       });
 
       if (newJoined >= 5) {
@@ -107,7 +116,21 @@ export default function TaskApplications({ applications, item, currentUserId, on
         createdAt: serverTimestamp(),
       }, { merge: true });
 
-      toast.success("Đã duyệt ứng viên");
+      if (isPlan) {
+        const groupId = await ensurePlanGroup(db, itemId, itemTitle, currentUserId, {
+          uid: applicantId,
+          name: app?.userName || "Thành viên",
+          avatar: app?.userAvatar || "",
+        });
+        toast.success("Đã duyệt và thêm vào nhóm kế hoạch", {
+          action: {
+            label: "Vào nhóm",
+            onClick: () => window.location.assign(`/groups/${groupId}`),
+          },
+        });
+      } else {
+        toast.success("Đã duyệt ứng viên");
+      }
       navigator.vibrate?.(10);
       onUpdate();
     } catch {
@@ -132,27 +155,66 @@ export default function TaskApplications({ applications, item, currentUserId, on
 
   const handleCompleteJob = async () => {
     if (!completingApp) return;
+    if (!feedback.trim()) {
+      toast.error("Vui lòng viết feedback");
+      return;
+    }
     setLoading(true);
-    const db = getFirebaseDB();
     try {
-      await updateDoc(doc(db, "tasks", itemId), {
-        status: "completed",
-        rating: rating,
+      const token = await getFirebaseAuth().currentUser?.getIdToken();
+      if (!token) throw new Error("Chưa đăng nhập");
+
+      const res = await fetch(`/api/tasks/${itemId}/complete-review`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rating,
+          feedback: feedback.trim(),
+          role: "owner",
+          targetUserId: completingApp.userId,
+        }),
       });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "Thất bại");
 
       if (isPlan) {
         await onPlanCompleted(itemOwnerId, rating, itemId);
-      } else {
-        await onJobCompleted(completingApp.userId, rating, itemId);
       }
 
-      toast.success(`Đã hoàn thành + ${rating} sao + XP`);
+      toast.success(body.message || `Đã đánh giá + ${rating} sao`);
       navigator.vibrate?.(15);
       setCompletingApp(null);
+      setFeedback("");
       onUpdate();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error("Hoàn thành thất bại");
+      toast.error(err instanceof Error ? err.message : "Hoàn thành thất bại");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReportAssignee = async () => {
+    if (!reportingApp) return;
+    setLoading(true);
+    try {
+      await submitTaskUserReport({
+        reporterId: currentUserId,
+        reporterName: getFirebaseAuth().currentUser?.displayName || "Chủ task",
+        targetId: reportingApp.userId,
+        targetName: reportingApp.userName,
+        taskId: itemId,
+        taskTitle: itemTitle,
+        reason: "quay_roi",
+        note: `Báo cáo từ chủ ${isPlan ? "plan" : "task"}`,
+      });
+      toast.success("Đã gửi báo cáo cho admin");
+      setReportingApp(null);
+    } catch {
+      toast.error("Gửi báo cáo thất bại");
     } finally {
       setLoading(false);
     }
@@ -278,14 +340,24 @@ export default function TaskApplications({ applications, item, currentUserId, on
                           Đã duyệt
                         </span>
                         {item.status!== 'completed' && (
-                          <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setCompletingApp(app)}
-                            className="h-8 px-3 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center gap-1.5 active:bg-blue-200 dark:active:bg-blue-900/50 transition-all"
-                          >
-                            <FiStar size={14} className="text-blue-500" />
-                            <span className="text-sm font-semibold text-blue-500">Hoàn thành</span>
-                          </motion.button>
+                          <>
+                            <motion.button
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => setCompletingApp(app)}
+                              className="h-8 px-3 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center gap-1.5 active:bg-blue-200 dark:active:bg-blue-900/50 transition-all"
+                            >
+                              <FiStar size={14} className="text-blue-500" />
+                              <span className="text-sm font-semibold text-blue-500">Hoàn thành</span>
+                            </motion.button>
+                            <motion.button
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => setReportingApp(app)}
+                              className="h-8 px-3 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center gap-1.5"
+                            >
+                              <FiFlag size={14} className="text-red-500" />
+                              <span className="text-sm font-semibold text-red-500">Báo cáo</span>
+                            </motion.button>
+                          </>
                         )}
                       </>
                     )}
@@ -308,7 +380,7 @@ export default function TaskApplications({ applications, item, currentUserId, on
             <Dialog.Title className="text-lg font-bold mb-2 text-zinc-900 dark:text-zinc-100">Hoàn thành {isPlan? 'plan' : 'job'}</Dialog.Title>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">Đánh giá {completingApp?.userName}</p>
 
-            <div className="flex justify-center gap-2 mb-5">
+            <div className="flex justify-center gap-2 mb-4">
               {[1,2,3,4,5].map(star => (
                 <button key={star} onClick={() => setRating(star)}>
                   <FiStar
@@ -317,6 +389,13 @@ export default function TaskApplications({ applications, item, currentUserId, on
                 </button>
               ))}
             </div>
+
+            <textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              placeholder="Viết feedback cho người này..."
+              className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 p-3 text-sm min-h-[88px] mb-4 bg-white dark:bg-zinc-800"
+            />
 
             <div className="flex gap-2">
               <button
@@ -331,6 +410,24 @@ export default function TaskApplications({ applications, item, currentUserId, on
                 className="flex-1 h-11 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold disabled:opacity-50"
               >
                 {loading? "Đang lưu..." : "Xác nhận"}
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root open={!!reportingApp} onOpenChange={(open) => !open && setReportingApp(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-[70] backdrop-blur-sm" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white dark:bg-zinc-900 rounded-3xl p-5 z-[70]">
+            <Dialog.Title className="text-lg font-bold mb-2">Gửi báo cáo admin</Dialog.Title>
+            <p className="text-sm text-zinc-500 mb-4">
+              Báo cáo {reportingApp?.userName} vì vi phạm trong {isPlan ? "plan" : "task"} này?
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setReportingApp(null)} className="flex-1 h-11 rounded-2xl border font-semibold">Hủy</button>
+              <button onClick={handleReportAssignee} disabled={loading} className="flex-1 h-11 rounded-2xl bg-red-600 text-white font-bold disabled:opacity-50">
+                {loading ? "Đang gửi..." : "Gửi báo cáo"}
               </button>
             </div>
           </Dialog.Content>

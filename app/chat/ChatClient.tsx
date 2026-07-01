@@ -567,7 +567,7 @@ return (
           <div key={chat.chatId} className="group relative">
             <Link
               href={
-                (chat as any).isStranger? `/friends` :
+                (chat as any).isStranger? `/stranger/${chat.chatId}` :
                 chat.chatId.startsWith('public_') || chat.isGroup? `/rooms/${chat.chatId}` :
                 `/chat/${chat.chatId}`
               }

@@ -98,7 +98,7 @@ messaging.onBackgroundMessage((payload) => {
     actions: getActions(data).slice(0, 2),
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  return self.registration.showNotification(title, options);
 });
 
 function getActions(data) {
@@ -113,6 +113,12 @@ function getActions(data) {
       { action: "accept", title: "✅ Chấp nhận" },
       { action: "decline", title: "❌ Từ chối" },
     ];
+  }
+  if (data.type === "stranger_match" || data.type === "stranger_message") {
+    return [{ action: "view", title: "💬 Vào phòng" }];
+  }
+  if (data.type === "message" || data.type === "group_message" || data.type === "mention") {
+    return [{ action: "view", title: "💬 Xem tin" }];
   }
   return [];
 }

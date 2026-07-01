@@ -13,6 +13,7 @@ import type { FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast } from "sonner";
 import { useAppStore } from "@/store/app";
+import { getCategoryLabel, matchesExpandedQuery } from "@/lib/taskCategories";
 
 type SubTab = "mine" | "saved" | "doing" | "applied" | "expired" | "completed" | "cancelled";
 
@@ -142,11 +143,11 @@ export default function TasksPage() {
   const filteredTasks = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return tasks;
-    return tasks.filter(
-      (t) =>
-        t.title.toLowerCase().includes(q) ||
-        t.description?.toLowerCase().includes(q) ||
-        t.category?.toLowerCase().includes(q)
+    return tasks.filter((t) =>
+      matchesExpandedQuery(
+        [t.title, t.description, t.category, getCategoryLabel(t.category, t.type)],
+        q
+      )
     );
   }, [tasks, searchQuery]);
 
@@ -445,6 +446,8 @@ export default function TasksPage() {
                       task={task}
                       theme={mode}
                       currentUserId={currentUserId}
+                      showAssigneeActions={subTab === "doing"}
+                      onAssigneeAction={() => mutate()}
                       onDelete={handleDelete}
                       onShare={handleShare}
                       onTaskUpdate={handleTaskUpdate}

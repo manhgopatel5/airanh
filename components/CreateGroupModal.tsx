@@ -83,6 +83,13 @@ export default function CreateGroupModal({
         lastSenderId: "",
         unreadCount: { [user.uid]: 0 },
         hasPassword: enablePassword,
+        membersInfo: {
+          [user.uid]: {
+            name: user.displayName || "User",
+            avatar: user.photoURL || "",
+            username: "",
+          },
+        },
       };
 
       if (enablePassword) {

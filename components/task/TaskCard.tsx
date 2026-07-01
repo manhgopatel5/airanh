@@ -31,6 +31,9 @@ import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { getTaskAuthorId, getTaskAuthorName, getTaskAuthorAvatar } from "@/lib/task/author";
 import { useProvinces } from "@/lib/useProvinces";
+import { getCategoryMeta } from "@/lib/taskCategories";
+import { formatShortLocation } from "@/lib/mapboxGeocode";
+import TaskAssigneeActions from "@/components/task/TaskAssigneeActions";
 
 
 type Props = {
@@ -42,6 +45,8 @@ type Props = {
   onShare?: (task: FeedTask) => void;
   onTaskUpdate?: (taskId: string, updates: Partial<FeedTask>) => void;
   className?: string;
+  showAssigneeActions?: boolean;
+  onAssigneeAction?: () => void;
 };
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
@@ -67,51 +72,6 @@ const short = p.name.replace("Thành phố ", "").replace("Tỉnh ", "");
     return map;
   }, [provinces]);
 };
-const CATEGORY_TASKS = [
-  { id: "doing", label: "Việc gấp", icon: "⚡️", color: "#0A84FF" },
-  { id: "skill", label: "Kỹ năng", icon: "🎓", color: "#5E5CE6" },
-  { id: "shopping", label: "Mua hộ", icon: "🛍️", color: "#FF9F0A" },
-  { id: "help", label: "Giúp đỡ", icon: "🤝", color: "#30D158" },
-  { id: "moving", label: "Chuyển đồ", icon: "🚚", color: "#FF375F" },
-  { id: "cleaning", label: "Dọn dẹp", icon: "🧹", color: "#64D2FF" },
-  { id: "repair", label: "Sửa chữa", icon: "🔧", color: "#BF5AF2" },
-  { id: "tutoring", label: "Gia sư", icon: "📚", color: "#0A84FF" },
-  { id: "photography", label: "Chụp ảnh", icon: "📸", color: "#FF9F0A" },
-  { id: "design", label: "Thiết kế", icon: "🎨", color: "#BF5AF2" },
-  { id: "cooking", label: "Nấu ăn", icon: "🍳", color: "#FF375F" },
-  { id: "petcare", label: "Chăm thú cưng", icon: "🐕", color: "#30D158" },
-  { id: "babysit", label: "Trông trẻ", icon: "👶", color: "#64D2FF" },
-  { id: "elderly", label: "Chăm người già", icon: "👴", color: "#5E5CE6" },
-  { id: "event", label: "Sự kiện", icon: "🎉", color: "#FF9F0A" },
-  { id: "marketing", label: "Marketing", icon: "📢", color: "#0A84FF" },
-  { id: "writing", label: "Viết lách", icon: "✍️", color: "#BF5AF2" },
-  { id: "translate", label: "Dịch thuật", icon: "🌐", color: "#64D2FF" },
-  { id: "consulting", label: "Tư vấn", icon: "💼", color: "#30D158" },
-  { id: "other", label: "Khác", icon: "📋", color: "#8E8E93" },
-] as const;
-
-const CATEGORY_PLANS = [
-  { id: "coffee", label: "Cà phê", icon: "☕", color: "#8B4513" },
-  { id: "meal", label: "Ăn uống", icon: "🍜", color: "#FF6347" },
-  { id: "sport", label: "Thể thao", icon: "⚽", color: "#30D158" },
-  { id: "party", label: "Tiệc tùng", icon: "🎉", color: "#FF9F0A" },
-  { id: "movie", label: "Xem phim", icon: "🎬", color: "#BF5AF2" },
-  { id: "music", label: "Âm nhạc", icon: "🎵", color: "#FF375F" },
-  { id: "travel", label: "Du lịch", icon: "✈️", color: "#0A84FF" },
-  { id: "game", label: "Game", icon: "🎮", color: "#5E5CE6" },
-  { id: "study", label: "Học nhóm", icon: "📚", color: "#64D2FF" },
-  { id: "volunteer", label: "Tình nguyện", icon: "❤️", color: "#FF375F" },
-  { id: "hiking", label: "Leo núi", icon: "⛰️", color: "#30D158" },
-  { id: "camping", label: "Cắm trại", icon: "🏕️", color: "#FF9F0A" },
-  { id: "beach", label: "Đi biển", icon: "🏖️", color: "#0A84FF" },
-  { id: "karaoke", label: "Karaoke", icon: "🎤", color: "#BF5AF2" },
-  { id: "boardgame", label: "Board game", icon: "🎲", color: "#5E5CE6" },
-  { id: "picnic", label: "Dã ngoại", icon: "🧺", color: "#30D158" },
-  { id: "workshop", label: "Workshop", icon: "🔨", color: "#FF9F0A" },
-  { id: "networking", label: "Kết nối", icon: "🤝", color: "#0A84FF" },
-  { id: "clubbing", label: "Club", icon: "🪩", color: "#BF5AF2" },
-  { id: "other", label: "Khác", icon: "📋", color: "#8E8E93" },
-] as const;
 function TaskCard({
   task,
   theme,
@@ -121,6 +81,8 @@ function TaskCard({
   onShare,
   onTaskUpdate,
   className,
+  showAssigneeActions = false,
+  onAssigneeAction,
 }: Props) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -209,10 +171,16 @@ function TaskCard({
 
   const cityKey = task.location?.city || "";
   const rawProvinceName = provinceMap.get(cityKey) || cityKey || "";
-  const provinceName = rawProvinceName.replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "").trim();
+  const provinceName =
+    formatShortLocation({
+      ...(task.location?.ward ? { ward: task.location.ward } : {}),
+      ...(rawProvinceName || task.location?.city
+        ? { city: rawProvinceName || task.location?.city }
+        : {}),
+    }) ||
+    rawProvinceName.replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "").trim();
   
-  const categories = task.type === "task" ? CATEGORY_TASKS : CATEGORY_PLANS;
-  const categoryData = categories.find(c => c.id === task.category);
+  const categoryData = getCategoryMeta(task.category, task.type === "plan" ? "plan" : "task");
   const coverImage = task.images?.[0];
   const description = task.description?.trim() || "";
 
@@ -238,6 +206,11 @@ function TaskCard({
 }, [task, provinceMap]);
 
   const isOwner = currentUserId === task.userId;
+  const isAssignee =
+    !!currentUserId &&
+    !!task.assignees?.includes(currentUserId) &&
+    !isOwner &&
+    task.status !== "completed";
 
   const authorId = getTaskAuthorId(task);
   const authorName = getTaskAuthorName(task);
@@ -427,12 +400,7 @@ function TaskCard({
                 </p>
               )}
               <div className="mt-1.5 flex flex-wrap gap-1">
-                {derived.isFull && (
-                  <span className="inline-flex items-center rounded-md bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:text-red-400">
-                    Đầy
-                  </span>
-                )}
-                {derived.isNearDeadline && !derived.isUrgent && (
+                {derived.isNearDeadline && !derived.isUrgent && isTaskTheme && (
                   <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
                     <FiClock className="h-2.5 w-2.5" /> Sắp hết hạn
                   </span>
@@ -440,11 +408,6 @@ function TaskCard({
                 {derived.isRemote && (
                   <span className="inline-flex items-center gap-0.5 rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-bold text-sky-600 dark:text-sky-400">
                     <FiWifi className="h-2.5 w-2.5" /> Từ xa
-                  </span>
-                )}
-                {!isTaskTheme && (
-                  <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: accent }}>
-                    Kế hoạch
                   </span>
                 )}
               </div>
@@ -489,6 +452,14 @@ function TaskCard({
             </div>
           </div>
 
+          {showAssigneeActions && isAssignee && currentUserId && (
+            <TaskAssigneeActions
+              task={task}
+              currentUserId={currentUserId}
+              {...(onAssigneeAction ? { onUpdated: onAssigneeAction } : {})}
+            />
+          )}
+
           <div className="flex items-center justify-between gap-2 border-t border-zinc-100 px-2 py-1 dark:border-zinc-800/80">
             <div className="flex items-center gap-0">
               <button
@@ -532,6 +503,16 @@ function TaskCard({
             </div>
 
             <div className="flex min-w-0 items-center justify-end gap-1">
+              {derived.isFull && (
+                <span className="inline-flex shrink-0 items-center rounded-md bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:text-red-400">
+                  Đầy
+                </span>
+              )}
+              {!isTaskTheme && derived.isNearDeadline && (
+                <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 shrink-0">
+                  <FiClock className="h-2.5 w-2.5" /> Sắp hết hạn
+                </span>
+              )}
               {derived.categoryLabel && (
                 <div
                   className="flex max-w-[72px] items-center gap-0.5 rounded-md px-1.5 py-1 text-[10px] font-bold text-white shadow-sm"

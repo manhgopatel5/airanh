@@ -73,7 +73,7 @@ const getUserTaskQuery = (tab: UserTaskTab, uid: string): Query<DocumentData> =>
 const matchesTab = (data: DocumentData, tab: UserTaskTab, nowMillis: number): boolean => {
   switch (tab) {
     case 'doing':
-      return data.status === 'doing'
+      return ['doing', 'full', 'open'].includes(String(data.status))
     case 'applied':
       return data.status === 'open' || data.status === 'pending'
     case 'completed':

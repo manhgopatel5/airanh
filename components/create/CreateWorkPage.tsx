@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timestamp } from "firebase/firestore";
 import { useSWRConfig } from "swr";
-import useSWRImmutable from 'swr/immutable';
 
 
 import TaskCard from "@/components/task/TaskCard"; // đường dẫn đúng của bạn
@@ -31,20 +30,16 @@ import {
 import { toast } from "sonner";
 import { createPlan, createTask } from "@/lib/task";
 import { useAuth } from "@/lib/AuthContext";
+import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geolocation";
+import { formatShortLocation, type ParsedMapboxLocation } from "@/lib/mapboxGeocode";
+import AddressSearchInput from "@/components/location/AddressSearchInput";
 
 type Mode = "task" | "plan";
-type Province = { id: number; name: string; code: string };
-type District = { id: number; name: string; code: string };
-type Ward = { id: number; name: string };
 
 type LocationState = {
   address: string;
-  provinceId: number | null;
-  provinceName: string;
-  districtId: number | null;
-  districtName: string;
-  wardId: number | null;
   wardName: string;
+  provinceName: string;
   lat?: number;
   lng?: number;
 };
@@ -70,7 +65,7 @@ type FormState = {
   requireApproval: boolean;
 };
 
-type FormErrors = Partial<Record<keyof FormState | "location.address" | "location.provinceId", string>>;
+type FormErrors = Partial<Record<keyof FormState | "location.address" | "location.coords", string>>;
 
 const CATEGORY_TASKS = [
   { id: "doing", label: "Việc gấp", icon: "⚡️", color: "#0A84FF", suggestPrice: 50000 },
@@ -132,12 +127,8 @@ const initialForm = (mode: Mode): FormState => ({
   visibility: "public",
   location: {
     address: "",
-    provinceId: null,
+    wardName: "",
     provinceName: "",
-    districtId: null,
-    districtName: "",
-    wardId: null,
-    wardName: ""
   },
   price: mode === "task"? 50000 : 0,
   budgetType: "fixed",
@@ -307,76 +298,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const [saving, setSaving] = useState(false);
 
   const [showPreview, setShowPreview] = useState(false);
-  const [placeSuggestions, setPlaceSuggestions] = useState<string[]>([]);
-
-
-const debounceRef = useRef<NodeJS.Timeout>();
-
-// Fetcher chung: luôn trả array, không bao giờ crash
-const fetcher = (url: string) => fetch(url).then(async r => {
-  const data = await r.json();
-  return Array.isArray(data) ? data : [];
-});
-
-// Tỉnh - cache vĩnh viễn
-const { 
-  data: provinces = [], 
-  isLoading: loadingProvinces, 
-  error: provinceError,
-  mutate: retryProvinces // thêm dòng này
-} = useSWRImmutable<Province[]>(
-  "/api/location/province",
-  fetcher,
-  { shouldRetryOnError: false, fallbackData: [] }
-);
-
-// Huyện - cache theo provinceId
-const { 
-  data: districts = [], 
-  isLoading: loadingDistricts
-} = useSWRImmutable<District[]>(
-  form.location.provinceId ? ["/api/location/district", form.location.provinceId] : null,
-  ([url, id]) => fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provinceId: id }),
-  }).then(r => r.json()).then(data => Array.isArray(data) ? data : []),
-);
-
-// Xã - cache theo districtId
-const { 
-  data: wards = [],
-  isLoading: loadingWards
-} = useSWRImmutable<Ward[]>(
-  form.location.districtId ? ["/api/location/ward", form.location.districtId] : null,
-  ([url, id]) => fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ districtId: id }),
-  }).then(r => r.json()).then(data => Array.isArray(data) ? data : []),
-);
-
-// Reset district/ward khi province thay đổi
-useEffect(() => {
-  if (!form.location.provinceId) {
-    updateLocation({
-      districtId: null,
-      districtName: "",
-      wardId: null,
-      wardName: ""
-    });
-  }
-}, [form.location.provinceId]);
-
-// Reset ward khi district thay đổi  
-useEffect(() => {
-  if (!form.location.districtId) {
-    updateLocation({
-      wardId: null,
-      wardName: ""
-    });
-  }
-}, [form.location.districtId]);
+  const [locating, setLocating] = useState(false);
 
 const isTask = mode === "task";
 const previewTask = useMemo(() => ({
@@ -395,7 +317,6 @@ const previewTask = useMemo(() => ({
   visibility: form.visibility,
   location: {
     city: form.location.provinceName,
-    district: form.location.districtName,
     ward: form.location.wardName,
     address: form.location.address,
     lat: form.location.lat,
@@ -469,9 +390,10 @@ useEffect(() => {
         if (value.trim().length < 20) return "Tối thiểu 20 ký tự";
         return "";
       case "location":
-  if (!value.address.trim()) return "Nhập địa chỉ cụ thể";
-  if (!value.provinceId && !value.provinceName.trim()) return "Chọn hoặc nhập tỉnh/thành phố";
-  return "";
+        if (!value.address?.trim()) return "Nhập hoặc lấy địa chỉ";
+        if (value.lat == null || value.lng == null) return "Bấm Gửi vị trí hoặc chọn từ gợi ý";
+        if (!value.provinceName?.trim()) return "Chưa xác định được tỉnh/thành phố";
+        return "";
       case "price":
         if (isTask && form.budgetType !== "negotiable" && value <= 0) return "Nhập số tiền hợp lệ";
         return "";
@@ -494,8 +416,11 @@ useEffect(() => {
       newErrors.description = validateField("description", form.description);
     }
     if (stepIdx === 1) {
-      newErrors["location.address"] = !form.location.address.trim() ? "Nhập địa chỉ cụ thể" : "";
-      newErrors["location.provinceId"] = !form.location.provinceId ? "Chọn tỉnh/thành phố" : "";
+      newErrors["location.address"] = !form.location.address.trim() ? "Nhập hoặc lấy địa chỉ" : "";
+      newErrors["location.coords"] =
+        form.location.lat == null || form.location.lng == null
+          ? "Bấm Gửi vị trí hoặc chọn từ gợi ý"
+          : "";
     }
     if (stepIdx === 2) {
       if (isTask) {
@@ -521,31 +446,50 @@ useEffect(() => {
     setErrors((prev) => ({ ...prev, [key]: validateField(key, form[key]) }));
   };
 
-  const updateLocation = (patch: Partial<LocationState>) => {
-    setForm((prev) => ({ ...prev, location: { ...prev.location, ...patch } }));
-    if (touched.location) {
-      setErrors((prev) => ({ ...prev, "location.address": validateField("location", { ...form.location, ...patch }) }));
-    }
-  };
-
-  const searchPlaces = useCallback(async (query: string) => {
-    if (query.length < 3) {
-      setPlaceSuggestions([]);
-      return;
-    }
-    try {
-      const res = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      setPlaceSuggestions(data.predictions?.map((p: any) => p.description) || []);
-    } catch {
-      setPlaceSuggestions([]);
-    }
+  const applyParsedLocation = useCallback((parsed: ParsedMapboxLocation) => {
+    setForm((prev) => ({
+      ...prev,
+      location: {
+        address: parsed.address,
+        wardName: parsed.ward || "",
+        provinceName: parsed.city || "",
+        lat: parsed.lat,
+        lng: parsed.lng,
+      },
+    }));
   }, []);
 
+  const handleSendLocation = useCallback(async () => {
+    if (locating) return;
+    setLocating(true);
+    try {
+      const pos = await getCurrentPosition();
+      const res = await fetch(`/api/places/geocode?lat=${pos.lat}&lng=${pos.lng}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Không xác định được địa chỉ");
+      applyParsedLocation(data as ParsedMapboxLocation);
+      toast.success("Đã lấy vị trí hiện tại");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Không lấy được vị trí";
+      toast.error(message, { duration: message === GEO_PERMISSION_DENIED_MESSAGE ? 6000 : 4000 });
+    } finally {
+      setLocating(false);
+    }
+  }, [locating, applyParsedLocation]);
+
   const handleAddressChange = (value: string) => {
-    updateLocation({ address: value });
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => searchPlaces(value), 400);
+    setForm((prev) => {
+      const { lat: _lat, lng: _lng, ...rest } = prev.location;
+      return {
+        ...prev,
+        location: {
+          ...rest,
+          address: value,
+          wardName: "",
+          provinceName: "",
+        },
+      };
+    });
   };
 
 const handleCategoryChange = (catId: string) => {
@@ -584,10 +528,9 @@ const handleCategoryChange = (catId: string) => {
       const location = {
         address: form.location.address.trim(),
         city: form.location.provinceName,
-        ...(form.location.districtName && { district: form.location.districtName }),
-        ...(form.location.wardName && { ward: form.location.wardName }),
-        ...(form.location.lat !== undefined && { lat: form.location.lat }),
-        ...(form.location.lng !== undefined && { lng: form.location.lng }),
+        ...(form.location.wardName ? { ward: form.location.wardName } : {}),
+        lat: form.location.lat as number,
+        lng: form.location.lng as number,
       };
 
       if (isTask) {
@@ -838,142 +781,56 @@ await mutate("/api/tasks?type=plan&limit=20");
  {step === 1 && (
   <StepContent key="step1">
     <Card>
-<Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
-  {provinceError ? (
-    <div className="space-y-3">
-      <div className="input-premium flex items-center justify-between bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
-        <span className="text-sm font-bold text-red-600 dark:text-red-400 flex items-center gap-2">
-          <FiAlertCircle /> Không tải được danh sách tỉnh
-        </span>
-        <button
+      <Field label="Vị trí" required error={errors["location.address"] || errors["location.coords"]} icon={FiMapPin}>
+        <motion.button
           type="button"
-          onClick={() => retryProvinces()}
-          className="text-xs font-black px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 active:scale-95"
+          whileTap={{ scale: 0.98 }}
+          onClick={handleSendLocation}
+          disabled={locating}
+          className="mb-3 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-black text-white shadow-lg transition disabled:opacity-60"
+          style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
         >
-          Thử lại
-        </button>
-      </div>
-      <input
-        type="text"
-        value={form.location.provinceName}
-        onChange={(e) => updateLocation({ 
-          provinceName: e.target.value,
-          provinceId: null
-        })}
-        placeholder="Nhập tên tỉnh/thành phố..."
-        className="input-premium"
-      />
-      <p className="text-xs text-zinc-400">Tạm nhập tay do lỗi mạng</p>
-    </div>
-  ) : (
-    <select
-      value={form.location.provinceId || ""}
-      onChange={(e) => {
-        const id = Number(e.target.value);
-        const p = provinces.find(p => p.id === id);
-        updateLocation({
-          provinceId: id || null,
-          provinceName: p?.name || "",
-          districtId: null,
-          districtName: "",
-          wardId: null,
-          wardName: ""
-        });
-      }}
-      className="input-premium"
-      disabled={loadingProvinces}
-    >
-      <option value="">
-        {loadingProvinces 
-          ? "Đang tải 63 tỉnh/thành..." 
-          : provinces.length === 0
-            ? "Không có dữ liệu"
-            : "Chọn tỉnh/thành phố"}
-      </option>
-      {provinces.map((p) => (
-        <option key={p.id} value={p.id}>{p.name}</option>
-      ))}
-    </select>
-  )}
-</Field>
-
-      <Field label="Quận/Huyện" icon={FiMapPin}>
-        <select
-          value={form.location.districtId || ""}
-          onChange={(e) => {
-            const id = Number(e.target.value);
-            const d = districts.find(d => d.id === id);
-            updateLocation({
-              districtId: id,
-              districtName: d?.name || "",
-              wardId: null,
-              wardName: ""
-            });
-          }}
-          className="input-premium"
-          disabled={!form.location.provinceId}
-        >
-  <option value="">
-  {!form.location.provinceId 
-    ? "Chọn tỉnh trước" 
-    : loadingDistricts
-      ? "Đang tải..." 
-      : "Chọn quận/huyện"}
-</option>
-          {districts.map((d) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
-        </select>
-      </Field>
-
-      <Field label="Phường/Xã" icon={FiMapPin}>
-     <select
-  value={form.location.wardId || ""}
-  onChange={(e) => {
-    const id = Number(e.target.value);
-    const w = wards.find(w => w.id === id);
-    updateLocation({ wardId: id, wardName: w?.name || "" });
-  }}
-  className="input-premium"
-  disabled={!form.location.districtId}
->
-  <option value="">
-    {!form.location.districtId 
-      ? "Chọn quận trước" 
-      : loadingWards
-        ? "Đang tải..."
-        : "Chọn phường/xã"}
-  </option>
-  {wards.map((w) => (
-    <option key={w.id} value={w.id}>{w.name}</option>
-  ))}
-</select>
-      </Field>
-
-      <Field label="Địa chỉ cụ thể" required error={errors["location.address"]} icon={FiMapPin}>
-        <div className="relative">
-          <input
-            value={form.location.address}
-            onChange={(e) => handleAddressChange(e.target.value)}
-            onBlur={() => blur("location")}
-            placeholder="Tên đường, số nhà..."
-            className="input-premium"
-          />
-          {placeSuggestions.length > 0 && (
-            <div className="absolute top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
-              {placeSuggestions.map((s, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => { updateLocation({ address: s }); setPlaceSuggestions([]); }}
-                  className="w-full border-b border-zinc-100 px-4 py-3 text-left text-sm font-medium hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800 last:border-0"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+          {locating ? (
+            <>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              Đang lấy vị trí...
+            </>
+          ) : (
+            <>
+              <FiMapPin className="text-base" />
+              Gửi vị trí
+            </>
           )}
+        </motion.button>
+        <p className="mb-3 text-xs leading-relaxed text-zinc-500">
+          Bấm để dùng GPS. Nếu lỡ từ chối quyền định vị, thoát trang rồi vào lại để cho phép.
+        </p>
+
+        <div className="relative my-4 flex items-center gap-3">
+          <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+          <span className="shrink-0 text-xs font-bold text-zinc-500">hoặc bạn dùng địa chỉ khác</span>
+          <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
         </div>
+
+        <AddressSearchInput
+          value={form.location.address}
+          onChange={handleAddressChange}
+          onSelect={applyParsedLocation}
+          onBlur={() => blur("location")}
+          placeholder="Nhập địa chỉ cụ thể..."
+        />
+
+        {(form.location.wardName || form.location.provinceName) && (
+          <div className="mt-3 rounded-xl bg-zinc-50 px-3 py-2.5 text-sm dark:bg-zinc-900/60">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Hiển thị công khai</p>
+            <p className="mt-1 font-semibold text-zinc-800 dark:text-zinc-100">
+              {formatShortLocation({
+                ward: form.location.wardName,
+                city: form.location.provinceName,
+              }) || form.location.provinceName}
+            </p>
+          </div>
+        )}
       </Field>
     </Card>
   </StepContent>

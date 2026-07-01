@@ -5,7 +5,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { ChevronLeft, Bell, Clock, Mail, AtSign, MessageSquare, Zap, Smartphone } from "lucide-react";
+import { ChevronLeft, Bell, Clock, Mail, AtSign, MessageSquare, Zap, Smartphone, UserPlus } from "lucide-react";
+import { requestFcmReregister } from "@/components/FCMProvider";
 import { toast, Toaster } from "sonner";
 
 type NotificationSettings = {
@@ -15,6 +16,8 @@ type NotificationSettings = {
   notiPlanDeadline: boolean;
   notiChatMention: boolean;
   notiChatAll: boolean;
+  notiFriendRequest: boolean;
+  notiFriendAccepted: boolean;
   emailDigest: "off" | "daily" | "weekly";
   quietHours: { enabled: boolean; from: string; to: string };
 };
@@ -30,6 +33,8 @@ export default function NotificationsPage() {
     notiPlanDeadline: true,
     notiChatMention: true,
     notiChatAll: false,
+    notiFriendRequest: true,
+    notiFriendAccepted: true,
     emailDigest: "off",
     quietHours: { enabled: false, from: "22:00", to: "07:00" },
   });
@@ -50,8 +55,10 @@ export default function NotificationsPage() {
     }
     const result = await Notification.requestPermission();
     setPushPermission(result);
-    if (result === "granted") toast.success("Đã bật thông báo đẩy");
-    else if (result === "denied") toast.error("Bạn đã từ chối quyền thông báo");
+    if (result === "granted") {
+      toast.success("Đã bật thông báo đẩy");
+      requestFcmReregister();
+    } else if (result === "denied") toast.error("Bạn đã từ chối quyền thông báo");
   }, []);
 
   useEffect(() => {
@@ -150,6 +157,21 @@ export default function NotificationsPage() {
             icon={Bell}
             checked={settings.notiPlanDeadline}
             onChange={(v) => updateSetting("notiPlanDeadline", v)}
+          />
+        </Section>
+
+        <Section title="BẠN BÈ">
+          <ToggleItem
+            label="Lời mời kết bạn"
+            icon={UserPlus}
+            checked={settings.notiFriendRequest ?? true}
+            onChange={(v) => updateSetting("notiFriendRequest", v)}
+          />
+          <ToggleItem
+            label="Được chấp nhận kết bạn"
+            icon={UserPlus}
+            checked={settings.notiFriendAccepted ?? true}
+            onChange={(v) => updateSetting("notiFriendAccepted", v)}
           />
         </Section>
 

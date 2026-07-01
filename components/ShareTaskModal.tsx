@@ -129,7 +129,7 @@ const handleSend = async () => {
 
         const chatRoomRef = doc(db, "chats", roomId);
         await setDoc(chatRoomRef, {
-          participants: [user.uid, friendId],
+          members: [user.uid, friendId],
           lastMessage: `Đã chia sẻ: ${task.title}`,
           lastMessageAt: serverTimestamp(),
           lastSenderId: user.uid,

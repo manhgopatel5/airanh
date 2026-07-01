@@ -11,27 +11,19 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import ChatButton from "@/components/stranger/ChatButton";
+import RegionPicker from "@/components/stranger/RegionPicker";
 import { useRouter } from "next/navigation";
-const CATEGORIES = [
-  { id: "tat-ca", label: "Tất cả", icon: "🌟", count: 0 },
-  { id: "thich-di-phuot", label: "Thích đi phượt", icon: "🏍️", count: 93 },
-  { id: "nguoi-yeu", label: "Người yêu", icon: "🌹", count: 117 },
-  { id: "moi-quan-he-nghiem-tuc", label: "Mối quan hệ nghiêm túc", icon: "💍", count: 72 },
-  { id: "ranh-toi-nay", label: "Rảnh tối nay", icon: "🌙", count: 38 },
-  { id: "nhung-nguoi-ban-moi", label: "Những người bạn mới", icon: "👋", count: 34 },
-  { id: "muon-co-con", label: "Muốn có con", icon: "👶", count: 13 },
-  { id: "du-lich", label: "Du lịch", icon: "✈️", count: 96 },
-  { id: "hoi-me-phim", label: "Hội mê Phim", icon: "📺", count: 31 },
-  { id: "yeu-the-thao", label: "Yêu thể thao", icon: "💧", count: 47 },
-  { id: "hen-di-cafe", label: "Hẹn đi cafe", icon: "☕", count: 21 },
-  { id: "thich-di-nhau", label: "Thích đi nhậu", icon: "🍷", count: 16 },
-  { id: "me-mao-hiem", label: "Mê mạo hiểm", icon: "🎲", count: 30 },
-  { id: "hoi-yeu-sang-tao", label: "Hội yêu Sáng tạo", icon: "🎨", count: 45 },
-  { id: "dam-me-am-thuc", label: "Đam mê ẩm thực", icon: "🍑", count: 81 },
-  { id: "yeu-thien-nhien", label: "Yêu thiên nhiên", icon: "🌱", count: 75 },
-  { id: "yeu-am-nhac", label: "Yêu âm nhạc", icon: "🎧", count: 23 },
-  { id: "cham-soc-ban-than", label: "Chăm sóc bản thân", icon: "🦆", count: 107 },
-];
+import { useActiveStrangerChatId } from "@/hooks/useActiveStrangerChat";
+import {
+  defaultStrangerRegion,
+  isStrangerRegionValid,
+  type StrangerRegion,
+} from "@/lib/strangerLocation";
+import CategoryIcon from "@/components/stranger/CategoryIcon";
+import {
+  STRANGER_CATEGORIES,
+  STRANGER_CATEGORY_COUNT,
+} from "@/lib/strangerCategories";
 
 const GENDERS = [
   { value: "all", label: "Tất cả" },
@@ -39,24 +31,11 @@ const GENDERS = [
   { value: "female", label: "Nữ" },
 ] as const;
 
-const PROVINCES = [
-  "Toàn quốc", "Hà Nội", "TP. Hồ Chí Minh", "Hải Phòng", "Đà Nẵng", "Cần Thơ",
-  "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh",
-  "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau",
-  "Cao Bằng", "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp",
-  "Gia Lai", "Hà Giang", "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang",
-  "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu",
-  "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định", "Nghệ An",
-  "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam",
-  "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh",
-  "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "Trà Vinh",
-  "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
-];
-
 export default function StrangerPage() {
   const { user } = useAuth();
   const db = getFirebaseDB();
   const router = useRouter();
+  const activeStrangerChatId = useActiveStrangerChatId();
   const [userKarma, setUserKarma] = useState<number | null>(null);
   const [userTier, setUserTier] = useState<"user" | "vip" | "elite">("user");
   const [accountStatus, setAccountStatus] = useState<"active" | "warning" | "banned">("active");
@@ -76,12 +55,12 @@ export default function StrangerPage() {
   const [ageFrom, setAgeFrom] = useState<number>(18);
   const [ageTo, setAgeTo] = useState<number>(30);
   const [selectedGender, setSelectedGender] = useState<"all" | "male" | "female">("all");
-  const [selectedProvince, setSelectedProvince] = useState("Toàn quốc");
+  const [region, setRegion] = useState<StrangerRegion>(() => defaultStrangerRegion());
 
   const [tempAgeFrom, setTempAgeFrom] = useState<number | string>(18);
   const [tempAgeTo, setTempAgeTo] = useState<number | string>(30);
   const [tempGender, setTempGender] = useState<"all" | "male" | "female">("all");
-  const [tempProvince, setTempProvince] = useState("Toàn quốc");
+  const [tempRegion, setTempRegion] = useState<StrangerRegion>(() => defaultStrangerRegion());
 const [queueData, setQueueData] = useState<any>(null); // THÊM DÒNG NÀY
 
 useEffect(() => {
@@ -100,12 +79,11 @@ useEffect(() => {
   const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
     const data = snap.data();
     if (data?.matchedChatId) {
-      setMatchedChatId(data.matchedChatId); // DÙNG setMatchedChatId Ở ĐÂY
-      toast.success("Đã tìm thấy bạn phù hợp!", { duration: 3000 });
+      setMatchedChatId(data.matchedChatId);
       setInQueue(false);
       setFindingStranger(false);
       setQueueData(null);
-    } else if (data && !data?.matchedChatId) {
+    } else if (data?.status === "waiting") {
       setInQueue(true);
       setFindingStranger(true);
       setQueueData(data);
@@ -156,7 +134,7 @@ const isDisabled = accountStatus === "banned";
     setTempAgeFrom(ageFrom);
     setTempAgeTo(ageTo);
     setTempGender(selectedGender);
-    setTempProvince(selectedProvince);
+    setTempRegion(region);
     setShowFilterModal(true);
   };
 
@@ -167,11 +145,12 @@ const isDisabled = accountStatus === "banned";
     if (from > to) return toast.error("Độ tuổi không hợp lệ");
     if (from < 18) return toast.error("Độ tuổi tối thiểu là 18");
     if (to > 100) return toast.error("Độ tuổi tối đa là 100");
+    if (!isStrangerRegionValid(tempRegion)) return toast.error("Chọn khu vực bằng GPS hoặc nhập địa chỉ");
 
     setAgeFrom(from);
     setAgeTo(to);
     setSelectedGender(tempGender);
-    setSelectedProvince(tempProvince);
+    setRegion(tempRegion);
     setShowFilterModal(false);
     toast.success("Đã lưu bộ lọc");
   };
@@ -221,10 +200,17 @@ const isDisabled = accountStatus === "banned";
         return;
       }
 
+      if (!isStrangerRegionValid(tempRegion)) {
+        toast.error("Chọn khu vực bằng GPS hoặc nhập địa chỉ");
+        setCurrentStep(2);
+        openFilterModal();
+        return;
+      }
+
       setAgeFrom(from);
       setAgeTo(to);
       setSelectedGender(tempGender);
-      setSelectedProvince(tempProvince);
+      setRegion(tempRegion);
       setCurrentStep(3);
     }
   };
@@ -234,11 +220,12 @@ const isDisabled = accountStatus === "banned";
   if (isDisabled) return toast.error("Tài khoản bị cấm");
   
   const finalCats = selectAllMode 
-   ? CATEGORIES.filter(c => c.id !== "tat-ca").map(c => c.id) 
+   ? STRANGER_CATEGORIES.filter(c => c.id !== "tat-ca").map(c => c.id) 
     : selectedCats;
 
   if (finalCats.length < 3) return toast.error("Chọn ít nhất 3 sở thích");
   if (ageFrom < 18) return toast.error("Độ tuổi tối thiểu là 18");
+  if (!isStrangerRegionValid(region)) return toast.error("Chọn khu vực bằng GPS hoặc nhập địa chỉ");
 
   setFindingStranger(true);
   setInQueue(true);
@@ -251,7 +238,10 @@ const isDisabled = accountStatus === "banned";
       interests: finalCats,
       ageRange: `${ageFrom}-${ageTo}`,
       wantGender: selectedGender,
-      province: selectedProvince,
+      province: region.province,
+      ...(region.lat != null && region.lng != null
+        ? { locationLat: region.lat, locationLng: region.lng }
+        : {}),
     });
 
     const data = result.data as { chatId: string, matched: boolean };
@@ -308,7 +298,7 @@ const isDisabled = accountStatus === "banned";
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <ChatButton chatId={currentChatId} variant="default" showDetails />
+              <ChatButton chatId={activeStrangerChatId || currentChatId} variant="default" showDetails />
               <button
                 onClick={() => setShowStatusModal(true)}
                 className={cn(
@@ -345,91 +335,65 @@ const isDisabled = accountStatus === "banned";
           )}
         </div>
 
-   <AnimatePresence mode="wait">
-  {matchedChatId? (
-    <motion.div
-      key="matched"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      className="bg-green-50 dark:bg-green-900/20 rounded-3xl p-8 border border-green-200 dark:border-green-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
-    >
-      <div className="w-20 h-20 mx-auto mb-4 bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-600/30">
-        <FiCheck className="text-white" size={36} />
-      </div>
-      <h3 className="text-lg font-[800] mb-2">Đã tìm thấy bạn!</h3>
-      <p className="text-sm text-zinc-500 mb-6">Bấm để bắt đầu trò chuyện ngay</p>
-<button
-  onClick={async () => {
-    if (!matchedChatId ||!user?.uid) return;
-
-    // CHECK DOC TỒN TẠI TRƯỚC KHI PUSH
-    try {
-      const chatSnap = await getDoc(doc(db, "stranger_chats", matchedChatId));
-      if (chatSnap.exists()) {
-        router.push(`/stranger/${matchedChatId}`);
-        deleteDoc(doc(db, "stranger_queue", user.uid)).catch(() => {});
-      } else {
-        toast.error("Phòng chat chưa sẵn sàng, thử lại sau 1s");
-        setTimeout(async () => {
-          const retrySnap = await getDoc(doc(db, "stranger_chats", matchedChatId));
-          if (retrySnap.exists()) {
-            router.push(`/stranger/${matchedChatId}`);
-            deleteDoc(doc(db, "stranger_queue", user.uid)).catch(() => {});
-          } else {
-            toast.error("Không thể vào phòng chat");
-          }
-        }, 1000);
-      }
-    } catch (err) {
-      toast.error("Lỗi kiểm tra phòng chat");
-    }
-  }}
-  className="w-full h-12 bg-green-600 text-white rounded-xl font-[700] active:scale-95 transition-all"
->
-  Trò chuyện ngay
-</button>
-    </motion.div>
-  ) : inQueue? (
-    <motion.div
-      key="queue"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 text-center"
-    >
-      <div className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-blue-600/30">
-        <FiLoader className="text-white animate-spin" size={36} />
-      </div>
-      <h3 className="text-lg font-[800] mb-2">Đang tìm bạn phù hợp...</h3>
-      <p className="text-sm text-zinc-500 mb-2">
-        {queueData?.interests
-         ? queueData.interests.length === CATEGORIES.length - 1
-           ? "Tất cả mục"
-            : `${queueData.interests.length} mục đã chọn`
-          : selectAllMode
-         ? "Tất cả mục"
-          : `${selectedCats.length} mục đã chọn`
-        }
-      </p>
-      <p className="text-xs text-zinc-400 mb-6">
-        Bạn có thể thoát ra, hệ thống sẽ tự thông báo khi có người match
-      </p>
-      <button
-        onClick={handleCancelQueue}
-        className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-[700] active:scale-95 transition-all"
-      >
-        Hủy tìm kiếm
-      </button>
-    </motion.div>
-  ) : (
-            <motion.div
-              key="grid"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-4"
+        {matchedChatId && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-4 border border-green-200 dark:border-green-800 flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-green-600 flex items-center justify-center shrink-0 shadow-lg shadow-green-600/30">
+              <FiCheck className="text-white" size={22} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-[800] text-green-800 dark:text-green-300">Đã tìm thấy bạn!</p>
+              <p className="text-xs text-green-600 dark:text-green-400">Bấm để bắt đầu trò chuyện</p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!matchedChatId || !user?.uid) return;
+                try {
+                  const chatSnap = await getDoc(doc(db, "stranger_chats", matchedChatId));
+                  if (chatSnap.exists()) {
+                    router.push(`/stranger/${matchedChatId}`);
+                    deleteDoc(doc(db, "stranger_queue", user.uid)).catch(() => {});
+                  } else {
+                    toast.error("Phòng chat chưa sẵn sàng, thử lại sau");
+                  }
+                } catch {
+                  toast.error("Không thể vào phòng chat");
+                }
+              }}
+              className="h-10 px-4 bg-green-600 text-white rounded-xl text-sm font-[700] active:scale-95 shrink-0"
             >
+              Vào chat
+            </button>
+          </div>
+        )}
+
+        {inQueue && !matchedChatId && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-4 border border-blue-200 dark:border-blue-800 flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/30">
+              <FiLoader className="text-white animate-spin" size={22} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-[800] text-blue-800 dark:text-blue-300">Đang tìm bạn phù hợp...</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400">
+                {queueData?.interests
+                  ? queueData.interests.length === STRANGER_CATEGORY_COUNT
+                    ? "Tất cả mục"
+                    : `${queueData.interests.length} mục đã chọn`
+                  : selectAllMode
+                    ? "Tất cả mục"
+                    : `${selectedCats.length} mục đã chọn`}
+                {" · "}Bạn có thể thoát trang, sẽ nhận thông báo khi match
+              </p>
+            </div>
+            <button
+              onClick={handleCancelQueue}
+              className="h-10 px-3 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-xl text-sm font-[700] border border-zinc-200 dark:border-zinc-700 active:scale-95 shrink-0"
+            >
+              Hủy
+            </button>
+          </div>
+        )}
+
+        <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleStepClick(1)}
@@ -473,9 +437,9 @@ const isDisabled = accountStatus === "banned";
 
               {currentStep === 1 && (
                 <div className="grid grid-cols-2 gap-3">
-                  {CATEGORIES.map(cat => {
+                  {STRANGER_CATEGORIES.map(cat => {
                     const isSelected = selectedCats.includes(cat.id) || (selectAllMode && cat.id === "tat-ca");
-                    const isDisabledCard = selectAllMode && cat.id!== "tat-ca";
+                    const isDisabledCard = selectAllMode && cat.id !== "tat-ca";
 
                     return (
                       <button
@@ -485,21 +449,21 @@ const isDisabled = accountStatus === "banned";
                         className={cn(
                           "rounded-3xl p-4 border-2 shadow-lg shadow-zinc-900/5 dark:shadow-black/20 active:scale-95 transition-all disabled:opacity-40 h-44 flex flex-col items-center justify-center gap-3",
                           isSelected
-                         ? "bg-blue-600 text-white border-blue-600"
-                          : isDisabledCard
-                         ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 text-zinc-400"
-                          : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : isDisabledCard
+                              ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 text-zinc-400"
+                              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                         )}
                       >
-                        <div className="text-5xl">{cat.icon}</div>
+                        <CategoryIcon
+                          icon={cat.icon}
+                          gradient={cat.gradient}
+                          ring={cat.ring}
+                          selected={isSelected}
+                          size="lg"
+                        />
                         <div className="text-center">
                           <p className="text-sm font-[700] leading-tight">{cat.label}</p>
-                          {cat.count > 0 && (
-                            <div className="flex items-center justify-center gap-1 text-xs mt-1 opacity-60">
-                              <FiUsers size={12} />
-                              <span>{cat.count}</span>
-                            </div>
-                          )}
                         </div>
                       </button>
                     );
@@ -527,7 +491,7 @@ const isDisabled = accountStatus === "banned";
                           <span className="text-xs font-[600] text-zinc-500">Danh mục</span>
                         </div>
                         <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">
-                          {selectAllMode? "Tất cả" : selectedCats.map(id => CATEGORIES.find(c => c.id === id)?.label).join(", ")}
+                          {selectAllMode ? "Tất cả" : selectedCats.map(id => STRANGER_CATEGORIES.find(c => c.id === id)?.label).join(", ")}
                         </p>
                       </div>
 
@@ -552,7 +516,9 @@ const isDisabled = accountStatus === "banned";
                           <FiMapPin size={16} className="text-emerald-500" />
                           <span className="text-xs font-[600] text-zinc-500">Khu vực</span>
                         </div>
-                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">{selectedProvince}</p>
+                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">
+                          {isStrangerRegionValid(region) ? region.displayLabel : "Chưa chọn — dùng GPS hoặc nhập địa chỉ"}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -587,7 +553,7 @@ const isDisabled = accountStatus === "banned";
                           <span className="text-xs font-[600] text-zinc-500">Danh mục</span>
                         </div>
                         <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">
-                          {selectAllMode? "Tất cả" : selectedCats.map(id => CATEGORIES.find(c => c.id === id)?.label).join(", ")}
+                          {selectAllMode ? "Tất cả" : selectedCats.map(id => STRANGER_CATEGORIES.find(c => c.id === id)?.label).join(", ")}
                         </p>
                       </div>
 
@@ -612,7 +578,9 @@ const isDisabled = accountStatus === "banned";
                           <FiMapPin size={16} className="text-emerald-500" />
                           <span className="text-xs font-[600] text-zinc-500">Khu vực</span>
                         </div>
-                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">{selectedProvince}</p>
+                        <p className="text-sm font-[700] text-zinc-900 dark:text-white line-clamp-2">
+                          {isStrangerRegionValid(region) ? region.displayLabel : "Chưa chọn — dùng GPS hoặc nhập địa chỉ"}
+                        </p>
                       </div>
                     </div>
 
@@ -634,9 +602,7 @@ const isDisabled = accountStatus === "banned";
                   </button>
                 </div>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -921,16 +887,8 @@ const isDisabled = accountStatus === "banned";
                 </div>
 
                 <div>
-                  <label className="text-sm font-[700] mb-2 block">Tỉnh/Thành phố</label>
-                  <select
-                    value={tempProvince}
-                    onChange={(e) => setTempProvince(e.target.value)}
-                    className="w-full h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 text-base font-[600] focus:outline-none focus:ring-2 focus:ring-blue-600 border border-zinc-200 dark:border-zinc-700"
-                  >
-                    {PROVINCES.map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
+                  <label className="text-sm font-[700] mb-2 block">Khu vực</label>
+                  <RegionPicker value={tempRegion} onChange={setTempRegion} />
                 </div>
 
                 <button

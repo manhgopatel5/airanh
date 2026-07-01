@@ -5,11 +5,19 @@ import { useRouter } from "next/navigation";
 import { FiUsers, FiMessageCircle, FiClock } from "react-icons/fi";
 import { doc, onSnapshot } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
+import { useAuth } from "@/lib/AuthContext";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  fetchPartnerProfile,
+  partnerFromChatData,
+  partnerOnline,
+  unreadForUser,
+} from "@/lib/strangerPartners";
+import { useActiveStrangerChatId } from "@/hooks/useActiveStrangerChat";
 
 interface ChatButtonProps {
-  chatId: string | null;
+  chatId?: string | null;
   className?: string;
   variant?: "default" | "compact" | "icon";
   showDetails?: boolean;
@@ -26,24 +34,27 @@ interface ChatPreview {
 }
 
 export default function ChatButton({
-  chatId,
+  chatId: chatIdProp,
   className,
   variant = "default",
-  showDetails = false
+  showDetails = false,
 }: ChatButtonProps) {
   const router = useRouter();
+  const { user } = useAuth();
+  const activeChatId = useActiveStrangerChatId();
+  const chatId = chatIdProp || activeChatId;
   const db = getFirebaseDB();
   const [chatData, setChatData] = useState<ChatPreview | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!chatId) {
+    if (!chatId || !user?.uid) {
       setLoading(false);
       setChatData(null);
       return;
     }
 
-    const unsub = onSnapshot(doc(db, "stranger_chats", chatId), (snap) => {
+    const unsub = onSnapshot(doc(db, "stranger_chats", chatId), async (snap) => {
       const data = snap.data();
       if (!data) {
         setChatData(null);
@@ -51,20 +62,27 @@ export default function ChatButton({
         return;
       }
 
+      const partnerId = (data.members as string[] | undefined)?.find((m) => m !== user.uid) || "";
+      let partner = partnerFromChatData(data, partnerId);
+
+      if (!partner.name || partner.name === "Người lạ") {
+        partner = await fetchPartnerProfile(partnerId);
+      }
+
       setChatData({
-        partnerName: data.partnerName || "Người lạ",
-        partnerAvatar: data.partnerAvatar || "",
-        lastMessage: data.lastMessage || "",
-        lastMessageTime: data.lastMessageTime?.toMillis() || 0,
-        unreadCount: data.unreadCount || 0,
-        isPartnerOnline: data.isPartnerOnline || false,
-        status: data.status || "active",
+        partnerName: partner.name,
+        partnerAvatar: partner.avatar,
+        lastMessage: (data.lastMessage as string) || "",
+        lastMessageTime: data.lastMessageTime?.toMillis?.() || 0,
+        unreadCount: unreadForUser(data, user.uid),
+        isPartnerOnline: partnerOnline(data, partnerId),
+        status: (data.status as ChatPreview["status"]) || "active",
       });
       setLoading(false);
     });
 
     return () => unsub();
-  }, [chatId, db]);
+  }, [chatId, db, user?.uid]);
 
   const formatTime = (timestamp: number) => {
     if (!timestamp) return "";
@@ -79,11 +97,8 @@ export default function ChatButton({
     return `${days}d`;
   };
 
-  // KHÔNG CÓ CHATID -> NÚT QUẢN LÝ CHAT
-  if (!chatId || loading ||!chatData) {
-    const handleClick = () => {
-      router.push(`/stranger/chats`);
-    };
+  if (!chatId || loading || !chatData) {
+    const handleClick = () => router.push("/stranger/chats");
 
     if (variant === "icon") {
       return (
@@ -93,7 +108,7 @@ export default function ChatButton({
             "relative w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center active:scale-90 transition-all border border-zinc-200 dark:border-zinc-700",
             className
           )}
-          title="Chat"
+          title="Lịch sử chat"
         >
           <FiUsers size={20} />
         </button>
@@ -110,12 +125,11 @@ export default function ChatButton({
           )}
         >
           <FiUsers size={18} />
-          <span className="text-xs font-[700]">Chat</span>
+          <span className="text-xs font-[700]">Lịch sử</span>
         </button>
       );
     }
 
-    // Default
     return (
       <button
         onClick={handleClick}
@@ -125,17 +139,13 @@ export default function ChatButton({
         )}
       >
         <FiUsers size={18} />
-        <span className="text-xs font-[700]">Chat</span>
+        <span className="text-xs font-[700]">Lịch sử chat</span>
       </button>
     );
   }
 
-  // CÓ CHATID -> NÚT VÀO CHAT
-  const handleClick = () => {
-    router.push(`/stranger/${chatId}`);
-  };
+  const handleClick = () => router.push(`/stranger/${chatId}`);
 
-  // Variant: Icon only
   if (variant === "icon") {
     return (
       <button
@@ -149,7 +159,7 @@ export default function ChatButton({
         <FiMessageCircle size={20} />
         {chatData.unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-[800] rounded-full flex items-center justify-center">
-            {chatData.unreadCount > 9? "9+" : chatData.unreadCount}
+            {chatData.unreadCount > 9 ? "9+" : chatData.unreadCount}
           </span>
         )}
         {chatData.isPartnerOnline && (
@@ -159,7 +169,6 @@ export default function ChatButton({
     );
   }
 
-  // Variant: Compact
   if (variant === "compact") {
     return (
       <button
@@ -173,7 +182,7 @@ export default function ChatButton({
           <FiUsers size={18} />
           {chatData.unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-[800] rounded-full flex items-center justify-center">
-              {chatData.unreadCount > 9? "9+" : chatData.unreadCount}
+              {chatData.unreadCount > 9 ? "9+" : chatData.unreadCount}
             </span>
           )}
         </div>
@@ -182,7 +191,6 @@ export default function ChatButton({
     );
   }
 
-  // Variant: Default - Full info
   return (
     <motion.button
       onClick={handleClick}
@@ -195,10 +203,12 @@ export default function ChatButton({
         className
       )}
     >
-      {/* Avatar + Online status */}
       <div className="relative flex-shrink-0">
         <img
-          src={chatData.partnerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.partnerName)}&background=random`}
+          src={
+            chatData.partnerAvatar ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.partnerName)}&background=random`
+          }
           alt={chatData.partnerName}
           className="w-7 h-7 rounded-xl object-cover"
         />
@@ -214,33 +224,25 @@ export default function ChatButton({
         </AnimatePresence>
       </div>
 
-      {/* Info */}
       <div className="flex-1 text-left min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-[700] truncate max-w-[100px]">
-            {chatData.status === "ended"? "Đã kết thúc" : chatData.partnerName}
+            {chatData.status === "ended" ? "Đã kết thúc" : chatData.partnerName}
           </span>
-          {chatData.status === "waiting" && (
-            <FiClock size={12} className="text-amber-300 flex-shrink-0" />
-          )}
+          {chatData.status === "waiting" && <FiClock size={12} className="text-amber-300 flex-shrink-0" />}
         </div>
         {showDetails && chatData.lastMessage && (
-          <p className="text-[10px] text-blue-100 truncate max-w-[120px]">
-            {chatData.lastMessage}
-          </p>
+          <p className="text-[10px] text-blue-100 truncate max-w-[120px]">{chatData.lastMessage}</p>
         )}
       </div>
 
-      {/* Unread badge / Time */}
       <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-        {chatData.unreadCount > 0? (
+        {chatData.unreadCount > 0 ? (
           <span className="min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-[800] rounded-full flex items-center justify-center">
-            {chatData.unreadCount > 99? "99+" : chatData.unreadCount}
+            {chatData.unreadCount > 99 ? "99+" : chatData.unreadCount}
           </span>
-        ) : chatData.lastMessageTime > 0? (
-          <span className="text-[10px] text-blue-100">
-            {formatTime(chatData.lastMessageTime)}
-          </span>
+        ) : chatData.lastMessageTime > 0 ? (
+          <span className="text-[10px] text-blue-100">{formatTime(chatData.lastMessageTime)}</span>
         ) : null}
       </div>
     </motion.button>

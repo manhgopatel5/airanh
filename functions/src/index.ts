@@ -3,8 +3,10 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
+import { getMessaging } from "firebase-admin/messaging";
+import { FirestoreEvent, QueryDocumentSnapshot, Change } from "firebase-functions/v2/firestore";
 import { DocumentSnapshot } from "firebase-admin/firestore";
+import { createNotificationAndPush, extractMentionedUids } from "./notificationService";
 
 initializeApp();
 const db = getFirestore();
@@ -26,17 +28,20 @@ export const onFriendRequestCreated = onDocumentCreated(
       const fromUserDoc = await db.doc(`users/${fromUserId}`).get();
       const fromUser = fromUserDoc.data();
 
-      await db.collection(`notifications/${toUserId}/items`).add({
-        type: "friend_request",
-        fromUid: fromUserId,
-        fromName: fromUser?.displayName || fromUser?.name || "Người dùng",
-        fromAvatar: fromUser?.photoURL || fromUser?.avatar || "",
-        title: "Lời mời kết bạn",
-        message: "đã gửi lời mời kết bạn",
-        actionData: { requesterId: fromUserId },
-        read: false,
-        createdAt: FieldValue.serverTimestamp(),
-      });
+      await createNotificationAndPush(
+        toUserId,
+        {
+          type: "friend_request",
+          fromUid: fromUserId,
+          fromName: fromUser?.displayName || fromUser?.name || "Người dùng",
+          fromAvatar: fromUser?.photoURL || fromUser?.avatar || "",
+          title: "Lời mời kết bạn",
+          message: "đã gửi lời mời kết bạn",
+          link: "/friends",
+          actionData: { requesterId: fromUserId, requestId: event.params.requestId },
+        },
+        { settingKey: "notiFriendRequest" }
+      );
     } catch (error) {
       console.error("onFriendRequestCreated error:", error);
     }
@@ -62,17 +67,20 @@ export const onFriendAccepted = onDocumentCreated(
       const userDoc = await db.doc(`users/${userId}`).get();
       const userData = userDoc.data();
 
-      await db.collection(`notifications/${friendId}/items`).add({
-        type: "friend_accepted",
-        fromUid: userId,
-        fromName: userData?.displayName || userData?.name || "Người dùng",
-        fromAvatar: userData?.photoURL || userData?.avatar || "",
-        title: "Đã chấp nhận kết bạn",
-        message: "đã chấp nhận lời mời kết bạn của bạn",
-        actionData: { chatId: [userId, friendId].sort().join("_") },
-        read: false,
-        createdAt: FieldValue.serverTimestamp(),
-      });
+      await createNotificationAndPush(
+        friendId,
+        {
+          type: "friend_accepted",
+          fromUid: userId,
+          fromName: userData?.displayName || userData?.name || "Người dùng",
+          fromAvatar: userData?.photoURL || userData?.avatar || "",
+          title: "Đã chấp nhận kết bạn",
+          message: "đã chấp nhận lời mời kết bạn của bạn",
+          link: `/chat/${[userId, friendId].sort().join("_")}`,
+          actionData: { chatId: [userId, friendId].sort().join("_") },
+        },
+        { settingKey: "notiFriendAccepted" }
+      );
 
       await db.doc(`friendRequests/${requestId}`).delete();
     } catch (error) {
@@ -457,16 +465,142 @@ export const updateHotScore = onSchedule(
 );
 
 // 8. TÌM NGƯỜI LẠ CHAT 1-1 - CHUẨN
+function normalizeProvinceName(name?: string) {
+  if (!name) return "";
+  return String(name).replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "").trim();
+}
+
+function provincesMatch(a?: string, b?: string) {
+  const na = normalizeProvinceName(a);
+  const nb = normalizeProvinceName(b);
+  if (!na || !nb) return false;
+  return na.toLowerCase() === nb.toLowerCase();
+}
+
+async function getUserPublic(uid: string) {
+  const snap = await db.doc(`users/${uid}`).get();
+  const d = snap.data();
+  return {
+    name: d?.displayName || d?.name || "Người lạ",
+    avatar: d?.photoURL || d?.avatar || "",
+  };
+}
+
+async function sendPushToUser(
+  uid: string,
+  payload: { title: string; body: string; data: Record<string, string> }
+) {
+  try {
+    const userDoc = await db.doc(`users/${uid}`).get();
+    const rawTokens: string[] = userDoc.data()?.fcmTokens || [];
+    const tokens = [...new Set(rawTokens.filter((t) => typeof t === "string" && t.length > 0))];
+    if (tokens.length === 0) return;
+
+    const link = payload.data.link || payload.data.url || "/";
+    const messaging = getMessaging();
+    await messaging.sendEachForMulticast({
+      tokens,
+      notification: { title: payload.title, body: payload.body },
+      data: payload.data,
+      webpush: {
+        fcmOptions: { link },
+        notification: { icon: "/icon-192.png", badge: "/icon-192.png" },
+      },
+    });
+  } catch (error) {
+    console.error("sendPushToUser error:", error);
+  }
+}
+
+async function notifyStrangerMatch(
+  toUid: string,
+  fromUid: string,
+  chatId: string,
+  fromPublic: { name: string; avatar: string }
+) {
+  try {
+    const link = `/stranger/${chatId}`;
+    await db.collection(`notifications/${toUid}/items`).add({
+      type: "stranger_match",
+      fromUid,
+      fromName: fromPublic.name,
+      fromAvatar: fromPublic.avatar,
+      title: "Tìm thấy bạn mới!",
+      message: `${fromPublic.name} muốn trò chuyện với bạn`,
+      link,
+      actionData: { chatId },
+      read: false,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    await sendPushToUser(toUid, {
+      title: "Tìm thấy bạn mới!",
+      body: `${fromPublic.name} muốn trò chuyện với bạn`,
+      data: {
+        type: "stranger_match",
+        chatId,
+        link,
+        url: link,
+      },
+    });
+  } catch (error) {
+    console.error("notifyStrangerMatch error:", error);
+  }
+}
+
+async function notifyStrangerMessage(
+  toUid: string,
+  fromUid: string,
+  chatId: string,
+  fromPublic: { name: string; avatar: string },
+  preview: string
+) {
+  try {
+    const link = `/stranger/${chatId}`;
+    const body = preview.length > 100 ? `${preview.slice(0, 100)}...` : preview;
+
+    await db.collection(`notifications/${toUid}/items`).add({
+      type: "stranger_message",
+      fromUid,
+      fromName: fromPublic.name,
+      fromAvatar: fromPublic.avatar,
+      title: fromPublic.name,
+      message: body,
+      link,
+      actionData: { chatId },
+      read: false,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    await sendPushToUser(toUid, {
+      title: fromPublic.name,
+      body,
+      data: {
+        type: "stranger_message",
+        chatId,
+        link,
+        url: link,
+      },
+    });
+  } catch (error) {
+    console.error("notifyStrangerMessage error:", error);
+  }
+}
+
 export const findStranger = onCall(
   { region: "asia-southeast1" },
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
 
-    const { interests, ageRange, wantGender, province } = request.data;
+    const { interests, ageRange, wantGender, province, locationLat, locationLng } = request.data;
 
     if (!interests || interests.length < 3) {
       throw new HttpsError("invalid-argument", "Chọn ít nhất 3 sở thích");
+    }
+
+    if (!province || String(province).trim() === "" || province === "Toàn quốc") {
+      throw new HttpsError("invalid-argument", "Chọn khu vực bằng GPS hoặc nhập địa chỉ");
     }
 
     try {
@@ -525,9 +659,7 @@ export const findStranger = onCall(
         if (d.wantGender!== "all" && d.wantGender!== userGender) continue;
         if (ageRange && d.ageRange!== ageRange) continue;
 
-        if (province && province!== "Toàn quốc") {
-          if (d.province!== province && d.province!== "Toàn quốc") continue;
-        }
+        if (!provincesMatch(province, d.province)) continue;
 
         const common = interests.filter((i: string) => d.interests?.includes(i)).length;
         if (common >= 2 && common > maxCommon) {
@@ -542,6 +674,10 @@ export const findStranger = onCall(
 
         const chatId = `str_${[uid, other.userId].sort().join("_")}`;
         const chatRef = db.doc(`stranger_chats/${chatId}`);
+        const [mePublic, otherPublic] = await Promise.all([
+          getUserPublic(uid),
+          getUserPublic(other.userId),
+        ]);
 
         await db.runTransaction(async (transaction) => {
           const otherQueueSnap = await transaction.get(bestMatch!.ref);
@@ -567,13 +703,27 @@ export const findStranger = onCall(
               status: "active",
               unreadCounts: { [uid]: 0, [other.userId]: 0 },
               onlineStatus: { [uid]: true, [other.userId]: false },
+              partnerNames: {
+                [uid]: mePublic.name,
+                [other.userId]: otherPublic.name,
+              },
+              partnerAvatars: {
+                [uid]: mePublic.avatar,
+                [other.userId]: otherPublic.avatar,
+              },
               friendRequests: {},
               filters: {
                 interests,
                 ageRange,
                 wantGender,
-                province
-              }
+                province,
+                ...(locationLat != null && locationLng != null
+                  ? { locationLat, locationLng }
+                  : {}),
+              },
+              ...(locationLat != null && locationLng != null
+                ? { locationLat, locationLng }
+                : {}),
             });
           }
 
@@ -589,6 +739,11 @@ export const findStranger = onCall(
           });
         });
 
+        await Promise.all([
+          notifyStrangerMatch(uid, other.userId, chatId, otherPublic),
+          notifyStrangerMatch(other.userId, uid, chatId, mePublic),
+        ]);
+
         return { matched: true, chatId };
       }
 
@@ -598,7 +753,8 @@ export const findStranger = onCall(
         ageRange,
         wantGender,
         gender: userGender,
-        province: province || "Toàn quốc",
+        province,
+        ...(locationLat != null && locationLng != null ? { locationLat, locationLng } : {}),
         status: "waiting",
         createdAt: FieldValue.serverTimestamp(),
       });
@@ -908,5 +1064,260 @@ export const sendFriendRequest = onCall(
     });
 
     return { success: true, message: "Đã gửi lời mời" };
+  }
+);
+
+// 14. Thông báo tin nhắn người lạ mới
+export const onStrangerChatUpdated = onDocumentUpdated(
+  {
+    document: "stranger_chats/{chatId}",
+    region: "asia-southeast1",
+  },
+  async (event: FirestoreEvent<Change<QueryDocumentSnapshot> | undefined>) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+
+    const lastMessageBefore = before.lastMessage as string | undefined;
+    const lastMessageAfter = after.lastMessage as string | undefined;
+    const lastSenderId = after.lastSenderId as string | undefined;
+
+    if (!lastMessageAfter || lastMessageAfter === lastMessageBefore) return;
+    if (!lastSenderId) return;
+    if (lastMessageAfter === "Đã kết nối. Hãy chào nhau 👋") return;
+
+    const members = (after.members as string[]) || [];
+    const recipientId = members.find((m) => m !== lastSenderId);
+    if (!recipientId) return;
+
+    const chatId = event.params.chatId;
+    const partnerNames = (after.partnerNames as Record<string, string>) || {};
+    const partnerAvatars = (after.partnerAvatars as Record<string, string>) || {};
+    const fromPublic = {
+      name: partnerNames[lastSenderId] || "Người lạ",
+      avatar: partnerAvatars[lastSenderId] || "",
+    };
+
+    await notifyStrangerMessage(recipientId, lastSenderId, chatId, fromPublic, lastMessageAfter);
+  }
+);
+
+// 15. Tin nhắn DM → thông báo + push
+export const onChatMessageCreated = onDocumentCreated(
+  {
+    document: "chats/{chatId}/messages/{messageId}",
+    region: "asia-southeast1",
+  },
+  async (event: FirestoreEvent<QueryDocumentSnapshot | undefined>) => {
+    const msg = event.data?.data();
+    if (!msg) return;
+
+    const chatId = event.params.chatId;
+    const senderId = msg.senderId as string;
+    const text = (msg.text as string) || (msg.content as string) || "Đã gửi tin nhắn";
+    if (!senderId) return;
+
+    const chatSnap = await db.doc(`chats/${chatId}`).get();
+    if (!chatSnap.exists) return;
+
+    const chat = chatSnap.data()!;
+    const members: string[] = chat.members || [];
+    const recipientId = members.find((m) => m !== senderId);
+    if (!recipientId) return;
+
+    const mutedBy: string[] = chat.mutedBy || [];
+    if (mutedBy.includes(recipientId)) return;
+
+    const senderSnap = await db.doc(`users/${senderId}`).get();
+    const sender = senderSnap.data();
+    const senderName = msg.senderName || sender?.displayName || sender?.name || "Người dùng";
+    const senderAvatar = msg.senderAvatar || sender?.photoURL || sender?.avatar || "";
+    const preview = String(text).slice(0, 120);
+
+    await createNotificationAndPush(
+      recipientId,
+      {
+        type: "message",
+        fromUid: senderId,
+        fromName: senderName,
+        fromAvatar: senderAvatar,
+        title: senderName,
+        message: preview,
+        link: `/chat/${chatId}`,
+        actionData: { chatId },
+      },
+      { isMention: false }
+    );
+  }
+);
+
+// 16. Tin nhắn nhóm → thông báo + push (mention ưu tiên)
+export const onGroupMessageCreated = onDocumentCreated(
+  {
+    document: "groups/{groupId}/messages/{messageId}",
+    region: "asia-southeast1",
+  },
+  async (event: FirestoreEvent<QueryDocumentSnapshot | undefined>) => {
+    const msg = event.data?.data();
+    if (!msg) return;
+
+    const groupId = event.params.groupId;
+    const senderId = msg.senderId as string;
+    const text = (msg.text as string) || (msg.imageUrl ? "📷 Đã gửi ảnh" : msg.audioUrl ? "🎤 Voice" : "Tin nhắn mới");
+    if (!senderId) return;
+
+    const groupSnap = await db.doc(`groups/${groupId}`).get();
+    if (!groupSnap.exists) return;
+
+    const group = groupSnap.data()!;
+    const members: string[] = group.members || [];
+    const membersInfo = (group.membersInfo as Record<string, { name?: string; username?: string }>) || {};
+    const mentionedUids = extractMentionedUids(String(text), members, membersInfo);
+    const mentionUids: string[] = msg.mentions || mentionedUids;
+
+    const senderName = msg.senderName || "Thành viên";
+    const senderAvatar = msg.senderAvatar || "";
+    const preview = String(text).slice(0, 120);
+
+    for (const memberId of members) {
+      if (memberId === senderId) continue;
+      const isMention = mentionUids.includes(memberId);
+      const type = isMention ? "mention" : "group_message";
+
+      await createNotificationAndPush(
+        memberId,
+        {
+          type,
+          fromUid: senderId,
+          fromName: senderName,
+          fromAvatar: senderAvatar,
+          title: isMention ? `${senderName} đã nhắc bạn` : group.name || "Nhóm",
+          message: isMention ? preview : `${senderName}: ${preview}`,
+          link: `/groups/${groupId}`,
+          actionData: { groupId, chatId: groupId },
+        },
+        { isMention }
+      );
+    }
+  }
+);
+
+// 17. Ứng tuyển task/plan → thông báo chủ
+export const onApplicationCreated = onDocumentCreated(
+  {
+    document: "applications/{appId}",
+    region: "asia-southeast1",
+  },
+  async (event: FirestoreEvent<QueryDocumentSnapshot | undefined>) => {
+    const app = event.data?.data();
+    if (!app || app.status !== "pending") return;
+
+    const taskId = (app.taskId || app.planId) as string;
+    const ownerId = (app.taskOwnerId || app.planOwnerId) as string;
+    const applicantId = app.userId as string;
+    if (!taskId || !ownerId || !applicantId) return;
+
+    const taskSnap = await db.doc(`tasks/${taskId}`).get();
+    const task = taskSnap.data();
+    const isPlan = task?.type === "plan";
+
+    await createNotificationAndPush(
+      ownerId,
+      {
+        type: "task_apply",
+        fromUid: applicantId,
+        fromName: app.userName || "Ứng viên",
+        fromAvatar: app.userAvatar || "",
+        title: isPlan ? "Ứng viên kế hoạch mới" : "Ứng viên task mới",
+        message: `muốn tham gia "${task?.title || "công việc"}"`,
+        link: `/task/${taskId}`,
+        actionData: { taskId },
+      },
+      { settingKey: isPlan ? "notiPlanInvite" : "notiTaskAssigned" }
+    );
+  }
+);
+
+// 18. Nhắc deadline plan + ghim nhóm
+export const checkDeadlineReminders = onSchedule(
+  {
+    schedule: "every 1 hours",
+    timeZone: "Asia/Ho_Chi_Minh",
+    region: "asia-southeast1",
+  },
+  async () => {
+    const now = Date.now();
+    const in24h = now + 24 * 60 * 60 * 1000;
+
+    const plansSnap = await db
+      .collection("tasks")
+      .where("type", "==", "plan")
+      .where("status", "in", ["open", "doing", "in_progress"])
+      .limit(200)
+      .get();
+
+    for (const docSnap of plansSnap.docs) {
+      const d = docSnap.data();
+      const eventMs = d.eventDate?.toMillis?.() || 0;
+      if (!eventMs || eventMs < now || eventMs > in24h) continue;
+      if (d.deadlineNotifiedAt) continue;
+
+      const members: string[] = [d.userId, ...(d.assignees || [])];
+      const hoursLeft = Math.ceil((eventMs - now) / 3600000);
+      const title = d.title || "Kế hoạch";
+
+      for (const uid of [...new Set(members)]) {
+        if (!uid) continue;
+        await createNotificationAndPush(
+          uid,
+          {
+            type: "system",
+            fromUid: "system",
+            fromName: "Huha",
+            fromAvatar: "",
+            title: "Sắp đến hạn kế hoạch",
+            message: `"${title}" còn khoảng ${hoursLeft} giờ`,
+            link: `/task/${docSnap.id}`,
+            actionData: { taskId: docSnap.id },
+          },
+          { settingKey: "notiPlanDeadline", force: false }
+        );
+      }
+
+      await docSnap.ref.update({ deadlineNotifiedAt: FieldValue.serverTimestamp() });
+    }
+
+    const groupsSnap = await db.collection("groups").limit(300).get();
+    for (const gDoc of groupsSnap.docs) {
+      const g = gDoc.data();
+      const pinned = g.pinnedMessage as { deadline?: { toMillis?: () => number }; deadlineNotified?: boolean; text?: string } | undefined;
+      if (!pinned?.deadline?.toMillis) continue;
+      const deadlineMs = pinned.deadline.toMillis();
+      if (deadlineMs < now || deadlineMs > in24h || pinned.deadlineNotified) continue;
+
+      const members: string[] = g.members || [];
+      const hoursLeft = Math.ceil((deadlineMs - now) / 3600000);
+
+      for (const uid of members) {
+        await createNotificationAndPush(
+          uid,
+          {
+            type: "system",
+            fromUid: g.ownerId || g.createdBy || "system",
+            fromName: g.name || "Nhóm",
+            fromAvatar: g.avatar || "",
+            title: "Sắp đến hạn ghim",
+            message: `${pinned.text || "Mục ghim"} — còn ${hoursLeft} giờ`,
+            link: `/groups/${gDoc.id}`,
+            actionData: { groupId: gDoc.id },
+          },
+          { settingKey: "notiPlanDeadline" }
+        );
+      }
+
+      await gDoc.ref.update({
+        "pinnedMessage.deadlineNotified": true,
+      });
+    }
   }
 );

@@ -27,6 +27,46 @@ const requiredEnvs = [
   "FIREBASE_PRIVATE_KEY",
 ] as const;
 
+/** Chuẩn hóa PEM key — xử lý \\n, quote thừa, key một dòng, hoặc sai format Vercel */
+export function parseFirebasePrivateKey(raw?: string): string {
+  if (!raw?.trim()) {
+    throw new Error("Missing FIREBASE_PRIVATE_KEY");
+  }
+
+  let key = raw.trim();
+
+  // Fix paste sai: value có thể bắt đầu bằng :" hoặc :
+  if (key.startsWith(':"')) {
+    key = key.slice(2);
+  } else if (key.startsWith(":")) {
+    key = key.slice(1).trim();
+  }
+
+  while (
+    (key.startsWith('"') && key.endsWith('"')) ||
+    (key.startsWith("'") && key.endsWith("'"))
+  ) {
+    key = key.slice(1, -1).trim();
+  }
+
+  key = key.replace(/\\\\n/g, "\\n").replace(/\\n/g, "\n");
+
+  const begin = "-----BEGIN PRIVATE KEY-----";
+  const end = "-----END PRIVATE KEY-----";
+
+  if (key.includes(begin) && key.includes(end) && !key.includes("\n")) {
+    const body = key.replace(begin, "").replace(end, "").replace(/\s+/g, "");
+    const lines = body.match(/.{1,64}/g) || [];
+    key = `${begin}\n${lines.join("\n")}\n${end}\n`;
+  }
+
+  if (!key.includes(begin)) {
+    throw new Error("FIREBASE_PRIVATE_KEY phải là PEM (-----BEGIN PRIVATE KEY-----)");
+  }
+
+  return key;
+}
+
 function getServiceAccount(): ServiceAccount {
   const missing = requiredEnvs.filter((env) =>!process.env[env]);
   if (missing.length > 0) {
@@ -36,7 +76,7 @@ function getServiceAccount(): ServiceAccount {
   return {
     projectId: process.env.FIREBASE_PROJECT_ID!,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
+    privateKey: parseFirebasePrivateKey(process.env.FIREBASE_PRIVATE_KEY),
   };
 }
 

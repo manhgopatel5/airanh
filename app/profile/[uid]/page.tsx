@@ -113,6 +113,9 @@ const [_requestId, setRequestId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
 const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
+  const [profileReviews, setProfileReviews] = useState<
+    { id: string; fromUserName: string; rating: number; feedback: string; taskTitle?: string; createdAt?: string | null }[]
+  >([]);
   const [showTrustInfo, setShowTrustInfo] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -231,6 +234,16 @@ const fetchUser = useCallback(async () => {
     } as PublicUser;
 
     setTargetUser(data);
+
+    try {
+      const reviewsRes = await fetch(`/api/users/${resolvedSnap.id}/reviews?limit=8`);
+      if (reviewsRes.ok) {
+        const reviewsBody = await reviewsRes.json();
+        setProfileReviews(reviewsBody.reviews || []);
+      }
+    } catch {
+      setProfileReviews([]);
+    }
 
     if (currentUserSnap.exists()) {
       setCurrentUserData(currentUserSnap.data());
@@ -799,11 +812,34 @@ return (
   <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
     <div className="flex items-center justify-center gap-1 text-yellow-500 mb-1">
       <Star className="w-4 h-4 fill-current" />
-      <span className="text-base font-bold">{reviews}</span>
+      <span className="text-base font-bold">{rating > 0 ? rating.toFixed(1) : "—"}</span>
     </div>
-    <p className="text-xs text-zinc-500 leading-tight">Đánh giá</p>
+    <p className="text-xs text-zinc-500 leading-tight">Điểm đánh giá ({reviews})</p>
   </div>
 </div>
+
+{profileReviews.length > 0 && (
+  <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <p className="text-sm font-bold text-zinc-900 mb-3">Feedback từ cộng đồng</p>
+    <div className="space-y-3">
+      {profileReviews.map((rev) => (
+        <div key={rev.id} className="rounded-xl bg-zinc-50 p-3">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <p className="text-sm font-semibold text-zinc-900">{rev.fromUserName}</p>
+            <div className="flex items-center gap-0.5 text-amber-500 text-xs font-bold">
+              <Star className="w-3.5 h-3.5 fill-current" />
+              {rev.rating}
+            </div>
+          </div>
+          {rev.taskTitle && (
+            <p className="text-xs text-zinc-500 mb-1">Task: {rev.taskTitle}</p>
+          )}
+          <p className="text-sm text-zinc-700 leading-relaxed">{rev.feedback}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 {/* THÀNH TỰU - THIẾT KẾ HEXAGON */}
 <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
   <div className="flex items-center justify-between mb-3">

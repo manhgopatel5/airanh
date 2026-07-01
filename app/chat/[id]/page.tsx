@@ -12,7 +12,7 @@ import {
 import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
-  Image as ImageIcon, FileText, Link2, Navigation, ChevronDown, ChevronUp, Flag, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
+  Image as ImageIcon, FileText, Link2, Navigation, ChevronDown, ChevronUp, Flag, MapPin, BellOff, Bell, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
   Smile, Reply, Trash2, Pencil, Shield, Pin, Copy, Search
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
@@ -20,6 +20,16 @@ import imageCompression from "browser-image-compression";
 import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
 import SharedTaskMessage from "@/components/chat/SharedTaskMessage";
+import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geolocation";
+import { formatShortLocation, type ParsedMapboxLocation } from "@/lib/mapboxGeocode";
+import AddressSearchInput from "@/components/location/AddressSearchInput";
+import { requestFcmReregister } from "@/components/FCMProvider";
+import {
+  shouldShowChatDateDivider,
+  shouldShowChatTimeDivider,
+  formatChatDateDivider,
+  formatChatTimeDivider,
+} from "@/lib/chatTime";
 // === LINK PREVIEW ===
 function LinkPreview({ url }: { url: string }) {
   const [data, setData] = useState<any>(null);
@@ -90,6 +100,8 @@ fileUrl?: string;
   lat?: number;
   lng?: number;
   address?: string;
+  ward?: string;
+  city?: string;
   accuracy?: number;
 
   type: "text" | "image" | "file" | "location" | "task_share";
@@ -109,6 +121,7 @@ fileUrl?: string;
   taskType?: "task" | "plan";
   taskPrice?: number;
   price?: number;
+  progress?: number;
 };
 
 type ChatData = {
@@ -141,6 +154,7 @@ type ChatData = {
   typing?: Record<string, boolean>;
   blockedUsers?: string[];
   deletedFor?: string[];
+  mutedBy?: string[];
   type?: string;
   backgroundId?: string;
   background?: string;
@@ -165,12 +179,16 @@ export default function ChatDetailPage() {
 const [showUnpinSheet, setShowUnpinSheet] = useState<any>(null); // thay vì boolean
   const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
   const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
+  const isChatMuted = chatData?.mutedBy?.includes(user?.uid || "") ?? false;
   const canSendMessage =!!friendId && isFriend &&!isBlocked &&!isDeleted;
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [locationQuery, setLocationQuery] = useState("");
+  const [locatingGps, setLocatingGps] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
   const [showMedia, setShowMedia] = useState(false);
@@ -209,6 +227,22 @@ useEffect(() => {
   };
   type();
 }, [isTyping, friend?.name]);
+
+  useEffect(() => {
+    if (!user?.uid || loadingFriend || !friend) return;
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+
+    if (Notification.permission === "granted") {
+      requestFcmReregister();
+      return;
+    }
+    if (Notification.permission !== "default") return;
+
+    Notification.requestPermission().then((result) => {
+      if (result === "granted") requestFcmReregister();
+    });
+  }, [user?.uid, loadingFriend, friend]);
+
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -627,79 +661,114 @@ const sendFile = async (file: File) => {
 
 
 
-  const sendLocation = async () => {
-  if (!canSendMessage || isBlocked || isDeleted) {
-    toast.error("Không thể nhắn tin");
-    return;
-  }
-  if (!user ||!chatId ||!friendId ||!chatData) {
-    if (!chatData) toast.error("Đang tải dữ liệu chat...");
-    return;
-  }
-  if (!navigator.geolocation) {
-    toast.error("Trình duyệt không hỗ trợ định vị");
-    return;
-  }
+  const postLocationMessage = async (payload: {
+    lat: number;
+    lng: number;
+    address: string;
+    ward?: string;
+    city?: string;
+    accuracy?: number;
+  }) => {
+    if (!user || !chatId || !friendId || !chatData) {
+      if (!chatData) toast.error("Đang tải dữ liệu chat...");
+      return;
+    }
 
-  setUploading(true);
-  const toastId = toast.loading("Đang lấy vị trí...");
+    await addDoc(collection(db, "chats", chatId, "messages"), {
+      senderId: user.uid,
+      senderName: user.displayName || user.email?.split("@")[0] || "Bạn",
+      type: "location",
+      text: "",
+      lat: payload.lat,
+      lng: payload.lng,
+      location: { lat: payload.lat, lng: payload.lng },
+      address: payload.address,
+      ...(payload.ward ? { ward: payload.ward } : {}),
+      ...(payload.city ? { city: payload.city } : {}),
+      ...(payload.accuracy != null ? { accuracy: payload.accuracy } : {}),
+      createdAt: serverTimestamp(),
+      seenBy: [user.uid],
+      members: chatData.members,
+    });
 
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const { latitude, longitude, accuracy } = pos.coords;
+    await updateDoc(doc(db, "chats", chatId), {
+      lastMessage: "📍 Vị trí",
+      lastMessageAt: serverTimestamp(),
+    });
+  };
+
+  const sendCurrentLocation = async () => {
+    if (!canSendMessage || isBlocked || isDeleted) {
+      toast.error("Không thể nhắn tin");
+      return;
+    }
+
+    setLocatingGps(true);
+    const toastId = toast.loading("Đang lấy vị trí...");
+
+    try {
+      const { lat, lng, accuracy } = await getCurrentPosition();
+
+      let address = "Vị trí đã chia sẻ";
+      let ward: string | undefined;
+      let city: string | undefined;
       try {
-        // Reverse geocode OSM
-        let address = '';
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-            { headers: { 'Accept-Language': 'vi' } }
-          );
-          const data = await res.json();
-          address = data.address?.road
-           ? `${data.address.road}, ${data.address.city || data.address.town || data.address.village || ''}`
-            : data.display_name?.split(',').slice(0,2).join(', ');
-        } catch {}
+        const res = await fetch(`/api/places/geocode?lat=${lat}&lng=${lng}`);
+        const data = await res.json();
+        if (res.ok) {
+          address = data.address || address;
+          ward = data.ward;
+          city = data.city;
+        }
+      } catch {}
 
-        await addDoc(collection(db, "chats", chatId, "messages"), {
-          senderId: user.uid,
-          senderName: user.displayName || user.email?.split('@')[0] || 'Bạn',
-          type: "location",
-          text: '', // <-- thêm để tránh lỗi text undefined
-          lat: latitude,
-          lng: longitude,
-          location: { lat: latitude, lng: longitude }, // <-- thêm để tương thích UI cũ
-          address: address || 'Vị trí đã chia sẻ',
-          accuracy,
-          createdAt: serverTimestamp(),
-          seenBy: [user.uid],
-          members: chatData.members,
-        });
-
-        await updateDoc(doc(db, "chats", chatId), {
-          lastMessage: '📍 Vị trí',
-          lastMessageAt: serverTimestamp(),
-        });
-
-        toast.dismiss(toastId);
-        toast.success("Đã gửi vị trí");
-      } catch (err: any) {
-        console.error(err);
-        toast.dismiss(toastId);
-        toast.error(`Lỗi gửi vị trí`);
-      } finally {
-        setUploading(false);
-      }
-    },
-    (err) => {
-      console.error(err);
+      await postLocationMessage({
+        lat,
+        lng,
+        address,
+        ...(ward ? { ward } : {}),
+        ...(city ? { city } : {}),
+        ...(accuracy != null ? { accuracy } : {}),
+      });
+      setShowLocationPicker(false);
+      setLocationQuery("");
       toast.dismiss(toastId);
-      toast.error("Không lấy được vị trí. Hãy bật GPS");
+      toast.success("Đã gửi vị trí");
+    } catch (err: unknown) {
+      toast.dismiss(toastId);
+      const message = err instanceof Error ? err.message : "Không lấy được vị trí";
+      toast.error(message, { duration: message === GEO_PERMISSION_DENIED_MESSAGE ? 6000 : 4000 });
+    } finally {
+      setLocatingGps(false);
+    }
+  };
+
+  const sendPickedLocation = async (picked: ParsedMapboxLocation) => {
+    if (!canSendMessage || isBlocked || isDeleted) {
+      toast.error("Không thể nhắn tin");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      await postLocationMessage({
+        lat: picked.lat,
+        lng: picked.lng,
+        address: picked.address,
+        ...(picked.ward ? { ward: picked.ward } : {}),
+        ...(picked.city ? { city: picked.city } : {}),
+      });
+      setShowLocationPicker(false);
+      setLocationQuery(picked.address);
+      toast.success("Đã gửi vị trí");
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error("Lỗi gửi vị trí");
+    } finally {
       setUploading(false);
-    },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-  );
-};
+    }
+  };
+
   const toggleReaction = async (msgId: string, emoji: string) => {
     if (!user ||!chatId) return;
 
@@ -833,16 +902,6 @@ useEffect(() => {
     } catch {
       return "";
     }
-  };
-
-  const formatDateDivider = (time: Timestamp) => {
-    const date = time.toDate();
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (date.toDateString() === today.toDateString()) return "Hôm nay";
-    if (date.toDateString() === yesterday.toDateString()) return "Hôm qua";
-    return format(date, "dd/MM/yyyy", { locale: vi });
   };
 
   const scrollToMessage = (msgId: string) => {
@@ -1441,11 +1500,8 @@ const next = messages[i + 1];
 const showAvatar =!isMe && (!next || next.senderId!== m.senderId);
 const isFirstInGroup =!prev || prev.senderId!== m.senderId;
 const isLastInGroup =!next || next.senderId!== m.senderId;
-const showDate =
-  prev &&
-  m.createdAt &&
-  prev.createdAt &&
-  m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString();
+const showDate = m.createdAt ? shouldShowChatDateDivider(prev, m) : false;
+const showTime = m.createdAt && !showDate ? shouldShowChatTimeDivider(prev, m) : false;
     const seenAvatars = getSeenAvatars(m);
     const LINK_REGEX = /((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/i;
     const linkMatch = m.text?.match(LINK_REGEX);
@@ -1454,12 +1510,20 @@ const showDate =
     return (
       <div key={m.id} id={`msg-${m.id}`}>
         {showDate && m.createdAt && (
-          <div className="flex items-center justify-center my-6">
+          <div className="flex items-center justify-center my-4">
             <div className="px-4 py-1.5 bg-gray-200/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-full">
               <p className="text-xs font-bold text-gray-600 dark:text-zinc-400">
-                {formatDateDivider(m.createdAt)}
+                {formatChatDateDivider(m.createdAt)}
               </p>
             </div>
+          </div>
+        )}
+
+        {showTime && m.createdAt && (
+          <div className="flex items-center justify-center my-3">
+            <span className="text-[11px] font-medium text-gray-400 dark:text-zinc-500">
+              {formatChatTimeDivider(m.createdAt)}
+            </span>
           </div>
         )}
 
@@ -1580,6 +1644,7 @@ onClick={(e) => {
               <SharedTaskMessage
                 {...(m.taskId ? { taskId: m.taskId } : {})}
                 taskType={m.taskType ?? ((m.taskPrice ?? m.price ?? 0) > 0 ? "task" : "plan")}
+                {...(m.progress != null ? { progress: Number(m.progress) } : {})}
               />
             ) : (m.type === 'location' || m.location)? (
   // LOCATION - không bubble
@@ -1595,7 +1660,15 @@ onClick={(e) => {
               <img src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${lng},${lat})/${lng},${lat},16/360x220@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`} className="w-full h-full object-cover" alt="" />
             </div>
             <div className="bg-white dark:bg-zinc-900 px-2.5 py-2">
-              <p className="text-[10px] leading-none flex items-center justify-center gap-1 text-zinc-500 dark:text-zinc-400">
+              <p className="text-[11px] font-semibold leading-snug text-zinc-700 dark:text-zinc-200 line-clamp-2">
+                {formatShortLocation({
+                  ...(m.ward ? { ward: m.ward } : {}),
+                  ...(m.city ? { city: m.city } : {}),
+                }) ||
+                  m.address ||
+                  "Vị trí đã chia sẻ"}
+              </p>
+              <p className="text-[10px] leading-none flex items-center justify-center gap-1 text-zinc-500 dark:text-zinc-400 mt-1">
                 <Navigation size={10} strokeWidth={2.5} />
                 Nhấn để mở bản đồ
               </p>
@@ -1755,29 +1828,24 @@ className={isLinkOnly
         
                 </div>
 
-         {/* GIỜ Ở GIỮA */}
-{isLastInGroup && messages.length > 0 && i === messages.length - 1 && m.createdAt && (
-  <div className="flex w-full justify-center items-center gap-1.5 my-2">
-    <span className="text-[11px] text-gray-400 dark:text-zinc-500">
-      {formatTime(m.createdAt)}
-    </span>
-    {isMe && seenAvatars.length > 0 && (
-      <div className="flex -space-x-1">
-        {seenAvatars.slice(0, 3).map((u, idx) => (
-          <img
-            key={idx}
-            src={u.avatar}
-            className="w-3 h-3 rounded-full ring-1 ring-white dark:ring-zinc-950"
-            alt={u.name}
-          />
-        ))}
-      </div>
-    )}
-    {isMe && seenAvatars.length === 0 && m.seenBy && m.seenBy.length > 1 && (
-      <CheckCheck className="text-blue-500" size={12} />
-    )}
-  </div>
-)}
+        {isLastInGroup && isMe && i === messages.length - 1 && (
+          <div className="flex w-full justify-end items-center gap-1.5 pr-2 mt-0.5 mb-1">
+            {seenAvatars.length > 0 ? (
+              <div className="flex -space-x-1">
+                {seenAvatars.slice(0, 3).map((u, idx) => (
+                  <img
+                    key={idx}
+                    src={u.avatar}
+                    className="w-3.5 h-3.5 rounded-full ring-1 ring-white dark:ring-zinc-950"
+                    alt={u.name}
+                  />
+                ))}
+              </div>
+            ) : m.seenBy && m.seenBy.length > 1 ? (
+              <CheckCheck className="text-blue-500" size={12} />
+            ) : null}
+          </div>
+        )}
         </div>
       </div>
     );
@@ -1921,6 +1989,59 @@ const isColor = bg.url?.startsWith('#');
         </div>
       )}
 
+{/* LOCATION PICKER */}
+{showLocationPicker && !isBlocked && !isDeleted && (
+  <div className="shrink-0 z-30 mx-3 mb-2 rounded-2xl border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="mb-2 flex items-center justify-between">
+      <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Gửi vị trí</p>
+      <button
+        type="button"
+        onClick={() => setShowLocationPicker(false)}
+        className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        aria-label="Đóng"
+      >
+        <X size={16} />
+      </button>
+    </div>
+
+    <button
+      type="button"
+      onClick={sendCurrentLocation}
+      disabled={locatingGps || uploading}
+      className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0084FF] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+    >
+      {locatingGps ? (
+        <>
+          <Loader2 size={16} className="animate-spin" />
+          Đang lấy vị trí...
+        </>
+      ) : (
+        <>
+          <Navigation size={16} />
+          Gửi vị trí hiện tại
+        </>
+      )}
+    </button>
+
+    <div className="relative mb-3 flex items-center gap-2">
+      <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+      <span className="shrink-0 text-[11px] font-semibold text-zinc-500">hoặc bạn dùng địa chỉ khác</span>
+      <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+    </div>
+
+    <AddressSearchInput
+      value={locationQuery}
+      onChange={setLocationQuery}
+      onSelect={sendPickedLocation}
+      placeholder="Nhập địa chỉ..."
+      inputClassName="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm outline-none focus:border-[#0084FF] dark:border-zinc-700 dark:bg-zinc-800"
+    />
+    <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
+      Chọn địa chỉ từ gợi ý để gửi. Nếu từ chối GPS, thoát chat rồi vào lại để cấp quyền.
+    </p>
+  </div>
+)}
+
 {/* INPUT */}
 <div
   className="shrink-0 z-30 px-3 relative"
@@ -1940,11 +2061,13 @@ const isColor = bg.url?.startsWith('#');
 
     {/* 2. Vị trí */}
     <button
-      onClick={sendLocation}
+      onClick={() => setShowLocationPicker((v) => !v)}
       disabled={isBlocked || isDeleted}
-      className={`w-8 h-8 flex items-center justify-center rounded-full active:scale-90 shrink-0 ${isBlocked || isDeleted? 'opacity-40' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+      className={`w-8 h-8 flex items-center justify-center rounded-full active:scale-90 shrink-0 ${
+        showLocationPicker ? "bg-[#0084FF]/15" : ""
+      } ${isBlocked || isDeleted ? "opacity-40" : "hover:bg-zinc-100 dark:hover:bg-zinc-800"}`}
     >
-      <MapPin size={20} className="text-[#0084FF]" strokeWidth={2.2} />
+      <MapPin size={20} className={showLocationPicker ? "text-[#0084FF]" : "text-[#0084FF]"} strokeWidth={2.2} />
     </button>
 
     {/* 3. File desktop */}
@@ -2081,7 +2204,18 @@ const isColor = bg.url?.startsWith('#');
         {/* QUYỀN RIÊNG TƯ */}
         <div className="bg-white rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
           {[
-            { icon: BellOff, label: 'Tắt thông báo', action: async () => { toast.success('Đã tắt thông báo'); setShowSettings(false); } },
+            {
+              icon: isChatMuted ? Bell : BellOff,
+              label: isChatMuted ? 'Bật thông báo' : 'Tắt thông báo',
+              action: async () => {
+                if (!chatId || !user?.uid) return;
+                await updateDoc(doc(db, "chats", chatId), {
+                  mutedBy: isChatMuted ? arrayRemove(user.uid) : arrayUnion(user.uid),
+                });
+                toast.success(isChatMuted ? 'Đã bật thông báo' : 'Đã tắt thông báo');
+                setShowSettings(false);
+              },
+            },
             {
               icon: Shield,
               label: chatData?.blockedUsers?.includes(friendId || '')? 'Bỏ chặn' : 'Chặn người dùng',
