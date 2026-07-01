@@ -351,11 +351,11 @@ const getAuthToken = useCallback(async () => {
                   onClick={goToProfile}
                   className={cn("relative shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2", ringClass)}
                 >
-           <UserAvatar
+<UserAvatar
   src={authorAvatar}
   name={authorName}
   size={34}
-  className="rounded-lg"
+  className="!rounded-full !ring-0 !border-0 !shadow-none"
 />
                   {task.userVerified && <FiCheckCircle className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-white dark:bg-zinc-950" style={{ color: accent }} />}
                 </button>
