@@ -11,7 +11,14 @@ import {
   arrayUnion,
   serverTimestamp,
   Timestamp,
+  collection,
+  query,
+  where,
+  limit,
+  getDocs,
 } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { getApp } from "firebase/app";
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
@@ -28,13 +35,13 @@ import {
   MapPin,
   ExternalLink,
   Share2,
-  Flag,
   Crown,
   Sparkles,
   Flame,
   Shield,
   Gem,
   ChevronRight,
+  ChevronLeft,
   Users,
   Mail,
   Phone,
@@ -42,6 +49,7 @@ import {
   Lock,
   Calendar,
   Globe,
+  Ban,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { buildGamificationUser } from "@/lib/gamification";
@@ -51,6 +59,8 @@ import TrustScoreModal from "@/components/profile/TrustScoreModal";
 import AchievementsModal from "@/components/profile/AchievementsModal";
 import HuhaLevelModal from "@/components/profile/HuhaLevelModal";
 import CompletedWorksModal from "@/components/profile/CompletedWorksModal";
+import ReviewsModal from "@/components/profile/ReviewsModal";
+import { getTierForLevel } from "@/lib/huhaLevel";
 
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -63,6 +73,7 @@ type PublicUser = {
   uid: string;
   name: string;
   userId: string;
+  username?: string;
   avatar: string;
   bio?: string;
   birthday?: string;  
@@ -108,15 +119,16 @@ export default function PublicProfile() {
   const [targetUser, setTargetUser] = useState<PublicUser | null>(null);
   const [currentUserData, setCurrentUserData] = useState<any>(null);
   const [isFriend, setIsFriend] = useState(false);
-  const [hasSentRequest, setHasSentRequest] = useState(false); // ← THÊM
-const [_requestId, setRequestId] = useState<string | null>(null); 
+  const [hasSentRequest, setHasSentRequest] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
-const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
+  const [friendCount, setFriendCount] = useState(0);
   const [profileReviews, setProfileReviews] = useState<
     { id: string; fromUserName: string; rating: number; feedback: string; taskTitle?: string; createdAt?: string | null }[]
   >([]);
   const [showTrustInfo, setShowTrustInfo] = useState(false);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
@@ -225,6 +237,7 @@ const fetchUser = useCallback(async () => {
     setFriendCount(body.friendCount ?? 0);
     setIsFriend(!!body.isFriend);
     setHasSentRequest(!!body.hasSentRequest);
+    setRequestId(body.requestId ?? null);
 
     try {
       const reviewsRes = await fetch(`/api/users/${u.uid}/reviews?limit=8`);
@@ -262,76 +275,72 @@ const fetchUser = useCallback(async () => {
   }, [fetchUser, authLoading, user, router]);
 
   const handleConnect = async () => {
-  if (!user || !targetUser || actionLoading) return;
-
-  if (user.uid === targetUser?.uid) {
-    return toast.error("Đây là bạn");
-  }
-
-  if (isFriend) {
-    return toast.info("Các bạn đã là bạn bè");
-  }
-
-  setActionLoading(true);
-
-  try {
-    // Nếu đã gửi rồi thì hủy
-    if (hasSentRequest && _requestId) {
-      await deleteDoc(doc(db, "friendRequests", _requestId));
-      setHasSentRequest(false);
-      setRequestId(null);
-      toast.success("Đã hủy lời mời kết bạn");
-      if ("vibrate" in navigator) navigator.vibrate(8);
-      return;
-    }
-
-    // Chưa gửi thì tạo request mới
-    const reqId = [user.uid, targetUser.uid].sort().join('_');
-    
-    await setDoc(
-      doc(db, "friendRequests", reqId),
-      {
-        from: user.uid,
-        to: targetUser.uid,
-        status: "pending",
-        createdAt: serverTimestamp(),
-        fromName: currentUserData?.name || user.displayName || "User",
-        fromAvatar: currentUserData?.avatar || user.photoURL || "",
-        fromShortId: currentUserData?.userId || "",
-        toName: targetUser.name,
-        toAvatar: targetUser.avatar,
-        toShortId: targetUser.userId,
-      }
-    );
-
-    setHasSentRequest(true);
-    setRequestId(reqId);
-    toast.success(`Đã gửi lời mời tới ${targetUser.name}`);
-    if ("vibrate" in navigator) {
-      navigator.vibrate(8);
-    }
-  } catch (err) {
-    console.error(err);
-    toast.error("Thao tác thất bại");
-  } finally {
-    setActionLoading(false);
-  }
-};
-
-
-  const handleUnfriend = async () => {
-    if (!user ||!targetUser || actionLoading) return;
+    if (!user || !targetUser || actionLoading) return;
+    if (user.uid === targetUser.uid) return toast.error("Đây là bạn");
+    if (isFriend) return toast.info("Các bạn đã là bạn bè");
 
     setActionLoading(true);
-
     try {
-      await Promise.all([
-        deleteDoc(doc(db, "users", user.uid, "friends", targetUser?.uid)),
-        deleteDoc(doc(db, "users", targetUser?.uid, "friends", user.uid)),
-      ]);
+      if (hasSentRequest) {
+        if (requestId) {
+          await deleteDoc(doc(db, "friendRequests", requestId));
+        } else {
+          const pending = await getDocs(
+            query(
+              collection(db, "friendRequests"),
+              where("fromUserId", "==", user.uid),
+              where("toUserId", "==", targetUser.uid),
+              where("status", "==", "pending"),
+              limit(1)
+            )
+          );
+          if (!pending.empty) await deleteDoc(pending.docs[0]!.ref);
+        }
+        setHasSentRequest(false);
+        setRequestId(null);
+        toast.success("Đã hủy lời mời kết bạn");
+        if ("vibrate" in navigator) navigator.vibrate(8);
+        return;
+      }
 
+      const functions = getFunctions(getApp(), "asia-southeast1");
+      const sendRequest = httpsCallable(functions, "sendFriendRequest");
+      await sendRequest({ toUid: targetUser.uid });
+
+      const pending = await getDocs(
+        query(
+          collection(db, "friendRequests"),
+          where("fromUserId", "==", user.uid),
+          where("toUserId", "==", targetUser.uid),
+          where("status", "==", "pending"),
+          limit(1)
+        )
+      );
+      setHasSentRequest(true);
+      setRequestId(pending.docs[0]?.id ?? null);
+      toast.success(`Đã gửi lời mời tới ${targetUser.name}`);
+      if ("vibrate" in navigator) navigator.vibrate(8);
+    } catch (err: unknown) {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : "Thao tác thất bại";
+      toast.error(msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnfriend = async () => {
+    if (!user || !targetUser || actionLoading) return;
+    if (!confirm(`Hủy kết bạn với ${targetUser.name}?`)) return;
+
+    setActionLoading(true);
+    try {
+      const functions = getFunctions(getApp(), "asia-southeast1");
+      const unfriendFn = httpsCallable(functions, "unfriend");
+      await unfriendFn({ friendUid: targetUser.uid });
       setIsFriend(false);
       toast.success("Đã hủy kết nối");
+      if ("vibrate" in navigator) navigator.vibrate(8);
     } catch {
       toast.error("Có lỗi xảy ra");
     } finally {
@@ -445,45 +454,31 @@ const handleMessage = async () => {
   };
 
   const rank: RankData = useMemo(() => {
-    if (level >= 50) {
-      return {
-        name: "Huyền thoại",
-        icon: <Crown className="w-3.5 h-3.5" />,
-        gradient: "from-amber-400 to-orange-500",
-        glow: "shadow-amber-500/20",
-      };
-    }
-    if (level >= 35) {
-      return {
-        name: "Chuyên gia",
-        icon: <Gem className="w-3.5 h-3.5" />,
-        gradient: "from-violet-500 to-fuchsia-500",
-        glow: "shadow-violet-500/20",
-      };
-    }
-    if (level >= 20) {
-      return {
-        name: "Đối tác tin cậy",
-        icon: <Shield className="w-3.5 h-3.5" />,
-        gradient: "from-blue-500 to-sky-500",
-        glow: "shadow-blue-500/20",
-      };
-    }
-    if (level >= 8) {
-      return {
-        name: "Thành viên tích cực",
-        icon: <Flame className="w-3.5 h-3.5" />,
-        gradient: "from-emerald-500 to-teal-500",
-        glow: "shadow-emerald-500/20",
-      };
-    }
+    const tier = getTierForLevel(level);
+    const iconMap: Record<string, React.ReactNode> = {
+      "Mới tham gia": <Sparkles className="w-3.5 h-3.5" />,
+      "Thành viên tích cực": <Flame className="w-3.5 h-3.5" />,
+      "Đối tác tin cậy": <Shield className="w-3.5 h-3.5" />,
+      "Chuyên gia": <Gem className="w-3.5 h-3.5" />,
+      "Huyền thoại": <Crown className="w-3.5 h-3.5" />,
+    };
     return {
-      name: "Mới tham gia",
-      icon: <Sparkles className="w-3.5 h-3.5" />,
-      gradient: "from-sky-400 to-blue-600",
+      name: tier.name,
+      icon: iconMap[tier.name] ?? <Sparkles className="w-3.5 h-3.5" />,
+      gradient: tier.gradient,
       glow: "shadow-blue-500/20",
     };
   }, [level]);
+
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
+
+  const displayHandle = targetUser?.username || targetUser?.userId || targetUser?.uid?.slice(0, 8);
 
 
 
@@ -551,8 +546,31 @@ if (loading) {
 if (!targetUser) return null;
 
 return (
-  <div className="min-h-screen bg-zinc-50 pb-28">
+  <div className="min-h-screen bg-zinc-50 pb-10">
     <Toaster richColors position="top-center" />
+
+    {/* Sticky header */}
+    <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-zinc-100">
+      <div className="max-w-md mx-auto flex items-center justify-between px-4 h-12">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center active:bg-zinc-100 transition-colors"
+          aria-label="Quay lại"
+        >
+          <ChevronLeft className="w-5 h-5 text-zinc-800" />
+        </button>
+        <p className="text-sm font-bold text-zinc-900 truncate max-w-[50%]">{targetUser?.name}</p>
+        <button
+          type="button"
+          onClick={handleShare}
+          className="w-9 h-9 -mr-1 rounded-full flex items-center justify-center active:bg-zinc-100 transition-colors"
+          aria-label="Chia sẻ"
+        >
+          <Share2 className="w-4 h-4 text-zinc-700" />
+        </button>
+      </div>
+    </div>
 
 {/* HEADER - TRẮNG SẠCH */}
 <div className="relative bg-white pt-2 pb-2">
@@ -601,7 +619,13 @@ return (
   )}
 </div>
 
-    {/* BỎ USERID */}
+<p className="text-sm text-zinc-500 mt-0.5">@{displayHandle}</p>
+
+{targetUser?.bio && (
+  <p className="text-sm text-zinc-600 text-center mt-2 px-6 line-clamp-2 leading-relaxed">
+    {targetUser.bio}
+  </p>
+)}
 
     {/* RANK BADGE - INFO NÚT NHỎ GÓC PHẢI */}
   <div className="mt-2.5 relative inline-block">
@@ -651,42 +675,48 @@ return (
     <button
       onClick={handleMessage}
       disabled={actionLoading}
+      title="Nhắn tin"
       className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center active:scale-90 transition-all disabled:opacity-50"
     >
       <MessageCircle className="w-5 h-5 text-blue-600" />
     </button>
-    
-<button
-  onClick={isFriend ? handleUnfriend : handleConnect}
-  disabled={actionLoading}
-  className={`w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 ${
-    hasSentRequest ? 'bg-zinc-200' : 'bg-pink-50'
-  }`}
->
-  {isFriend ? (
-    <UserMinus className="w-5 h-5 text-pink-600" />
-  ) : hasSentRequest ? (
-    <Clock className="w-5 h-5 text-zinc-600" />
-  ) : (
-    <UserPlus className="w-5 h-5 text-pink-600" />
-  )}
-</button>
 
     <button
-      onClick={handleShare}
-      className="w-11 h-11 rounded-full bg-sky-50 flex items-center justify-center active:scale-90 transition-all"
+      onClick={isFriend ? handleUnfriend : handleConnect}
+      disabled={actionLoading}
+      title={isFriend ? "Hủy kết bạn" : hasSentRequest ? "Hủy lời mời" : "Kết bạn"}
+      className={`w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 ${
+        hasSentRequest ? "bg-zinc-200" : "bg-pink-50"
+      }`}
     >
-      <Share2 className="w-5 h-5 text-sky-600" />
+      {isFriend ? (
+        <UserMinus className="w-5 h-5 text-pink-600" />
+      ) : hasSentRequest ? (
+        <Clock className="w-5 h-5 text-zinc-600" />
+      ) : (
+        <UserPlus className="w-5 h-5 text-pink-600" />
+      )}
     </button>
 
-<button
-  onClick={handleBlock} // THÊM DÒNG NÀY
-  disabled={actionLoading}
-  className="w-11 h-11 rounded-full bg-orange-50 flex items-center justify-center active:scale-90 transition-all disabled:opacity-50"
->
-  <Flag className="w-5 h-5 text-orange-600" />
-</button>
+    <button
+      onClick={handleBlock}
+      disabled={actionLoading}
+      title="Chặn người dùng"
+      className="w-11 h-11 rounded-full bg-orange-50 flex items-center justify-center active:scale-90 transition-all disabled:opacity-50"
+    >
+      <Ban className="w-5 h-5 text-orange-600" />
+    </button>
   </div>
+)}
+
+{isOwnProfile && (
+  <button
+    type="button"
+    onClick={() => router.push("/settings/profile-edit")}
+    className="mt-3 px-5 h-10 rounded-full bg-blue-500 text-white text-sm font-semibold active:scale-95 transition-transform"
+  >
+    Chỉnh sửa hồ sơ
+  </button>
 )}
   </div>
 </div>
@@ -759,11 +789,17 @@ return (
   </button>
 
   <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
-    <div className="flex items-center justify-center gap-1 text-yellow-500 mb-1">
-      <Star className="w-4 h-4 fill-current" />
-      <span className="text-base font-bold">{rating > 0 ? rating.toFixed(1) : "—"}</span>
-    </div>
-    <p className="text-xs text-zinc-500 leading-tight">Điểm đánh giá ({reviews})</p>
+    <button
+      type="button"
+      onClick={() => setShowReviewsModal(true)}
+      className="w-full active:scale-95 transition-transform"
+    >
+      <div className="flex items-center justify-center gap-1 text-yellow-500 mb-1">
+        <Star className="w-4 h-4 fill-current" />
+        <span className="text-base font-bold">{rating > 0 ? rating.toFixed(1) : "—"}</span>
+      </div>
+      <p className="text-xs text-zinc-500 leading-tight">Điểm đánh giá ({reviews})</p>
+    </button>
   </div>
 </div>
 
@@ -930,6 +966,12 @@ return (
   uid={targetUser?.uid ?? ""}
   count={completed}
 />
+<ReviewsModal
+  open={showReviewsModal}
+  onOpenChange={setShowReviewsModal}
+  uid={targetUser?.uid ?? ""}
+  {...(user?.uid ? { currentUserId: user.uid } : {})}
+/>
 {/* MODAL THÔNG TIN CÁ NHÂN - THIẾT KẾ MỚI */}
 <Dialog.Root open={showUserInfo} onOpenChange={setShowUserInfo}>
   <Dialog.Portal>
@@ -946,7 +988,12 @@ return (
     }
   }}
 >
-   
+  <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-xl border-b border-zinc-100 px-4 h-12 flex items-center justify-between">
+    <Dialog.Title className="text-sm font-bold text-zinc-900">Thông tin cá nhân</Dialog.Title>
+    <Dialog.Close className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600">
+      ✕
+    </Dialog.Close>
+  </div>
 
 {/* PROFILE HEADER CARD - TRẮNG */}
 <div
@@ -979,25 +1026,22 @@ return (
           </div>
 
           <h2 className="text-xl font-bold text-zinc-900 mt-4">
-  {targetUser?.name || "Unknown User"}
-</h2>
-<p className="text-sm text-zinc-500 mt-0.5">@{targetUser?.userId || 'user'}</p>
+            {targetUser?.name || "Unknown User"}
+          </h2>
+          <p className="text-sm text-zinc-500 mt-0.5">@{displayHandle}</p>
 
-
-            <div className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3 text-white" />
-              <span className="text-xs font-bold text-white">
-                {joinedDays >= 999
-                 ? "Thành viên lâu năm"
-                  : joinedDays === 0
-                   ? "Tham gia Hôm nay"
-                    : `${joinedDays} ngày`
-                }
-              </span>
-            </div>
+          <div className="mt-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 flex items-center gap-1.5">
+            <Sparkles className="w-3 h-3 text-blue-600" />
+            <span className="text-xs font-bold text-blue-700">
+              {joinedDays >= 999
+                ? "Thành viên lâu năm"
+                : joinedDays === 0
+                  ? "Tham gia hôm nay"
+                  : `${joinedDays} ngày trên Airanh`}
+            </span>
           </div>
         </div>
-      
+</div>
 
       {/* COMPLETION PROGRESS - CHỈ CHỦ PROFILE */}
       {isOwnProfile && (

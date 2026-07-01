@@ -41,17 +41,45 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ uid:
 
     let friendCount = 0;
     try {
-      const friendsSnap = await adminDb().collection("users").doc(snap.id).collection("friends").get();
-      friendCount = friendsSnap.size;
+      const friendsSnap = await adminDb()
+        .collection("users")
+        .doc(snap.id)
+        .collection("friends")
+        .get();
+      friendCount = friendsSnap.docs.filter((doc) => {
+        const status = doc.data()?.status;
+        return status === "active" || status === undefined;
+      }).length;
     } catch {
       friendCount = 0;
     }
+
+    const myFriendDoc = await adminDb()
+      .collection("users")
+      .doc(decoded.uid)
+      .collection("friends")
+      .doc(snap.id)
+      .get();
+    const friendData = myFriendDoc.data();
+    const isFriend =
+      myFriendDoc.exists && friendData?.status !== "removed";
+
+    const sentReqSnap = await adminDb()
+      .collection("friendRequests")
+      .where("fromUserId", "==", decoded.uid)
+      .where("toUserId", "==", snap.id)
+      .where("status", "==", "pending")
+      .limit(1)
+      .get();
+
+    const pendingReq = sentReqSnap.docs[0];
 
     return NextResponse.json({
       user: {
         uid: snap.id,
         name: d.displayName || d.name || d.username || "User",
         userId: d.userId || "",
+        username: d.username || "",
         avatar: d.photoURL || d.avatar || "",
         bio: d.bio || "",
         birthday: d.birthday || "",
@@ -59,6 +87,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ uid:
         title: d.title || "",
         location: d.location || "",
         online: !!d.isOnline,
+        lastSeen: d.lastSeen?.toDate?.()?.toISOString?.() || null,
         emailVerified: !!d.emailVerified,
         isVerifiedId: !!(d.isVerifiedId || d.verified),
         skills: d.skills || [],
@@ -71,14 +100,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ uid:
           : null,
       },
       friendCount,
-      isFriend: (
-        await adminDb().collection("users").doc(decoded.uid).collection("friends").doc(snap.id).get()
-      ).exists,
-      hasSentRequest: await (async () => {
-        const reqId = [decoded.uid, snap.id].sort().join("_");
-        const req = await adminDb().collection("friendRequests").doc(reqId).get();
-        return req.exists && req.data()?.from === decoded.uid;
-      })(),
+      isFriend,
+      hasSentRequest: !!pendingReq,
+      requestId: pendingReq?.id ?? null,
     });
   } catch (error) {
     console.error("GET profile error:", error);

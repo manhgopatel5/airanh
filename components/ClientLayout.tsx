@@ -24,6 +24,7 @@ export default function ClientLayout({ children }: Props) {
     [pathname]
   );
   const isHomeShell = pathname === "/";
+  const isProfileRoute = pathname.startsWith("/profile/");
 
   useEffect(() => {
     if (loading) return;
@@ -67,7 +68,9 @@ export default function ClientLayout({ children }: Props) {
       "flex-1 pt-[env(safe-area-inset-top)]",
       isHomeShell
         ? "overflow-hidden flex flex-col min-h-0"
-        : "overflow-y-auto pb-[calc(56px+env(safe-area-inset-bottom)+16px)] [-webkit-overflow-scrolling:touch] overscroll-y-contain"
+        : isProfileRoute
+          ? "overflow-y-auto pb-[env(safe-area-inset-bottom)] [-webkit-overflow-scrolling:touch] overscroll-y-contain"
+          : "overflow-y-auto pb-[calc(56px+env(safe-area-inset-bottom)+16px)] [-webkit-overflow-scrolling:touch] overscroll-y-contain"
     )}
   >
     {children}

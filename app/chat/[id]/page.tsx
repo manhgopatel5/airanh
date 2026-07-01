@@ -2174,7 +2174,11 @@ const isColor = bg.url?.startsWith('#');
     <button 
       onClick={() => {
         setShowSettings(false);
-        if (friend?.uid) router.push(`/profile/${friend.uid}`);
+        if (friend?.uid) {
+          router.push(`/profile/${friend.uid}`);
+        } else {
+          toast.error("Không tìm thấy hồ sơ người dùng");
+        }
       }} 
       className="px-4 h-9 bg-[#0084FF] hover:bg-[#0073e6] text-white rounded-full text- font-medium active:scale-95 transition shadow-sm"
     >
