@@ -55,7 +55,8 @@ export type BaseItem = {
   userVerified?: boolean; 
   userShortId?: string;
   userUsername?: string;
-
+authorVipTier?: 'pro' | 'elite' | null;
+  authorVipExpiresAt?: Timestamp | null;
   // Status
   status: TaskStatus;
   visibility: Visibility;
