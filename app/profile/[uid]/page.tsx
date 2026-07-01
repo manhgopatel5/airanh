@@ -7,6 +7,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   deleteDoc,
   
   arrayUnion,
@@ -55,9 +56,15 @@ import { buildGamificationUser } from "@/lib/gamification";
 import { evaluateAchievements, getAchievementColor } from "@/lib/achievements";
 import { AchievementIcon } from "@/components/achievements/AchievementIcon";
 
-import { formatDistanceToNow } from "date-fns";
-import { toTimestampDate } from "@/lib/notifications";
-import { vi } from "date-fns/locale";
+import {
+  canReceiveMessageFrom,
+  formatOnlineStatus,
+  getPrivacySettings,
+  maskEmail,
+  maskPhone,
+  showOnlineIndicator,
+} from "@/lib/privacy";
+import { getLanguageLabel } from "@/lib/formatPrefs";
 
 
 type PublicUser = {
@@ -90,6 +97,7 @@ type PublicUser = {
   };
   huhaScore?: number;
   createdAt?: Timestamp;
+  settings?: Record<string, unknown>;
 };
 
 type RankData = {
@@ -194,6 +202,21 @@ const Divider = () => <div className="h-px bg-zinc-100 ml-[52px]" />;
 
   
   const isOwnProfile = user?.uid === uid;
+
+  const targetPrivacy = useMemo(
+    () => getPrivacySettings(targetUser),
+    [targetUser]
+  );
+
+  const phoneDisplay = useMemo(
+    () => maskPhone(targetUser?.phone, targetPrivacy, isOwnProfile),
+    [targetUser?.phone, targetPrivacy, isOwnProfile]
+  );
+
+  const emailDisplay = useMemo(
+    () => maskEmail(targetUser?.emailVerified, targetPrivacy, isOwnProfile),
+    [targetUser?.emailVerified, targetPrivacy, isOwnProfile]
+  );
 
 const fetchUser = useCallback(async () => {
   if (!uid || typeof uid !== 'string' || uid === 'undefined') {
@@ -378,14 +401,12 @@ const handleBlock = async () => {
 
   setActionLoading(true);
   try {
-    await setDoc(doc(db, "users", user.uid), {
-      settings: {
-        blockedUsers: arrayUnion({
-          uid: targetUser.uid,
-          blockedAt: Timestamp.now() // ĐỔI DÒNG NÀY
-        })
-      }
-    }, { merge: true });
+    await updateDoc(doc(db, "users", user.uid), {
+      "settings.blockedUsers": arrayUnion({
+        uid: targetUser.uid,
+        blockedAt: Timestamp.now(),
+      }),
+    });
     
     toast.success(`Đã chặn ${targetUser.name}`);
     if ("vibrate" in navigator) navigator.vibrate(8);
@@ -400,6 +421,11 @@ const handleBlock = async () => {
 const handleMessage = async () => {
   if (!user || !targetUser || actionLoading) return;
   if (user.uid === targetUser.uid) return toast.error("Không thể tự nhắn cho mình");
+
+  if (!canReceiveMessageFrom(targetPrivacy, isFriend)) {
+    toast.error("Người này không cho phép nhận tin nhắn từ bạn");
+    return;
+  }
   
   setActionLoading(true);
   try {
@@ -506,16 +532,6 @@ const handleMessage = async () => {
       navigator.clipboard.writeText(url);
       toast.success("Đã copy link");
     }
-  };
-
-  const formatLastSeen = (timestamp?: Timestamp | { seconds?: number }) => {
-    const date = toTimestampDate(timestamp);
-    if (!date) return "Lâu rồi";
-
-    return formatDistanceToNow(date, {
-      addSuffix: true,
-      locale: vi,
-    });
   };
 
   const rank: RankData = useMemo(() => {
@@ -635,7 +651,7 @@ return (
           />
         </div>
       </div>
-      {targetUser?.online && (
+      {showOnlineIndicator(targetUser?.online, targetPrivacy, isOwnProfile) && (
         <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-400 border-[2.5px] border-white shadow-md animate-pulse" />
       )}
       {isOwnProfile && (
@@ -683,11 +699,9 @@ return (
 {/* HOẠT ĐỘNG + VỊ TRÍ */}
 <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
   <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-zinc-100">
-    <div className={`w-1.5 h-1.5 rounded-full ${targetUser?.online? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'}`} />
+    <div className={`w-1.5 h-1.5 rounded-full ${targetUser?.online && showOnlineIndicator(targetUser.online, targetPrivacy, isOwnProfile) ? "bg-emerald-500 animate-pulse" : "bg-zinc-400"}`} />
     <span className="text-xs text-zinc-600 font-medium">
-      {targetUser?.online
-       ? "Online"
-        : formatLastSeen(targetUser?.lastSeen)}
+      {formatOnlineStatus(targetUser?.online, targetUser?.lastSeen, targetPrivacy, isOwnProfile)}
     </span>
   </div>
 
@@ -1461,8 +1475,8 @@ return (
    <InfoRow
   icon={<Mail className="w-5 h-5" />}
   label="Email"
-  value={targetUser?.emailVerified? "••••••@gmail.com" : "Chưa xác minh"}
-  verified={!!targetUser?.emailVerified} // THÊM!!
+  value={emailDisplay.value}
+  verified={!!targetUser?.emailVerified && !emailDisplay.hidden}
 />
           <Divider />
           <InfoRow
@@ -1481,8 +1495,8 @@ return (
           <InfoRow
             icon={<Phone className="w-5 h-5" />}
             label="Số điện thoại"
-            value={targetUser?.phone? "••••••" + targetUser.phone.slice(-3) : "Chưa cập nhật"}
-            empty={!targetUser?.phone}
+            value={phoneDisplay.value}
+            empty={!targetUser?.phone || phoneDisplay.hidden}
           />
         </div>
       </div>
@@ -1503,7 +1517,7 @@ return (
           <InfoRow
             icon={<Globe className="w-5 h-5" />}
             label="Ngôn ngữ"
-            value="Tiếng Việt"
+            value={getLanguageLabel(targetPrivacy.language)}
           />
           <Divider />
   <InfoRow

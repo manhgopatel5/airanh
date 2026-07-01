@@ -19,6 +19,7 @@ import {
   isStrangerRegionValid,
   type StrangerRegion,
 } from "@/lib/strangerLocation";
+import { canUseStrangerChat, getPrivacySettings } from "@/lib/privacy";
 import CategoryIcon from "@/components/stranger/CategoryIcon";
 import {
   STRANGER_CATEGORIES,
@@ -61,7 +62,8 @@ export default function StrangerPage() {
   const [tempAgeTo, setTempAgeTo] = useState<number | string>(30);
   const [tempGender, setTempGender] = useState<"all" | "male" | "female">("all");
   const [tempRegion, setTempRegion] = useState<StrangerRegion>(() => defaultStrangerRegion());
-const [queueData, setQueueData] = useState<any>(null); // THÊM DÒNG NÀY
+  const [allowStrangers, setAllowStrangers] = useState<"everyone" | "contacts" | "none">("everyone");
+  const [queueData, setQueueData] = useState<{ interests?: string[] } | null>(null);
 
 useEffect(() => {
   if (!user?.uid) return;
@@ -74,6 +76,7 @@ useEffect(() => {
     setUserTier(data?.tier || "user");
     setAccountStatus(data?.status || "active");
     setCurrentChatId(data?.currentChatId || null);
+    setAllowStrangers(getPrivacySettings(data).allowStrangers);
   });
 
   const unsubQueue = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
@@ -218,6 +221,9 @@ const isDisabled = accountStatus === "banned";
   const handleFindStranger = async () => {
   if (!user?.uid) return;
   if (isDisabled) return toast.error("Tài khoản bị cấm");
+  if (!canUseStrangerChat({ allowStrangers, hideOnline: false, hideLastSeen: false, hidePhone: false, hideEmail: false, language: "vi" })) {
+    return toast.error("Bạn đã tắt nhắn tin với người lạ trong Cài đặt chung");
+  }
   
   const finalCats = selectAllMode 
    ? STRANGER_CATEGORIES.filter(c => c.id !== "tat-ca").map(c => c.id) 

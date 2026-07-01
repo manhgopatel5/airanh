@@ -114,11 +114,58 @@
 
   html {
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-    font-size: 14px;
+    font-size: var(--app-font-size, 14px);
     line-height: 1.43;
     @apply font-sans text-base;
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
+  }
+
+  html[data-font-size="small"] {
+    --app-font-size: 14px;
+  }
+
+  html[data-font-size="medium"] {
+    --app-font-size: 16px;
+  }
+
+  html[data-font-size="large"] {
+    --app-font-size: 18px;
+  }
+
+  html[data-compact="true"] {
+    --bottom-nav-height: 56px;
+    --header-height: 52px;
+  }
+
+  html[data-compact="true"] .py-3\.5 {
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+
+  html[data-reduce-motion="true"] *,
+  html[data-reduce-motion="true"] *::before,
+  html[data-reduce-motion="true"] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .accent-task {
+    color: rgb(var(--accent-task, 59 130 246));
+  }
+
+  .bg-accent-task {
+    background-color: rgb(var(--accent-task, 59 130 246));
+  }
+
+  .accent-plan {
+    color: rgb(var(--accent-plan, 34 197 94));
+  }
+
+  .bg-accent-plan {
+    background-color: rgb(var(--accent-plan, 34 197 94));
   }
 
   .dark html {

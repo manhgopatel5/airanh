@@ -42,7 +42,10 @@ export type AppUser = {
   createdAt?: Timestamp | string;
   updatedAt?: Timestamp | string;
   onboardingCompleted: boolean;
-  huhaScore?: number; // THÊM DÒNG NÀY
+  huhaScore?: number;
+  lastNameChangeAt?: Timestamp;
+  lastAvatarChangeAt?: Timestamp;
+  settings?: Record<string, unknown>;
 };
 
 type AuthContextType = {
