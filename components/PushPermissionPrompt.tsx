@@ -81,8 +81,9 @@ export default function PushPermissionPrompt({
     setDismissed(true);
   }, []);
 
-  if (dismissed && permission === "granted") return null;
-  if (dismissed && permission !== "granted" && !statusMsg) return null;
+  if (permission === "granted") return null;
+
+  if (dismissed && !statusMsg) return null;
 
   const shellClass =
     variant === "fixed"
@@ -129,17 +130,6 @@ export default function PushPermissionPrompt({
           <button type="button" onClick={handleDismiss} className="mt-2 text-[12px] text-amber-700">
             Đóng
           </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (permission === "granted" && statusOk) {
-    return (
-      <div className={shellClass} style={innerStyle}>
-        <div className="rounded-2xl border border-green-200 bg-green-50 px-3.5 py-3 shadow-lg flex items-center gap-2">
-          <CheckCircle2 size={18} className="text-green-600 shrink-0" />
-          <p className="text-[13px] text-green-900 font-medium">{statusMsg || "Đã bật thông báo đẩy"}</p>
         </div>
       </div>
     );

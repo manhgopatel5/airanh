@@ -55,6 +55,8 @@ import { isAdminUser } from "@/lib/adminAuth";
 import TrustScoreModal from "@/components/profile/TrustScoreModal";
 import AchievementsModal from "@/components/profile/AchievementsModal";
 import ReviewsModal from "@/components/profile/ReviewsModal";
+import HuhaLevelModal from "@/components/profile/HuhaLevelModal";
+import CompletedWorksModal from "@/components/profile/CompletedWorksModal";
 
 export default function ProfileTabContent() {
   const db = getFirebaseDB();
@@ -77,6 +79,8 @@ export default function ProfileTabContent() {
   const [showTrustModal, setShowTrustModal] = useState(false);
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [showLevelModal, setShowLevelModal] = useState(false);
+  const [showCompletedModal, setShowCompletedModal] = useState(false);
   const [friendCount, setFriendCount] = useState(0);
 
   const hasCheckedId = useRef(false);
@@ -95,11 +99,11 @@ export default function ProfileTabContent() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const shouldHide = showNameModal || showAvatarModal || showCropModal || showLogoutModal || showTrustModal || showAchievementsModal || showReviewsModal;
+    const shouldHide = showNameModal || showAvatarModal || showCropModal || showLogoutModal || showTrustModal || showAchievementsModal || showReviewsModal || showLevelModal || showCompletedModal;
     document.body.classList.toggle('modal-open', shouldHide);
 
     return () => document.body.classList.remove('modal-open');
-  }, [showNameModal, showAvatarModal, showCropModal, showLogoutModal, showTrustModal, showAchievementsModal, showReviewsModal]);
+  }, [showNameModal, showAvatarModal, showCropModal, showLogoutModal, showTrustModal, showAchievementsModal, showReviewsModal, showLevelModal, showCompletedModal]);
 
   useEffect(() => {
     if (user === null) {
@@ -603,7 +607,7 @@ const handleUpdateName = async () => {
               </div>
             </div>
 
-            <div className="mt-5">
+            <button type="button" onClick={() => setShowLevelModal(true)} className="mt-5 w-full text-left active:scale-[0.99] transition-transform">
               <div className="flex items-center justify-between text-xs font-bold mb-1.5">
                 <span className="text-zinc-500">Cấp {gamification.level}</span>
                 <span className="text-zinc-400">{gamification.exp}/{gamification.nextLevelExp} XP</span>
@@ -614,20 +618,19 @@ const handleUpdateName = async () => {
                   style={{ width: `${xpPercent}%` }}
                 />
               </div>
-            </div>
+            </button>
 
             <div className="mt-4 grid grid-cols-3 gap-2">
               {[
                 { label: "Tin cậy", value: `${gamification.trustScore}%`, onClick: () => setShowTrustModal(true) },
-                { label: "Hoàn thành", value: String(userData.stats?.completed ?? 0) },
+                { label: "Hoàn thành", value: String(userData.stats?.completed ?? 0), onClick: () => setShowCompletedModal(true) },
                 { label: "Đánh giá", value: (userData.stats?.rating ?? gamification.stats.rating ?? 0).toFixed(1), onClick: () => setShowReviewsModal(true) },
               ].map((item) => (
                 <button
                   key={item.label}
                   type="button"
                   onClick={item.onClick}
-                  disabled={!item.onClick}
-                  className={`rounded-xl bg-zinc-50 p-2.5 text-center ring-1 ring-zinc-100 ${item.onClick ? "active:scale-95 transition-transform" : ""}`}
+                  className="rounded-xl bg-zinc-50 p-2.5 text-center ring-1 ring-zinc-100 active:scale-95 transition-transform"
                 >
                   <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">{item.label}</p>
                   <p className="mt-0.5 text-base font-black">{item.value}</p>
@@ -1016,6 +1019,19 @@ const handleUpdateName = async () => {
         onOpenChange={setShowReviewsModal}
         uid={user.uid}
         currentUserId={user.uid}
+      />
+      <HuhaLevelModal
+        open={showLevelModal}
+        onOpenChange={setShowLevelModal}
+        huhaScore={gamification.huhaScore}
+        isOwnProfile
+        onNavigate={(href) => router.push(href)}
+      />
+      <CompletedWorksModal
+        open={showCompletedModal}
+        onOpenChange={setShowCompletedModal}
+        uid={user.uid}
+        count={userData.stats?.completed ?? 0}
       />
     </div>
   );

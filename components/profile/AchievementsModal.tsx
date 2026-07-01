@@ -11,6 +11,7 @@ import {
 } from "@/lib/achievements";
 import { buildGamificationUser, type GamificationUser } from "@/lib/gamification";
 import { AchievementIcon } from "@/components/achievements/AchievementIcon";
+import { useAppStore } from "@/store/app";
 
 type AchievementsModalProps = {
   open: boolean;
@@ -116,7 +117,13 @@ function AchievementsModalInner({
   allAchievements: EvaluatedAchievement[];
   unlockedCount: number;
 }) {
+  const setHideTabBar = useAppStore((s) => s.setHideTabBar);
   const [selected, setSelected] = useState<EvaluatedAchievement | null>(null);
+
+  useEffect(() => {
+    setHideTabBar(open);
+    return () => setHideTabBar(false);
+  }, [open, setHideTabBar]);
 
   useEffect(() => {
     if (!open) setSelected(null);

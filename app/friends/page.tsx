@@ -35,9 +35,15 @@ type FriendItem = {
   userId: string;
   isOnline: boolean;
   lastSeen?: any;
+  lastMessage?: string;
   isDeletedByThem?: boolean;
   mutualFriends?: number;
   vip?: { tier: 'free' | 'pro' | 'elite' };
+};
+
+type ChatMeta = {
+  lastMessage: string;
+  updatedAt?: unknown;
 };
 
 type StrangerChatItem = {
@@ -71,6 +77,7 @@ export default function FriendsPage() {
   const router = useRouter();
 const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions' | 'strangers'>('friends');
   const [friends, setFriends] = useState<FriendItem[]>([]);
+  const [chatMetaByUid, setChatMetaByUid] = useState<Record<string, ChatMeta>>({});
   const [strangerChats, setStrangerChats] = useState<StrangerChatItem[]>([]);
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
@@ -188,6 +195,29 @@ const [tab, setTab] = useState<'friends' | 'requests' | 'suggestions' | 'strange
 
   return () => unsub();
 }, [user?.uid, db]);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const q = query(collection(db, "chats"), where("members", "array-contains", user.uid));
+    const unsub = onSnapshot(q, (snap) => {
+      const meta: Record<string, ChatMeta> = {};
+      snap.docs.forEach((d) => {
+        const data = d.data();
+        if (d.id.startsWith("public_") || data.isPublicRoom || data.isStranger || data.isGroup) return;
+        const otherUid = data.members?.find((m: string) => m !== user.uid);
+        if (!otherUid) return;
+        const lastMessage =
+          typeof data.lastMessage === "string"
+            ? data.lastMessage
+            : data.lastMessage?.text || "";
+        meta[otherUid] = { lastMessage, updatedAt: data.updatedAt };
+      });
+      setChatMetaByUid(meta);
+    });
+
+    return () => unsub();
+  }, [user?.uid, db]);
 
   // QUERY CHAT NGƯỜI LẠ CHƯA KẾT BẠN
 useEffect(() => {
@@ -561,10 +591,17 @@ const handleRemoveFriend = async (friend: FriendItem) => {
   if ("vibrate" in navigator) navigator.vibrate(10);
 };
 
-const formatLastSeen = (timestamp?: any, lastMessage?: string): string => {
-  if (lastMessage?.trim()) return lastMessage;
-  if (!timestamp?.toDate) return "Bấm vào để xem tin nhắn mới";
+const formatLastSeen = (timestamp?: any): string => {
+  if (!timestamp?.toDate) return "";
   return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
+};
+
+const getMessagePreview = (friend: FriendItem | StrangerChatItem): string => {
+  if ("lastMessage" in friend && friend.lastMessage?.trim()) return friend.lastMessage;
+  const fromChat = chatMetaByUid[friend.uid]?.lastMessage;
+  if (fromChat?.trim()) return fromChat;
+  const seen = formatLastSeen(friend.lastSeen);
+  return seen || "Chưa có tin nhắn";
 };
 
 const allItems = useMemo((): (FriendItem | StrangerChatItem)[] => {
@@ -635,21 +672,18 @@ const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
               {isStranger && <span className="text-xs px-1.5 py-0.5 bg-gradient-to-r from-pink-500/15 to-purple-500/15 text-pink-600 dark:text-pink-400 rounded-md font-[600]">Người lạ</span>}
               {!isStranger && (friend as FriendItem).vip?.tier === 'pro' && <span className="text-sm">💎</span>}
             </div>
-            <div className="flex items-center gap-2 text-sm leading-4 text-[#8e8e93] dark:text-zinc-500 font-serif">
-              <span>{friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</span>
-              {!isStranger && (friend as FriendItem).mutualFriends! > 0 && (
-                <>
-                  <span>•</span>
-                  <span>{(friend as FriendItem).mutualFriends} bạn chung</span>
-                </>
+            <p className="text-sm leading-4 text-[#8e8e93] dark:text-zinc-500 font-serif truncate mt-0.5">
+              {friend.isOnline ? (
+                <span className="text-[#30d158] font-medium">Đang hoạt động</span>
+              ) : (
+                getMessagePreview(friend)
               )}
-              {isStranger && 'lastMessage' in friend && (
-                <>
-                  <span>•</span>
-                  <span className="truncate">{friend.lastMessage}</span>
-                </>
-              )}
-            </div>
+            </p>
+            {!isStranger && (friend as FriendItem).mutualFriends! > 0 && (
+              <p className="text-xs text-[#aeaeb2] dark:text-zinc-600 mt-0.5">
+                {(friend as FriendItem).mutualFriends} bạn chung
+              </p>
+            )}
           </div>
           {'unreadCount' in friend && friend.unreadCount! > 0 && (
             <div className="min-w-5 h-5 px-1.5 bg-[#0a84ff] rounded-full flex items-center justify-center shadow-md shadow-[#0a84ff]/30">

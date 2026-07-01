@@ -8,17 +8,11 @@ import {
   getDoc,
   setDoc,
   deleteDoc,
-  
   arrayUnion,
   serverTimestamp,
   Timestamp,
-  getDocs,
-  collection,
-  query,
-  where,
-  limit,
 } from "firebase/firestore";
-import { getFirebaseDB } from "@/lib/firebase";
+import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
 import {
@@ -33,7 +27,6 @@ import {
   Info,
   MapPin,
   ExternalLink,
-  Zap,
   Share2,
   Flag,
   Crown,
@@ -56,6 +49,8 @@ import { evaluateAchievements, getAchievementColor } from "@/lib/achievements";
 import { AchievementIcon } from "@/components/achievements/AchievementIcon";
 import TrustScoreModal from "@/components/profile/TrustScoreModal";
 import AchievementsModal from "@/components/profile/AchievementsModal";
+import HuhaLevelModal from "@/components/profile/HuhaLevelModal";
+import CompletedWorksModal from "@/components/profile/CompletedWorksModal";
 
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -128,6 +123,7 @@ const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
   const touchStartX = useRef(0);
 const touchEndX = useRef(0);
   const [showAchievementInfo, setShowAchievementInfo] = useState(false);
+  const [showCompletedInfo, setShowCompletedInfo] = useState(false);
 // Component hàng thông tin
 const InfoRow = ({
   icon,
@@ -175,9 +171,6 @@ const Divider = () => <div className="h-px bg-zinc-100 ml-[52px]" />;
   const rating = gamUser.stats.rating || 0;
   const huhaScore = gamUser.huhaScore;
   const level = gamUser.level;
-  const currentLevelXP = gamUser.exp;
-  const nextLevelExp = gamUser.nextLevelExp;
-  const progress = nextLevelExp > 0 ? (currentLevelXP / nextLevelExp) * 100 : 0;
   const trustScore = gamUser.trustScore;
   const joinedDays = gamUser.joinedDays;
   const profileCompletion = gamUser.profileCompletion;
@@ -189,47 +182,52 @@ const Divider = () => <div className="h-px bg-zinc-100 ml-[52px]" />;
   const isOwnProfile = user?.uid === uid;
 
 const fetchUser = useCallback(async () => {
-  if (!uid || typeof uid !== 'string' || uid === 'undefined') {
+  if (!uid || typeof uid !== "string" || uid === "undefined") {
     setLoading(false);
     return;
   }
 
-  if (!user) return;
+  if (!user) {
+    setLoading(false);
+    return;
+  }
+
+  setLoading(true);
+  setNotFound(false);
+  setTargetUser(null);
 
   try {
-    const [userSnap, currentUserSnap] = await Promise.all([
-      getDoc(doc(db, "users", uid as string)),
-      getDoc(doc(db, "users", user.uid)),
-    ]);
+    const token = await getFirebaseAuth().currentUser?.getIdToken();
+    const res = await fetch(`/api/users/${encodeURIComponent(uid)}/profile`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
 
-    let resolvedSnap = userSnap;
-    if (!userSnap.exists()) {
-      const byPublicId = await getDocs(
-        query(collection(db, "users"), where("userId", "==", uid), limit(1))
-      );
-      if (!byPublicId.empty) {
-        resolvedSnap = byPublicId.docs[0]!;
-      }
-    }
-
-    if (!resolvedSnap.exists()) {
+    if (res.status === 404) {
       toast.error("Không tìm thấy người dùng");
       setNotFound(true);
       return;
     }
 
-    const raw = resolvedSnap.data();
+    if (!res.ok) {
+      throw new Error("Failed to load profile");
+    }
+
+    const body = await res.json();
+    const u = body.user;
     const data = {
-      uid: resolvedSnap.id,
-      ...raw,
-      name: raw.displayName || raw.name || raw.username || "Unknown User",
-      avatar: raw.photoURL || raw.avatar || "",
+      uid: u.uid,
+      ...u,
+      name: u.name || "Unknown User",
+      avatar: u.avatar || "",
     } as PublicUser;
 
     setTargetUser(data);
+    setFriendCount(body.friendCount ?? 0);
+    setIsFriend(!!body.isFriend);
+    setHasSentRequest(!!body.hasSentRequest);
 
     try {
-      const reviewsRes = await fetch(`/api/users/${resolvedSnap.id}/reviews?limit=8`);
+      const reviewsRes = await fetch(`/api/users/${u.uid}/reviews?limit=8`);
       if (reviewsRes.ok) {
         const reviewsBody = await reviewsRes.json();
         setProfileReviews(reviewsBody.reviews || []);
@@ -238,40 +236,18 @@ const fetchUser = useCallback(async () => {
       setProfileReviews([]);
     }
 
+    const currentUserSnap = await getDoc(doc(db, "users", user.uid));
     if (currentUserSnap.exists()) {
       setCurrentUserData(currentUserSnap.data());
     }
-
-  const friendSnap = await getDoc(
-  doc(db, "users", user.uid, "friends", resolvedSnap.id)
-);
-setIsFriend(friendSnap.exists());
-
-if (!friendSnap.exists()) {
-  const reqId = [user.uid, resolvedSnap.id].sort().join('_');
-  const reqSnap = await getDoc(doc(db, "friendRequests", reqId));
-  if (reqSnap.exists() && reqSnap.data().from === user.uid) {
-    setHasSentRequest(true);
-    setRequestId(reqId);
-  }
-}
-
-    try {
-  const friendsCollection = await getDocs(collection(db, "users", resolvedSnap.id, "friends"));
-  setFriendCount(friendsCollection.size);
-} catch (e) {
-  console.warn("Không đọc được số bạn bè:", e);
-  setFriendCount(0); // Set 0 nếu không có quyền đọc
-}
-
   } catch (err) {
     console.error(err);
-    toast.error("Có lỗi xảy ra");
-   
+    toast.error("Không tải được hồ sơ");
+    setNotFound(true);
   } finally {
     setLoading(false);
   }
-}, [uid, user, db, router]);
+}, [uid, user, db]);
 
   
 
@@ -441,49 +417,6 @@ const handleMessage = async () => {
     setActionLoading(false);
   }
 };
-  const levelTiers = [
-    {
-      range: "1 - 7",
-      name: "Mới tham gia",
-      icon: <Sparkles className="w-4 h-4" />,
-      gradient: "from-sky-400 to-blue-600",
-      xp: "0 - 2,100",
-      perks: "Bắt đầu hành trình trên Airanh",
-    },
-    {
-      range: "8 - 19",
-      name: "Thành viên tích cực",
-      icon: <Flame className="w-4 h-4" />,
-      gradient: "from-emerald-500 to-teal-500",
-      xp: "2,100 - 5,700",
-      perks: "Hoạt động thường xuyên, được đánh giá tốt",
-    },
-    {
-      range: "20 - 34",
-      name: "Đối tác tin cậy",
-      icon: <Shield className="w-4 h-4" />,
-      gradient: "from-blue-500 to-sky-500",
-      xp: "5,700 - 10,200",
-      perks: "Được cộng đồng tin tưởng cao",
-    },
-    {
-      range: "35 - 49",
-      name: "Chuyên gia",
-      icon: <Gem className="w-4 h-4" />,
-      gradient: "from-violet-500 to-fuchsia-500",
-      xp: "10,200 - 14,700",
-      perks: "Kinh nghiệm dày dặn, uy tín hàng đầu",
-    },
-    {
-      range: "50+",
-      name: "Huyền thoại",
-      icon: <Crown className="w-4 h-4" />,
-      gradient: "from-amber-400 to-orange-500",
-      xp: "14,700+",
-      perks: "Biểu tượng uy tín của cộng đồng",
-    },
-  ];
-
   const handleShare = async () => {
     if (!targetUser) return;
 
@@ -671,16 +604,19 @@ return (
     {/* BỎ USERID */}
 
     {/* RANK BADGE - INFO NÚT NHỎ GÓC PHẢI */}
-<div className="mt-2.5 relative inline-block">
-  <div className={`px-4 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-lg`}>
+  <div className="mt-2.5 relative inline-block">
+  <button
+    type="button"
+    onClick={() => setShowLevelInfo(true)}
+    className={`px-4 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-lg active:scale-95`}
+  >
     {rank.icon}
     <span className="font-bold text-xs">{rank.name}</span>
     <div className="px-2 py-0.5 rounded-full bg-white/30 text- font-black backdrop-blur-sm">
       Lv.{level}
     </div>
-  </div>
+  </button>
   
-  {/* Nút info nhỏ góc phải như ô Độ uy tín */}
   <button
     onClick={() => setShowLevelInfo(true)}
     className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-zinc-100 flex items-center justify-center active:scale-95 shadow-sm"
@@ -810,13 +746,17 @@ return (
     <p className="text-xs text-zinc-500 leading-tight">Bạn bè</p>
   </div>
 
-  <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
+  <button
+    type="button"
+    onClick={() => setShowCompletedInfo(true)}
+    className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm active:scale-95 transition-transform w-full"
+  >
     <div className="flex items-center justify-center gap-1 text-sky-500 mb-1">
       <Briefcase className="w-4 h-4" />
       <span className="text-base font-bold">{completed}</span>
     </div>
     <p className="text-xs text-zinc-500 leading-tight">Hoàn thành</p>
-  </div>
+  </button>
 
   <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
     <div className="flex items-center justify-center gap-1 text-yellow-500 mb-1">
@@ -966,119 +906,13 @@ return (
 
 
 
-<Dialog.Root open={showLevelInfo} onOpenChange={setShowLevelInfo}>
-  <Dialog.Portal>
-    <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-3xl p-5 z-50 shadow-2xl">
-      <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4">
-        Hệ thống cấp độ Airanh
-      </Dialog.Title>
-
-      {/* CÔNG THỨC TÍNH XP */}
-<div className="mb-5 p-4 rounded-2xl bg-blue-50 border border-blue-200">
-  <p className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-1.5">
-    <Zap className="w-4 h-4" />
-    Công thức tính XP
-  </p>
-  <div className="space-y-1.5 text-sm text-blue-800">
-    <div className="flex justify-between">
-      <span>Hoàn thành 1 job</span>
-      <span className="font-semibold">+12 XP</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Nhận 1 đánh giá</span>
-      <span className="font-semibold">+8 XP</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Rating trung bình</span>
-      <span className="font-semibold">+Rating × 20 XP</span>
-    </div>
-    <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-bold">
-      <span>Tổng XP hiện tại</span>
-      <span>{huhaScore} XP</span>
-    </div>
-    <div className="text-xs text-blue-700 mt-1">
-      Mỗi level cần 300 XP
-    </div>
-  </div>
-</div>
-
-      {/* BẢNG RANK */}
-      <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5">
-        Các cấp độ
-      </p>
-      <div className="space-y-2.5">
-        {levelTiers.map((tier, i) => (
- <div
-  key={i}
-  className={`p-3.5 rounded-2xl border ${
-  level >= parseInt(tier.range.split(" - ")[0] || "0")
-     ? "border-zinc-300 bg-zinc-50"
-      : "border-zinc-200 bg-white opacity-60"
-  }`}
->
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-8 h-8 rounded-xl bg-gradient-to-r ${tier.gradient} text-white flex items-center justify-center shadow-sm`}
-                >
-                  {tier.icon}
-                </div>
-                <div>
-                  <p className="font-bold text-zinc-900 text-sm">{tier.name}</p>
-                  <p className="text-xs text-zinc-500">Level {tier.range}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xs font-semibold text-zinc-700">{tier.xp}</p>
-                <p className="text-xs text-zinc-500">XP</p>
-              </div>
-            </div>
-            <p className="text-xs text-zinc-600 leading-5">{tier.perks}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* LEVEL HIỆN TẠI */}
-      <div className="mt-4 p-3 rounded-2xl bg-gradient-to-r from-zinc-900 to-zinc-800 text-white">
-        <p className="text-xs text-zinc-400 mb-1">Level hiện tại của bạn</p>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div
-              className={`w-10 h-10 rounded-xl bg-gradient-to-r ${rank.gradient} flex items-center justify-center`}
-            >
-              {rank.icon}
-            </div>
-            <div>
-              <p className="font-bold">{rank.name}</p>
-              <p className="text-xs text-zinc-300">Lv.{level}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="font-bold text-lg">{huhaScore}</p>
-            <p className="text-xs text-zinc-400">XP</p>
-          </div>
-        </div>
-        <div className="mt-3">
-          <div className="flex justify-between text-xs mb-1">
-            <span className="text-zinc-400">Tiến trình</span>
-            <span className="text-zinc-300">{currentLevelXP}/{nextLevelExp} XP</span>
-          </div>
-          <div className="h-1.5 rounded-full bg-zinc-700 overflow-hidden">
-            <div
-              className={`h-full rounded-full bg-gradient-to-r ${rank.gradient}`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
-        Đã hiểu
-      </Dialog.Close>
-    </Dialog.Content>
-  </Dialog.Portal>
-</Dialog.Root>
+<HuhaLevelModal
+  open={showLevelInfo}
+  onOpenChange={setShowLevelInfo}
+  huhaScore={huhaScore}
+  isOwnProfile={isOwnProfile}
+  onNavigate={(href) => router.push(href)}
+/>
 <TrustScoreModal
   open={showTrustInfo}
   onOpenChange={setShowTrustInfo}
@@ -1090,6 +924,12 @@ return (
   onNavigate={(href) => router.push(href)}
 />
 <AchievementsModal open={showAchievementInfo} onOpenChange={setShowAchievementInfo} gamUser={gamUser} />
+<CompletedWorksModal
+  open={showCompletedInfo}
+  onOpenChange={setShowCompletedInfo}
+  uid={targetUser?.uid ?? ""}
+  count={completed}
+/>
 {/* MODAL THÔNG TIN CÁ NHÂN - THIẾT KẾ MỚI */}
 <Dialog.Root open={showUserInfo} onOpenChange={setShowUserInfo}>
   <Dialog.Portal>

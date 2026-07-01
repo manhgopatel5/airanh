@@ -294,6 +294,7 @@ const handlePinMessage = async (msg: any) => {
 
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isInitialScroll = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -440,7 +441,15 @@ const handlePinMessage = async (msg: any) => {
   }, [chatId, user, friendId, db]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    isInitialScroll.current = true;
+  }, [chatId]);
+
+  useEffect(() => {
+    if (!messages.length) return;
+    messagesEndRef.current?.scrollIntoView({
+      behavior: isInitialScroll.current ? "instant" : "smooth",
+    });
+    isInitialScroll.current = false;
   }, [messages.length]);
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);

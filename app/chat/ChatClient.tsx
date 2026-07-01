@@ -8,6 +8,7 @@ import CreateGroupModal from "@/components/CreateGroupModal";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import LeaderboardModal from "@/components/LeaderboardModal";
+import InboxNoticeSheet from "@/components/inbox/InboxNoticeSheet";
 import { EventItem } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
 import { useEvents } from "@/hooks/useEvents";
@@ -105,6 +106,7 @@ export default function ChatClient({ initialEvents = [] }: { initialEvents?: Eve
   const isPlan = mode === "plan";
   const [showGpsModal, setShowGpsModal] = useState(false);
 const [gpsLoading, setGpsLoading] = useState(false);
+const [inboxNoticeDone, setInboxNoticeDone] = useState(false);
 const [userLat, setUserLat] = useState<number | null>(null);
   const [userLng, setUserLng] = useState<number | null>(null);
 const [showLeaderboard, setShowLeaderboard] = useState(false);
@@ -139,14 +141,14 @@ const requestGPS = useCallback(async () => {
   );
 }, []);
 
-// Check GPS khi vào trang
+// GPS chỉ hỏi sau khi đóng bảng thông báo inbox
 useEffect(() => {
-  const hasLocation = localStorage.getItem('userLat') && localStorage.getItem('userLng');
-  if (!hasLocation && user?.uid) {
+  if (!inboxNoticeDone || !user?.uid) return;
+  const hasLocation = localStorage.getItem("userLat") && localStorage.getItem("userLng");
+  if (!hasLocation) {
     setShowGpsModal(true);
-    requestGPS(); // Tự động bật popup xin quyền
   }
-}, [user?.uid, requestGPS]);
+}, [inboxNoticeDone, user?.uid]);
   const primaryBg = isPlan? "bg-green-500" : "bg-[#0a84ff]";
 
 
@@ -481,6 +483,7 @@ if (authLoading) {
 
 return (
   <>
+    {!inboxNoticeDone && <InboxNoticeSheet onDismissed={() => setInboxNoticeDone(true)} />}
     <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
       
       <div className="sticky top-0 z-40 pt-3 px-4">
