@@ -216,10 +216,25 @@ function TaskCard({
   const authorName = getTaskAuthorName(task);
   const authorAvatar = getTaskAuthorAvatar(task);
 
-  const goToTask = useCallback(() => {
-    vibrate();
-    router.push(`/task/${task.id}`);
-  }, [router, task.id]);
+  const goToTask = useCallback(async () => {
+  vibrate();
+  
+  // 1. Optimistic update để mắt nhảy số ngay trên feed
+  onTaskUpdate?.(task.id, { viewCount: (task.viewCount || 0) + 1 });
+
+  // 2. Gọi API tăng view (không cần đợi)
+  try {
+    const token = await getAuthToken();
+    fetch(`/api/tasks/${task.id}/view`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      keepalive: true, // đảm bảo gửi được cả khi chuyển trang
+    }).catch(() => {});
+  } catch {}
+
+  // 3. Mở trang
+  router.push(`/task/${task.id}`);
+}, [router, task.id, task.viewCount, onTaskUpdate, getAuthToken]);
 
   const goToProfile = useCallback(
     (e: React.MouseEvent) => {
