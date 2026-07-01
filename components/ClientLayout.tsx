@@ -1,10 +1,10 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import FCMProvider from "@/components/FCMProvider";
-import { ChatPushPermissionBanner } from "@/components/PushPermissionPrompt";
+import ChatPushPermissionGate from "@/components/ChatPushPermissionGate";
 import StrangerStatusBanners from "@/components/stranger/StrangerStatusBanners";
-import { useEffect, useMemo } from "react";
 import { Toaster } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { isGuestBrowsableRoute } from "@/components/auth/authRoutes";
@@ -16,7 +16,6 @@ type Props = {
 
 export default function ClientLayout({ children }: Props) {
   const pathname = usePathname() || "";
-  const searchParams = useSearchParams();
   const router = useRouter();
   const { user, userData, loading } = useAuth();
 
@@ -25,18 +24,6 @@ export default function ClientLayout({ children }: Props) {
     [pathname]
   );
   const isHomeShell = pathname === "/";
-
-  const isChatScreen = useMemo(
-    () =>
-      pathname === "/chat" ||
-      pathname === "/messages" ||
-      /^\/chat\/[^/]+/.test(pathname) ||
-      /^\/groups\/[^/]+/.test(pathname) ||
-      /^\/stranger\/[^/]+/.test(pathname) ||
-      /^\/rooms\/[^/]+/.test(pathname) ||
-      (pathname === "/" && searchParams.get("tab") === "messages"),
-    [pathname, searchParams]
-  );
 
   useEffect(() => {
     if (loading) return;
@@ -69,7 +56,11 @@ export default function ClientLayout({ children }: Props) {
     <div className="h-dvh flex flex-col bg-white dark:bg-zinc-950 font-sans">
       {user && <FCMProvider userId={user.uid} />}
       {user && <StrangerStatusBanners />}
-      {user && isChatScreen && <ChatPushPermissionBanner />}
+      {user && (
+        <Suspense fallback={null}>
+          <ChatPushPermissionGate />
+        </Suspense>
+      )}
 
   <main
     className={cn(
