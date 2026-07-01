@@ -12,7 +12,7 @@ import {
 import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
-  Image as ImageIcon, FileText, Link2, Navigation, ChevronDown, ChevronUp, Flag, MapPin, BellOff, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
+  Image as ImageIcon, FileText, Link2, Navigation, ChevronDown, ChevronUp, Flag, MapPin, BellOff, Bell, Paperclip, Phone, Send, Loader2, X, Video, CheckCheck,
   Smile, Reply, Trash2, Pencil, Shield, Pin, Copy, Search
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
@@ -23,6 +23,13 @@ import SharedTaskMessage from "@/components/chat/SharedTaskMessage";
 import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geolocation";
 import { formatShortLocation, type ParsedMapboxLocation } from "@/lib/mapboxGeocode";
 import AddressSearchInput from "@/components/location/AddressSearchInput";
+import { requestFcmReregister } from "@/components/FCMProvider";
+import {
+  shouldShowChatDateDivider,
+  shouldShowChatTimeDivider,
+  formatChatDateDivider,
+  formatChatTimeDivider,
+} from "@/lib/chatTime";
 // === LINK PREVIEW ===
 function LinkPreview({ url }: { url: string }) {
   const [data, setData] = useState<any>(null);
@@ -147,6 +154,7 @@ type ChatData = {
   typing?: Record<string, boolean>;
   blockedUsers?: string[];
   deletedFor?: string[];
+  mutedBy?: string[];
   type?: string;
   backgroundId?: string;
   background?: string;
@@ -171,6 +179,7 @@ export default function ChatDetailPage() {
 const [showUnpinSheet, setShowUnpinSheet] = useState<any>(null); // thay vì boolean
   const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
   const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
+  const isChatMuted = chatData?.mutedBy?.includes(user?.uid || "") ?? false;
   const canSendMessage =!!friendId && isFriend &&!isBlocked &&!isDeleted;
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
@@ -218,6 +227,22 @@ useEffect(() => {
   };
   type();
 }, [isTyping, friend?.name]);
+
+  useEffect(() => {
+    if (!user?.uid || loadingFriend || !friend) return;
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+
+    if (Notification.permission === "granted") {
+      requestFcmReregister();
+      return;
+    }
+    if (Notification.permission !== "default") return;
+
+    Notification.requestPermission().then((result) => {
+      if (result === "granted") requestFcmReregister();
+    });
+  }, [user?.uid, loadingFriend, friend]);
+
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -879,16 +904,6 @@ useEffect(() => {
     }
   };
 
-  const formatDateDivider = (time: Timestamp) => {
-    const date = time.toDate();
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (date.toDateString() === today.toDateString()) return "Hôm nay";
-    if (date.toDateString() === yesterday.toDateString()) return "Hôm qua";
-    return format(date, "dd/MM/yyyy", { locale: vi });
-  };
-
   const scrollToMessage = (msgId: string) => {
     const el = document.getElementById(`msg-${msgId}`);
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1485,11 +1500,8 @@ const next = messages[i + 1];
 const showAvatar =!isMe && (!next || next.senderId!== m.senderId);
 const isFirstInGroup =!prev || prev.senderId!== m.senderId;
 const isLastInGroup =!next || next.senderId!== m.senderId;
-const showDate =
-  prev &&
-  m.createdAt &&
-  prev.createdAt &&
-  m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString();
+const showDate = m.createdAt ? shouldShowChatDateDivider(prev, m) : false;
+const showTime = m.createdAt && !showDate ? shouldShowChatTimeDivider(prev, m) : false;
     const seenAvatars = getSeenAvatars(m);
     const LINK_REGEX = /((https?:\/\/|www\.)[^\s]+|[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s]*)?)/i;
     const linkMatch = m.text?.match(LINK_REGEX);
@@ -1498,12 +1510,20 @@ const showDate =
     return (
       <div key={m.id} id={`msg-${m.id}`}>
         {showDate && m.createdAt && (
-          <div className="flex items-center justify-center my-6">
+          <div className="flex items-center justify-center my-4">
             <div className="px-4 py-1.5 bg-gray-200/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-full">
               <p className="text-xs font-bold text-gray-600 dark:text-zinc-400">
-                {formatDateDivider(m.createdAt)}
+                {formatChatDateDivider(m.createdAt)}
               </p>
             </div>
+          </div>
+        )}
+
+        {showTime && m.createdAt && (
+          <div className="flex items-center justify-center my-3">
+            <span className="text-[11px] font-medium text-gray-400 dark:text-zinc-500">
+              {formatChatTimeDivider(m.createdAt)}
+            </span>
           </div>
         )}
 
@@ -1808,29 +1828,24 @@ className={isLinkOnly
         
                 </div>
 
-         {/* GIỜ Ở GIỮA */}
-{isLastInGroup && messages.length > 0 && i === messages.length - 1 && m.createdAt && (
-  <div className="flex w-full justify-center items-center gap-1.5 my-2">
-    <span className="text-[11px] text-gray-400 dark:text-zinc-500">
-      {formatTime(m.createdAt)}
-    </span>
-    {isMe && seenAvatars.length > 0 && (
-      <div className="flex -space-x-1">
-        {seenAvatars.slice(0, 3).map((u, idx) => (
-          <img
-            key={idx}
-            src={u.avatar}
-            className="w-3 h-3 rounded-full ring-1 ring-white dark:ring-zinc-950"
-            alt={u.name}
-          />
-        ))}
-      </div>
-    )}
-    {isMe && seenAvatars.length === 0 && m.seenBy && m.seenBy.length > 1 && (
-      <CheckCheck className="text-blue-500" size={12} />
-    )}
-  </div>
-)}
+        {isLastInGroup && isMe && i === messages.length - 1 && (
+          <div className="flex w-full justify-end items-center gap-1.5 pr-2 mt-0.5 mb-1">
+            {seenAvatars.length > 0 ? (
+              <div className="flex -space-x-1">
+                {seenAvatars.slice(0, 3).map((u, idx) => (
+                  <img
+                    key={idx}
+                    src={u.avatar}
+                    className="w-3.5 h-3.5 rounded-full ring-1 ring-white dark:ring-zinc-950"
+                    alt={u.name}
+                  />
+                ))}
+              </div>
+            ) : m.seenBy && m.seenBy.length > 1 ? (
+              <CheckCheck className="text-blue-500" size={12} />
+            ) : null}
+          </div>
+        )}
         </div>
       </div>
     );
@@ -2189,7 +2204,18 @@ const isColor = bg.url?.startsWith('#');
         {/* QUYỀN RIÊNG TƯ */}
         <div className="bg-white rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
           {[
-            { icon: BellOff, label: 'Tắt thông báo', action: async () => { toast.success('Đã tắt thông báo'); setShowSettings(false); } },
+            {
+              icon: isChatMuted ? Bell : BellOff,
+              label: isChatMuted ? 'Bật thông báo' : 'Tắt thông báo',
+              action: async () => {
+                if (!chatId || !user?.uid) return;
+                await updateDoc(doc(db, "chats", chatId), {
+                  mutedBy: isChatMuted ? arrayRemove(user.uid) : arrayUnion(user.uid),
+                });
+                toast.success(isChatMuted ? 'Đã bật thông báo' : 'Đã tắt thông báo');
+                setShowSettings(false);
+              },
+            },
             {
               icon: Shield,
               label: chatData?.blockedUsers?.includes(friendId || '')? 'Bỏ chặn' : 'Chặn người dùng',
