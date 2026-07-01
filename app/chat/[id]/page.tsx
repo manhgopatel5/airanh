@@ -23,7 +23,6 @@ import SharedTaskMessage from "@/components/chat/SharedTaskMessage";
 import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geolocation";
 import { formatShortLocation, type ParsedMapboxLocation } from "@/lib/mapboxGeocode";
 import AddressSearchInput from "@/components/location/AddressSearchInput";
-import PushPermissionPrompt from "@/components/PushPermissionPrompt";
 import { dispatchOfflinePush } from "@/lib/pushNotifyClient";
 import {
   shouldShowChatDateDivider,
@@ -1158,7 +1157,6 @@ useEffect(() => {
       </button>
     </div>
   </div>
-  <PushPermissionPrompt />
 </div>
 {showMedia && (
   <div className="fixed inset-0 z-[200] bg-white flex flex-col">
