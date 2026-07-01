@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Bell, X, Smartphone } from "lucide-react";
+import { toast } from "sonner";
+import { enablePushNotifications } from "@/lib/fcmRegister";
 import { requestFcmReregister } from "@/components/FCMProvider";
+import {
+  readPushPermission,
+  type PushPermissionState,
+} from "@/lib/pushPermissions";
 
 const DISMISS_KEY = "push-permission-prompt-dismissed-until";
-
-function readPermission(): NotificationPermission | "unsupported" {
-  if (typeof window === "undefined") return "default";
-  if (!("Notification" in window)) return "unsupported";
-  return Notification.permission;
-}
 
 function isDismissed(): boolean {
   try {
@@ -23,7 +23,6 @@ function isDismissed(): boolean {
 
 type Props = {
   message?: string;
-  /** fixed = luôn nổi trên cùng, không bị che bởi layout chat */
   variant?: "inline" | "fixed";
 };
 
@@ -31,12 +30,15 @@ export default function PushPermissionPrompt({
   message = "Bật thông báo để nhận tin nhắn khi bạn không mở app",
   variant = "inline",
 }: Props) {
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">(readPermission);
-  const [dismissed, setDismissed] = useState(isDismissed);
+  const [permission, setPermission] = useState<PushPermissionState>(() =>
+    typeof window === "undefined" ? "default" : readPushPermission()
+  );
+  const [dismissed, setDismissed] = useState(false);
   const [requesting, setRequesting] = useState(false);
 
   useEffect(() => {
-    const current = readPermission();
+    setDismissed(isDismissed());
+    const current = readPushPermission();
     setPermission(current);
     if (current === "granted") {
       requestFcmReregister();
@@ -44,13 +46,16 @@ export default function PushPermissionPrompt({
   }, []);
 
   const handleEnable = useCallback(async () => {
-    if (!("Notification" in window)) return;
     setRequesting(true);
     try {
-      const result = await Notification.requestPermission();
-      setPermission(result);
-      if (result === "granted") {
+      const result = await enablePushNotifications();
+      const next = readPushPermission();
+      setPermission(next);
+      if (result.success) {
+        toast.success(result.message);
         requestFcmReregister();
+      } else {
+        toast.error(result.message, { duration: 5000 });
       }
     } finally {
       setRequesting(false);
@@ -72,7 +77,7 @@ export default function PushPermissionPrompt({
 
   const shellClass =
     variant === "fixed"
-      ? "fixed left-0 right-0 z-[200] mx-auto max-w-2xl px-3"
+      ? "fixed left-0 right-0 z-[250] mx-auto max-w-2xl px-3 pointer-events-auto"
       : "shrink-0 w-full";
 
   const innerStyle =
@@ -80,7 +85,7 @@ export default function PushPermissionPrompt({
       ? { top: "max(8px, env(safe-area-inset-top))" }
       : undefined;
 
-  if (permission === "unsupported") {
+  if (permission === "ios-install") {
     return (
       <div className={shellClass} style={innerStyle}>
         <div className="rounded-2xl border border-violet-200 dark:border-violet-800/60 bg-violet-50 dark:bg-violet-950/50 px-3.5 py-3 shadow-lg shadow-black/5">
@@ -90,13 +95,9 @@ export default function PushPermissionPrompt({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-medium text-violet-950 dark:text-violet-100 leading-snug">
-                Để nhận push trên iPhone: Thêm trang vào Màn hình chính (Share → Add to Home Screen), mở app từ icon đó rồi bật thông báo.
+                iPhone: bấm Share → <b>Thêm vào Màn hình chính</b>, mở app từ icon đó, rồi bấm Cho phép thông báo.
               </p>
-              <button
-                type="button"
-                onClick={handleDismiss}
-                className="mt-2 text-[12px] font-medium text-violet-700 dark:text-violet-300"
-              >
+              <button type="button" onClick={handleDismiss} className="mt-2 text-[12px] font-medium text-violet-700">
                 Đã hiểu
               </button>
             </div>
@@ -109,14 +110,26 @@ export default function PushPermissionPrompt({
     );
   }
 
+  if (permission === "unsupported") {
+    return (
+      <div className={shellClass} style={innerStyle}>
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-3.5 py-3 shadow-lg">
+          <p className="text-[13px] text-zinc-800 leading-snug">
+            Trình duyệt này không hỗ trợ push. Dùng Chrome trên Android hoặc cài app PWA trên iPhone.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (permission === "granted") return null;
 
   if (permission === "denied") {
     return (
       <div className={shellClass} style={innerStyle}>
-        <div className="relative rounded-2xl border border-amber-200/80 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-3 shadow-lg shadow-black/5">
-          <p className="text-[13px] text-amber-900 dark:text-amber-100 leading-snug pr-6">
-            Thông báo đã bị chặn. Vào cài đặt trình duyệt → Quyền → Thông báo → cho phép trang này.
+        <div className="relative rounded-2xl border border-amber-200/80 bg-amber-50 px-3.5 py-3 shadow-lg">
+          <p className="text-[13px] text-amber-900 leading-snug pr-6">
+            Thông báo bị chặn. Vào cài đặt trình duyệt → Quyền / Thông báo → cho phép trang <b>airanh.vercel.app</b>.
           </p>
           <button type="button" onClick={handleDismiss} className="absolute top-2 right-2 text-amber-600 p-1" aria-label="Đóng">
             <X size={16} />
@@ -140,25 +153,16 @@ export default function PushPermissionPrompt({
                 type="button"
                 onClick={handleEnable}
                 disabled={requesting}
-                className="px-4 py-2 rounded-full bg-white text-[#0a84ff] text-[13px] font-bold active:scale-95 disabled:opacity-60 transition-transform"
+                className="px-4 py-2 rounded-full bg-white text-[#0a84ff] text-[13px] font-bold active:scale-95 disabled:opacity-60"
               >
                 {requesting ? "Đang xử lý..." : "Cho phép thông báo"}
               </button>
-              <button
-                type="button"
-                onClick={handleDismiss}
-                className="px-3 py-2 rounded-full text-[13px] font-medium text-white/85 active:opacity-70"
-              >
+              <button type="button" onClick={handleDismiss} className="px-3 py-2 text-[13px] font-medium text-white/85">
                 Để sau
               </button>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-white/80 active:bg-white/10 shrink-0"
-            aria-label="Đóng"
-          >
+          <button type="button" onClick={handleDismiss} className="text-white/80 p-1" aria-label="Đóng">
             <X size={16} />
           </button>
         </div>
@@ -167,9 +171,6 @@ export default function PushPermissionPrompt({
   );
 }
 
-/** Hiện banner cố định trên mọi màn chat khi user đã đăng nhập */
 export function ChatPushPermissionBanner() {
-  return (
-    <PushPermissionPrompt variant="fixed" />
-  );
+  return <PushPermissionPrompt variant="fixed" />;
 }

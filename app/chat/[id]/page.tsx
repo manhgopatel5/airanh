@@ -24,6 +24,8 @@ import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geoloca
 import { formatShortLocation, type ParsedMapboxLocation } from "@/lib/mapboxGeocode";
 import AddressSearchInput from "@/components/location/AddressSearchInput";
 import { dispatchOfflinePush } from "@/lib/pushNotifyClient";
+import { enablePushNotifications } from "@/lib/fcmRegister";
+import { readPushPermission } from "@/lib/pushPermissions";
 import {
   shouldShowChatDateDivider,
   shouldShowChatTimeDivider,
@@ -2196,14 +2198,30 @@ const isColor = bg.url?.startsWith('#');
         <div className="bg-white rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
           {[
             {
+              icon: Bell,
+              label:
+                readPushPermission() === "granted"
+                  ? "Thông báo đẩy: Đã bật"
+                  : "Bật thông báo đẩy (thiết bị)",
+              action: async () => {
+                if (readPushPermission() === "granted") {
+                  toast.info("Thông báo đẩy đã bật trên thiết bị này");
+                  return;
+                }
+                const result = await enablePushNotifications();
+                if (result.success) toast.success(result.message);
+                else toast.error(result.message, { duration: 5000 });
+              },
+            },
+            {
               icon: isChatMuted ? Bell : BellOff,
-              label: isChatMuted ? 'Bật thông báo' : 'Tắt thông báo',
+              label: isChatMuted ? 'Bật thông báo cuộc chat' : 'Tắt thông báo cuộc chat',
               action: async () => {
                 if (!chatId || !user?.uid) return;
                 await updateDoc(doc(db, "chats", chatId), {
                   mutedBy: isChatMuted ? arrayRemove(user.uid) : arrayUnion(user.uid),
                 });
-                toast.success(isChatMuted ? 'Đã bật thông báo' : 'Đã tắt thông báo');
+                toast.success(isChatMuted ? 'Đã bật thông báo cuộc chat' : 'Đã tắt thông báo cuộc chat');
                 setShowSettings(false);
               },
             },

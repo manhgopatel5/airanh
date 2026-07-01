@@ -7,6 +7,8 @@ import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { ChevronLeft, Bell, Clock, Mail, AtSign, MessageSquare, Zap, Smartphone, UserPlus } from "lucide-react";
 import { requestFcmReregister } from "@/components/FCMProvider";
+import { enablePushNotifications } from "@/lib/fcmRegister";
+import { readPushPermission } from "@/lib/pushPermissions";
 import { toast, Toaster } from "sonner";
 
 type NotificationSettings = {
@@ -49,16 +51,17 @@ export default function NotificationsPage() {
   }, []);
 
   const requestPushPermission = useCallback(async () => {
-    if (!("Notification" in window)) {
-      toast.error("Trình duyệt không hỗ trợ push");
-      return;
-    }
-    const result = await Notification.requestPermission();
-    setPushPermission(result);
-    if (result === "granted") {
-      toast.success("Đã bật thông báo đẩy");
+    const result = await enablePushNotifications();
+    const p = readPushPermission();
+    setPushPermission(
+      p === "granted" || p === "denied" || p === "default" ? p : "unsupported"
+    );
+    if (result.success) {
+      toast.success(result.message);
       requestFcmReregister();
-    } else if (result === "denied") toast.error("Bạn đã từ chối quyền thông báo");
+    } else {
+      toast.error(result.message, { duration: 5000 });
+    }
   }, []);
 
   useEffect(() => {
