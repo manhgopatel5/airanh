@@ -8,17 +8,18 @@ import {
   getDoc,
   setDoc,
   deleteDoc,
-  
   arrayUnion,
   serverTimestamp,
   Timestamp,
-  getDocs,
   collection,
   query,
   where,
   limit,
+  getDocs,
 } from "firebase/firestore";
-import { getFirebaseDB } from "@/lib/firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { getApp } from "firebase/app";
+import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
 import {
@@ -33,15 +34,14 @@ import {
   Info,
   MapPin,
   ExternalLink,
-  Zap,
   Share2,
-  Flag,
   Crown,
   Sparkles,
   Flame,
   Shield,
   Gem,
   ChevronRight,
+  ChevronLeft,
   Users,
   Mail,
   Phone,
@@ -49,11 +49,18 @@ import {
   Lock,
   Calendar,
   Globe,
+  Ban,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { buildGamificationUser } from "@/lib/gamification";
 import { evaluateAchievements, getAchievementColor } from "@/lib/achievements";
 import { AchievementIcon } from "@/components/achievements/AchievementIcon";
+import TrustScoreModal from "@/components/profile/TrustScoreModal";
+import AchievementsModal from "@/components/profile/AchievementsModal";
+import HuhaLevelModal from "@/components/profile/HuhaLevelModal";
+import CompletedWorksModal from "@/components/profile/CompletedWorksModal";
+import ReviewsModal from "@/components/profile/ReviewsModal";
+import { getTierForLevel } from "@/lib/huhaLevel";
 
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -66,6 +73,7 @@ type PublicUser = {
   uid: string;
   name: string;
   userId: string;
+  username?: string;
   avatar: string;
   bio?: string;
   birthday?: string;  
@@ -73,7 +81,7 @@ type PublicUser = {
   title?: string;
   location?: string;
   online?: boolean;
-  lastSeen?: Timestamp;
+  lastSeen?: Timestamp | string;
   emailVerified?: boolean;
   isVerifiedId?: boolean;
   skills?: string[];
@@ -91,7 +99,7 @@ type PublicUser = {
     taskCategories?: Record<string, number>;
   };
   huhaScore?: number;
-  createdAt?: Timestamp;
+  createdAt?: Timestamp | string;
   vip?: VipInfo | null;
 };
 
@@ -102,8 +110,91 @@ type RankData = {
   glow: string;
 };
 
+function InfoRow({
+  icon,
+  label,
+  value,
+  verified,
+  empty,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  verified?: boolean;
+  empty?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between px-4 py-4 active:bg-zinc-50 transition-colors">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className={`${empty ? "text-zinc-300" : "text-zinc-400"}`}>{icon}</div>
+        <span className="text- text-zinc-700">{label}</span>
+      </div>
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        <span className={`text- ${empty ? "text-zinc-400" : "text-zinc-900 font-medium"}`}>{value}</span>
+        {verified && (
+          <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+            <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Divider() {
+  return <div className="h-px bg-zinc-100 ml-[52px]" />;
+}
+
+function normalizePublicUser(u: Record<string, unknown>): PublicUser {
+  const skills = Array.isArray(u.skills) ? u.skills.filter((s): s is string => typeof s === "string") : [];
+  const portfolio = Array.isArray(u.portfolio)
+    ? u.portfolio
+        .filter((p): p is { title: string; url: string } => {
+          return !!p && typeof p === "object" && typeof (p as { title?: unknown }).title === "string";
+        })
+        .map((p) => ({ title: p.title, url: typeof p.url === "string" ? p.url : "" }))
+    : [];
+
+  const user: PublicUser = {
+    uid: String(u.uid || ""),
+    name: typeof u.name === "string" ? u.name : "Unknown User",
+    userId: typeof u.userId === "string" ? u.userId : "",
+    avatar: typeof u.avatar === "string" ? u.avatar : "",
+    online: !!u.online,
+    emailVerified: !!u.emailVerified,
+    isVerifiedId: !!u.isVerifiedId,
+    skills,
+    portfolio,
+    stats:
+      u.stats && typeof u.stats === "object"
+        ? (u.stats as NonNullable<PublicUser["stats"]>)
+        : { completed: 0, rating: 0, totalReviews: 0 },
+    huhaScore: typeof u.huhaScore === "number" ? u.huhaScore : Number(u.huhaScore) || 0,
+    vip: (u.vip as PublicUser["vip"]) ?? null,
+  };
+
+  if (typeof u.username === "string" && u.username) user.username = u.username;
+  if (typeof u.bio === "string" && u.bio) user.bio = u.bio;
+  if (typeof u.birthday === "string" && u.birthday) user.birthday = u.birthday;
+  if (u.phone != null) user.phone = typeof u.phone === "string" ? u.phone : String(u.phone);
+  if (typeof u.title === "string" && u.title) user.title = u.title;
+  if (typeof u.location === "string" && u.location) user.location = u.location;
+  if (u.lastSeen != null) user.lastSeen = u.lastSeen as NonNullable<PublicUser["lastSeen"]>;
+  if (u.createdAt != null) user.createdAt = u.createdAt as NonNullable<PublicUser["createdAt"]>;
+
+  return user;
+}
+
+function maskPhone(phone?: string) {
+  if (!phone) return "Chưa cập nhật";
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 3) return "••••••";
+  return `••••••${digits.slice(-3)}`;
+}
+
 export default function PublicProfile() {
-  const { uid } = useParams();
+  const params = useParams();
+  const uid = typeof params.uid === "string" ? params.uid : params.uid?.[0];
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const db = getFirebaseDB();
@@ -111,57 +202,23 @@ export default function PublicProfile() {
   const [targetUser, setTargetUser] = useState<PublicUser | null>(null);
   const [currentUserData, setCurrentUserData] = useState<any>(null);
   const [isFriend, setIsFriend] = useState(false);
-  const [hasSentRequest, setHasSentRequest] = useState(false); // ← THÊM
-const [_requestId, setRequestId] = useState<string | null>(null); 
+  const [hasSentRequest, setHasSentRequest] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
-const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
+  const [friendCount, setFriendCount] = useState(0);
   const [profileReviews, setProfileReviews] = useState<
     { id: string; fromUserName: string; rating: number; feedback: string; taskTitle?: string; createdAt?: string | null }[]
   >([]);
   const [showTrustInfo, setShowTrustInfo] = useState(false);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   const touchStartX = useRef(0);
 const touchEndX = useRef(0);
   const [showAchievementInfo, setShowAchievementInfo] = useState(false);
-  const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
-// Component hàng thông tin
-const InfoRow = ({
-  icon,
-  label,
-  value,
-  verified,
-  empty
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  verified?: boolean; // giữ nguyên
-  empty?: boolean; // giữ nguyên
-}) => (
-  <div className="flex items-center justify-between px-4 py-4 active:bg-zinc-50 transition-colors">
-    <div className="flex items-center gap-3 flex-1 min-w-0">
-      <div className={`${empty? 'text-zinc-300' : 'text-zinc-400'}`}>
-        {icon}
-      </div>
-      <span className="text- text-zinc-700">{label}</span>
-    </div>
-    <div className="flex items-center gap-1.5 flex-shrink-0">
-      <span className={`text- ${empty? 'text-zinc-400' : 'text-zinc-900 font-medium'}`}>
-        {value}
-      </span>
-      {verified && (
-        <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-          <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
-        </div>
-      )}
-    </div>
-  </div>
-);
-
-
-const Divider = () => <div className="h-px bg-zinc-100 ml-[52px]" />;
+  const [showCompletedInfo, setShowCompletedInfo] = useState(false);
 
   const gamUser = useMemo(
     () => buildGamificationUser((targetUser || {}) as Record<string, unknown>, targetUser?.uid, friendCount),
@@ -170,76 +227,61 @@ const Divider = () => <div className="h-px bg-zinc-100 ml-[52px]" />;
 
   const completed = gamUser.stats.completed || 0;
   const reviews = gamUser.stats.totalReviews || 0;
-  const rating = gamUser.stats.rating || 0;
+  const rating = Number(gamUser.stats.rating) || 0;
   const huhaScore = gamUser.huhaScore;
   const level = gamUser.level;
-  const currentLevelXP = gamUser.exp;
-  const nextLevelExp = gamUser.nextLevelExp;
-  const progress = nextLevelExp > 0 ? (currentLevelXP / nextLevelExp) * 100 : 0;
   const trustScore = gamUser.trustScore;
   const joinedDays = gamUser.joinedDays;
   const profileCompletion = gamUser.profileCompletion;
 
-  const allAchievements = useMemo(
-    () =>
-      evaluateAchievements(gamUser).map((a) => {
-        const colors = getAchievementColor(a.id);
-        return {
-          ...a,
-          icon: <AchievementIcon name={a.iconName} className="w-5 h-5" />,
-          color: colors.gradient,
-          borderColor: colors.border,
-        };
-      }),
-    [gamUser]
-  );
+  const allAchievements = useMemo(() => evaluateAchievements(gamUser), [gamUser]);
 
 
   
-  const isOwnProfile = user?.uid === uid;
+  const isOwnProfile = user?.uid === (targetUser?.uid ?? uid);
 
 const fetchUser = useCallback(async () => {
-  if (!uid || typeof uid !== 'string' || uid === 'undefined') {
+  if (!uid || typeof uid !== "string" || uid === "undefined") {
     setLoading(false);
     return;
   }
 
-  if (!user) return;
+  if (!user) {
+    setLoading(false);
+    return;
+  }
+
+  setLoading(true);
+  setNotFound(false);
+  setTargetUser(null);
 
   try {
-    const [userSnap, currentUserSnap] = await Promise.all([
-      getDoc(doc(db, "users", uid as string)),
-      getDoc(doc(db, "users", user.uid)),
-    ]);
+    const token = await getFirebaseAuth().currentUser?.getIdToken();
+    const res = await fetch(`/api/users/${encodeURIComponent(uid)}/profile`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
 
-    let resolvedSnap = userSnap;
-    if (!userSnap.exists()) {
-      const byPublicId = await getDocs(
-        query(collection(db, "users"), where("userId", "==", uid), limit(1))
-      );
-      if (!byPublicId.empty) {
-        resolvedSnap = byPublicId.docs[0]!;
-      }
-    }
-
-    if (!resolvedSnap.exists()) {
+    if (res.status === 404) {
       toast.error("Không tìm thấy người dùng");
-      router.replace("/404");
+      setNotFound(true);
       return;
     }
 
-    const raw = resolvedSnap.data();
-    const data = {
-      uid: resolvedSnap.id,
-      ...raw,
-      name: raw.displayName || raw.name || raw.username || "Unknown User",
-      avatar: raw.photoURL || raw.avatar || "",
-    } as PublicUser;
+    if (!res.ok) {
+      throw new Error("Failed to load profile");
+    }
+
+    const body = await res.json();
+    const data = normalizePublicUser(body.user as Record<string, unknown>);
 
     setTargetUser(data);
+    setFriendCount(body.friendCount ?? 0);
+    setIsFriend(!!body.isFriend);
+    setHasSentRequest(!!body.hasSentRequest);
+    setRequestId(body.requestId ?? null);
 
     try {
-      const reviewsRes = await fetch(`/api/users/${resolvedSnap.id}/reviews?limit=8`);
+      const reviewsRes = await fetch(`/api/users/${data.uid}/reviews?limit=8`);
       if (reviewsRes.ok) {
         const reviewsBody = await reviewsRes.json();
         setProfileReviews(reviewsBody.reviews || []);
@@ -248,40 +290,18 @@ const fetchUser = useCallback(async () => {
       setProfileReviews([]);
     }
 
+    const currentUserSnap = await getDoc(doc(db, "users", user.uid));
     if (currentUserSnap.exists()) {
       setCurrentUserData(currentUserSnap.data());
     }
-
-  const friendSnap = await getDoc(
-  doc(db, "users", user.uid, "friends", resolvedSnap.id)
-);
-setIsFriend(friendSnap.exists());
-
-if (!friendSnap.exists()) {
-  const reqId = [user.uid, resolvedSnap.id].sort().join('_');
-  const reqSnap = await getDoc(doc(db, "friendRequests", reqId));
-  if (reqSnap.exists() && reqSnap.data().from === user.uid) {
-    setHasSentRequest(true);
-    setRequestId(reqId);
-  }
-}
-
-    try {
-  const friendsCollection = await getDocs(collection(db, "users", resolvedSnap.id, "friends"));
-  setFriendCount(friendsCollection.size);
-} catch (e) {
-  console.warn("Không đọc được số bạn bè:", e);
-  setFriendCount(0); // Set 0 nếu không có quyền đọc
-}
-
   } catch (err) {
     console.error(err);
-    toast.error("Có lỗi xảy ra");
-   
+    toast.error("Không tải được hồ sơ");
+    setNotFound(true);
   } finally {
     setLoading(false);
   }
-}, [uid, user, db, router]);
+}, [uid, user, db]);
 
   
 
@@ -296,76 +316,72 @@ if (!friendSnap.exists()) {
   }, [fetchUser, authLoading, user, router]);
 
   const handleConnect = async () => {
-  if (!user || !targetUser || actionLoading) return;
-
-  if (user.uid === targetUser?.uid) {
-    return toast.error("Đây là bạn");
-  }
-
-  if (isFriend) {
-    return toast.info("Các bạn đã là bạn bè");
-  }
-
-  setActionLoading(true);
-
-  try {
-    // Nếu đã gửi rồi thì hủy
-    if (hasSentRequest && _requestId) {
-      await deleteDoc(doc(db, "friendRequests", _requestId));
-      setHasSentRequest(false);
-      setRequestId(null);
-      toast.success("Đã hủy lời mời kết bạn");
-      if ("vibrate" in navigator) navigator.vibrate(8);
-      return;
-    }
-
-    // Chưa gửi thì tạo request mới
-    const reqId = [user.uid, targetUser.uid].sort().join('_');
-    
-    await setDoc(
-      doc(db, "friendRequests", reqId),
-      {
-        from: user.uid,
-        to: targetUser.uid,
-        status: "pending",
-        createdAt: serverTimestamp(),
-        fromName: currentUserData?.name || user.displayName || "User",
-        fromAvatar: currentUserData?.avatar || user.photoURL || "",
-        fromShortId: currentUserData?.userId || "",
-        toName: targetUser.name,
-        toAvatar: targetUser.avatar,
-        toShortId: targetUser.userId,
-      }
-    );
-
-    setHasSentRequest(true);
-    setRequestId(reqId);
-    toast.success(`Đã gửi lời mời tới ${targetUser.name}`);
-    if ("vibrate" in navigator) {
-      navigator.vibrate(8);
-    }
-  } catch (err) {
-    console.error(err);
-    toast.error("Thao tác thất bại");
-  } finally {
-    setActionLoading(false);
-  }
-};
-
-
-  const handleUnfriend = async () => {
-    if (!user ||!targetUser || actionLoading) return;
+    if (!user || !targetUser || actionLoading) return;
+    if (user.uid === targetUser.uid) return toast.error("Đây là bạn");
+    if (isFriend) return toast.info("Các bạn đã là bạn bè");
 
     setActionLoading(true);
-
     try {
-      await Promise.all([
-        deleteDoc(doc(db, "users", user.uid, "friends", targetUser?.uid)),
-        deleteDoc(doc(db, "users", targetUser?.uid, "friends", user.uid)),
-      ]);
+      if (hasSentRequest) {
+        if (requestId) {
+          await deleteDoc(doc(db, "friendRequests", requestId));
+        } else {
+          const pending = await getDocs(
+            query(
+              collection(db, "friendRequests"),
+              where("fromUserId", "==", user.uid),
+              where("toUserId", "==", targetUser.uid),
+              where("status", "==", "pending"),
+              limit(1)
+            )
+          );
+          if (!pending.empty) await deleteDoc(pending.docs[0]!.ref);
+        }
+        setHasSentRequest(false);
+        setRequestId(null);
+        toast.success("Đã hủy lời mời kết bạn");
+        if ("vibrate" in navigator) navigator.vibrate(8);
+        return;
+      }
 
+      const functions = getFunctions(getApp(), "asia-southeast1");
+      const sendRequest = httpsCallable(functions, "sendFriendRequest");
+      await sendRequest({ toUid: targetUser.uid });
+
+      const pending = await getDocs(
+        query(
+          collection(db, "friendRequests"),
+          where("fromUserId", "==", user.uid),
+          where("toUserId", "==", targetUser.uid),
+          where("status", "==", "pending"),
+          limit(1)
+        )
+      );
+      setHasSentRequest(true);
+      setRequestId(pending.docs[0]?.id ?? null);
+      toast.success(`Đã gửi lời mời tới ${targetUser.name}`);
+      if ("vibrate" in navigator) navigator.vibrate(8);
+    } catch (err: unknown) {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : "Thao tác thất bại";
+      toast.error(msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnfriend = async () => {
+    if (!user || !targetUser || actionLoading) return;
+    if (!confirm(`Hủy kết bạn với ${targetUser.name}?`)) return;
+
+    setActionLoading(true);
+    try {
+      const functions = getFunctions(getApp(), "asia-southeast1");
+      const unfriendFn = httpsCallable(functions, "unfriend");
+      await unfriendFn({ friendUid: targetUser.uid });
       setIsFriend(false);
       toast.success("Đã hủy kết nối");
+      if ("vibrate" in navigator) navigator.vibrate(8);
     } catch {
       toast.error("Có lỗi xảy ra");
     } finally {
@@ -451,49 +467,6 @@ const handleMessage = async () => {
     setActionLoading(false);
   }
 };
-  const levelTiers = [
-    {
-      range: "1 - 7",
-      name: "Mới tham gia",
-      icon: <Sparkles className="w-4 h-4" />,
-      gradient: "from-sky-400 to-blue-600",
-      xp: "0 - 2,100",
-      perks: "Bắt đầu hành trình trên Airanh",
-    },
-    {
-      range: "8 - 19",
-      name: "Thành viên tích cực",
-      icon: <Flame className="w-4 h-4" />,
-      gradient: "from-emerald-500 to-teal-500",
-      xp: "2,100 - 5,700",
-      perks: "Hoạt động thường xuyên, được đánh giá tốt",
-    },
-    {
-      range: "20 - 34",
-      name: "Đối tác tin cậy",
-      icon: <Shield className="w-4 h-4" />,
-      gradient: "from-blue-500 to-sky-500",
-      xp: "5,700 - 10,200",
-      perks: "Được cộng đồng tin tưởng cao",
-    },
-    {
-      range: "35 - 49",
-      name: "Chuyên gia",
-      icon: <Gem className="w-4 h-4" />,
-      gradient: "from-violet-500 to-fuchsia-500",
-      xp: "10,200 - 14,700",
-      perks: "Kinh nghiệm dày dặn, uy tín hàng đầu",
-    },
-    {
-      range: "50+",
-      name: "Huyền thoại",
-      icon: <Crown className="w-4 h-4" />,
-      gradient: "from-amber-400 to-orange-500",
-      xp: "14,700+",
-      perks: "Biểu tượng uy tín của cộng đồng",
-    },
-  ];
-
   const handleShare = async () => {
     if (!targetUser) return;
 
@@ -511,7 +484,7 @@ const handleMessage = async () => {
     }
   };
 
-  const formatLastSeen = (timestamp?: Timestamp | { seconds?: number }) => {
+  const formatLastSeen = (timestamp?: Timestamp | string | { seconds?: number }) => {
     const date = toTimestampDate(timestamp);
     if (!date) return "Lâu rồi";
 
@@ -522,49 +495,49 @@ const handleMessage = async () => {
   };
 
   const rank: RankData = useMemo(() => {
-    if (level >= 50) {
-      return {
-        name: "Huyền thoại",
-        icon: <Crown className="w-3.5 h-3.5" />,
-        gradient: "from-amber-400 to-orange-500",
-        glow: "shadow-amber-500/20",
-      };
-    }
-    if (level >= 35) {
-      return {
-        name: "Chuyên gia",
-        icon: <Gem className="w-3.5 h-3.5" />,
-        gradient: "from-violet-500 to-fuchsia-500",
-        glow: "shadow-violet-500/20",
-      };
-    }
-    if (level >= 20) {
-      return {
-        name: "Đối tác tin cậy",
-        icon: <Shield className="w-3.5 h-3.5" />,
-        gradient: "from-blue-500 to-sky-500",
-        glow: "shadow-blue-500/20",
-      };
-    }
-    if (level >= 8) {
-      return {
-        name: "Thành viên tích cực",
-        icon: <Flame className="w-3.5 h-3.5" />,
-        gradient: "from-emerald-500 to-teal-500",
-        glow: "shadow-emerald-500/20",
-      };
-    }
+    const tier = getTierForLevel(level);
+    const iconMap: Record<string, React.ReactNode> = {
+      "Mới tham gia": <Sparkles className="w-3.5 h-3.5" />,
+      "Thành viên tích cực": <Flame className="w-3.5 h-3.5" />,
+      "Đối tác tin cậy": <Shield className="w-3.5 h-3.5" />,
+      "Chuyên gia": <Gem className="w-3.5 h-3.5" />,
+      "Huyền thoại": <Crown className="w-3.5 h-3.5" />,
+    };
     return {
-      name: "Mới tham gia",
-      icon: <Sparkles className="w-3.5 h-3.5" />,
-      gradient: "from-sky-400 to-blue-600",
+      name: tier.name,
+      icon: iconMap[tier.name] ?? <Sparkles className="w-3.5 h-3.5" />,
+      gradient: tier.gradient,
       glow: "shadow-blue-500/20",
     };
   }, [level]);
 
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
+
+  const displayHandle = targetUser?.username || targetUser?.userId || targetUser?.uid?.slice(0, 8);
 
 
 
+
+
+if (notFound) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 px-6">
+      <p className="text-lg font-bold text-zinc-900">Không tìm thấy người dùng</p>
+      <button
+        onClick={() => router.back()}
+        className="mt-4 px-6 py-3 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-95"
+      >
+        Quay lại
+      </button>
+    </div>
+  );
+}
 
 if (loading) {
   return (
@@ -614,8 +587,31 @@ if (loading) {
 if (!targetUser) return null;
 
 return (
-  <div className="min-h-screen bg-zinc-50 pb-28">
+  <div className="min-h-screen bg-zinc-50 pb-10">
     <Toaster richColors position="top-center" />
+
+    {/* Sticky header */}
+    <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-zinc-100">
+      <div className="max-w-md mx-auto flex items-center justify-between px-4 h-12">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center active:bg-zinc-100 transition-colors"
+          aria-label="Quay lại"
+        >
+          <ChevronLeft className="w-5 h-5 text-zinc-800" />
+        </button>
+        <p className="text-sm font-bold text-zinc-900 truncate max-w-[50%]">{targetUser?.name}</p>
+        <button
+          type="button"
+          onClick={handleShare}
+          className="w-9 h-9 -mr-1 rounded-full flex items-center justify-center active:bg-zinc-100 transition-colors"
+          aria-label="Chia sẻ"
+        >
+          <Share2 className="w-4 h-4 text-zinc-700" />
+        </button>
+      </div>
+    </div>
 
 {/* HEADER - TRẮNG SẠCH */}
 <div className="relative bg-white pt-2 pb-2">
@@ -664,19 +660,28 @@ return (
   )}
 </div>
 
-    {/* BỎ USERID */}
+<p className="text-sm text-zinc-500 mt-0.5">@{displayHandle}</p>
+
+{targetUser?.bio && (
+  <p className="text-sm text-zinc-600 text-center mt-2 px-6 line-clamp-2 leading-relaxed">
+    {targetUser.bio}
+  </p>
+)}
 
     {/* RANK BADGE - INFO NÚT NHỎ GÓC PHẢI */}
-<div className="mt-2.5 relative inline-block">
-  <div className={`px-4 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-lg`}>
+  <div className="mt-2.5 relative inline-block">
+  <button
+    type="button"
+    onClick={() => setShowLevelInfo(true)}
+    className={`px-4 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-lg active:scale-95`}
+  >
     {rank.icon}
     <span className="font-bold text-xs">{rank.name}</span>
     <div className="px-2 py-0.5 rounded-full bg-white/30 text- font-black backdrop-blur-sm">
       Lv.{level}
     </div>
-  </div>
+  </button>
   
-  {/* Nút info nhỏ góc phải như ô Độ uy tín */}
   <button
     onClick={() => setShowLevelInfo(true)}
     className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-zinc-100 flex items-center justify-center active:scale-95 shadow-sm"
@@ -711,42 +716,48 @@ return (
     <button
       onClick={handleMessage}
       disabled={actionLoading}
+      title="Nhắn tin"
       className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center active:scale-90 transition-all disabled:opacity-50"
     >
       <MessageCircle className="w-5 h-5 text-blue-600" />
     </button>
-    
-<button
-  onClick={isFriend ? handleUnfriend : handleConnect}
-  disabled={actionLoading}
-  className={`w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 ${
-    hasSentRequest ? 'bg-zinc-200' : 'bg-pink-50'
-  }`}
->
-  {isFriend ? (
-    <UserMinus className="w-5 h-5 text-pink-600" />
-  ) : hasSentRequest ? (
-    <Clock className="w-5 h-5 text-zinc-600" />
-  ) : (
-    <UserPlus className="w-5 h-5 text-pink-600" />
-  )}
-</button>
 
     <button
-      onClick={handleShare}
-      className="w-11 h-11 rounded-full bg-sky-50 flex items-center justify-center active:scale-90 transition-all"
+      onClick={isFriend ? handleUnfriend : handleConnect}
+      disabled={actionLoading}
+      title={isFriend ? "Hủy kết bạn" : hasSentRequest ? "Hủy lời mời" : "Kết bạn"}
+      className={`w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 ${
+        hasSentRequest ? "bg-zinc-200" : "bg-pink-50"
+      }`}
     >
-      <Share2 className="w-5 h-5 text-sky-600" />
+      {isFriend ? (
+        <UserMinus className="w-5 h-5 text-pink-600" />
+      ) : hasSentRequest ? (
+        <Clock className="w-5 h-5 text-zinc-600" />
+      ) : (
+        <UserPlus className="w-5 h-5 text-pink-600" />
+      )}
     </button>
 
-<button
-  onClick={handleBlock} // THÊM DÒNG NÀY
-  disabled={actionLoading}
-  className="w-11 h-11 rounded-full bg-orange-50 flex items-center justify-center active:scale-90 transition-all disabled:opacity-50"
->
-  <Flag className="w-5 h-5 text-orange-600" />
-</button>
+    <button
+      onClick={handleBlock}
+      disabled={actionLoading}
+      title="Chặn người dùng"
+      className="w-11 h-11 rounded-full bg-orange-50 flex items-center justify-center active:scale-90 transition-all disabled:opacity-50"
+    >
+      <Ban className="w-5 h-5 text-orange-600" />
+    </button>
   </div>
+)}
+
+{isOwnProfile && (
+  <button
+    type="button"
+    onClick={() => router.push("/settings/profile-edit")}
+    className="mt-3 px-5 h-10 rounded-full bg-blue-500 text-white text-sm font-semibold active:scale-95 transition-transform"
+  >
+    Chỉnh sửa hồ sơ
+  </button>
 )}
   </div>
 </div>
@@ -806,20 +817,30 @@ return (
     <p className="text-xs text-zinc-500 leading-tight">Bạn bè</p>
   </div>
 
-  <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
+  <button
+    type="button"
+    onClick={() => setShowCompletedInfo(true)}
+    className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm active:scale-95 transition-transform w-full"
+  >
     <div className="flex items-center justify-center gap-1 text-sky-500 mb-1">
       <Briefcase className="w-4 h-4" />
       <span className="text-base font-bold">{completed}</span>
     </div>
     <p className="text-xs text-zinc-500 leading-tight">Hoàn thành</p>
-  </div>
+  </button>
 
   <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
-    <div className="flex items-center justify-center gap-1 text-yellow-500 mb-1">
-      <Star className="w-4 h-4 fill-current" />
-      <span className="text-base font-bold">{rating > 0 ? rating.toFixed(1) : "—"}</span>
-    </div>
-    <p className="text-xs text-zinc-500 leading-tight">Điểm đánh giá ({reviews})</p>
+    <button
+      type="button"
+      onClick={() => setShowReviewsModal(true)}
+      className="w-full active:scale-95 transition-transform"
+    >
+      <div className="flex items-center justify-center gap-1 text-yellow-500 mb-1">
+        <Star className="w-4 h-4 fill-current" />
+        <span className="text-base font-bold">{rating > 0 ? rating.toFixed(1) : "—"}</span>
+      </div>
+      <p className="text-xs text-zinc-500 leading-tight">Điểm đánh giá ({reviews})</p>
+    </button>
   </div>
 </div>
 
@@ -850,10 +871,7 @@ return (
   <div className="flex items-center justify-between mb-3">
     <p className="text-sm font-bold text-zinc-900">Thành tựu</p>
     <button
-      onClick={() => {
-        setSelectedAchievement(null);
-        setShowAchievementInfo(true);
-      }}
+      onClick={() => setShowAchievementInfo(true)}
       className="w-5 h-5 rounded-full bg-zinc-100 flex items-center justify-center active:scale-95"
     >
       <Info className="w-3 h-3 text-zinc-500" />
@@ -861,66 +879,27 @@ return (
   </div>
   
   <div className="grid grid-cols-3 gap-3">
-    {allAchievements.slice(0, 6).map((item) => (
+    {allAchievements.slice(0, 6).map((item) => {
+      const colors = getAchievementColor(item.id);
+      return (
       <button
         key={item.id}
-        onClick={() => {
-          setSelectedAchievement(item);
-          setShowAchievementInfo(true);
-        }}
+        onClick={() => setShowAchievementInfo(true)}
         className="flex flex-col items-center active:scale-95 transition-all"
       >
-        {/* HEXAGON */}
         <div className="relative w-16 h-16 mb-2">
-          <svg viewBox="0 0 100 100" className="w-full h-full">
-            <defs>
-              {item.unlocked && (
-                <linearGradient id={`gradient-${item.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor={item.color.includes('amber')? '#FBBF24' : 
-                    item.color.includes('emerald')? '#34D399' :
-                    item.color.includes('violet')? '#A78BFA' :
-                    item.color.includes('yellow')? '#FACC15' :
-                    item.color.includes('blue')? '#60A5FA' :
-                    item.color.includes('indigo')? '#818CF8' :
-                    item.color.includes('orange')? '#FB923C' :
-                    item.color.includes('rose')? '#FB7185' :
-                    item.color.includes('green')? '#4ADE80' :
-                    item.color.includes('sky')? '#38BDF8' :
-                    item.color.includes('purple')? '#C084FC' :
-                    item.color.includes('teal')? '#2DD4BF' :
-                    item.color.includes('lime')? '#A3E635' :
-                    item.color.includes('pink')? '#F472B6' :
-                    item.color.includes('cyan')? '#22D3EE' :
-                    item.color.includes('fuchsia')? '#E879F9' : '#60A5FA'
-                  } />
-                  <stop offset="100%" stopColor={item.color.includes('orange')? '#FB923C' : 
-                    item.color.includes('teal')? '#2DD4BF' :
-                    item.color.includes('fuchsia')? '#E879F9' :
-                    item.color.includes('amber')? '#FBBF24' :
-                    item.color.includes('sky')? '#38BDF8' :
-                    item.color.includes('blue')? '#3B82F6' :
-                    item.color.includes('red')? '#F87171' :
-                    item.color.includes('pink')? '#F472B6' :
-                    item.color.includes('emerald')? '#34D399' :
-                    item.color.includes('purple')? '#C084FC' :
-                    item.color.includes('yellow')? '#FACC15' :
-                    item.color.includes('indigo')? '#818CF8' : '#3B82F6'
-                  } />
-                </linearGradient>
+          <div
+            className={`w-full h-full rounded-2xl flex items-center justify-center ${
+              item.unlocked ? `bg-gradient-to-br ${colors.gradient}` : "bg-zinc-100 border-2 border-dashed border-zinc-300"
+            }`}
+          >
+            <div className={item.unlocked ? "text-white" : "text-zinc-400"}>
+              {item.unlocked ? (
+                <AchievementIcon name={item.iconName} className="w-5 h-5" />
+              ) : (
+                <Lock className="w-5 h-5" />
               )}
-            </defs>
-            <polygon
-              points="50 1 95 25 95 75 50 99 5 75 5 25"
-              fill={item.unlocked? `url(#gradient-${item.id})` : "none"}
-              stroke={item.unlocked? "none" : "#D4D4D8"}
-              strokeWidth="2"
-              strokeDasharray={item.unlocked? "none" : "4 4"}
-            />
-          </svg>
-          <div className={`absolute inset-0 flex items-center justify-center ${
-            item.unlocked? "text-white" : "text-zinc-400"
-          }`}>
-            {item.unlocked? item.icon : <Lock className="w-5 h-5" />}
+            </div>
           </div>
         </div>
         
@@ -931,15 +910,12 @@ return (
           {item.desc}
         </p>
       </button>
-    ))}
+    );})}
   </div>
 
   {allAchievements.length > 6 && (
     <button
-      onClick={() => {
-        setSelectedAchievement(null);
-        setShowAchievementInfo(true);
-      }}
+      onClick={() => setShowAchievementInfo(true)}
       className="w-full mt-3 py-2 rounded-xl bg-zinc-50 text-xs font-semibold text-zinc-600 active:bg-zinc-100"
     >
       Xem tất cả {allAchievements.length} thành tựu
@@ -950,7 +926,7 @@ return (
 
 
 {/* SKILLS */}
-{targetUser?.skills && targetUser?.skills.length > 0 && (
+{Array.isArray(targetUser?.skills) && targetUser.skills.length > 0 && (
   <div className="mt-5">
     <div className="flex items-center justify-between mb-2.5">
       <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 px-1">
@@ -959,7 +935,7 @@ return (
       <ChevronRight className="w-4 h-4 text-zinc-400" />
     </div>
     <div className="flex flex-wrap gap-2">
-      {targetUser?.skills.map((skill) => (
+      {targetUser.skills.map((skill) => (
         <div
           key={skill}
           className="px-3.5 py-2 rounded-2xl border border-zinc-200/80 bg-white text-sm font-medium text-zinc-700 shadow-sm"
@@ -972,7 +948,7 @@ return (
 )}
 
 {/* PORTFOLIO */}
-{targetUser?.portfolio && targetUser?.portfolio.length > 0 && (
+{Array.isArray(targetUser?.portfolio) && targetUser.portfolio.length > 0 && (
   <div className="mt-6">
     <div className="flex items-center justify-between mb-2.5">
       <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 px-1">
@@ -1007,352 +983,36 @@ return (
 
 
 
-<Dialog.Root open={showLevelInfo} onOpenChange={setShowLevelInfo}>
-  <Dialog.Portal>
-    <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-3xl p-5 z-50 shadow-2xl">
-      <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4">
-        Hệ thống cấp độ Airanh
-      </Dialog.Title>
-
-      {/* CÔNG THỨC TÍNH XP */}
-<div className="mb-5 p-4 rounded-2xl bg-blue-50 border border-blue-200">
-  <p className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-1.5">
-    <Zap className="w-4 h-4" />
-    Công thức tính XP
-  </p>
-  <div className="space-y-1.5 text-sm text-blue-800">
-    <div className="flex justify-between">
-      <span>Hoàn thành 1 job</span>
-      <span className="font-semibold">+12 XP</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Nhận 1 đánh giá</span>
-      <span className="font-semibold">+8 XP</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Rating trung bình</span>
-      <span className="font-semibold">+Rating × 20 XP</span>
-    </div>
-    <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-bold">
-      <span>Tổng XP hiện tại</span>
-      <span>{huhaScore} XP</span>
-    </div>
-    <div className="text-xs text-blue-700 mt-1">
-      Mỗi level cần 300 XP
-    </div>
-  </div>
-</div>
-
-      {/* BẢNG RANK */}
-      <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5">
-        Các cấp độ
-      </p>
-      <div className="space-y-2.5">
-        {levelTiers.map((tier, i) => (
- <div
-  key={i}
-  className={`p-3.5 rounded-2xl border ${
-  level >= parseInt(tier.range.split(" - ")[0] || "0")
-     ? "border-zinc-300 bg-zinc-50"
-      : "border-zinc-200 bg-white opacity-60"
-  }`}
->
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-8 h-8 rounded-xl bg-gradient-to-r ${tier.gradient} text-white flex items-center justify-center shadow-sm`}
-                >
-                  {tier.icon}
-                </div>
-                <div>
-                  <p className="font-bold text-zinc-900 text-sm">{tier.name}</p>
-                  <p className="text-xs text-zinc-500">Level {tier.range}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xs font-semibold text-zinc-700">{tier.xp}</p>
-                <p className="text-xs text-zinc-500">XP</p>
-              </div>
-            </div>
-            <p className="text-xs text-zinc-600 leading-5">{tier.perks}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* LEVEL HIỆN TẠI */}
-      <div className="mt-4 p-3 rounded-2xl bg-gradient-to-r from-zinc-900 to-zinc-800 text-white">
-        <p className="text-xs text-zinc-400 mb-1">Level hiện tại của bạn</p>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div
-              className={`w-10 h-10 rounded-xl bg-gradient-to-r ${rank.gradient} flex items-center justify-center`}
-            >
-              {rank.icon}
-            </div>
-            <div>
-              <p className="font-bold">{rank.name}</p>
-              <p className="text-xs text-zinc-300">Lv.{level}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="font-bold text-lg">{huhaScore}</p>
-            <p className="text-xs text-zinc-400">XP</p>
-          </div>
-        </div>
-        <div className="mt-3">
-          <div className="flex justify-between text-xs mb-1">
-            <span className="text-zinc-400">Tiến trình</span>
-            <span className="text-zinc-300">{currentLevelXP}/{nextLevelExp} XP</span>
-          </div>
-          <div className="h-1.5 rounded-full bg-zinc-700 overflow-hidden">
-            <div
-              className={`h-full rounded-full bg-gradient-to-r ${rank.gradient}`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
-        Đã hiểu
-      </Dialog.Close>
-    </Dialog.Content>
-  </Dialog.Portal>
-</Dialog.Root>
-<Dialog.Root open={showTrustInfo} onOpenChange={setShowTrustInfo}>
-  <Dialog.Portal>
-    <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-3xl p-5 z-50 shadow-2xl">
-      <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4 flex items-center gap-2">
-        <Shield className="w-5 h-5 text-blue-500" />
-        Độ uy tín được tính thế nào?
-      </Dialog.Title>
-
-      <p className="text-sm text-zinc-600 mb-4">
-        Độ uy tín phản ánh mức độ tin cậy của bạn dựa trên hoạt động thực tế. Điểm càng cao càng được ưu tiên.
-      </p>
-
-      {/* BREAKDOWN CHI TIẾT */}
-<div className="space-y-3 mb-5">
-  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-    <div className="flex justify-between items-center mb-1">
-      <span className="text-sm font-semibold text-zinc-700">Đánh giá trung bình</span>
-      <span className="text-sm font-bold text-blue-600">
-        +{Math.min(Math.floor(rating * 15), 40)}/40
-      </span>
-    </div>
-    <p className="text-xs text-zinc-500">
-      {rating} sao × 15 điểm. Tối đa 40 điểm
-    </p>
-  </div>
-
-  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-    <div className="flex justify-between items-center mb-1">
-      <span className="text-sm font-semibold text-zinc-700">Công việc hoàn thành</span>
-      <span className="text-sm font-bold text-blue-600">
-        +{Math.min(Math.floor(completed * 1.2), 30)}/30
-      </span>
-    </div>
-    <p className="text-xs text-zinc-500">
-      {completed} job × 1.2 điểm. Tối đa 30 điểm
-    </p>
-  </div>
-
-  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-    <div className="flex justify-between items-center mb-1">
-      <span className="text-sm font-semibold text-zinc-700">Số lượng đánh giá</span>
-      <span className="text-sm font-bold text-blue-600">
-        +{Math.min(reviews, 15)}/15
-      </span>
-    </div>
-    <p className="text-xs text-zinc-500">
-      {reviews} đánh giá × 1 điểm. Tối đa 15 điểm
-    </p>
-  </div>
-</div>
-
-        <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-sm font-semibold text-zinc-700">Xác minh tài khoản</span>
-            <span className="text-sm font-bold text-blue-600">
-              +{(targetUser?.emailVerified? 5 : 0) + (targetUser?.isVerifiedId? 5 : 0)}/10
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500">
-            Email {targetUser?.emailVerified? '✓ +5' : '✗ 0'}, CCCD {targetUser?.isVerifiedId? '✓ +5' : '✗ 0'}
-          </p>
-        </div>
-
-   <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-  <div className="flex justify-between items-center mb-1">
-    <span className="text-sm font-semibold text-zinc-700">Thời gian tham gia</span>
-    <span className="text-sm font-bold text-blue-600">
-      +{Math.min(Math.floor(joinedDays / 30), 5)}/5
-    </span>
-  </div>
-  <p className="text-xs text-zinc-500">
-    {joinedDays > 0
-      ? `${joinedDays} ngày = ${Math.floor(joinedDays / 30)} tháng. Tối đa 5 điểm`
-      : "Chưa có dữ liệu. Tối đa 5 điểm"}
-  </p>
-</div>
-  
-
-     
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-sky-500 text-white">
-        <div className="flex justify-between items-center">
-          <span className="font-semibold">Tổng điểm uy tín</span>
-          <span className="text-2xl font-bold">{trustScore}/100</span>
-        </div>
-        <div className="mt-2 h-2 rounded-full bg-white/30 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-white"
-            style={{ width: `${trustScore}%` }}
-          />
-        </div>
-      </div>
-
-      <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
-        Đã hiểu
-      </Dialog.Close>
-    </Dialog.Content>
-  </Dialog.Portal>
-</Dialog.Root>
-<Dialog.Root open={showAchievementInfo} onOpenChange={setShowAchievementInfo}>
-  <Dialog.Portal>
-    <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-3xl p-5 z-50 shadow-2xl">
-      {selectedAchievement? (
-        <>
-          <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4 flex items-center gap-3">
-            <div 
-              className="w-12 h-12 rounded-2xl text-white flex items-center justify-center shadow-lg"
-              style={{
-                background: selectedAchievement.unlocked 
-                 ? `linear-gradient(135deg, ${selectedAchievement.color.includes('amber')? '#FBBF24' : 
-                      selectedAchievement.color.includes('emerald')? '#34D399' :
-                      selectedAchievement.color.includes('violet')? '#A78BFA' :
-                      selectedAchievement.color.includes('yellow')? '#FACC15' :
-                      selectedAchievement.color.includes('blue')? '#60A5FA' :
-                      selectedAchievement.color.includes('indigo')? '#818CF8' :
-                      selectedAchievement.color.includes('orange')? '#FB923C' :
-                      selectedAchievement.color.includes('rose')? '#FB7185' :
-                      selectedAchievement.color.includes('green')? '#4ADE80' :
-                      selectedAchievement.color.includes('sky')? '#38BDF8' :
-                      selectedAchievement.color.includes('purple')? '#C084FC' :
-                      selectedAchievement.color.includes('teal')? '#2DD4BF' :
-                      selectedAchievement.color.includes('lime')? '#A3E635' :
-                      selectedAchievement.color.includes('pink')? '#F472B6' :
-                      selectedAchievement.color.includes('cyan')? '#22D3EE' :
-                      selectedAchievement.color.includes('fuchsia')? '#E879F9' : '#60A5FA'}, ${
-                      selectedAchievement.color.includes('orange')? '#FB923C' : 
-                      selectedAchievement.color.includes('teal')? '#2DD4BF' :
-                      selectedAchievement.color.includes('fuchsia')? '#E879F9' :
-                      selectedAchievement.color.includes('amber')? '#FBBF24' :
-                      selectedAchievement.color.includes('sky')? '#38BDF8' :
-                      selectedAchievement.color.includes('blue')? '#3B82F6' :
-                      selectedAchievement.color.includes('red')? '#F87171' :
-                      selectedAchievement.color.includes('pink')? '#F472B6' :
-                      selectedAchievement.color.includes('emerald')? '#34D399' :
-                      selectedAchievement.color.includes('purple')? '#C084FC' :
-                      selectedAchievement.color.includes('yellow')? '#FACC15' :
-                      selectedAchievement.color.includes('indigo')? '#818CF8' : '#3B82F6'})`
-                  : '#F4F4F5'
-              }}
-            >
-              <div className={selectedAchievement.unlocked? "text-white" : "text-zinc-400"}>
-                {selectedAchievement.icon}
-              </div>
-            </div>
-            <div>
-              <p>{selectedAchievement.label}</p>
-              <p className="text-xs font-normal text-zinc-500 mt-0.5">
-                {selectedAchievement.category === 'task'? 'Thành tựu Task' : 'Thành tựu Profile'}
-              </p>
-            </div>
-          </Dialog.Title>
-          
-          <p className="text-sm text-zinc-600 mb-4 leading-6">{selectedAchievement.desc}</p>
-          
-          <div className={`p-4 rounded-2xl border ${selectedAchievement.unlocked? 'bg-emerald-50 border-emerald-200' : 'bg-zinc-50 border-zinc-200'}`}>
-            <p className="text-xs font-bold text-zinc-700 mb-2 uppercase tracking-wider">Điều kiện mở khóa</p>
-            <p className="text-sm text-zinc-700 font-medium">{selectedAchievement.condition}</p>
-          </div>
-          
-          {selectedAchievement.unlocked && (
-            <div className="mt-4 flex items-center gap-2 text-emerald-600 bg-emerald-50 px-3 py-2 rounded-xl">
-              <Check className="w-4 h-4 stroke-[3]" />
-              <span className="text-sm font-bold">Đã mở khóa</span>
-            </div>
-          )}
-        </>
-      ) : (
-        <>
-          <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4">
-            Tất cả thành tựu
-          </Dialog.Title>
-          <p className="text-xs text-zinc-500 mb-4">
-            Đã mở khóa {allAchievements.filter(a => a.unlocked).length}/{allAchievements.length} thành tựu
-          </p>
-          <div className="grid grid-cols-3 gap-3">
-            {allAchievements.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setSelectedAchievement(item)}
-                className="flex flex-col items-center active:scale-95 transition-all"
-              >
-                <div 
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-1.5 ${
-                    item.unlocked? '' : 'bg-zinc-100 border-2 border-dashed border-zinc-300'
-                  }`}
-                  style={item.unlocked? {
-                    background: `linear-gradient(135deg, ${item.color.includes('amber')? '#FBBF24' : 
-                      item.color.includes('emerald')? '#34D399' :
-                      item.color.includes('violet')? '#A78BFA' :
-                      item.color.includes('yellow')? '#FACC15' :
-                      item.color.includes('blue')? '#60A5FA' :
-                      item.color.includes('indigo')? '#818CF8' :
-                      item.color.includes('orange')? '#FB923C' :
-                      item.color.includes('rose')? '#FB7185' :
-                      item.color.includes('green')? '#4ADE80' :
-                      item.color.includes('sky')? '#38BDF8' :
-                      item.color.includes('purple')? '#C084FC' :
-                      item.color.includes('teal')? '#2DD4BF' :
-                      item.color.includes('lime')? '#A3E635' :
-                      item.color.includes('pink')? '#F472B6' :
-                      item.color.includes('cyan')? '#22D3EE' :
-                      item.color.includes('fuchsia')? '#E879F9' : '#60A5FA'}, ${
-                      item.color.includes('orange')? '#FB923C' : 
-                      item.color.includes('teal')? '#2DD4BF' :
-                      item.color.includes('fuchsia')? '#E879F9' :
-                      item.color.includes('amber')? '#FBBF24' :
-                      item.color.includes('sky')? '#38BDF8' :
-                      item.color.includes('blue')? '#3B82F6' :
-                      item.color.includes('red')? '#F87171' :
-                      item.color.includes('pink')? '#F472B6' :
-                      item.color.includes('emerald')? '#34D399' :
-                      item.color.includes('purple')? '#C084FC' :
-                      item.color.includes('yellow')? '#FACC15' :
-                      item.color.includes('indigo')? '#818CF8' : '#3B82F6'})`
-                  } : {}}
-                >
-                  <div className={item.unlocked? "text-white" : "text-zinc-400"}>
-                    {item.unlocked? item.icon : <Lock className="w-4 h-4" />}
-                  </div>
-                </div>
-                <p className="text-xs font-semibold text-zinc-700 text-center leading-tight line-clamp-2">{item.label}</p>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-      <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
-        Đóng
-      </Dialog.Close>
-    </Dialog.Content>
-  </Dialog.Portal>
-</Dialog.Root>
+<HuhaLevelModal
+  open={showLevelInfo}
+  onOpenChange={setShowLevelInfo}
+  huhaScore={huhaScore}
+  isOwnProfile={isOwnProfile}
+  onNavigate={(href) => router.push(href)}
+/>
+<TrustScoreModal
+  open={showTrustInfo}
+  onOpenChange={setShowTrustInfo}
+  stats={gamUser.stats}
+  emailVerified={!!targetUser?.emailVerified}
+  isVerifiedId={!!targetUser?.isVerifiedId}
+  joinedDays={joinedDays}
+  isOwnProfile={isOwnProfile}
+  onNavigate={(href) => router.push(href)}
+/>
+<AchievementsModal open={showAchievementInfo} onOpenChange={setShowAchievementInfo} gamUser={gamUser} />
+<CompletedWorksModal
+  open={showCompletedInfo}
+  onOpenChange={setShowCompletedInfo}
+  uid={targetUser?.uid ?? ""}
+  count={completed}
+/>
+<ReviewsModal
+  open={showReviewsModal}
+  onOpenChange={setShowReviewsModal}
+  uid={targetUser?.uid ?? ""}
+  {...(user?.uid ? { currentUserId: user.uid } : {})}
+/>
 {/* MODAL THÔNG TIN CÁ NHÂN - THIẾT KẾ MỚI */}
 <Dialog.Root open={showUserInfo} onOpenChange={setShowUserInfo}>
   <Dialog.Portal>
@@ -1369,7 +1029,12 @@ return (
     }
   }}
 >
-   
+  <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-xl border-b border-zinc-100 px-4 h-12 flex items-center justify-between">
+    <Dialog.Title className="text-sm font-bold text-zinc-900">Thông tin cá nhân</Dialog.Title>
+    <Dialog.Close className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600">
+      ✕
+    </Dialog.Close>
+  </div>
 
 {/* PROFILE HEADER CARD - TRẮNG */}
 <div
@@ -1402,25 +1067,22 @@ return (
           </div>
 
           <h2 className="text-xl font-bold text-zinc-900 mt-4">
-  {targetUser?.name || "Unknown User"}
-</h2>
-<p className="text-sm text-zinc-500 mt-0.5">@{targetUser?.userId || 'user'}</p>
+            {targetUser?.name || "Unknown User"}
+          </h2>
+          <p className="text-sm text-zinc-500 mt-0.5">@{displayHandle}</p>
 
-
-            <div className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3 text-white" />
-              <span className="text-xs font-bold text-white">
-                {joinedDays >= 999
-                 ? "Thành viên lâu năm"
-                  : joinedDays === 0
-                   ? "Tham gia Hôm nay"
-                    : `${joinedDays} ngày`
-                }
-              </span>
-            </div>
+          <div className="mt-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 flex items-center gap-1.5">
+            <Sparkles className="w-3 h-3 text-blue-600" />
+            <span className="text-xs font-bold text-blue-700">
+              {joinedDays >= 999
+                ? "Thành viên lâu năm"
+                : joinedDays === 0
+                  ? "Tham gia hôm nay"
+                  : `${joinedDays} ngày trên Airanh`}
+            </span>
           </div>
         </div>
-      
+</div>
 
       {/* COMPLETION PROGRESS - CHỈ CHỦ PROFILE */}
       {isOwnProfile && (
@@ -1486,7 +1148,7 @@ return (
           <InfoRow
             icon={<Phone className="w-5 h-5" />}
             label="Số điện thoại"
-            value={targetUser?.phone? "••••••" + targetUser.phone.slice(-3) : "Chưa cập nhật"}
+            value={maskPhone(targetUser?.phone)}
             empty={!targetUser?.phone}
           />
         </div>

@@ -45,7 +45,7 @@ export default function UserProfilePage() {
       try {
         const userSnap = await getDoc(doc(db, "users", uid));
         if (!userSnap.exists()) {
-          router.replace("/404");
+          setLoading(false);
           return;
         }
         setUser({ uid,...userSnap.data() } as UserProfile);

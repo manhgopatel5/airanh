@@ -1,6 +1,4 @@
 "use client";
-import GpsRequiredModal from "@/components/GpsRequiredModal";
-
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -8,6 +6,7 @@ import CreateGroupModal from "@/components/CreateGroupModal";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import LeaderboardModal from "@/components/LeaderboardModal";
+import InboxNoticeSheet from "@/components/inbox/InboxNoticeSheet";
 import { EventItem } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
 import { useEvents } from "@/hooks/useEvents";
@@ -103,9 +102,8 @@ export default function ChatClient({ initialEvents = [] }: { initialEvents?: Eve
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const mode = useAppStore((s) => s.mode);
   const isPlan = mode === "plan";
-  const [showGpsModal, setShowGpsModal] = useState(false);
-const [gpsLoading, setGpsLoading] = useState(false);
-const [userLat, setUserLat] = useState<number | null>(null);
+  const [inboxNoticeDone, setInboxNoticeDone] = useState(false);
+  const [userLat, setUserLat] = useState<number | null>(null);
   const [userLng, setUserLng] = useState<number | null>(null);
 const [showLeaderboard, setShowLeaderboard] = useState(false);
   useEffect(() => {
@@ -117,36 +115,17 @@ const [showLeaderboard, setShowLeaderboard] = useState(false);
     }
   }, []);
 
-const requestGPS = useCallback(async () => {
-  if (!navigator.geolocation) {
-    toast.error("Trình duyệt không hỗ trợ GPS");
-    return;
-  }
-  setGpsLoading(true);
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      localStorage.setItem('userLat', String(pos.coords.latitude));
-      localStorage.setItem('userLng', String(pos.coords.longitude));
-      setShowGpsModal(false);
-      setGpsLoading(false);
-    },
-    (err) => {
-      setGpsLoading(false);
-      if (err.code === 1) toast.error("Bạn đã từ chối quyền vị trí");
-      else toast.error("Không lấy được vị trí");
-    },
-    { enableHighAccuracy: true, timeout: 10000 }
-  );
-}, []);
+  useEffect(() => {
+    if (!inboxNoticeDone) {
+      try {
+        const dismissed = localStorage.getItem("inbox-notice-dismissed") === "1";
+        if (dismissed) setInboxNoticeDone(true);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [inboxNoticeDone]);
 
-// Check GPS khi vào trang
-useEffect(() => {
-  const hasLocation = localStorage.getItem('userLat') && localStorage.getItem('userLng');
-  if (!hasLocation && user?.uid) {
-    setShowGpsModal(true);
-    requestGPS(); // Tự động bật popup xin quyền
-  }
-}, [user?.uid, requestGPS]);
   const primaryBg = isPlan? "bg-green-500" : "bg-[#0a84ff]";
 
 
@@ -202,9 +181,9 @@ const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 const setHideTabBar = useAppStore((s) => s.setHideTabBar);
 
 useEffect(() => {
-  setHideTabBar(!!selectedEvent);
+  setHideTabBar(!!selectedEvent || !inboxNoticeDone || authLoading);
   return () => setHideTabBar(false);
-}, [selectedEvent, setHideTabBar]);
+}, [selectedEvent, inboxNoticeDone, authLoading, setHideTabBar]);
 
 
 
@@ -481,6 +460,17 @@ if (authLoading) {
 
 return (
   <>
+    {!inboxNoticeDone && (
+      <InboxNoticeSheet
+        onDismissed={(location) => {
+          if (location) {
+            setUserLat(location.lat);
+            setUserLng(location.lng);
+          }
+          setInboxNoticeDone(true);
+        }}
+      />
+    )}
     <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
       
       <div className="sticky top-0 z-40 pt-3 px-4">
@@ -662,13 +652,6 @@ return (
   }}
 />
 
-<GpsRequiredModal 
-  open={showGpsModal} 
-  onClose={() => setShowGpsModal(false)} 
-  onRetry={requestGPS}
-  loading={gpsLoading}
-  mode="task" 
-/>
 {showLeaderboard && user?.uid && <LeaderboardModal onClose={() => setShowLeaderboard(false)} currentUserId={user.uid} />}
     </>
   );

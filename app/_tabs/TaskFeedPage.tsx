@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import useSWRInfinite from "swr/infinite";
 import { useInView } from "react-intersection-observer";
 import { FiInbox, FiRefreshCw, FiSearch } from "react-icons/fi";
@@ -55,7 +55,6 @@ type TaskFeedPageProps = {
 };
 
 export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPageProps) {
-  const reduceMotion = useReducedMotion();
   const mode = useAppStore((s) => s.mode) ?? "task";
   const setMode = useAppStore((s) => s.setMode);
   const { user } = useAuth();
@@ -205,7 +204,6 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   };
 
   const loading = isLoading && !data?.length;
-  const refreshing = isValidating && !!data?.length;
   const showError = !!error && !data?.length;
   const modeNoun = isTaskMode ? "công việc" : "sự kiện";
   const currentUserId = user?.uid;
@@ -259,7 +257,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
             </div>
           </div>
 
-          <div className="mt-3 flex items-stretch gap-2">
+          <div className="mt-3 flex items-center gap-2">
             <div className="min-w-0 flex-1">
               <FeedSearchPanel
                 mode={mode}
@@ -269,6 +267,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
                 onApply={handleApplyFilters}
                 currentFilters={filters}
                 isLoggedIn={!!user}
+                inline
               />
             </div>
             <button
@@ -397,12 +396,6 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
             {isValidating && (
               <FiRefreshCw className="animate-spin h-5 w-5" style={{ color: accent }} />
             )}
-          </div>
-        )}
-
-        {refreshing && !reduceMotion && (
-          <div className="pointer-events-none fixed top-[calc(env(safe-area-inset-top)+8px)] left-1/2 z-50 -translate-x-1/2 rounded-full bg-white/90 dark:bg-zinc-900/90 px-3 py-1.5 shadow-md">
-            <FiRefreshCw className="animate-spin h-4 w-4" style={{ color: accent }} />
           </div>
         )}
 

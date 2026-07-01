@@ -294,6 +294,7 @@ const handlePinMessage = async (msg: any) => {
 
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isInitialScroll = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -440,7 +441,15 @@ const handlePinMessage = async (msg: any) => {
   }, [chatId, user, friendId, db]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    isInitialScroll.current = true;
+  }, [chatId]);
+
+  useEffect(() => {
+    if (!messages.length) return;
+    messagesEndRef.current?.scrollIntoView({
+      behavior: isInitialScroll.current ? "instant" : "smooth",
+    });
+    isInitialScroll.current = false;
   }, [messages.length]);
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -2163,7 +2172,14 @@ const isColor = bg.url?.startsWith('#');
 
   <div className="flex gap-2.5 mt-4">
     <button 
-      onClick={() => friend?.uid && router.push(`/profile/${friend.uid}`)} 
+      onClick={() => {
+        setShowSettings(false);
+        if (friend?.uid) {
+          router.push(`/profile/${friend.uid}`);
+        } else {
+          toast.error("Không tìm thấy hồ sơ người dùng");
+        }
+      }} 
       className="px-4 h-9 bg-[#0084FF] hover:bg-[#0073e6] text-white rounded-full text- font-medium active:scale-95 transition shadow-sm"
     >
       Trang cá nhân

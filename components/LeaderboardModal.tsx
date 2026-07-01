@@ -13,11 +13,11 @@ import {
   limit,
   Timestamp,
 } from "firebase/firestore";
-import * as Dialog from "@radix-ui/react-dialog";
 import { buildGamificationUser, type GamificationUser } from "@/lib/gamification";
 import { ALL_ACHIEVEMENT_DEFS } from "@/lib/achievements";
+import HuhaLevelModal from "@/components/profile/HuhaLevelModal";
 import {
-  Zap, Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun,
+  Crown, Flame, Trophy, Sparkles, Shield, Gem, Coffee, Heart, Music, Sun,
   Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag,
   Mic, Bike, Palette, Beer, Map, PartyPopper, Briefcase, Camera, Globe, Clock,
   TrendingUp, ThumbsUp, BookOpen, ShieldCheck, MapPin, Users, Mail, Star
@@ -463,100 +463,12 @@ return (
           {tab === "rank" && <RankTab rankUsers={rankUsers} currentUserId={currentUserId} />}
         </div>
       </div>
-      {/* DIALOG CẤP ĐỘ */}
-      <Dialog.Root open={showLevelInfo} onOpenChange={setShowLevelInfo}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-[70] backdrop-blur-sm" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-3xl p-5 z-[70] shadow-2xl">
-            <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4">
-              Hệ thống cấp độ Huha
-            </Dialog.Title>
-
-       <div className="mb-5 p-4 rounded-2xl bg-blue-50 border-blue-200">
-  <p className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-1.5">
-    <Zap className="w-4 h-4" />
-    Công thức tính XP
-  </p>
-  <div className="space-y-1.5 text-sm text-blue-800">
-    <div className="flex justify-between">
-      <span>Hoàn thành 1 job</span>
-      <span className="font-semibold">+50 XP</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Nhận đánh giá 4-5★</span>
-      <span className="font-semibold">+20 XP</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Nhận đánh giá 1-3★</span>
-      <span className="font-semibold">+5 XP</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Có bạn bè mới</span>
-      <span className="font-semibold">+10 XP</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Tạo sự kiện/ công việc hot 5+ người tham gia</span>
-      <span className="font-semibold">+30 XP</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Check-in sự kiện</span>
-      <span className="font-semibold">+15 XP</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Streak hàng ngày</span>
-      <span className="font-semibold">+5 XP/ngày</span>
-    </div>
- <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-bold">
-  <span>Tổng XP hiện tại</span>
-  <span>{userData?.huhaScore?.toLocaleString() || 0} XP</span>
-</div>
-    <div className="text-xs text-blue-700 mt-1">
-      Level tăng theo công thức: 100 × Level^1.5 XP
-    </div>
-  </div>
-</div>
-
-<p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5">
-  CÁC CẤP ĐỘ
-</p>
-<div className="space-y-2.5">
-  {[
-    { range: "1 - 7", name: "Mới tham gia", icon: <Sparkles className="w-4 h-4" />, gradient: "from-sky-400 to-blue-600", xp: "0 - 2,000" },
-    { range: "8 - 19", name: "Thành viên tích cực", icon: <Flame className="w-4 h-4" />, gradient: "from-emerald-500 to-teal-500", xp: "2,000 - 10,000" },
-    { range: "20 - 34", name: "Đối tác tin cậy", icon: <Shield className="w-4 h-4" />, gradient: "from-blue-500 to-sky-500", xp: "10,000 - 22,000" },
-    { range: "35 - 49", name: "Chuyên gia", icon: <Gem className="w-4 h-4" />, gradient: "from-violet-500 to-fuchsia-500", xp: "22,000 - 35,000" },
-    { range: "50+", name: "Huyền thoại", icon: <Crown className="w-4 h-4" />, gradient: "from-amber-400 to-orange-500", xp: "35,000+" },
-  ].map((tier, i) => {
-    const minLv = parseInt(tier.range.split(" - ")[0] || "0");
-    const isActive = (userData?.level || 1) >= minLv;
-    return (
-      <div key={i} className={`p-3.5 rounded-2xl border ${isActive? "border-zinc-300 bg-zinc-50" : "border-zinc-200 bg-white opacity-60"}`}>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 rounded-xl bg-gradient-to-r ${tier.gradient} text-white flex items-center justify-center shadow-sm`}>
-              {tier.icon}
-            </div>
-            <div>
-              <p className="font-bold text-zinc-900 text-sm">{tier.name}</p>
-              <p className="text-xs text-zinc-500">Level {tier.range}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-xs font-semibold text-zinc-700">{tier.xp}</p>
-            <p className="text-xs text-zinc-500">XP</p>
-          </div>
-        </div>
-      </div>
-    );
-  })}
-</div>
-
-            <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
-              Đã hiểu
-            </Dialog.Close>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      <HuhaLevelModal
+        open={showLevelInfo}
+        onOpenChange={setShowLevelInfo}
+        huhaScore={userData?.huhaScore ?? 0}
+        isOwnProfile
+      />
     </div>
   );
 }

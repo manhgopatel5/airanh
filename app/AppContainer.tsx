@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 const ChatClient = dynamic(() => import("./chat/ChatClient"), {
   ssr: false,
-  loading: () => <JobSkeleton count={1} />,
+  loading: () => null,
 });
 const TasksPage = dynamic(() => import("./_tabs/MyTasksPage"), {
   ssr: false,
@@ -71,25 +71,26 @@ export default function AppContainer({ initialJobs, initialPlans, initialEvents 
     });
   }, [currentMainTab]);
 
-  const handleChangeTab = useCallback(
-    (tab: MainTab) => {
-      if (tab === "messages") prefetchAppTab("messages");
-      if (tab === "tasks") prefetchAppTab("tasks");
-      if (tab === "profile") prefetchAppTab("profile");
-      if (tab === "home" || tab === "plans") prefetchAppTab("home");
-      setCurrentMainTab(tab);
-      const newUrl = tab === "home" ? "/" : `/?tab=${tab}`;
-      router.replace(newUrl, { scroll: false });
-    },
-    [router]
-  );
+  const handleChangeTab = useCallback((tab: MainTab) => {
+    if (tab === currentMainTab) return;
+    if (tab === "messages") prefetchAppTab("messages");
+    if (tab === "tasks") prefetchAppTab("tasks");
+    if (tab === "profile") prefetchAppTab("profile");
+    if (tab === "home" || tab === "plans") prefetchAppTab("home");
+    setCurrentMainTab(tab);
+    const newUrl = tab === "home" ? "/" : `/?tab=${tab}`;
+    window.history.replaceState(window.history.state, "", newUrl);
+  }, [currentMainTab]);
 
   useEffect(() => {
-    const tabFromUrl = (searchParams.get("tab") as MainTab) || "home";
-    if (tabFromUrl !== currentMainTab) {
-      setCurrentMainTab(tabFromUrl);
-    }
-  }, [searchParams, currentMainTab]);
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = (params.get("tab") as MainTab) || "home";
+      setCurrentMainTab(tab);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
