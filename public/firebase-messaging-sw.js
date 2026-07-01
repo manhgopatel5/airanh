@@ -1,4 +1,4 @@
-/* ================= FIREBASE SW V2.5 — push avatar, no duplicate title ================= */
+/* ================= FIREBASE SW V2.6 — TikTok-style push (tên + nội dung, avatar) ================= */
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
@@ -12,7 +12,7 @@ const firebaseConfig = {
   databaseURL: "https://airanh-ba64c-default-rtdb.asia-southeast1.firebasedatabase.app/",
 };
 
-const VERSION = "v2.5.0";
+const VERSION = "v2.6.0";
 const APP_ICON = "/icon-192.PNG";
 
 firebase.initializeApp(firebaseConfig);
@@ -33,21 +33,39 @@ function resolveIcon(data, isSystem) {
   const abs = toAbsoluteUrl(icon);
   if (abs) return abs;
   const name = (data.senderName || "U").trim();
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0a84ff&color=fff&size=128&bold=true`;
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0a84ff&color=fff&size=192&bold=true&rounded=true`;
 }
 
-function buildNotificationBody(data) {
-  if (data.body && String(data.body).trim()) return String(data.body).trim();
-  const sender = (data.senderName || "Ai đó").trim();
+/** TikTok-style: title = tên, body = nội dung (không lặp "đã gửi tin nhắn") */
+function resolveTitle(data, isSystem) {
+  const title = (data.title || data.senderName || "").trim();
+  if (title) return title;
+  return isSystem ? "Hệ thống" : "Ai đó";
+}
+
+function resolveBody(data) {
+  const body = (data.body || data.preview || data.message || "").trim();
+  if (body) return body;
+
   const kind = data.contentKind || "text";
-  const text = (data.message || data.preview || "").trim();
-  if (kind === "friend_request") return `${sender} đã gửi lời mời kết bạn.`;
-  if (kind === "image") return `${sender} đã gửi hình ảnh.`;
-  if (kind === "file") return `${sender} đã gửi tệp đính kèm.`;
-  if (kind === "location") return `${sender} đã gửi vị trí.`;
-  if (kind === "system") return data.message || "Thông báo hệ thống";
-  if (text) return `${sender} đã gửi tin nhắn:\n${text}`;
-  return `${sender} đã gửi tin nhắn.`;
+  switch (kind) {
+    case "friend_request":
+      return "Gửi lời mời kết bạn";
+    case "friend_accepted":
+      return "Chấp nhận lời mời kết bạn";
+    case "image":
+      return "Đã gửi hình ảnh";
+    case "file":
+      return "Đã gửi tệp đính kèm";
+    case "location":
+      return "Đã gửi vị trí";
+    case "audio":
+      return "Đã gửi tin nhắn thoại";
+    case "system":
+      return "Bạn có thông báo mới";
+    default:
+      return "Tin nhắn mới";
+  }
 }
 
 function parsePayloadData(raw) {
@@ -64,8 +82,8 @@ function parsePayloadData(raw) {
 
 function showPushNotification(data, messageId) {
   const isSystem = data.isSystem === "true" || data.type === "system";
-  const title = (data.title || "").trim();
-  const body = buildNotificationBody(data);
+  const title = resolveTitle(data, isSystem);
+  const body = resolveBody(data);
   const icon = resolveIcon(data, isSystem);
   const tag = data.chatId || data.groupId || data.messageId || data.type || "default";
   const url = data.url || data.link || "/";
@@ -86,10 +104,12 @@ function showPushNotification(data, messageId) {
     },
   };
 
-  // Title trống → chỉ hiện body, không lặp tên + "from App"
-  const displayTitle = title || (isSystem ? "Hệ thống" : " ");
+  // Android: hiện avatar lớn bên phải (giống TikTok)
+  if (!isSystem && icon) {
+    options.image = icon;
+  }
 
-  return self.registration.showNotification(displayTitle, options);
+  return self.registration.showNotification(title, options);
 }
 
 const CACHE_NAME = `fcm-assets-${VERSION}`;

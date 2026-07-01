@@ -7,7 +7,7 @@ import { FirestoreEvent, QueryDocumentSnapshot, Change } from "firebase-function
 import { DocumentSnapshot } from "firebase-admin/firestore";
 import { db } from "./admin";
 import { createNotificationAndPush, extractMentionedUids } from "./notificationService";
-import { inferPushContentKind } from "./pushFormat";
+import { buildPushDisplayPayload, inferPushContentKind } from "./pushFormat";
 
 // 1. Khi có lời mời kết bạn mới → tạo thông báo cho người nhận
 export const onFriendRequestCreated = onDocumentCreated(
@@ -486,7 +486,13 @@ async function getUserPublic(uid: string) {
 
 async function sendPushToUser(
   uid: string,
-  payload: { title: string; body: string; data: Record<string, string> }
+  payload: {
+    senderName: string;
+    preview?: string;
+    senderAvatar?: string | null;
+    type?: string;
+    data: Record<string, string>;
+  }
 ) {
   try {
     const userDoc = await db.doc(`users/${uid}`).get();
@@ -494,15 +500,23 @@ async function sendPushToUser(
     const tokens = [...new Set(rawTokens.filter((t) => typeof t === "string" && t.length > 0))];
     if (tokens.length === 0) return;
 
-    const link = payload.data.link || payload.data.url || "/";
+    const display = buildPushDisplayPayload({
+      senderName: payload.senderName,
+      preview: payload.preview,
+      senderAvatar: payload.senderAvatar,
+      type: payload.type || payload.data.type,
+      link: payload.data.link,
+      extraData: payload.data,
+    });
+
+    const link = display.data.url || display.data.link || "/";
     const messaging = getMessaging();
     await messaging.sendEachForMulticast({
       tokens,
-      notification: { title: payload.title, body: payload.body },
-      data: payload.data,
+      data: display.data,
       webpush: {
         fcmOptions: { link },
-        notification: { icon: "/icon-192.png", badge: "/icon-192.png" },
+        headers: { TTL: "86400" },
       },
     });
   } catch (error) {
@@ -532,8 +546,10 @@ async function notifyStrangerMatch(
     });
 
     await sendPushToUser(toUid, {
-      title: "Tìm thấy bạn mới!",
-      body: `${fromPublic.name} muốn trò chuyện với bạn`,
+      senderName: fromPublic.name,
+      preview: "muốn trò chuyện với bạn",
+      senderAvatar: fromPublic.avatar,
+      type: "stranger_match",
       data: {
         type: "stranger_match",
         chatId,
@@ -571,8 +587,10 @@ async function notifyStrangerMessage(
     });
 
     await sendPushToUser(toUid, {
-      title: fromPublic.name,
-      body,
+      senderName: fromPublic.name,
+      preview: body,
+      senderAvatar: fromPublic.avatar,
+      type: "stranger_message",
       data: {
         type: "stranger_message",
         chatId,
@@ -1272,7 +1290,7 @@ export const checkDeadlineReminders = onSchedule(
           {
             type: "system",
             fromUid: "system",
-            fromName: "Huha",
+            fromName: "AIR",
             fromAvatar: "",
             title: "Sắp đến hạn kế hoạch",
             message: `"${title}" còn khoảng ${hoursLeft} giờ`,

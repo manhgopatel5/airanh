@@ -37,6 +37,13 @@ async function getFcmServiceWorker(): Promise<ServiceWorkerRegistration> {
   if (reg.waiting) {
     reg.waiting.postMessage({ type: "SKIP_WAITING" });
   }
+  if (reg.installing) {
+    reg.installing.addEventListener("statechange", () => {
+      if (reg.installing?.state === "installed" && reg.waiting) {
+        reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      }
+    });
+  }
   void reg.update();
   return reg;
 }
@@ -103,9 +110,18 @@ export async function registerFcmToken(): Promise<FcmRegisterResult> {
       onMessage(messaging, (payload) => {
         const data = payload.data || {};
         const isSystem = data.isSystem === "true" || data.type === "system";
-        const body = data.body || payload.notification?.body || "";
-        const rawTitle = (data.title || payload.notification?.title || "").trim();
-        const title = rawTitle || (isSystem ? "Hệ thống" : " ");
+        const title = (
+          data.title ||
+          data.senderName ||
+          payload.notification?.title ||
+          (isSystem ? "Hệ thống" : "Ai đó")
+        ).trim();
+        const body = (
+          data.body ||
+          data.preview ||
+          payload.notification?.body ||
+          ""
+        ).trim();
         const iconRaw = data.icon || data.senderAvatar || "";
         const icon =
           iconRaw.startsWith("http")
@@ -114,7 +130,7 @@ export async function registerFcmToken(): Promise<FcmRegisterResult> {
               ? `${window.location.origin}${iconRaw.startsWith("/") ? iconRaw : `/${iconRaw}`}`
               : isSystem
                 ? `${window.location.origin}/icon-192.PNG`
-                : `https://ui-avatars.com/api/?name=${encodeURIComponent((data.senderName || "U").trim())}&background=0a84ff&color=fff&size=128&bold=true`;
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent((data.senderName || "U").trim())}&background=0a84ff&color=fff&size=192&bold=true&rounded=true`;
         const link = data.link || data.url || "/";
         const notif = new Notification(title, {
           body,

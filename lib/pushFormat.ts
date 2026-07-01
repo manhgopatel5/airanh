@@ -27,42 +27,43 @@ function truncatePreview(text?: string, maxLen = 120): string {
   return `${t.slice(0, maxLen).trimEnd()}…`;
 }
 
-/** Body push — tên + hành động, không dấu "-" đầu dòng nội dung */
-export function formatPushBody(
+/** TikTok-style: title = tên, body = nội dung ngắn (không lặp tên) */
+export function formatPushTitle(
   senderName: string,
+  isSystem: boolean
+): string {
+  if (isSystem) return "Hệ thống";
+  return senderName.trim() || "Ai đó";
+}
+
+export function formatPushBody(
   kind: PushContentKind,
   preview?: string
 ): string {
-  const name = senderName.trim() || "Ai đó";
+  const p = truncatePreview(preview);
 
   switch (kind) {
     case "friend_request":
-      return `${name} đã gửi lời mời kết bạn.`;
+      return "Gửi lời mời kết bạn";
     case "friend_accepted":
-      return `${name} đã chấp nhận lời mời kết bạn.`;
+      return "Chấp nhận lời mời kết bạn";
     case "image":
-      return `${name} đã gửi hình ảnh.`;
+      return "Đã gửi hình ảnh";
     case "file":
-      return `${name} đã gửi tệp đính kèm.`;
+      return "Đã gửi tệp đính kèm";
     case "location":
-      return `${name} đã gửi vị trí.`;
+      return "Đã gửi vị trí";
     case "audio":
-      return `${name} đã gửi tin nhắn thoại.`;
-    case "mention": {
-      const p = truncatePreview(preview);
-      return p ? `${name} đã nhắc đến bạn:\n${p}` : `${name} đã nhắc đến bạn trong nhóm.`;
-    }
-    case "group_text": {
-      const p = truncatePreview(preview);
-      return p ? `${name} đã gửi tin nhắn trong nhóm:\n${p}` : `${name} đã gửi tin nhắn trong nhóm.`;
-    }
+      return "Đã gửi tin nhắn thoại";
+    case "mention":
+      return p ? p : "Nhắc đến bạn trong nhóm";
+    case "group_text":
+      return p ? p : "Gửi tin nhắn trong nhóm";
     case "system":
-      return truncatePreview(preview) || "Bạn có thông báo mới.";
+      return truncatePreview(preview) || "Bạn có thông báo mới";
     case "text":
-    default: {
-      const p = truncatePreview(preview);
-      return p ? `${name} đã gửi tin nhắn:\n${p}` : `${name} đã gửi tin nhắn.`;
-    }
+    default:
+      return p || "Tin nhắn mới";
   }
 }
 
@@ -94,7 +95,6 @@ export function inferPushContentKind(
   return "text";
 }
 
-/** Avatar người gửi — fallback ui-avatars nếu chưa có ảnh */
 export function resolvePushIcon(
   senderName: string,
   avatar?: string | null,
@@ -109,12 +109,11 @@ export function resolvePushIcon(
     return `${base}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
   }
 
-  const initials = encodeURIComponent((senderName || "U").trim().slice(0, 2) || "U");
-  return `https://ui-avatars.com/api/?name=${initials}&background=0a84ff&color=fff&size=128&bold=true`;
+  const name = encodeURIComponent((senderName || "U").trim());
+  return `https://ui-avatars.com/api/?name=${name}&background=0a84ff&color=fff&size=192&bold=true&rounded=true`;
 }
 
 export type PushDisplayPayload = {
-  /** Title trống cho tin user — tránh "Tên" + "from App" trên iOS */
   title: string;
   body: string;
   icon: string;
@@ -138,12 +137,12 @@ export function buildPushDisplayPayload(params: {
     inferPushContentKind(type, params.preview ? { text: params.preview } : undefined);
   const isSystem = params.isSystem ?? contentKind === "system";
   const senderName = isSystem ? "Hệ thống" : (params.senderName || "Ai đó").trim();
-  const body = formatPushBody(senderName, contentKind, params.preview);
+  const title = formatPushTitle(senderName, isSystem);
+  const body = formatPushBody(contentKind, params.preview);
   const icon = resolvePushIcon(senderName, params.senderAvatar, isSystem);
   const base = getPushBaseUrl();
   const link = params.link || "/";
   const absoluteLink = link.startsWith("http") ? link : `${base}${link.startsWith("/") ? link : `/${link}`}`;
-  const title = isSystem ? "Hệ thống" : "";
 
   return {
     title,
@@ -155,6 +154,7 @@ export function buildPushDisplayPayload(params: {
       icon,
       senderName,
       senderAvatar: params.senderAvatar?.trim() || icon,
+      preview: truncatePreview(params.preview) || "",
       contentKind,
       isSystem: isSystem ? "true" : "false",
       type,

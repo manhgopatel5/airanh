@@ -107,6 +107,19 @@ const nextConfig = {
         ],
       },
       {
+        source: '/firebase-messaging-sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+        ],
+      },
+      {
+        source: '/manifest.json',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, must-revalidate' },
+        ],
+      },
+      {
         source: '/animations/:path*',
         headers: [
           { key: 'Access-Control-Allow-Origin', value: '*' },
