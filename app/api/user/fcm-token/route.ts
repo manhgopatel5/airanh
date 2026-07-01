@@ -1,36 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { adminAuth, adminDb } from '@/lib/firebase-admin'
-import { FieldValue } from 'firebase-admin/firestore'
+import { NextRequest, NextResponse } from "next/server";
+import { adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
+import { getAuthUid } from "@/lib/server/verifyAuth";
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Lấy user từ session cookie. Bảo mật, không tin client
-    const token = request.cookies.get('__session')?.value
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    
-    const decoded = await adminAuth().verifySessionCookie(token, true)
-    const uid = decoded.uid
-
-    // 2. Lấy FCM token từ body
-    const { token: fcmToken } = await request.json()
-    if (!fcmToken) {
-      return NextResponse.json({ error: 'Missing FCM token' }, { status: 400 })
+    const uid = await getAuthUid(request);
+    if (!uid) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 3. Update vào Firestore. Dùng arrayUnion để hỗ trợ multi-device
-    const db = adminDb()
-    const userRef = db.doc(`users/${uid}`)
-    
-    await userRef.update({
-      fcmTokens: FieldValue.arrayUnion(fcmToken),
-      fcmTokenUpdatedAt: FieldValue.serverTimestamp(),
-    })
+    const { token: fcmToken } = await request.json();
+    if (!fcmToken || typeof fcmToken !== "string") {
+      return NextResponse.json({ error: "Missing FCM token" }, { status: 400 });
+    }
 
-    return NextResponse.json({ success: true })
+    const userRef = adminDb().doc(`users/${uid}`);
+    await userRef.set(
+      {
+        fcmTokens: FieldValue.arrayUnion(fcmToken),
+        fcmTokenUpdatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('FCM token error:', err)
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    console.error("FCM token error:", err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

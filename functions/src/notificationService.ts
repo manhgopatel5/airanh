@@ -35,6 +35,8 @@ export type NotifyOptions = {
   isMention?: boolean;
   /** Bỏ qua quiet hours (tin khẩn) */
   force?: boolean;
+  /** Idempotency — tránh gửi push trùng */
+  messageId?: string;
 };
 
 function isInQuietHours(quietHours?: UserSettings["quietHours"]): boolean {
@@ -71,12 +73,22 @@ function shouldSendPush(settings: UserSettings, type: string, options: NotifyOpt
 
 async function sendPushToUser(
   uid: string,
-  payload: { title: string; body: string; data: Record<string, string> }
+  payload: { title: string; body: string; data: Record<string, string> },
+  messageId?: string
 ) {
   const userDoc = await db().doc(`users/${uid}`).get();
   const rawTokens: string[] = userDoc.data()?.fcmTokens || [];
   const tokens = [...new Set(rawTokens.filter((t) => typeof t === "string" && t.length > 0))];
-  if (tokens.length === 0) return;
+  if (tokens.length === 0) {
+    console.warn(`[push] No fcmTokens for user ${uid}`);
+    return;
+  }
+
+  if (messageId) {
+    const logRef = db().doc(`notificationPushLog/${messageId}`);
+    const log = await logRef.get();
+    if (log.exists) return;
+  }
 
   const link = payload.data.link || payload.data.url || "/";
   const messaging = getMessaging();
@@ -85,8 +97,8 @@ async function sendPushToUser(
     notification: { title: payload.title, body: payload.body },
     data: payload.data,
     webpush: {
-      fcmOptions: { link },
-      notification: { icon: "/icon-192.png", badge: "/icon-192.png" },
+      fcmOptions: { link: link.startsWith("http") ? link : `https://airanh.vercel.app${link}` },
+      notification: { icon: "/icon-192.PNG", badge: "/icon-192.PNG" },
     },
   });
 
@@ -97,6 +109,14 @@ async function sendPushToUser(
   if (deadTokens.length > 0) {
     await db().doc(`users/${uid}`).update({
       fcmTokens: FieldValue.arrayRemove(...deadTokens),
+    });
+  }
+
+  if (messageId && result.successCount > 0) {
+    await db().doc(`notificationPushLog/${messageId}`).set({
+      recipientId: uid,
+      sentAt: FieldValue.serverTimestamp(),
+      source: "cloud_function",
     });
   }
 }
@@ -146,18 +166,22 @@ export async function createNotificationAndPush(
     if (!pushOk) return;
 
     const link = payload.link || "/";
-    await sendPushToUser(toUid, {
-      title: payload.title,
-      body: payload.message,
-      data: {
-        type: payload.type,
-        link,
-        url: link,
-        ...(payload.actionData?.chatId ? { chatId: String(payload.actionData.chatId) } : {}),
-        ...(payload.actionData?.groupId ? { groupId: String(payload.actionData.groupId) } : {}),
-        ...(payload.actionData?.requestId ? { requestId: String(payload.actionData.requestId) } : {}),
+    await sendPushToUser(
+      toUid,
+      {
+        title: payload.title,
+        body: payload.message,
+        data: {
+          type: payload.type,
+          link,
+          url: link,
+          ...(payload.actionData?.chatId ? { chatId: String(payload.actionData.chatId) } : {}),
+          ...(payload.actionData?.groupId ? { groupId: String(payload.actionData.groupId) } : {}),
+          ...(payload.actionData?.requestId ? { requestId: String(payload.actionData.requestId) } : {}),
+        },
       },
-    });
+      options.messageId
+    );
   } catch (error) {
     console.error("createNotificationAndPush error:", error);
   }

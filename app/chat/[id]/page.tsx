@@ -24,6 +24,7 @@ import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geoloca
 import { formatShortLocation, type ParsedMapboxLocation } from "@/lib/mapboxGeocode";
 import AddressSearchInput from "@/components/location/AddressSearchInput";
 import { requestFcmReregister } from "@/components/FCMProvider";
+import { dispatchOfflinePush } from "@/lib/pushNotifyClient";
 import {
   shouldShowChatDateDivider,
   shouldShowChatTimeDivider,
@@ -512,7 +513,7 @@ useEffect(() => {
           editedAt: serverTimestamp()
         });
       } else {
-        await addDoc(collection(db, "chats", chatId, "messages"), {
+        const docRef = await addDoc(collection(db, "chats", chatId, "messages"), {
           text: tempText,
           senderId: user.uid,
           createdAt: serverTimestamp(),
@@ -526,6 +527,12 @@ useEffect(() => {
               senderName: tempReply.senderId === user.uid? "Bạn" : friend.name,
             },
           }),
+        });
+        void dispatchOfflinePush({
+          chatId,
+          messageId: docRef.id,
+          title: user.displayName || user.email?.split("@")[0] || "Tin nhắn mới",
+          body: tempText.slice(0, 120),
         });
       }
     } catch (e: any) {

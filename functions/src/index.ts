@@ -1143,7 +1143,7 @@ export const onChatMessageCreated = onDocumentCreated(
         link: `/chat/${chatId}`,
         actionData: { chatId },
       },
-      { isMention: false }
+      { isMention: false, messageId: event.params.messageId }
     );
   }
 );

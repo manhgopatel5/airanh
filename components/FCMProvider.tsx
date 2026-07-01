@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { getFirebaseApp } from "@/lib/firebase";
+import { saveFcmTokenToServer } from "@/lib/fcmClient";
 
 async function registerFcmToken(): Promise<boolean> {
   if (typeof window === "undefined") return false;
@@ -9,11 +10,14 @@ async function registerFcmToken(): Promise<boolean> {
 
   const { getMessaging, getToken, isSupported, onMessage } = await import("firebase/messaging");
   const supported = await isSupported();
-  if (!supported) return false;
+  if (!supported) {
+    console.warn("[FCM] Trình duyệt không hỗ trợ push");
+    return false;
+  }
 
   const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY?.trim();
   if (!vapidKey) {
-    console.warn("[FCM] Thiếu NEXT_PUBLIC_FIREBASE_VAPID_KEY — không đăng ký được push token");
+    console.warn("[FCM] Thiếu NEXT_PUBLIC_FIREBASE_VAPID_KEY");
     return false;
   }
 
@@ -21,6 +25,7 @@ async function registerFcmToken(): Promise<boolean> {
   if ("serviceWorker" in navigator) {
     try {
       swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+      await navigator.serviceWorker.ready;
     } catch {
       swReg = await navigator.serviceWorker.ready;
     }
@@ -32,15 +37,13 @@ async function registerFcmToken(): Promise<boolean> {
     vapidKey,
     ...(swReg ? { serviceWorkerRegistration: swReg } : {}),
   });
-  if (!token) return false;
+  if (!token) {
+    console.warn("[FCM] Không lấy được token");
+    return false;
+  }
 
-  await fetch("/api/user/fcm-token", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ token }),
-    keepalive: true,
-  });
+  const saved = await saveFcmTokenToServer(token);
+  if (!saved) return false;
 
   onMessage(messaging, (payload) => {
     if (!payload.notification) return;
@@ -48,13 +51,14 @@ async function registerFcmToken(): Promise<boolean> {
     const link = data.link || data.url || "/";
     const notif = new Notification(payload.notification.title ?? "Thông báo mới", {
       body: payload.notification.body ?? "",
-      icon: "/icon-192x192.png",
+      icon: "/icon-192.PNG",
       tag: data.chatId || data.groupId || data.type || "default",
       data: { link, type: data.type || "" },
     });
     notif.onclick = () => {
       window.focus();
       if (link.startsWith("/")) window.location.href = link;
+      else if (link.startsWith("http")) window.location.href = link;
       notif.close();
     };
   });
@@ -81,15 +85,7 @@ export default function FCMProvider({ userId }: { userId: string }) {
   useEffect(() => {
     if (!userId) return;
 
-    const onIdle = (cb: () => void) => {
-      if ("requestIdleCallback" in window) {
-        (window as Window & { requestIdleCallback: (cb: () => void, o?: { timeout: number }) => void }).requestIdleCallback(cb, { timeout: 2000 });
-      } else {
-        setTimeout(cb, 2000);
-      }
-    };
-
-    onIdle(() => initFCM());
+    initFCM();
 
     const onReregister = () => {
       initialized.current = false;
@@ -97,13 +93,22 @@ export default function FCMProvider({ userId }: { userId: string }) {
     };
     window.addEventListener("fcm-reregister", onReregister);
 
-    return () => window.removeEventListener("fcm-reregister", onReregister);
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && Notification.permission === "granted") {
+        initFCM();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      window.removeEventListener("fcm-reregister", onReregister);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [userId, initFCM]);
 
   return null;
 }
 
-/** Gọi sau khi user cấp quyền thông báo trong settings */
 export function requestFcmReregister() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("fcm-reregister"));
