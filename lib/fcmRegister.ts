@@ -98,9 +98,15 @@ export async function registerFcmToken(): Promise<FcmRegisterResult> {
       onMessageBound = true;
       onMessage(messaging, (payload) => {
         const data = payload.data || {};
-        const title = data.title || payload.notification?.title || "Thông báo mới";
+        const isSystem = data.isSystem === "true" || data.type === "system";
         const body = data.body || payload.notification?.body || "";
-        const icon = data.icon || "/icon-192.PNG";
+        const rawTitle = (data.title || payload.notification?.title || "").trim();
+        const title = rawTitle || (isSystem ? "Hệ thống" : " ");
+        const iconRaw = data.icon || data.senderAvatar || "";
+        const icon =
+          iconRaw.startsWith("http") ? iconRaw : iconRaw ? `${window.location.origin}${iconRaw.startsWith("/") ? iconRaw : `/${iconRaw}`}` : isSystem
+            ? `${window.location.origin}/icon-192.PNG`
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent((data.senderName || "U").trim())}&background=0a84ff&color=fff&size=128&bold=true`;
         const link = data.link || data.url || "/";
         const notif = new Notification(title, {
           body,
