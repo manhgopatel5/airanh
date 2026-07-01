@@ -27,13 +27,13 @@ function truncatePreview(text?: string, maxLen = 120): string {
   return `${t.slice(0, maxLen).trimEnd()}…`;
 }
 
-/** Title = hành động — thay chỗ "from Huha" trên iOS khi title trống */
-export function formatPushActionTitle(
-  kind: PushContentKind,
-  isSystem: boolean
-): string {
+/** Title = tên người gửi (hiện đầu tiên) */
+export function formatPushTitle(senderName: string, isSystem: boolean): string {
   if (isSystem) return "Hệ thống";
+  return senderName.trim() || "Ai đó";
+}
 
+export function formatPushActionLabel(kind: PushContentKind): string {
   switch (kind) {
     case "friend_request":
       return "đã gửi lời mời kết bạn";
@@ -57,31 +57,19 @@ export function formatPushActionTitle(
   }
 }
 
-/** Body = tên người gửi + nội dung (nếu có) */
-export function formatPushBody(
-  senderName: string,
-  kind: PushContentKind,
-  preview?: string
-): string {
-  const name = senderName.trim() || "Ai đó";
+/** Body = hành động + nội dung (nếu có) */
+export function formatPushBody(kind: PushContentKind, preview?: string): string {
   const p = truncatePreview(preview);
 
   if (kind === "system") {
     return p || "Bạn có thông báo mới";
   }
 
-  if (
-    kind === "friend_request" ||
-    kind === "friend_accepted" ||
-    kind === "image" ||
-    kind === "file" ||
-    kind === "location" ||
-    kind === "audio"
-  ) {
-    return name;
+  const action = formatPushActionLabel(kind);
+  if ((kind === "text" || kind === "mention" || kind === "group_text") && p) {
+    return `${action}\n${p}`;
   }
-
-  return p ? `${name}\n${p}` : name;
+  return action;
 }
 
 export function inferPushContentKind(
@@ -154,8 +142,8 @@ export function buildPushDisplayPayload(params: {
     inferPushContentKind(type, params.preview ? { text: params.preview } : undefined);
   const isSystem = params.isSystem ?? contentKind === "system";
   const senderName = isSystem ? "Hệ thống" : (params.senderName || "Ai đó").trim();
-  const title = formatPushActionTitle(contentKind, isSystem);
-  const body = formatPushBody(senderName, contentKind, params.preview);
+  const title = formatPushTitle(senderName, isSystem);
+  const body = formatPushBody(contentKind, params.preview);
   const icon = resolvePushIcon(senderName, params.senderAvatar, isSystem);
   const base = getPushBaseUrl();
   const link = params.link || "/";

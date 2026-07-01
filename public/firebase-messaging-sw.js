@@ -1,4 +1,4 @@
-/* ================= FIREBASE SW V2.7 — title = hành động, thay "from Huha" ================= */
+/* ================= FIREBASE SW V2.8 — tên đầu, hành động + nội dung ================= */
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
@@ -12,7 +12,7 @@ const firebaseConfig = {
   databaseURL: "https://airanh-ba64c-default-rtdb.asia-southeast1.firebasedatabase.app/",
 };
 
-const VERSION = "v2.7.0";
+const VERSION = "v2.8.0";
 const APP_ICON = "/icon-192.PNG";
 
 firebase.initializeApp(firebaseConfig);
@@ -36,8 +36,7 @@ function resolveIcon(data, isSystem) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0a84ff&color=fff&size=192&bold=true&rounded=true`;
 }
 
-function actionTitle(kind, isSystem) {
-  if (isSystem) return "Hệ thống";
+function actionLabel(kind) {
   switch (kind) {
     case "friend_request":
       return "đã gửi lời mời kết bạn";
@@ -61,33 +60,24 @@ function actionTitle(kind, isSystem) {
 }
 
 function resolveTitle(data, isSystem) {
-  const title = (data.title || "").trim();
+  const title = (data.title || data.senderName || "").trim();
   if (title) return title;
-  return actionTitle(data.contentKind || "text", isSystem);
+  return isSystem ? "Hệ thống" : "Ai đó";
 }
 
 function resolveBody(data, isSystem) {
   const body = (data.body || "").trim();
   if (body) return body;
 
-  const sender = (data.senderName || "Ai đó").trim();
-  const preview = (data.preview || data.message || "").trim();
   const kind = data.contentKind || "text";
+  const preview = (data.preview || data.message || "").trim();
+  const action = actionLabel(kind);
 
   if (isSystem) return preview || "Bạn có thông báo mới";
-
-  if (
-    kind === "friend_request" ||
-    kind === "friend_accepted" ||
-    kind === "image" ||
-    kind === "file" ||
-    kind === "location" ||
-    kind === "audio"
-  ) {
-    return sender;
+  if ((kind === "text" || kind === "mention" || kind === "group_text") && preview) {
+    return `${action}\n${preview}`;
   }
-
-  return preview ? `${sender}\n${preview}` : sender;
+  return action;
 }
 
 function parsePayloadData(raw) {

@@ -112,14 +112,15 @@ export async function registerFcmToken(): Promise<FcmRegisterResult> {
         const isSystem = data.isSystem === "true" || data.type === "system";
         const title = (
           data.title ||
+          data.senderName ||
           payload.notification?.title ||
-          (isSystem ? "Hệ thống" : "đã gửi tin nhắn:")
+          (isSystem ? "Hệ thống" : "Ai đó")
         ).trim();
         let body = (data.body || payload.notification?.body || "").trim();
         if (!body) {
-          const sender = (data.senderName || "Ai đó").trim();
           const preview = (data.preview || "").trim();
-          body = preview ? `${sender}\n${preview}` : sender;
+          const action = "đã gửi tin nhắn:";
+          body = preview ? `${action}\n${preview}` : action;
         }
         const iconRaw = data.icon || data.senderAvatar || "";
         const icon =
