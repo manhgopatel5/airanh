@@ -220,26 +220,10 @@ const getAuthToken = useCallback(async () => {
     if (!authUser) return null;
     return authUser.getIdToken();
   }, []);
-  const goToTask = useCallback(async () => {
+  const goToTask = useCallback(() => {
   vibrate();
-  
-  // 1. Optimistic update để mắt nhảy số ngay trên feed
-  onTaskUpdate?.(task.id, { viewCount: (task.viewCount || 0) + 1 });
-
-  // 2. Gọi API tăng view (không cần đợi)
-  try {
-    const token = await getAuthToken();
-    fetch(`/api/tasks/${task.id}/view`, {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      keepalive: true, // đảm bảo gửi được cả khi chuyển trang
-    }).catch(() => {});
-  } catch {}
-
-  // 3. Mở trang
   router.push(`/task/${task.id}`);
-}, [router, task.id, task.viewCount, onTaskUpdate, getAuthToken]);
-
+}, [router, task.id]);
   const goToProfile = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -502,7 +486,7 @@ const getAuthToken = useCallback(async () => {
             />
           )}
 
-  <div className="flex items-center justify-between gap-2 border-t border-zinc-100 px-2 py-1 dark:border-zinc-800/80">
+<div className="flex items-center justify-between gap-2 px-2 py-1">
   <div className="flex items-center gap-3">
     {/* TIM */}
     <button
