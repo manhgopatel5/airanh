@@ -215,7 +215,11 @@ function TaskCard({
   const authorId = getTaskAuthorId(task);
   const authorName = getTaskAuthorName(task);
   const authorAvatar = getTaskAuthorAvatar(task);
-
+const getAuthToken = useCallback(async () => {
+    const authUser = getFirebaseAuth().currentUser;
+    if (!authUser) return null;
+    return authUser.getIdToken();
+  }, []);
   const goToTask = useCallback(async () => {
   vibrate();
   
@@ -249,11 +253,7 @@ function TaskCard({
     [router, authorId]
   );
 
-  const getAuthToken = useCallback(async () => {
-    const authUser = getFirebaseAuth().currentUser;
-    if (!authUser) return null;
-    return authUser.getIdToken();
-  }, []);
+  
 
   const handleLike = useCallback(async () => {
     if (!currentUserId) return router.push("/login");
