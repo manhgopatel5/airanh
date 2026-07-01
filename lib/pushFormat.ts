@@ -27,7 +27,7 @@ function truncatePreview(text?: string, maxLen = 120): string {
   return `${t.slice(0, maxLen).trimEnd()}…`;
 }
 
-/** Nội dung hiển thị — luôn có tên người gửi sau avatar */
+/** Nội dung chính — tên + hành động (hiển thị trong body, không lặp ở title) */
 export function formatPushBody(
   senderName: string,
   kind: PushContentKind,
@@ -98,14 +98,27 @@ export function inferPushContentKind(
   return "text";
 }
 
-export function resolvePushIcon(avatar?: string | null, isSystem = false): string {
+/** Avatar người gửi — fallback ui-avatars nếu chưa có ảnh */
+export function resolvePushIcon(
+  senderName: string,
+  avatar?: string | null,
+  isSystem = false
+): string {
   const base = getPushBaseUrl();
-  if (isSystem || !avatar?.trim()) return `${base}${APP_ICON}`;
-  if (avatar.startsWith("http")) return avatar;
-  return `${base}${avatar.startsWith("/") ? avatar : `/${avatar}`}`;
+  if (isSystem) return `${base}${APP_ICON}`;
+
+  const trimmed = avatar?.trim();
+  if (trimmed) {
+    if (trimmed.startsWith("http")) return trimmed;
+    return `${base}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
+  }
+
+  const initials = encodeURIComponent((senderName || "U").trim().slice(0, 2) || "U");
+  return `https://ui-avatars.com/api/?name=${initials}&background=0a84ff&color=fff&size=128&bold=true`;
 }
 
 export type PushDisplayPayload = {
+  /** Title trống cho tin user — tránh lặp tên + "from App" trên iOS */
   title: string;
   body: string;
   icon: string;
@@ -129,12 +142,14 @@ export function buildPushDisplayPayload(params: {
     inferPushContentKind(type, params.preview ? { text: params.preview } : undefined);
   const isSystem = params.isSystem ?? contentKind === "system";
   const senderName = isSystem ? "Hệ thống" : (params.senderName || "Ai đó").trim();
-  const title = senderName;
   const body = formatPushBody(senderName, contentKind, params.preview);
-  const icon = resolvePushIcon(params.senderAvatar, isSystem);
+  const icon = resolvePushIcon(senderName, params.senderAvatar, isSystem);
   const base = getPushBaseUrl();
   const link = params.link || "/";
   const absoluteLink = link.startsWith("http") ? link : `${base}${link.startsWith("/") ? link : `/${link}`}`;
+
+  // Title trống → iOS không hiện dòng tên dư phía trên; nội dung nằm trong body
+  const title = isSystem ? "Hệ thống" : "";
 
   return {
     title,
@@ -144,6 +159,8 @@ export function buildPushDisplayPayload(params: {
       title,
       body,
       icon,
+      senderName,
+      senderAvatar: params.senderAvatar?.trim() || icon,
       contentKind,
       isSystem: isSystem ? "true" : "false",
       type,
