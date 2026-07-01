@@ -97,12 +97,14 @@ export async function registerFcmToken(): Promise<FcmRegisterResult> {
     if (!onMessageBound) {
       onMessageBound = true;
       onMessage(messaging, (payload) => {
-        if (!payload.notification) return;
         const data = payload.data || {};
+        const title = data.title || payload.notification?.title || "Thông báo mới";
+        const body = data.body || payload.notification?.body || "";
+        const icon = data.icon || "/icon-192.PNG";
         const link = data.link || data.url || "/";
-        const notif = new Notification(payload.notification.title ?? "Thông báo mới", {
-          body: payload.notification.body ?? "",
-          icon: "/icon-192.PNG",
+        const notif = new Notification(title, {
+          body,
+          icon,
           tag: data.chatId || data.groupId || data.type || "default",
           data: { link, type: data.type || "" },
         });

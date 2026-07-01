@@ -1,11 +1,14 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb, sendNotification } from "@/lib/firebase-admin";
+import { buildPushDisplayPayload } from "@/lib/pushFormat";
 
 type PushPayload = {
   messageId: string;
   recipientId: string;
-  title: string;
-  body: string;
+  senderName: string;
+  message: string;
+  senderAvatar?: string | null;
+  isSystem?: boolean;
   type: string;
   link: string;
   actionData?: Record<string, string>;
@@ -35,23 +38,25 @@ export async function dispatchPushOnce(payload: PushPayload): Promise<{
     return { sent: false, reason: "no_fcm_tokens" };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_URL || "https://airanh.vercel.app";
-  const absoluteLink = payload.link.startsWith("http") ? payload.link : `${baseUrl}${payload.link}`;
-
-  const data: Record<string, string> = {
+  const display = buildPushDisplayPayload({
+    senderName: payload.senderName,
+    message: payload.message,
+    ...(payload.senderAvatar != null ? { senderAvatar: payload.senderAvatar } : {}),
+    ...(payload.isSystem != null ? { isSystem: payload.isSystem } : {}),
     type: payload.type,
     link: payload.link,
-    url: absoluteLink,
     messageId: payload.messageId,
-    ...payload.actionData,
-  };
+    ...(payload.actionData ? { extraData: payload.actionData } : {}),
+  });
 
   const result = await sendNotification({
     token: tokens,
-    title: payload.title,
-    body: payload.body,
-    link: absoluteLink,
-    data,
+    title: display.title,
+    body: display.body,
+    iconUrl: display.icon,
+    dataOnly: true,
+    link: display.data.url || display.data.link || "/",
+    data: display.data,
     priority: "high",
   });
 

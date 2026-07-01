@@ -13,7 +13,7 @@ const firebaseConfig = {
   databaseURL: "https://airanh-ba64c-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
-const VERSION = "v2.1.1";
+const VERSION = "v2.2.0";
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
@@ -59,8 +59,6 @@ self.addEventListener("message", (event) => {
 
 /* ================= BACKGROUND MESSAGE ================= */
 messaging.onBackgroundMessage((payload) => {
-  console.log("📩 Background:", payload);
-
   let data = payload.data || {};
   if (typeof data === "string") {
     try {
@@ -70,32 +68,27 @@ messaging.onBackgroundMessage((payload) => {
     }
   }
 
-  const notification = payload.notification || {};
-  const title = notification.title || data.title || "Thông báo mới";
-  const body = (notification.body || data.body || "").slice(0, 200);
-
-  const tag = data.conversationId || data.tag || data.type || "default";
+  const isSystem = data.isSystem === "true" || data.type === "system";
+  const title = data.title || "Thông báo mới";
+  const body = (data.body || "").slice(0, 200);
+  const icon = data.icon || (isSystem ? "/icon-192.PNG" : "/icon-192.PNG");
+  const tag = data.chatId || data.groupId || data.messageId || data.type || "default";
 
   const options = {
     body,
-    icon: notification.icon || data.icon || "/icon-192.PNG",
-    badge: notification.badge || "/icon-192.PNG",
-    image: data.image,
+    icon,
+    badge: "/icon-192.PNG",
     tag,
-    renotify: data.renotify === "true",
-    requireInteraction: data.requireInteraction === "true",
-    silent: data.silent === "true",
+    renotify: true,
     timestamp: Date.now(),
-    vibrate: data.renotify === "true"? [200, 100, 200] : undefined,
     dir: "auto",
-    lang: data.lang || "vi",
+    lang: "vi",
     data: {
-    ...data,
-      url: data.link || data.url || "/",
+      ...data,
+      url: data.url || data.link || "/",
       FCM_MSG_ID: payload.messageId,
-      timestamp: Date.now(),
     },
-    actions: getActions(data).slice(0, 2),
+    actions: [{ action: "view", title: "Xem" }],
   };
 
   return self.registration.showNotification(title, options);

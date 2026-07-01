@@ -5,7 +5,8 @@ export async function dispatchOfflinePush(params: {
   type?: string;
   chatId: string;
   messageId: string;
-  title: string;
+  senderName: string;
+  senderAvatar?: string;
   body: string;
 }): Promise<{ ok: boolean; reason?: string }> {
   try {
@@ -23,8 +24,9 @@ export async function dispatchOfflinePush(params: {
         type: params.type || "message",
         chatId: params.chatId,
         messageId: params.messageId,
-        title: params.title,
+        title: params.senderName,
         body: params.body,
+        senderAvatar: params.senderAvatar,
       }),
       keepalive: true,
     });

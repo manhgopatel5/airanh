@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
       messageId,
       title,
       body: messageBody,
+      senderAvatar: explicitSenderAvatar,
       recipientId: explicitRecipient,
       groupId,
     } = body as {
@@ -26,6 +27,7 @@ export async function POST(request: NextRequest) {
       messageId?: string;
       title?: string;
       body?: string;
+      senderAvatar?: string;
       recipientId?: string;
       groupId?: string;
     };
@@ -78,11 +80,22 @@ export async function POST(request: NextRequest) {
           ? `/groups/${groupId}`
           : "/notifications";
 
+    const senderSnap = await adminDb().doc(`users/${senderUid}`).get();
+    const sender = senderSnap.data();
+    const senderName =
+      title ||
+      sender?.displayName ||
+      sender?.name ||
+      "Tin nhắn mới";
+    const senderAvatar = explicitSenderAvatar || sender?.photoURL || sender?.avatar || null;
+
     const result = await dispatchPushOnce({
       messageId,
       recipientId,
-      title: title || "Thông báo mới",
-      body: messageBody || "",
+      senderName,
+      message: messageBody || "",
+      senderAvatar,
+      isSystem: type === "system",
       type,
       link,
       actionData: {

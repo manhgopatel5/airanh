@@ -325,6 +325,9 @@ export type SendNotificationPayload = {
   title: string;
   body: string;
   imageUrl?: string;
+  iconUrl?: string;
+  /** Gửi data-only để SW tự hiện — tránh trùng thông báo + "from Huha" trên iOS */
+  dataOnly?: boolean;
   data?: Record<string, any>;
   link?: string;
   priority?: "high" | "normal";
@@ -354,41 +357,69 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export async function sendNotification(
   payload: SendNotificationPayload
 ): Promise<SendNotificationResult> {
-  const { token, title, body, imageUrl, data, link, priority = "high", ttl = 86400, dryRun = false } = payload;
+  const {
+    token,
+    title,
+    body,
+    imageUrl,
+    iconUrl,
+    dataOnly = false,
+    data,
+    link,
+    priority = "high",
+    ttl = 86400,
+    dryRun = false,
+  } = payload;
   const msg = getFirebaseAdmin().messaging;
 
-  const baseMessage: Omit<Message, "token" | "topic" | "condition"> = {
-    notification: { title, body,...(imageUrl && { imageUrl }) },
-    data: stringifyData(data),
-    webpush: {
-      fcmOptions: { link: link || "/" },
-      notification: {
-        icon: "/icon-192.png",
-        badge: "/icon-192.png",
-        requireInteraction: priority === "high",
-      },
-      headers: { TTL: ttl.toString() },
-    },
-    android: {
-      priority: priority === "high"? "high" : "normal",
-      ttl: ttl * 1000,
-      notification: {
-        icon: "ic_notification",
-        color: "#3B82F6",
-      ...(priority === "high" && { sound: "default" }),
-      },
-    },
-    apns: {
-      headers: { "apns-priority": priority === "high"? "10" : "5" },
-      payload: {
-        aps: {
-          badge: 1,
-        ...(priority === "high" && { sound: "default" }),
-          "content-available": 1,
+  const icon = iconUrl || "/icon-192.PNG";
+  const mergedData = stringifyData({
+    title,
+    body,
+    icon,
+    ...data,
+  });
+
+  const baseMessage: Omit<Message, "token" | "topic" | "condition"> = dataOnly
+    ? {
+        data: mergedData,
+        webpush: {
+          fcmOptions: { link: link || "/" },
+          headers: { TTL: ttl.toString() },
         },
-      },
-    },
-  };
+      }
+    : {
+        notification: { title, body, ...(imageUrl && { imageUrl }) },
+        data: mergedData,
+        webpush: {
+          fcmOptions: { link: link || "/" },
+          notification: {
+            icon,
+            badge: icon,
+            requireInteraction: priority === "high",
+          },
+          headers: { TTL: ttl.toString() },
+        },
+        android: {
+          priority: priority === "high" ? "high" : "normal",
+          ttl: ttl * 1000,
+          notification: {
+            icon: "ic_notification",
+            color: "#3B82F6",
+            ...(priority === "high" && { sound: "default" }),
+          },
+        },
+        apns: {
+          headers: { "apns-priority": priority === "high" ? "10" : "5" },
+          payload: {
+            aps: {
+              badge: 1,
+              ...(priority === "high" && { sound: "default" }),
+              "content-available": 1,
+            },
+          },
+        },
+      };
 
   const sendWithRetry = async (sendFn: () => Promise<any>, retries = 2): Promise<any> => {
     for (let i = 0; i <= retries; i++) {

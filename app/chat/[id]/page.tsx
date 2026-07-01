@@ -24,8 +24,6 @@ import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geoloca
 import { formatShortLocation, type ParsedMapboxLocation } from "@/lib/mapboxGeocode";
 import AddressSearchInput from "@/components/location/AddressSearchInput";
 import { dispatchOfflinePush } from "@/lib/pushNotifyClient";
-import { enablePushNotifications } from "@/lib/fcmRegister";
-import { readPushPermission } from "@/lib/pushPermissions";
 import {
   shouldShowChatDateDivider,
   shouldShowChatTimeDivider,
@@ -517,8 +515,9 @@ useEffect(() => {
         void dispatchOfflinePush({
           chatId,
           messageId: docRef.id,
-          title: user.displayName || user.email?.split("@")[0] || "Tin nhắn mới",
-          body: tempText.slice(0, 120),
+          senderName: user.displayName || user.email?.split("@")[0] || "Tin nhắn mới",
+          ...(user.photoURL ? { senderAvatar: user.photoURL } : {}),
+          body: tempText,
         });
       }
     } catch (e: any) {
@@ -2197,22 +2196,6 @@ const isColor = bg.url?.startsWith('#');
         {/* QUYỀN RIÊNG TƯ */}
         <div className="bg-white rounded-2xl overflow-hidden border border-zinc-200 shadow-sm">
           {[
-            {
-              icon: Bell,
-              label:
-                readPushPermission() === "granted"
-                  ? "Thông báo đẩy: Đã bật"
-                  : "Bật thông báo đẩy (thiết bị)",
-              action: async () => {
-                if (readPushPermission() === "granted") {
-                  toast.info("Thông báo đẩy đã bật trên thiết bị này");
-                  return;
-                }
-                const result = await enablePushNotifications();
-                if (result.success) toast.success(result.message);
-                else toast.error(result.message, { duration: 5000 });
-              },
-            },
             {
               icon: isChatMuted ? Bell : BellOff,
               label: isChatMuted ? 'Bật thông báo cuộc chat' : 'Tắt thông báo cuộc chat',

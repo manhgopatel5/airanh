@@ -1,5 +1,6 @@
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
+import { buildPushDisplayPayload } from "./pushFormat";
 
 function db() {
   return getFirestore();
@@ -73,7 +74,14 @@ function shouldSendPush(settings: UserSettings, type: string, options: NotifyOpt
 
 async function sendPushToUser(
   uid: string,
-  payload: { title: string; body: string; data: Record<string, string> },
+  payload: {
+    senderName: string;
+    message: string;
+    senderAvatar?: string | null;
+    isSystem?: boolean;
+    type?: string;
+    data: Record<string, string>;
+  },
   messageId?: string
 ) {
   const userDoc = await db().doc(`users/${uid}`).get();
@@ -90,15 +98,25 @@ async function sendPushToUser(
     if (log.exists) return;
   }
 
-  const link = payload.data.link || payload.data.url || "/";
+  const display = buildPushDisplayPayload({
+    senderName: payload.senderName,
+    message: payload.message,
+    senderAvatar: payload.senderAvatar,
+    isSystem: payload.isSystem,
+    type: payload.type || payload.data.type,
+    link: payload.data.link,
+    messageId,
+    extraData: payload.data,
+  });
+
+  const link = display.data.url || display.data.link || "/";
   const messaging = getMessaging();
   const result = await messaging.sendEachForMulticast({
     tokens,
-    notification: { title: payload.title, body: payload.body },
-    data: payload.data,
+    data: display.data,
     webpush: {
-      fcmOptions: { link: link.startsWith("http") ? link : `https://airanh.vercel.app${link}` },
-      notification: { icon: "/icon-192.PNG", badge: "/icon-192.PNG" },
+      fcmOptions: { link },
+      headers: { TTL: "86400" },
     },
   });
 
@@ -169,8 +187,11 @@ export async function createNotificationAndPush(
     await sendPushToUser(
       toUid,
       {
-        title: payload.title,
-        body: payload.message,
+        senderName: payload.title || payload.fromName,
+        message: payload.message,
+        senderAvatar: payload.fromAvatar,
+        isSystem: payload.type === "system",
+        type: payload.type,
         data: {
           type: payload.type,
           link,
