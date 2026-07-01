@@ -15,7 +15,7 @@ import {
   FiEye,
   
   FiMapPin,
-  FiMessageCircle,
+  
   FiMoreHorizontal,
   FiShare2,
   FiTrash2,
