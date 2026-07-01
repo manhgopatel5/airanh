@@ -487,80 +487,62 @@ function TaskCard({
             />
           )}
 
-          <div className="flex items-center justify-between gap-2 border-t border-zinc-100 px-2 py-1 dark:border-zinc-800/80">
-            <div className="flex items-center gap-0">
-              <button
-                type="button"
-                aria-label={liked? "Bỏ thích" : "Thích"}
-                aria-pressed={liked}
-                onClick={(e) => { e.stopPropagation(); handleLike(); }}
-                disabled={liking}
-                className={cn("flex h-9 w-9 flex-col items-center justify-center gap-0 rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
-              >
-                {liked? <HiHeart className="h-4 w-4 text-red-500" /> : <HiOutlineHeart className="h-4 w-4" />}
-                <span className="text-[10px] font-bold leading-none">{task.likeCount || 0}</span>
-              </button>
-              <button
-                type="button"
-                aria-label="Bình luận"
-                onClick={goToTask}
-                className={cn("flex h-9 w-9 flex-col items-center justify-center gap-0 rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
-              >
-                <FiMessageCircle className="h-4 w-4" />
-                <span className="text-[10px] font-bold leading-none">{task.commentCount || 0}</span>
-              </button>
-              <button
-                type="button"
-                aria-label="Chia sẻ"
-                onClick={(e) => { e.stopPropagation(); vibrate(8); onShare?.(task); }}
-                className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
-              >
-                <FiShare2 className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                aria-label={isSaved? "Bỏ lưu" : "Lưu"}
-                aria-pressed={isSaved}
-                onClick={(e) => { e.stopPropagation(); handleSave(); }}
-                disabled={saving}
-                className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 transition active:scale-95 disabled:opacity-50 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
-              >
-                <FiBookmark className={cn("h-4 w-4", isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
-              </button>
-            </div>
+        <div className="flex items-center justify-between gap-2 border-t border-zinc-100 px-2 py-1 dark:border-zinc-800/80">
+  <div className="flex items-center gap-0">
+    <button
+      type="button"
+      aria-label={liked? "Bỏ thích" : "Thích"}
+      aria-pressed={liked}
+      onClick={(e) => { e.stopPropagation(); handleLike(); }}
+      disabled={liking}
+      className={cn("flex h-9 w-9 flex-col items-center justify-center gap-0 rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
+    >
+      {liked? <HiHeart className="h-4 w-4 text-red-500" /> : <HiOutlineHeart className="h-4 w-4" />}
+      <span className="text- font-bold leading-none">{task.likeCount || 0}</span>
+    </button>
+    <button
+      type="button"
+      aria-label="Bình luận"
+      onClick={goToTask}
+      className={cn("flex h-9 w-9 flex-col items-center justify-center gap-0 rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
+    >
+      <FiMessageCircle className="h-4 w-4" />
+      <span className="text- font-bold leading-none">{task.commentCount || 0}</span>
+    </button>
+  </div>
 
-            <div className="flex min-w-0 items-center justify-end gap-1">
-              {derived.isFull && (
-                <span className="inline-flex shrink-0 items-center rounded-md bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:text-red-400">
-                  Đầy
-                </span>
-              )}
-              {!isTaskTheme && derived.isNearDeadline && (
-                <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 shrink-0">
-                  <FiClock className="h-2.5 w-2.5" /> Sắp hết hạn
-                </span>
-              )}
-              {derived.categoryLabel && (
-                <div
-                  className="flex max-w-[72px] items-center gap-0.5 rounded-md px-1.5 py-1 text-[10px] font-bold text-white shadow-sm"
-                  style={{ background: `linear-gradient(135deg, ${derived.categoryColor}, ${derived.categoryColor}dd)` }}
-                  title={derived.categoryLabel}
-                >
-                  <span className="text-[11px] leading-none">{derived.categoryIcon}</span>
-                  <span className="truncate">{derived.categoryLabel}</span>
-                </div>
-              )}
-              {derived.provinceName && (
-                <div title={derived.provinceName} className="flex max-w-[64px] items-center gap-0.5 text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
-                  <FiMapPin className="h-2.5 w-2.5 shrink-0" />
-                  <span className="truncate">{derived.provinceName}</span>
-                </div>
-              )}
-              <div className="flex shrink-0 items-center gap-0.5 pr-0.5 text-[10px] font-bold text-zinc-400">
-                <FiEye className="h-2.5 w-2.5" /> {task.viewCount || 0}
-              </div>
-            </div>
-          </div>
+  <div className="flex min-w-0 items-center justify-end gap-1">
+    {derived.isFull && (
+      <span className="inline-flex shrink-0 items-center rounded-md bg-red-500/10 px-1.5 py-0.5 text- font-bold text-red-600 dark:text-red-400">
+        Đầy
+      </span>
+    )}
+    {!isTaskTheme && derived.isNearDeadline && (
+      <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-500/10 px-1.5 py-0.5 text- font-bold text-amber-700 dark:text-amber-400 shrink-0">
+        <FiClock className="h-2.5 w-2.5" /> Sắp hết hạn
+      </span>
+    )}
+    {derived.categoryLabel && (
+      <div
+        className="flex max-w- items-center gap-0.5 rounded-md px-1.5 py-1 text- font-bold text-white shadow-sm"
+        style={{ background: `linear-gradient(135deg, ${derived.categoryColor}, ${derived.categoryColor}dd)` }}
+        title={derived.categoryLabel}
+      >
+        <span className="text- leading-none">{derived.categoryIcon}</span>
+        <span className="truncate">{derived.categoryLabel}</span>
+      </div>
+    )}
+    {derived.provinceName && (
+      <div title={derived.provinceName} className="flex max-w- items-center gap-0.5 text- font-bold text-zinc-500 dark:text-zinc-400">
+        <FiMapPin className="h-2.5 w-2.5 shrink-0" />
+        <span className="truncate">{derived.provinceName}</span>
+      </div>
+    )}
+    <div className="flex shrink-0 items-center gap-0.5 pr-0.5 text- font-bold text-zinc-400">
+      <FiEye className="h-2.5 w-2.5" /> {task.viewCount || 0}
+    </div>
+  </div>
+</div>
         </div>
       </div>
 
