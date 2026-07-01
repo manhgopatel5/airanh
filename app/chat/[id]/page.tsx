@@ -2163,7 +2163,10 @@ const isColor = bg.url?.startsWith('#');
 
   <div className="flex gap-2.5 mt-4">
     <button 
-      onClick={() => friend?.uid && router.push(`/profile/${friend.uid}`)} 
+      onClick={() => {
+        setShowSettings(false);
+        if (friend?.uid) router.push(`/profile/${friend.uid}`);
+      }} 
       className="px-4 h-9 bg-[#0084FF] hover:bg-[#0073e6] text-white rounded-full text- font-medium active:scale-95 transition shadow-sm"
     >
       Trang cá nhân

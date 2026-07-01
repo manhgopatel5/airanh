@@ -54,6 +54,8 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { buildGamificationUser } from "@/lib/gamification";
 import { evaluateAchievements, getAchievementColor } from "@/lib/achievements";
 import { AchievementIcon } from "@/components/achievements/AchievementIcon";
+import TrustScoreModal from "@/components/profile/TrustScoreModal";
+import AchievementsModal from "@/components/profile/AchievementsModal";
 
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -121,11 +123,11 @@ const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
   >([]);
   const [showTrustInfo, setShowTrustInfo] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   const touchStartX = useRef(0);
 const touchEndX = useRef(0);
   const [showAchievementInfo, setShowAchievementInfo] = useState(false);
-  const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
 // Component hàng thông tin
 const InfoRow = ({
   icon,
@@ -180,19 +182,7 @@ const Divider = () => <div className="h-px bg-zinc-100 ml-[52px]" />;
   const joinedDays = gamUser.joinedDays;
   const profileCompletion = gamUser.profileCompletion;
 
-  const allAchievements = useMemo(
-    () =>
-      evaluateAchievements(gamUser).map((a) => {
-        const colors = getAchievementColor(a.id);
-        return {
-          ...a,
-          icon: <AchievementIcon name={a.iconName} className="w-5 h-5" />,
-          color: colors.gradient,
-          borderColor: colors.border,
-        };
-      }),
-    [gamUser]
-  );
+  const allAchievements = useMemo(() => evaluateAchievements(gamUser), [gamUser]);
 
 
   
@@ -224,7 +214,7 @@ const fetchUser = useCallback(async () => {
 
     if (!resolvedSnap.exists()) {
       toast.error("Không tìm thấy người dùng");
-      router.replace("/404");
+      setNotFound(true);
       return;
     }
 
@@ -566,6 +556,20 @@ const handleMessage = async () => {
 
 
 
+if (notFound) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 px-6">
+      <p className="text-lg font-bold text-zinc-900">Không tìm thấy người dùng</p>
+      <button
+        onClick={() => router.back()}
+        className="mt-4 px-6 py-3 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-95"
+      >
+        Quay lại
+      </button>
+    </div>
+  );
+}
+
 if (loading) {
   return (
     <div className="
@@ -850,10 +854,7 @@ return (
   <div className="flex items-center justify-between mb-3">
     <p className="text-sm font-bold text-zinc-900">Thành tựu</p>
     <button
-      onClick={() => {
-        setSelectedAchievement(null);
-        setShowAchievementInfo(true);
-      }}
+      onClick={() => setShowAchievementInfo(true)}
       className="w-5 h-5 rounded-full bg-zinc-100 flex items-center justify-center active:scale-95"
     >
       <Info className="w-3 h-3 text-zinc-500" />
@@ -861,66 +862,27 @@ return (
   </div>
   
   <div className="grid grid-cols-3 gap-3">
-    {allAchievements.slice(0, 6).map((item) => (
+    {allAchievements.slice(0, 6).map((item) => {
+      const colors = getAchievementColor(item.id);
+      return (
       <button
         key={item.id}
-        onClick={() => {
-          setSelectedAchievement(item);
-          setShowAchievementInfo(true);
-        }}
+        onClick={() => setShowAchievementInfo(true)}
         className="flex flex-col items-center active:scale-95 transition-all"
       >
-        {/* HEXAGON */}
         <div className="relative w-16 h-16 mb-2">
-          <svg viewBox="0 0 100 100" className="w-full h-full">
-            <defs>
-              {item.unlocked && (
-                <linearGradient id={`gradient-${item.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor={item.color.includes('amber')? '#FBBF24' : 
-                    item.color.includes('emerald')? '#34D399' :
-                    item.color.includes('violet')? '#A78BFA' :
-                    item.color.includes('yellow')? '#FACC15' :
-                    item.color.includes('blue')? '#60A5FA' :
-                    item.color.includes('indigo')? '#818CF8' :
-                    item.color.includes('orange')? '#FB923C' :
-                    item.color.includes('rose')? '#FB7185' :
-                    item.color.includes('green')? '#4ADE80' :
-                    item.color.includes('sky')? '#38BDF8' :
-                    item.color.includes('purple')? '#C084FC' :
-                    item.color.includes('teal')? '#2DD4BF' :
-                    item.color.includes('lime')? '#A3E635' :
-                    item.color.includes('pink')? '#F472B6' :
-                    item.color.includes('cyan')? '#22D3EE' :
-                    item.color.includes('fuchsia')? '#E879F9' : '#60A5FA'
-                  } />
-                  <stop offset="100%" stopColor={item.color.includes('orange')? '#FB923C' : 
-                    item.color.includes('teal')? '#2DD4BF' :
-                    item.color.includes('fuchsia')? '#E879F9' :
-                    item.color.includes('amber')? '#FBBF24' :
-                    item.color.includes('sky')? '#38BDF8' :
-                    item.color.includes('blue')? '#3B82F6' :
-                    item.color.includes('red')? '#F87171' :
-                    item.color.includes('pink')? '#F472B6' :
-                    item.color.includes('emerald')? '#34D399' :
-                    item.color.includes('purple')? '#C084FC' :
-                    item.color.includes('yellow')? '#FACC15' :
-                    item.color.includes('indigo')? '#818CF8' : '#3B82F6'
-                  } />
-                </linearGradient>
+          <div
+            className={`w-full h-full rounded-2xl flex items-center justify-center ${
+              item.unlocked ? `bg-gradient-to-br ${colors.gradient}` : "bg-zinc-100 border-2 border-dashed border-zinc-300"
+            }`}
+          >
+            <div className={item.unlocked ? "text-white" : "text-zinc-400"}>
+              {item.unlocked ? (
+                <AchievementIcon name={item.iconName} className="w-5 h-5" />
+              ) : (
+                <Lock className="w-5 h-5" />
               )}
-            </defs>
-            <polygon
-              points="50 1 95 25 95 75 50 99 5 75 5 25"
-              fill={item.unlocked? `url(#gradient-${item.id})` : "none"}
-              stroke={item.unlocked? "none" : "#D4D4D8"}
-              strokeWidth="2"
-              strokeDasharray={item.unlocked? "none" : "4 4"}
-            />
-          </svg>
-          <div className={`absolute inset-0 flex items-center justify-center ${
-            item.unlocked? "text-white" : "text-zinc-400"
-          }`}>
-            {item.unlocked? item.icon : <Lock className="w-5 h-5" />}
+            </div>
           </div>
         </div>
         
@@ -931,15 +893,12 @@ return (
           {item.desc}
         </p>
       </button>
-    ))}
+    );})}
   </div>
 
   {allAchievements.length > 6 && (
     <button
-      onClick={() => {
-        setSelectedAchievement(null);
-        setShowAchievementInfo(true);
-      }}
+      onClick={() => setShowAchievementInfo(true)}
       className="w-full mt-3 py-2 rounded-xl bg-zinc-50 text-xs font-semibold text-zinc-600 active:bg-zinc-100"
     >
       Xem tất cả {allAchievements.length} thành tựu
@@ -1120,239 +1079,17 @@ return (
     </Dialog.Content>
   </Dialog.Portal>
 </Dialog.Root>
-<Dialog.Root open={showTrustInfo} onOpenChange={setShowTrustInfo}>
-  <Dialog.Portal>
-    <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-3xl p-5 z-50 shadow-2xl">
-      <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4 flex items-center gap-2">
-        <Shield className="w-5 h-5 text-blue-500" />
-        Độ uy tín được tính thế nào?
-      </Dialog.Title>
-
-      <p className="text-sm text-zinc-600 mb-4">
-        Độ uy tín phản ánh mức độ tin cậy của bạn dựa trên hoạt động thực tế. Điểm càng cao càng được ưu tiên.
-      </p>
-
-      {/* BREAKDOWN CHI TIẾT */}
-<div className="space-y-3 mb-5">
-  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-    <div className="flex justify-between items-center mb-1">
-      <span className="text-sm font-semibold text-zinc-700">Đánh giá trung bình</span>
-      <span className="text-sm font-bold text-blue-600">
-        +{Math.min(Math.floor(rating * 15), 40)}/40
-      </span>
-    </div>
-    <p className="text-xs text-zinc-500">
-      {rating} sao × 15 điểm. Tối đa 40 điểm
-    </p>
-  </div>
-
-  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-    <div className="flex justify-between items-center mb-1">
-      <span className="text-sm font-semibold text-zinc-700">Công việc hoàn thành</span>
-      <span className="text-sm font-bold text-blue-600">
-        +{Math.min(Math.floor(completed * 1.2), 30)}/30
-      </span>
-    </div>
-    <p className="text-xs text-zinc-500">
-      {completed} job × 1.2 điểm. Tối đa 30 điểm
-    </p>
-  </div>
-
-  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-    <div className="flex justify-between items-center mb-1">
-      <span className="text-sm font-semibold text-zinc-700">Số lượng đánh giá</span>
-      <span className="text-sm font-bold text-blue-600">
-        +{Math.min(reviews, 15)}/15
-      </span>
-    </div>
-    <p className="text-xs text-zinc-500">
-      {reviews} đánh giá × 1 điểm. Tối đa 15 điểm
-    </p>
-  </div>
-</div>
-
-        <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-sm font-semibold text-zinc-700">Xác minh tài khoản</span>
-            <span className="text-sm font-bold text-blue-600">
-              +{(targetUser?.emailVerified? 5 : 0) + (targetUser?.isVerifiedId? 5 : 0)}/10
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500">
-            Email {targetUser?.emailVerified? '✓ +5' : '✗ 0'}, CCCD {targetUser?.isVerifiedId? '✓ +5' : '✗ 0'}
-          </p>
-        </div>
-
-   <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-  <div className="flex justify-between items-center mb-1">
-    <span className="text-sm font-semibold text-zinc-700">Thời gian tham gia</span>
-    <span className="text-sm font-bold text-blue-600">
-      +{Math.min(Math.floor(joinedDays / 30), 5)}/5
-    </span>
-  </div>
-  <p className="text-xs text-zinc-500">
-    {joinedDays > 0
-      ? `${joinedDays} ngày = ${Math.floor(joinedDays / 30)} tháng. Tối đa 5 điểm`
-      : "Chưa có dữ liệu. Tối đa 5 điểm"}
-  </p>
-</div>
-  
-
-     
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-sky-500 text-white">
-        <div className="flex justify-between items-center">
-          <span className="font-semibold">Tổng điểm uy tín</span>
-          <span className="text-2xl font-bold">{trustScore}/100</span>
-        </div>
-        <div className="mt-2 h-2 rounded-full bg-white/30 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-white"
-            style={{ width: `${trustScore}%` }}
-          />
-        </div>
-      </div>
-
-      <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
-        Đã hiểu
-      </Dialog.Close>
-    </Dialog.Content>
-  </Dialog.Portal>
-</Dialog.Root>
-<Dialog.Root open={showAchievementInfo} onOpenChange={setShowAchievementInfo}>
-  <Dialog.Portal>
-    <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-3xl p-5 z-50 shadow-2xl">
-      {selectedAchievement? (
-        <>
-          <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4 flex items-center gap-3">
-            <div 
-              className="w-12 h-12 rounded-2xl text-white flex items-center justify-center shadow-lg"
-              style={{
-                background: selectedAchievement.unlocked 
-                 ? `linear-gradient(135deg, ${selectedAchievement.color.includes('amber')? '#FBBF24' : 
-                      selectedAchievement.color.includes('emerald')? '#34D399' :
-                      selectedAchievement.color.includes('violet')? '#A78BFA' :
-                      selectedAchievement.color.includes('yellow')? '#FACC15' :
-                      selectedAchievement.color.includes('blue')? '#60A5FA' :
-                      selectedAchievement.color.includes('indigo')? '#818CF8' :
-                      selectedAchievement.color.includes('orange')? '#FB923C' :
-                      selectedAchievement.color.includes('rose')? '#FB7185' :
-                      selectedAchievement.color.includes('green')? '#4ADE80' :
-                      selectedAchievement.color.includes('sky')? '#38BDF8' :
-                      selectedAchievement.color.includes('purple')? '#C084FC' :
-                      selectedAchievement.color.includes('teal')? '#2DD4BF' :
-                      selectedAchievement.color.includes('lime')? '#A3E635' :
-                      selectedAchievement.color.includes('pink')? '#F472B6' :
-                      selectedAchievement.color.includes('cyan')? '#22D3EE' :
-                      selectedAchievement.color.includes('fuchsia')? '#E879F9' : '#60A5FA'}, ${
-                      selectedAchievement.color.includes('orange')? '#FB923C' : 
-                      selectedAchievement.color.includes('teal')? '#2DD4BF' :
-                      selectedAchievement.color.includes('fuchsia')? '#E879F9' :
-                      selectedAchievement.color.includes('amber')? '#FBBF24' :
-                      selectedAchievement.color.includes('sky')? '#38BDF8' :
-                      selectedAchievement.color.includes('blue')? '#3B82F6' :
-                      selectedAchievement.color.includes('red')? '#F87171' :
-                      selectedAchievement.color.includes('pink')? '#F472B6' :
-                      selectedAchievement.color.includes('emerald')? '#34D399' :
-                      selectedAchievement.color.includes('purple')? '#C084FC' :
-                      selectedAchievement.color.includes('yellow')? '#FACC15' :
-                      selectedAchievement.color.includes('indigo')? '#818CF8' : '#3B82F6'})`
-                  : '#F4F4F5'
-              }}
-            >
-              <div className={selectedAchievement.unlocked? "text-white" : "text-zinc-400"}>
-                {selectedAchievement.icon}
-              </div>
-            </div>
-            <div>
-              <p>{selectedAchievement.label}</p>
-              <p className="text-xs font-normal text-zinc-500 mt-0.5">
-                {selectedAchievement.category === 'task'? 'Thành tựu Task' : 'Thành tựu Profile'}
-              </p>
-            </div>
-          </Dialog.Title>
-          
-          <p className="text-sm text-zinc-600 mb-4 leading-6">{selectedAchievement.desc}</p>
-          
-          <div className={`p-4 rounded-2xl border ${selectedAchievement.unlocked? 'bg-emerald-50 border-emerald-200' : 'bg-zinc-50 border-zinc-200'}`}>
-            <p className="text-xs font-bold text-zinc-700 mb-2 uppercase tracking-wider">Điều kiện mở khóa</p>
-            <p className="text-sm text-zinc-700 font-medium">{selectedAchievement.condition}</p>
-          </div>
-          
-          {selectedAchievement.unlocked && (
-            <div className="mt-4 flex items-center gap-2 text-emerald-600 bg-emerald-50 px-3 py-2 rounded-xl">
-              <Check className="w-4 h-4 stroke-[3]" />
-              <span className="text-sm font-bold">Đã mở khóa</span>
-            </div>
-          )}
-        </>
-      ) : (
-        <>
-          <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4">
-            Tất cả thành tựu
-          </Dialog.Title>
-          <p className="text-xs text-zinc-500 mb-4">
-            Đã mở khóa {allAchievements.filter(a => a.unlocked).length}/{allAchievements.length} thành tựu
-          </p>
-          <div className="grid grid-cols-3 gap-3">
-            {allAchievements.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setSelectedAchievement(item)}
-                className="flex flex-col items-center active:scale-95 transition-all"
-              >
-                <div 
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-1.5 ${
-                    item.unlocked? '' : 'bg-zinc-100 border-2 border-dashed border-zinc-300'
-                  }`}
-                  style={item.unlocked? {
-                    background: `linear-gradient(135deg, ${item.color.includes('amber')? '#FBBF24' : 
-                      item.color.includes('emerald')? '#34D399' :
-                      item.color.includes('violet')? '#A78BFA' :
-                      item.color.includes('yellow')? '#FACC15' :
-                      item.color.includes('blue')? '#60A5FA' :
-                      item.color.includes('indigo')? '#818CF8' :
-                      item.color.includes('orange')? '#FB923C' :
-                      item.color.includes('rose')? '#FB7185' :
-                      item.color.includes('green')? '#4ADE80' :
-                      item.color.includes('sky')? '#38BDF8' :
-                      item.color.includes('purple')? '#C084FC' :
-                      item.color.includes('teal')? '#2DD4BF' :
-                      item.color.includes('lime')? '#A3E635' :
-                      item.color.includes('pink')? '#F472B6' :
-                      item.color.includes('cyan')? '#22D3EE' :
-                      item.color.includes('fuchsia')? '#E879F9' : '#60A5FA'}, ${
-                      item.color.includes('orange')? '#FB923C' : 
-                      item.color.includes('teal')? '#2DD4BF' :
-                      item.color.includes('fuchsia')? '#E879F9' :
-                      item.color.includes('amber')? '#FBBF24' :
-                      item.color.includes('sky')? '#38BDF8' :
-                      item.color.includes('blue')? '#3B82F6' :
-                      item.color.includes('red')? '#F87171' :
-                      item.color.includes('pink')? '#F472B6' :
-                      item.color.includes('emerald')? '#34D399' :
-                      item.color.includes('purple')? '#C084FC' :
-                      item.color.includes('yellow')? '#FACC15' :
-                      item.color.includes('indigo')? '#818CF8' : '#3B82F6'})`
-                  } : {}}
-                >
-                  <div className={item.unlocked? "text-white" : "text-zinc-400"}>
-                    {item.unlocked? item.icon : <Lock className="w-4 h-4" />}
-                  </div>
-                </div>
-                <p className="text-xs font-semibold text-zinc-700 text-center leading-tight line-clamp-2">{item.label}</p>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-      <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
-        Đóng
-      </Dialog.Close>
-    </Dialog.Content>
-  </Dialog.Portal>
-</Dialog.Root>
+<TrustScoreModal
+  open={showTrustInfo}
+  onOpenChange={setShowTrustInfo}
+  stats={gamUser.stats}
+  emailVerified={!!targetUser?.emailVerified}
+  isVerifiedId={!!targetUser?.isVerifiedId}
+  joinedDays={joinedDays}
+  isOwnProfile={isOwnProfile}
+  onNavigate={(href) => router.push(href)}
+/>
+<AchievementsModal open={showAchievementInfo} onOpenChange={setShowAchievementInfo} gamUser={gamUser} />
 {/* MODAL THÔNG TIN CÁ NHÂN - THIẾT KẾ MỚI */}
 <Dialog.Root open={showUserInfo} onOpenChange={setShowUserInfo}>
   <Dialog.Portal>

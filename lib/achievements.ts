@@ -93,6 +93,30 @@ export const ACHIEVEMENT_COLORS: Record<number, { gradient: string; border: stri
   10: { gradient: "from-yellow-500 to-amber-500", border: "border-yellow-500" },
 };
 
+const ACHIEVEMENT_GRADIENT_HEX: Record<number, [string, string]> = {
+  1: ["#F472B6", "#FB7185"],
+  2: ["#34D399", "#2DD4BF"],
+  3: ["#FACC15", "#FBBF24"],
+  4: ["#60A5FA", "#38BDF8"],
+  5: ["#818CF8", "#6366F1"],
+  6: ["#FB923C", "#F87171"],
+  7: ["#4ADE80", "#34D399"],
+  8: ["#38BDF8", "#3B82F6"],
+  9: ["#2DD4BF", "#22D3EE"],
+  10: ["#FBBF24", "#F59E0B"],
+};
+
+export function getAchievementGradientHex(id: number): [string, string] {
+  const palette: [string, string][] = [
+    ["#A78BFA", "#C084FC"],
+    ["#22D3EE", "#3B82F6"],
+    ["#A3E635", "#4ADE80"],
+    ["#E879F9", "#F472B6"],
+    ["#F87171", "#FB923C"],
+  ];
+  return ACHIEVEMENT_GRADIENT_HEX[id] || palette[(id - 1) % palette.length]!;
+}
+
 export function getAchievementColor(id: number): { gradient: string; border: string } {
   const palette = [
     "from-violet-400 to-purple-400",

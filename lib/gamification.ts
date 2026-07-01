@@ -76,15 +76,35 @@ export function calcProfileCompletion(d: Record<string, unknown>): number {
   return Math.round((fields.filter(Boolean).length / fields.length) * 100);
 }
 
-export function calcTrustScore(stats: GamificationStats): number {
-  return Math.min(
-    100,
-    Math.floor(
-      (stats.rating || 0) * 15 +
-        (stats.completed || 0) * 1.2 +
-        (stats.totalReviews || 0)
-    )
-  );
+export type TrustBreakdown = {
+  rating: number;
+  completed: number;
+  reviews: number;
+  verification: number;
+  tenure: number;
+  total: number;
+};
+
+export type TrustScoreInput = {
+  stats: GamificationStats;
+  emailVerified?: boolean;
+  isVerifiedId?: boolean;
+  joinedDays?: number;
+};
+
+export function calcTrustBreakdown(input: TrustScoreInput): TrustBreakdown {
+  const { stats, emailVerified, isVerifiedId, joinedDays = 0 } = input;
+  const rating = Math.min(Math.floor((stats.rating || 0) * 15), 75);
+  const completed = Math.min(Math.floor((stats.completed || 0) * 1.2), 30);
+  const reviews = Math.min(stats.totalReviews || 0, 20);
+  const verification = (emailVerified ? 5 : 0) + (isVerifiedId ? 5 : 0);
+  const tenure = Math.min(Math.floor(joinedDays / 30), 5);
+  const total = Math.min(100, rating + completed + reviews + verification + tenure);
+  return { rating, completed, reviews, verification, tenure, total };
+}
+
+export function calcTrustScore(stats: GamificationStats, extras?: Omit<TrustScoreInput, "stats">): number {
+  return calcTrustBreakdown({ stats, ...extras }).total;
 }
 
 export function calcJoinedDays(createdAt?: Timestamp | { seconds: number }): number {
@@ -116,7 +136,11 @@ export function buildGamificationUser(
     friendCount: friendCountOverride ?? ((d.friendCount as number) || 0),
     joinedDays: calcJoinedDays(d.createdAt as Timestamp),
     profileCompletion: calcProfileCompletion(d),
-    trustScore: calcTrustScore(stats),
+    trustScore: calcTrustScore(stats, {
+      emailVerified: !!(d.emailVerified),
+      isVerifiedId: !!(d.isVerifiedId),
+      joinedDays: calcJoinedDays(d.createdAt as Timestamp),
+    }),
     emailVerified: !!(d.emailVerified),
     isVerifiedId: !!(d.isVerifiedId),
     skills: (d.skills as string[]) || [],

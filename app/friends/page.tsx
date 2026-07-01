@@ -613,8 +613,8 @@ const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
           onContextMenu={(e) => { e.preventDefault(); if (!isStranger) setSelectedFriend(friend as FriendItem); }}
           className="flex items-center gap-3 p-4 w-full active:bg-gray-50 dark:active:bg-zinc-800 rounded-xl"
         >
-          <div className="relative flex-shrink-0">
-            <img src={friend.avatar} alt={friend.name} className="w-14 h-14 rounded-full object-cover" />
+          <div className="relative flex-shrink-0" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${friend.uid}`); }}>
+            <img src={friend.avatar} alt={friend.name} className="w-14 h-14 rounded-full object-cover active:opacity-70" />
             {friend.isOnline && (
               <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#30d158] rounded-full border-[3px] border-white dark:border-zinc-900" />
             )}
@@ -1059,6 +1059,16 @@ const FriendRow = ({ friend }: { friend: FriendItem | StrangerChatItem }) => {
                 </div>
               </div>
               <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setSelectedFriend(null);
+                    router.push(`/profile/${selectedFriend.uid}`);
+                  }}
+                  className="w-full h-12 flex items-center gap-3 px-5 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl active:scale-98 shadow-sm"
+                >
+                  <FiUsers size={22} />
+                  <span className="text-base font-[500]">Trang cá nhân</span>
+                </button>
                 <button
                   onClick={() => { handleStartChat(selectedFriend.uid); setSelectedFriend(null); }}
                   className="w-full h-12 flex items-center gap-3 px-5 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl active:scale-98 shadow-sm"
