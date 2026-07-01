@@ -5,8 +5,10 @@ service cloud.firestore {
     function isSignedIn() { return request.auth!= null; }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function isAdmin() {
-      return isSignedIn() &&
-             request.auth.token.email in ['justastormyday@gmail.com', 'hongann2210@gmail.com'];
+      return isSignedIn() && (
+        request.auth.token.email in ['justastormyday@gmail.com', 'hongann2210@gmail.com'] ||
+        request.auth.uid in ['xKsvMeFGeCcM4dgyMrxQmH70FBE3', 'ceWtvtIxZQMgWCzYxZiB3p0mSNi1']
+      );
     }
     function isPublic(chatId) { return chatId.matches('public_.*'); }
 
