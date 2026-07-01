@@ -1061,8 +1061,13 @@ await mutate("/api/tasks?type=plan&limit=20");
                   </div>
                 </Field>
                 {form.visibility === "public" && (
+                  <p className="rounded-2xl bg-green-50 px-4 py-3 text-xs font-medium leading-relaxed text-green-800 dark:bg-green-950/30 dark:text-green-200">
+                    Công khai sẽ đăng lên feed ngay sau khi bạn xuất bản.
+                  </p>
+                )}
+                {form.visibility === "private" && (
                   <p className="rounded-2xl bg-amber-50 px-4 py-3 text-xs font-medium leading-relaxed text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                    Công khai sẽ lưu ở mục <b>Ẩn</b> trong Task của bạn. Sau khi sẵn sàng, bấm <b>Hiện công khai</b> để đưa lên feed.
+                    Riêng tư sẽ lưu ở mục <b>Ẩn</b>. Khi sẵn sàng, bấm <b>Hiện công khai</b> để đưa lên feed.
                   </p>
                 )}
                 {form.visibility === "friends" && user?.uid && (

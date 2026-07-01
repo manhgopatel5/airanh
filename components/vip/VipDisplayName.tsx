@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { getEffectiveVipTier, vipNameClass, type VipInfo } from "@/lib/vip";
+import { getEffectiveVipTier, vipNameClass, vipNameColor, type VipInfo } from "@/lib/vip";
 
 type Props = {
   name: string;
@@ -15,10 +15,16 @@ export default function VipDisplayName({ name, vip, className, badgeClassName }:
   const tier = getEffectiveVipTier(vip);
   const isPro = tier === "pro";
   const isElite = tier === "elite";
+  const nameColor = vipNameColor(tier);
 
   return (
     <span className={cn("inline-flex min-w-0 items-center gap-1", className)}>
-      <span className={cn("truncate font-bold", vipNameClass(tier))}>{name}</span>
+      <span
+        className={cn("truncate font-bold", !nameColor && vipNameClass(tier))}
+        style={nameColor ? { color: nameColor } : undefined}
+      >
+        {name}
+      </span>
       {isPro && (
         <span className={cn("shrink-0 text-[13px] leading-none", badgeClassName)} aria-label="VIP Pro">
           💎

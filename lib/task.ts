@@ -144,7 +144,7 @@ export async function createTask(
   const { displayName, photoURL, username, userShortId } = getUserDisplayInfo(user, userData);
   const vipFields = extractAuthorVip(userData);
   const visibility = data.visibility || "public";
-  const isPublicDraft = visibility === "public";
+  const isHiddenDraft = visibility === "private";
 
   const taskData: Omit<TaskItem, "id"> = {
     type: "task",
@@ -164,7 +164,7 @@ export async function createTask(
     status: "open",
     visibility,
     banned: false,
-    hidden: isPublicDraft,
+    hidden: isHiddenDraft,
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
 ...(data.location && { location: data.location }),
@@ -271,7 +271,7 @@ export async function createPlan(
   const { displayName, photoURL, username, userShortId } = getUserDisplayInfo(user, userData);
   const vipFields = extractAuthorVip(userData);
   const visibility = data.visibility || "public";
-  const isPublicDraft = visibility === "public";
+  const isHiddenDraft = visibility === "private";
 
   const ownerParticipant: PlanParticipant = {
     userId: user.uid,
@@ -307,7 +307,7 @@ export async function createPlan(
     userShortId: userShortId,
     status: "open",
     visibility,
-    hidden: isPublicDraft,
+    hidden: isHiddenDraft,
     banned: false,
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,

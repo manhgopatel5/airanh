@@ -36,7 +36,7 @@ const EMPTY_COPY: Record<SubTab, { title: string; body: string }> = {
   completed: { title: "Chưa hoàn thành", body: "Những việc đã xong sẽ được lưu lại như một lịch sử gọn gàng." },
   expired: { title: "Không có mục hết hạn", body: "Các task quá hạn gần đây sẽ được gom ở đây để bạn xử lý nhanh." },
   cancelled: { title: "Không có mục đã hủy", body: "Những mục bị hủy sẽ được tách riêng để danh sách chính luôn sạch." },
-  hidden: { title: "Không có mục ẩn", body: "Các bài công khai mới sẽ nằm đây trước khi bạn hiện lên feed." },
+  hidden: { title: "Không có mục ẩn", body: "Các bài riêng tư sẽ nằm đây. Bấm Hiện công khai khi muốn đưa lên feed." },
 };
 
 const MODE_THEME = {

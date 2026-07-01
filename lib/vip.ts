@@ -32,6 +32,13 @@ export function vipNameClass(tier: VipTier): string {
   return "text-zinc-950 dark:text-white";
 }
 
+/** Inline color — overrides inherited button/text colors in cards */
+export function vipNameColor(tier: VipTier): string | undefined {
+  if (tier === "elite") return "#F59E0B";
+  if (tier === "pro") return "#0A84FF";
+  return undefined;
+}
+
 /** Serialize VIP expiry for JSON/RSC (Firestore Timestamp is not serializable) */
 export function serializeVipExpiresAt(raw: unknown): string | null {
   if (!raw) return null;
