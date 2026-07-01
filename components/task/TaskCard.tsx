@@ -215,6 +215,12 @@ function TaskCard({
   const authorId = getTaskAuthorId(task);
   const authorName = getTaskAuthorName(task);
   const authorAvatar = getTaskAuthorAvatar(task);
+const vipTier = (task as any).authorVipTier as 'pro' | 'elite' | undefined;
+const vipExpiresRaw = (task as any).authorVipExpiresAt;
+const vipExpires = vipExpiresRaw?.toDate? vipExpiresRaw.toDate() : vipExpiresRaw? new Date(vipExpiresRaw) : null;
+const isVipActive =!vipExpires || vipExpires > new Date();
+const isVipPro = isVipActive && vipTier === 'pro';
+const isVipElite = isVipActive && vipTier === 'elite';
 const getAuthToken = useCallback(async () => {
     const authUser = getFirebaseAuth().currentUser;
     if (!authUser) return null;
@@ -359,12 +365,45 @@ const getAuthToken = useCallback(async () => {
 />
                   {task.userVerified && <FiCheckCircle className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-white dark:bg-zinc-950" style={{ color: accent }} />}
                 </button>
-                <div className="min-w-0">
-                  <button type="button" onClick={goToProfile} className="block text-left">
-                    <p className="truncate text-[13px] font-bold text-zinc-950 hover:underline dark:text-white">{authorName}</p>
-                  </button>
-                  <p className="truncate text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{derived.timeAgo}</p>
-                </div>
+              <div className="min-w-0">
+  <button type="button" onClick={goToProfile} className="block text-left">
+    <div className="flex items-center gap-1">
+      <p className={cn(
+        "truncate text-[13px] font-bold hover:underline",
+        isVipElite? "text-[#F59E0B]" : isVipPro? "text-[#0A84FF]" : "text-zinc-950 dark:text-white"
+      )}>
+        {authorName}
+      </p>
+{isVipElite && (
+  <motion.span
+    animate={{
+      scale: [1, 1.2, 1],
+      rotate: [0, -10, 10, 0],
+    }}
+    transition={{
+      duration: 2,
+      repeat: Infinity,
+      ease: "easeInOut"
+    }}
+    className="relative text-[13px] leading-none"
+    style={{
+      filter: "drop-shadow(0 0 8px rgba(245,158,11,0.9)) drop-shadow(0 0 16px rgba(245,158,11,0.6))",
+    }}
+  >
+    <span className="relative z-10">👑</span>
+    {/* lớp glow phía sau */}
+    <span
+      className="absolute inset-0 animate-ping"
+      style={{ filter: "blur(4px)", opacity: 0.6 }}
+    >
+      👑
+    </span>
+  </motion.span>
+)}
+    </div>
+  </button>
+  <p className="truncate text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{derived.timeAgo}</p>
+</div>
               </div>
 
           <div className="flex items-center gap-1 shrink-0">
