@@ -20,6 +20,7 @@ import imageCompression from "browser-image-compression";
 import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
 import SharedTaskMessage from "@/components/chat/SharedTaskMessage";
+import SharedEventMessage from "@/components/chat/SharedEventMessage";
 import { getCurrentPosition, GEO_PERMISSION_DENIED_MESSAGE } from "@/lib/geolocation";
 import { formatShortLocation, type ParsedMapboxLocation } from "@/lib/mapboxGeocode";
 import AddressSearchInput from "@/components/location/AddressSearchInput";
@@ -104,7 +105,7 @@ fileUrl?: string;
   city?: string;
   accuracy?: number;
 
-  type: "text" | "image" | "file" | "location" | "task_share";
+  type: "text" | "image" | "file" | "location" | "task_share" | "event_share";
   reactions?: Reaction[];
   edited?: boolean;
   editedAt?: Timestamp;
@@ -122,6 +123,15 @@ fileUrl?: string;
   taskPrice?: number;
   price?: number;
   progress?: number;
+  eventId?: string;
+  eventTitle?: string;
+  eventImage?: string;
+  eventAddress?: string;
+  eventTag?: string;
+  eventDesc?: string;
+  eventPrice?: string;
+  eventOpenTime?: string;
+  mapUrl?: string;
 };
 
 type ChatData = {
@@ -1637,6 +1647,18 @@ onClick={(e) => {
                 {...(m.taskId ? { taskId: m.taskId } : {})}
                 taskType={m.taskType ?? ((m.taskPrice ?? m.price ?? 0) > 0 ? "task" : "plan")}
                 {...(m.progress != null ? { progress: Number(m.progress) } : {})}
+              />
+            ) : m.type === "event_share" ? (
+              <SharedEventMessage
+                {...(m.eventId ? { eventId: m.eventId } : {})}
+                {...(m.eventTitle ? { eventTitle: m.eventTitle } : {})}
+                {...(m.eventImage ? { eventImage: m.eventImage } : {})}
+                {...(m.eventAddress ? { eventAddress: m.eventAddress } : {})}
+                {...(m.eventTag ? { eventTag: m.eventTag } : {})}
+                {...(m.eventDesc ? { eventDesc: m.eventDesc } : {})}
+                {...(m.eventPrice ? { eventPrice: m.eventPrice } : {})}
+                {...(m.eventOpenTime ? { eventOpenTime: m.eventOpenTime } : {})}
+                {...(m.mapUrl ? { mapUrl: m.mapUrl } : {})}
               />
             ) : (m.type === 'location' || m.location)? (
   // LOCATION - không bubble

@@ -10,6 +10,8 @@ import { getFirebaseDB } from "@/lib/firebase";
 import LeaderboardModal from "@/components/LeaderboardModal";
 import { EventItem } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
+import { useEvents } from "@/hooks/useEvents";
+import { onEventCheckin } from "@/lib/xp";
 import { type PublicRoomItem } from "@/lib/publicRooms";
 import { joinPublicRoom } from "@/lib/joinPublicRoom";
 import { useAppStore } from "@/store/app";
@@ -91,6 +93,7 @@ const RETRY_DELAY = 1500;
 const BATCH_SIZE = 10;
 
 export default function ChatClient({ initialEvents = [] }: { initialEvents?: EventItem[] }) {
+  const { refresh: refreshEvents } = useEvents(initialEvents);
   const { user, loading: authLoading } = useAuth();
   const db = getFirebaseDB();
   const router = useRouter();
@@ -653,7 +656,14 @@ return (
 </div>
 </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
-<EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+<EventDetailModal
+  event={selectedEvent}
+  onClose={() => setSelectedEvent(null)}
+  onCheckinSuccess={async () => {
+    if (user?.uid) await onEventCheckin(user.uid);
+    await refreshEvents();
+  }}
+/>
 
 <GpsRequiredModal 
   open={showGpsModal} 

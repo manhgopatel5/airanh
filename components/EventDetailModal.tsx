@@ -1,13 +1,31 @@
 "use client";
-import { FiX, FiMapPin, FiClock, FiDollarSign, FiUsers, FiShare2, FiNavigation, FiStar, FiMessageSquare } from "react-icons/fi";
+
+import {
+  FiX,
+  FiMapPin,
+  FiClock,
+  FiDollarSign,
+  FiUsers,
+  FiShare2,
+  FiNavigation,
+  FiStar,
+  FiMessageSquare,
+  FiCheckCircle,
+  FiLogIn,
+} from "react-icons/fi";
 import { EventItem } from "@/data/events";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/lib/AuthContext";
+import { useRouter } from "next/navigation";
+import ShareEventModal from "@/components/ShareEventModal";
+import { eventAuthFetch } from "@/lib/eventApi";
 
 type Review = {
   id: string;
   userId: string;
+  userName?: string;
   rating: number;
   comment: string;
   createdAt: string;
@@ -16,12 +34,15 @@ type Review = {
 export default function EventDetailModal({
   event,
   onClose,
-  onCheckinSuccess
+  onCheckinSuccess,
 }: {
   event: EventItem | null;
   onClose: () => void;
   onCheckinSuccess?: () => void;
 }) {
+  const { user } = useAuth();
+  const router = useRouter();
+
   const [checking, setChecking] = useState(false);
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
   const [localJoined, setLocalJoined] = useState(event?.joined || 0);
@@ -31,69 +52,91 @@ export default function EventDetailModal({
   const [reviews, setReviews] = useState<Review[]>([]);
   const [myRating, setMyRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState("");
   const [savingReview, setSavingReview] = useState(false);
-  const [showCommentBox, setShowCommentBox] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState(true);
+  const [hasMyReview, setHasMyReview] = useState(false);
 
-  const getUserId = () => {
-    let uid = localStorage.getItem('userId');
-    if (!uid) {
-      uid = `guest_${crypto.randomUUID()}`;
-      localStorage.setItem('userId', uid);
-    }
-    return uid;
-  };
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     if (!event) return;
     try {
       const res = await fetch(`/api/admin/reviews?eventId=${event.id}`);
       const data = await res.json();
-      if (res.ok) {
-        const reviewList = data.reviews || [];
-        setReviews(reviewList);
-        const myReview = reviewList.find((r: Review) => r.userId === getUserId());
-        if (myReview) {
-          setMyRating(myReview.rating);
-          setComment(myReview.comment || '');
-          setShowCommentBox(true);
-        } else {
-          setMyRating(0);
-          setComment('');
-          setShowCommentBox(false);
-        }
-        // Update local rating + count
-        const total = reviewList.reduce((sum: number, r: Review) => sum + r.rating, 0);
-        const count = reviewList.length;
-        setLocalRating(count > 0? Number((total / count).toFixed(1)) : 0);
-        setLocalReviews(count);
+      if (!res.ok) return;
+
+      const reviewList: Review[] = data.reviews || [];
+      setReviews(reviewList);
+
+      const mine = user?.uid
+        ? reviewList.find((r) => r.userId === user.uid)
+        : undefined;
+
+      if (mine) {
+        setMyRating(mine.rating);
+        setComment(mine.comment || "");
+        setHasMyReview(true);
+      } else {
+        setHasMyReview(false);
       }
+
+      const total = reviewList.reduce((sum, r) => sum + r.rating, 0);
+      const count = reviewList.length;
+      setLocalRating(count > 0 ? Number((total / count).toFixed(1)) : 0);
+      setLocalReviews(count);
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [event, user?.uid]);
 
-useEffect(() => {
-  if (!event) return;
-  setLocalJoined(event.joined || 0);
-  setLocalRating(event.rating || 0); // Lấy từ prop, khỏi fetch
-  setLocalReviews(event.reviews || 0); // Lấy từ prop, khỏi fetch
-  // XÓA DÒNG NÀY: fetchReviews();
+  const fetchCheckinStatus = useCallback(async () => {
+    if (!event || !user?.uid) {
+      setHasCheckedIn(false);
+      setLoadingStatus(false);
+      return;
+    }
 
-  const userId = getUserId();
-  const checkedInToday = localStorage.getItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`);
-  setHasCheckedIn(!!checkedInToday);
-}, [event]);
+    setLoadingStatus(true);
+    try {
+      const res = await eventAuthFetch(`/api/admin/checkin?eventId=${event.id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setHasCheckedIn(!!data.hasCheckedIn);
+        if (typeof data.joined === "number") setLocalJoined(data.joined);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingStatus(false);
+    }
+  }, [event, user?.uid]);
+
+  useEffect(() => {
+    if (!event) return;
+    setLocalJoined(event.joined || 0);
+    setLocalRating(event.rating || 0);
+    setLocalReviews(event.reviews || 0);
+    setMyRating(0);
+    setComment("");
+    setHasMyReview(false);
+    setShowReviews(false);
+    void fetchReviews();
+    void fetchCheckinStatus();
+  }, [event, fetchReviews, fetchCheckinStatus]);
 
   const handleCheckin = async () => {
     if (!event || checking || hasCheckedIn) return;
+    if (!user?.uid) {
+      toast.error("Đăng nhập để check-in");
+      router.push("/login");
+      return;
+    }
+
     setChecking(true);
-    const userId = getUserId();
     try {
-      const res = await fetch('/api/admin/checkin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: event.id, userId })
+      const res = await eventAuthFetch("/api/admin/checkin", {
+        method: "POST",
+        body: JSON.stringify({ eventId: event.id }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -101,11 +144,11 @@ useEffect(() => {
         return;
       }
       setHasCheckedIn(true);
-      setLocalJoined(prev => prev + 1);
-      localStorage.setItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`, '1');
-      toast.success("Check-in thành công! 🎉");
+      if (typeof data.joined === "number") setLocalJoined(data.joined);
+      else setLocalJoined((prev) => prev + 1);
+      toast.success("Check-in thành công! +15 XP 🎉");
       onCheckinSuccess?.();
-    } catch (error) {
+    } catch {
       toast.error("Lỗi mạng");
     } finally {
       setChecking(false);
@@ -113,14 +156,12 @@ useEffect(() => {
   };
 
   const handleUncheckin = async () => {
-    if (!event || checking ||!hasCheckedIn) return;
+    if (!event || checking || !hasCheckedIn || !user?.uid) return;
     setChecking(true);
-    const userId = getUserId();
     try {
-      const res = await fetch('/api/admin/checkin', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: event.id, userId })
+      const res = await eventAuthFetch("/api/admin/checkin", {
+        method: "DELETE",
+        body: JSON.stringify({ eventId: event.id }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -128,309 +169,382 @@ useEffect(() => {
         return;
       }
       setHasCheckedIn(false);
-      setLocalJoined(prev => Math.max(0, prev - 1));
-      localStorage.removeItem(`checked_${event.id}_${userId}_${new Date().toDateString()}`);
+      if (typeof data.joined === "number") setLocalJoined(data.joined);
+      else setLocalJoined((prev) => Math.max(0, prev - 1));
       toast.success("Đã bỏ check-in");
       onCheckinSuccess?.();
-    } catch (error) {
+    } catch {
       toast.error("Lỗi mạng");
     } finally {
       setChecking(false);
     }
   };
 
-  const handleSelectStar = (star: number) => {
-    setMyRating(star);
-    setShowCommentBox(true);
-  };
-
   const handleSubmitReview = async () => {
     if (!event || myRating === 0 || savingReview) return;
+    if (!user?.uid) {
+      toast.error("Đăng nhập để đánh giá");
+      router.push("/login");
+      return;
+    }
+
     setSavingReview(true);
-    const userId = getUserId();
     try {
-      const res = await fetch('/api/admin/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: event.id, userId, rating: myRating, comment })
+      const res = await eventAuthFetch("/api/admin/reviews", {
+        method: "POST",
+        body: JSON.stringify({
+          eventId: event.id,
+          rating: myRating,
+          comment: comment.trim(),
+        }),
       });
       if (!res.ok) {
         toast.error("Gửi đánh giá thất bại");
         return;
       }
-      toast.success("Đã gửi đánh giá");
-      await fetchReviews(); // Update localRating + localReviews ngay
-      onCheckinSuccess?.(); // Refresh list ngoài
-    } catch (err) {
+      toast.success(hasMyReview ? "Đã cập nhật đánh giá" : "Đã gửi đánh giá");
+      setHasMyReview(true);
+      await fetchReviews();
+      onCheckinSuccess?.();
+    } catch {
       toast.error("Lỗi mạng");
     } finally {
       setSavingReview(false);
     }
   };
 
+  const handleShare = () => {
+    if (!user?.uid) {
+      toast.error("Đăng nhập để chia sẻ cho bạn bè");
+      router.push("/login");
+      return;
+    }
+    setShowShareModal(true);
+  };
+
   if (!event) return null;
 
   return (
-    <AnimatePresence>
-      {event && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-xl"
-            onClick={onClose}
-          />
-          <motion.div
-            initial={{ y: "-100%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "-100%", opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-3xl max-h-[calc(100vh-160px)] flex flex-col shadow-2xl overflow-hidden"
-          >
-            <div className="relative h-48 flex-shrink-0 rounded-t-3xl overflow-hidden">
-              <img src={event.image} className="w-full h-full object-cover" alt={event.title} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <button
-                onClick={onClose}
-                className="absolute top-3 right-3 w-8 h-8 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center active:scale-90 transition-transform"
-              >
-                <FiX className="text-white" size={20} />
-              </button>
-              <div className={`absolute top-3 left-4 px-2.5 py-1 bg-gradient-to-r ${event.tagColor} rounded-lg`}>
-                <span className="text-xs font-[800] text-white">{event.tag}</span>
-              </div>
-              {(localRating || 0) > 0 && (
-                <div className="absolute top-3 right-14 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-lg flex items-center gap-1">
-                  <FiStar className="text-amber-400" size={12} fill="currentColor" />
-                  <span className="text-xs font-[700] text-white">{localRating}</span>
-                  {(localReviews || 0) > 0 && <span className="text-xs text-white/70">({localReviews})</span>}
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1 overflow-auto">
-              <div className="p-5">
-                <div className="flex items-start gap-3 mb-4">
-                  <span className="text-3xl">{event.icon}</span>
-                  <div className="flex-1">
-                    <h2 className="text-xl font-[700] leading-tight">{event.title}</h2>
-                    <p className="text-sm text-[#8e8e93] mt-1">{event.desc}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3 mb-5">
-                  <div className="flex items-start gap-3 text-sm">
-                    <FiMapPin className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
-                    <div>
-                      <p className="font-[550]">Địa chỉ</p>
-                      <p className="text-[#8e8e93] text-xs mt-0.5">{event.address}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 text-sm">
-                    <FiClock className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
-                    <div>
-                      <p className="font-[550]">Giờ mở cửa</p>
-                      <p className="text-[#8e8e93] text-xs mt-0.5">{event.openTime}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 text-sm">
-                    <FiDollarSign className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
-                    <div>
-                      <p className="font-[550]">Giá vé</p>
-                      <p className="text-[#8e8e93] text-xs mt-0.5">{event.price}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 text-sm">
-                    <FiUsers className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-[550]">Lượt check-in</p>
-                          <p className="text-[#8e8e93] text-xs mt-0.5">
-                            {localJoined} người
-                          </p>
-                        </div>
-                        <button
-                          onClick={hasCheckedIn? handleUncheckin : handleCheckin}
-                          disabled={checking}
-                          className={`px-3 h-8 rounded-lg text-xs font-[600] flex items-center gap-1.5 ${
-                            hasCheckedIn
-                           ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:scale-95'
-                              : 'bg-[#0a84ff] text-white active:scale-95'
-                          } disabled:opacity-50 transition-transform`}
-                        >
-                          {checking? "Đang xử lý..." : hasCheckedIn? "Bỏ check-in" : "Check-in"}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Đánh giá của bạn - bỏ bg xám, giống row trên */}
-                  <div className="flex items-start gap-3 text-sm">
-                    <FiStar className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
-                    <div className="flex-1">
-                      <p className="font-[550] mb-2">Đánh giá của bạn</p>
-                      <div className="flex gap-1 mb-2">
-                        {[1,2,3,4,5].map(star => (
-                          <button
-                            key={star}
-                            onClick={() => handleSelectStar(star)}
-                            onMouseEnter={() => setHoverRating(star)}
-                            onMouseLeave={() => setHoverRating(0)}
-                          >
-                            <FiStar
-                              size={28}
-                              className={star <= (hoverRating || myRating)
-                             ? 'text-amber-400 fill-amber-400'
-                                : 'text-zinc-300 dark:text-zinc-600'
-                              }
-                            />
-                          </button>
-                        ))}
-                      </div>
-                     {showCommentBox && (
-  <div className="space-y-2">
-    <textarea
-      value={comment}
-      onChange={(e) => setComment(e.target.value)}
-      placeholder="Viết cảm nhận..."
-      className="w-full h-20 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm outline-none resize-none font-sans"
-    />
-    <button
-      onClick={handleSubmitReview}
-      disabled={myRating === 0 || savingReview}
-      className="w-full h-9 bg-[#0a84ff] text-white rounded-lg text-sm font-[600] disabled:opacity-50 active:scale-95 transition-transform"
-    >
-      {savingReview? "Đang gửi..." : reviews.find(r => r.userId === getUserId())? "Cập nhật đánh giá" : "Gửi đánh giá"}
-    </button>
-  </div>
-)}
-                    </div>
-                  </div>
-
-                  {/* Bài đánh giá - bỏ bg xám, giống row trên */}
-<div
-  onClick={async () => {
-    if (!showReviews) {
-      await fetchReviews();
-    }
-    setShowReviews(!showReviews);
-  }}
-  className="flex items-start gap-3 text-sm w-full text-left active:opacity-60 cursor-pointer"
->
-  <FiMessageSquare className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
-  <div className="flex-1">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="font-[550] font-sans">Bài đánh giá</p>
-        <p className="text-[#8e8e93] text-xs mt-0.5 font-sans">{localReviews} đánh giá</p>
-      </div>
-      <FiX className={`transform transition-transform text-[#8e8e93] ${showReviews? 'rotate-0' : 'rotate-45'}`} size={18} />
-    </div>
-  </div>
-</div>
-                </div>
-
-            {showReviews && (
-  <div className="space-y-3 mb-5 pl-8">
-    {reviews.length === 0? (
-      <p className="text-sm text-center text-[#8e8e93] py-4 font-sans">Chưa có đánh giá nào</p>
-    ) : (
-      reviews.map(r => {
-        const isMine = r.userId === getUserId();
-        return (
-          <div key={r.id} className={`pb-3 border-b border-zinc-200 dark:border-zinc-800 last:border-0 ${isMine? 'bg-blue-50/50 dark:bg-blue-950/20 -mx-2 px-2 rounded-lg' : ''}`}>
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <FiStar
-                      key={i}
-                      size={14}
-                      className={i < r.rating? 'text-amber-400 fill-amber-400' : 'text-zinc-300 dark:text-zinc-600'}
-                    />
-                  ))}
-                </div>
-                <span className="text-xs text-[#8e8e93] font-sans">
-                  {new Date(r.createdAt).toLocaleDateString('vi-VN')}
-                </span>
-                {isMine && <span className="text-xs text-[#0a84ff] font-[600] font-sans">Bạn</span>}
-              </div>
-              {isMine && (
+    <>
+      <AnimatePresence>
+        {event && (
+          <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xl"
+              onClick={onClose}
+            />
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 320 }}
+              className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
+            >
+              <div className="relative h-44 flex-shrink-0 overflow-hidden">
+                <img src={event.image} className="w-full h-full object-cover" alt={event.title} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
                 <button
-                  onClick={() => {
-                    setShowCommentBox(true);
-                    setShowReviews(false);
-                  }}
-                  className="text-xs text-[#0a84ff] font-[600] active:opacity-60 font-sans"
+                  onClick={onClose}
+                  className="absolute top-3 right-3 w-9 h-9 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center"
                 >
-                  Sửa
+                  <FiX className="text-white" size={20} />
                 </button>
-              )}
-            </div>
-            {r.comment && <p className="text-sm text-zinc-700 dark:text-zinc-300 font-sans">{r.comment}</p>}
-          </div>
-        )
-      })
-    )}
-  </div>
-)}
-
-{event.tips?.length > 0 && (
-  <div className="bg-amber-500/10 border border-amber-500/20 dark:border-amber-500/30 rounded-xl p-3 mb-5">
-    <p className="text-xs font-[700] text-amber-700 dark:text-amber-400 mb-2 font-sans">💡 Tips từ cộng đồng</p>
-    <ul className="space-y-1.5">
-      {event.tips.map((tip, i) => (
-        <li key={i} className="text-sm text-zinc-700 dark:text-zinc-300 flex items-start gap-2 font-sans">
-          <span className="text-amber-500 mt-0.5">•</span>
-          <span>{tip}</span>
-        </li>
-      ))}
-    </ul>
-  </div>
-)}
-                {event.gallery?.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-[600] mb-2">Ảnh từ cộng đồng</h3>
-                    <div className="grid grid-cols-3 gap-2">
-                      {event.gallery.map((img, i) => (
-                        <img
-                          key={i}
-                          src={img}
-                          className="w-full aspect-square rounded-lg object-cover"
-                          loading="lazy"
-                          alt={`Gallery ${i + 1}`}
-                        />
-                      ))}
-                    </div>
+                <div className={`absolute top-3 left-3 px-2.5 py-1 bg-gradient-to-r ${event.tagColor} rounded-lg`}>
+                  <span className="text-xs font-bold text-white">{event.tag}</span>
+                </div>
+                {(localRating || 0) > 0 && (
+                  <div className="absolute top-3 right-14 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-lg flex items-center gap-1">
+                    <FiStar className="text-amber-400" size={12} fill="currentColor" />
+                    <span className="text-xs font-bold text-white">{localRating}</span>
+                    {(localReviews || 0) > 0 && (
+                      <span className="text-xs text-white/70">({localReviews})</span>
+                    )}
                   </div>
                 )}
+                <div className="absolute bottom-3 left-4 right-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{event.icon}</span>
+                    <h2 className="text-lg font-bold text-white leading-tight line-clamp-2">{event.title}</h2>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div className="p-4 border-t border-black/5 dark:border-white/5 grid grid-cols-2 gap-3 flex-shrink-0">
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`${event.title} - ${event.address}`);
-                  toast.success("Đã copy địa chỉ");
-                }}
-                className="h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition-transform"
-              >
-                <FiShare2 size={18} />
-                Chia sẻ
-              </button>
-              <button
-                onClick={() => window.open(event.mapUrl, '_blank')}
-                className="h-12 bg-gradient-to-r from-[#0a84ff] to-purple-500 text-white rounded-xl text-sm font-[600] flex items-center justify-center gap-2 active:scale-95 transition-transform"
-              >
-                <FiNavigation size={18} />
-                Chỉ đường
-              </button>
-            </div>
-          </motion.div>
-        </div>
+              <div className="flex-1 overflow-auto">
+                <div className="p-5 space-y-4">
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">{event.desc}</p>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    <InfoRow icon={<FiMapPin size={16} />} label="Địa chỉ" value={event.address} />
+                    <InfoRow icon={<FiClock size={16} />} label="Giờ mở cửa" value={event.openTime} />
+                    <InfoRow icon={<FiDollarSign size={16} />} label="Giá vé" value={event.price} />
+                    <InfoRow
+                      icon={<FiUsers size={16} />}
+                      label="Lượt check-in"
+                      value={`${localJoined} người`}
+                    />
+                  </div>
+
+                  {/* Check-in card */}
+                  <div
+                    className={`rounded-2xl border p-4 ${
+                      hasCheckedIn
+                        ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/20"
+                        : "border-blue-100 bg-blue-50/60 dark:border-blue-900/40 dark:bg-blue-950/20"
+                    }`}
+                  >
+                    {!user?.uid ? (
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-sm">Check-in tại sự kiện</p>
+                          <p className="text-xs text-zinc-500 mt-0.5">Đăng nhập để ghi nhận lượt tham gia</p>
+                        </div>
+                        <button
+                          onClick={() => router.push("/login")}
+                          className="h-10 px-4 rounded-xl bg-blue-500 text-white text-sm font-semibold flex items-center gap-1.5"
+                        >
+                          <FiLogIn size={16} />
+                          Đăng nhập
+                        </button>
+                      </div>
+                    ) : hasCheckedIn ? (
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <FiCheckCircle className="text-emerald-500" size={22} />
+                          <div>
+                            <p className="font-semibold text-sm text-emerald-700 dark:text-emerald-400">
+                              Đã check-in hôm nay
+                            </p>
+                            <p className="text-xs text-zinc-500">Cảm ơn bạn đã tham gia!</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleUncheckin}
+                          disabled={checking}
+                          className="text-xs font-semibold text-red-500 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50"
+                        >
+                          {checking ? "..." : "Huỷ"}
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="font-semibold text-sm mb-1">Bạn đang ở đây?</p>
+                        <p className="text-xs text-zinc-500 mb-3">Check-in để cộng đồng biết và nhận +15 XP</p>
+                        <button
+                          onClick={handleCheckin}
+                          disabled={checking || loadingStatus}
+                          className="w-full h-11 rounded-xl bg-blue-500 text-white font-semibold text-sm disabled:opacity-50 active:scale-[0.98] transition-transform"
+                        >
+                          {checking || loadingStatus ? "Đang xử lý..." : "Check-in ngay"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Review card */}
+                  <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="font-semibold text-sm">Đánh giá của bạn</p>
+                      {hasMyReview && (
+                        <span className="text-xs font-semibold text-blue-500">Đã đánh giá</span>
+                      )}
+                    </div>
+                    <div className="flex gap-1 mb-3">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => setMyRating(star)}
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          className="p-0.5"
+                        >
+                          <FiStar
+                            size={30}
+                            className={
+                              star <= (hoverRating || myRating)
+                                ? "text-amber-400 fill-amber-400"
+                                : "text-zinc-300 dark:text-zinc-600"
+                            }
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    {myRating > 0 && (
+                      <div className="space-y-2">
+                        <textarea
+                          value={comment}
+                          onChange={(e) => setComment(e.target.value)}
+                          placeholder="Chia sẻ cảm nhận của bạn (tuỳ chọn)..."
+                          maxLength={500}
+                          className="w-full h-20 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm outline-none resize-none"
+                        />
+                        <button
+                          onClick={handleSubmitReview}
+                          disabled={savingReview}
+                          className="w-full h-10 bg-blue-500 text-white rounded-xl text-sm font-semibold disabled:opacity-50"
+                        >
+                          {savingReview
+                            ? "Đang gửi..."
+                            : hasMyReview
+                              ? "Cập nhật đánh giá"
+                              : "Gửi đánh giá"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Reviews list */}
+                  <button
+                    onClick={async () => {
+                      if (!showReviews) await fetchReviews();
+                      setShowReviews(!showReviews);
+                    }}
+                    className="w-full flex items-center justify-between py-2 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FiMessageSquare className="text-blue-500" size={18} />
+                      <div>
+                        <p className="font-semibold text-sm">Bài đánh giá</p>
+                        <p className="text-xs text-zinc-500">{localReviews} đánh giá</p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-blue-500 font-semibold">
+                      {showReviews ? "Thu gọn" : "Xem"}
+                    </span>
+                  </button>
+
+                  {showReviews && (
+                    <div className="space-y-3">
+                      {reviews.length === 0 ? (
+                        <p className="text-sm text-center text-zinc-400 py-4">Chưa có đánh giá nào</p>
+                      ) : (
+                        reviews.map((r) => {
+                          const isMine = r.userId === user?.uid;
+                          return (
+                            <div
+                              key={r.id}
+                              className={`rounded-xl p-3 ${
+                                isMine
+                                  ? "bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30"
+                                  : "bg-zinc-50 dark:bg-zinc-800/50"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1.5">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <p className="text-sm font-semibold truncate">
+                                    {isMine ? "Bạn" : r.userName || "Người dùng"}
+                                  </p>
+                                  <div className="flex">
+                                    {[...Array(5)].map((_, i) => (
+                                      <FiStar
+                                        key={i}
+                                        size={12}
+                                        className={
+                                          i < r.rating
+                                            ? "text-amber-400 fill-amber-400"
+                                            : "text-zinc-300"
+                                        }
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                                <span className="text-[10px] text-zinc-400 shrink-0">
+                                  {r.createdAt
+                                    ? new Date(r.createdAt).toLocaleDateString("vi-VN")
+                                    : ""}
+                                </span>
+                              </div>
+                              {r.comment && (
+                                <p className="text-sm text-zinc-600 dark:text-zinc-300">{r.comment}</p>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+
+                  {event.tips?.length > 0 && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50/80 dark:border-amber-900/40 dark:bg-amber-950/20 p-3">
+                      <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-2">
+                        Tips từ cộng đồng
+                      </p>
+                      <ul className="space-y-1">
+                        {event.tips.map((tip, i) => (
+                          <li key={i} className="text-sm text-zinc-700 dark:text-zinc-300 flex gap-2">
+                            <span className="text-amber-500">•</span>
+                            <span>{tip}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {event.gallery?.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2">Ảnh từ cộng đồng</h3>
+                      <div className="grid grid-cols-3 gap-2">
+                        {event.gallery.map((img, i) => (
+                          <img
+                            key={i}
+                            src={img}
+                            className="w-full aspect-square rounded-lg object-cover"
+                            loading="lazy"
+                            alt=""
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 grid grid-cols-2 gap-3 flex-shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                <button
+                  onClick={handleShare}
+                  className="h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                >
+                  <FiShare2 size={18} />
+                  Gửi cho bạn
+                </button>
+                <button
+                  onClick={() => window.open(event.mapUrl, "_blank")}
+                  className="h-12 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                >
+                  <FiNavigation size={18} />
+                  Chỉ đường
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {showShareModal && event && (
+        <ShareEventModal event={event} onClose={() => setShowShareModal(false)} />
       )}
-    </AnimatePresence>
+    </>
+  );
+}
+
+function InfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 text-sm">
+      <div className="text-blue-500 mt-0.5 shrink-0">{icon}</div>
+      <div className="min-w-0">
+        <p className="font-medium text-zinc-800 dark:text-zinc-200">{label}</p>
+        <p className="text-zinc-500 text-xs mt-0.5 break-words">{value}</p>
+      </div>
+    </div>
   );
 }

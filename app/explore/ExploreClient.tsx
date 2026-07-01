@@ -59,7 +59,7 @@ type Props = {
 export default function ExploreClient({ initialEvents }: Props) {
   const router = useRouter();
   const { user } = useAuth();
-  const { events, loading } = useEvents(initialEvents);
+  const { events, loading, refresh } = useEvents(initialEvents);
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [userLat, setUserLat] = useState<number | null>(null);
@@ -347,7 +347,7 @@ export default function ExploreClient({ initialEvents }: Props) {
           if (user?.uid) {
             await onEventCheckin(user.uid);
           }
-          router.refresh();
+          await refresh();
         }}
       />
     </div>
