@@ -27,44 +27,61 @@ function truncatePreview(text?: string, maxLen = 120): string {
   return `${t.slice(0, maxLen).trimEnd()}…`;
 }
 
-/** TikTok-style: title = tên, body = nội dung ngắn (không lặp tên) */
-export function formatPushTitle(
-  senderName: string,
+/** Title = hành động — thay chỗ "from Huha" trên iOS khi title trống */
+export function formatPushActionTitle(
+  kind: PushContentKind,
   isSystem: boolean
 ): string {
   if (isSystem) return "Hệ thống";
-  return senderName.trim() || "Ai đó";
-}
-
-export function formatPushBody(
-  kind: PushContentKind,
-  preview?: string
-): string {
-  const p = truncatePreview(preview);
 
   switch (kind) {
     case "friend_request":
-      return "Gửi lời mời kết bạn";
+      return "đã gửi lời mời kết bạn";
     case "friend_accepted":
-      return "Chấp nhận lời mời kết bạn";
+      return "đã chấp nhận lời mời kết bạn";
     case "image":
-      return "Đã gửi hình ảnh";
+      return "đã gửi hình ảnh";
     case "file":
-      return "Đã gửi tệp đính kèm";
+      return "đã gửi tệp đính kèm";
     case "location":
-      return "Đã gửi vị trí";
+      return "đã gửi vị trí";
     case "audio":
-      return "Đã gửi tin nhắn thoại";
+      return "đã gửi tin nhắn thoại";
     case "mention":
-      return p ? p : "Nhắc đến bạn trong nhóm";
+      return "đã nhắc đến bạn";
     case "group_text":
-      return p ? p : "Gửi tin nhắn trong nhóm";
-    case "system":
-      return truncatePreview(preview) || "Bạn có thông báo mới";
+      return "đã gửi tin nhắn trong nhóm";
     case "text":
     default:
-      return p || "Tin nhắn mới";
+      return "đã gửi tin nhắn:";
   }
+}
+
+/** Body = tên người gửi + nội dung (nếu có) */
+export function formatPushBody(
+  senderName: string,
+  kind: PushContentKind,
+  preview?: string
+): string {
+  const name = senderName.trim() || "Ai đó";
+  const p = truncatePreview(preview);
+
+  if (kind === "system") {
+    return p || "Bạn có thông báo mới";
+  }
+
+  if (
+    kind === "friend_request" ||
+    kind === "friend_accepted" ||
+    kind === "image" ||
+    kind === "file" ||
+    kind === "location" ||
+    kind === "audio"
+  ) {
+    return name;
+  }
+
+  return p ? `${name}\n${p}` : name;
 }
 
 export function inferPushContentKind(
@@ -137,8 +154,8 @@ export function buildPushDisplayPayload(params: {
     inferPushContentKind(type, params.preview ? { text: params.preview } : undefined);
   const isSystem = params.isSystem ?? contentKind === "system";
   const senderName = isSystem ? "Hệ thống" : (params.senderName || "Ai đó").trim();
-  const title = formatPushTitle(senderName, isSystem);
-  const body = formatPushBody(contentKind, params.preview);
+  const title = formatPushActionTitle(contentKind, isSystem);
+  const body = formatPushBody(senderName, contentKind, params.preview);
   const icon = resolvePushIcon(senderName, params.senderAvatar, isSystem);
   const base = getPushBaseUrl();
   const link = params.link || "/";

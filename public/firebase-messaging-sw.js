@@ -1,4 +1,4 @@
-/* ================= FIREBASE SW V2.6 — TikTok-style push (tên + nội dung, avatar) ================= */
+/* ================= FIREBASE SW V2.7 — title = hành động, thay "from Huha" ================= */
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
@@ -12,7 +12,7 @@ const firebaseConfig = {
   databaseURL: "https://airanh-ba64c-default-rtdb.asia-southeast1.firebasedatabase.app/",
 };
 
-const VERSION = "v2.6.0";
+const VERSION = "v2.7.0";
 const APP_ICON = "/icon-192.PNG";
 
 firebase.initializeApp(firebaseConfig);
@@ -36,36 +36,58 @@ function resolveIcon(data, isSystem) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0a84ff&color=fff&size=192&bold=true&rounded=true`;
 }
 
-/** TikTok-style: title = tên, body = nội dung (không lặp "đã gửi tin nhắn") */
-function resolveTitle(data, isSystem) {
-  const title = (data.title || data.senderName || "").trim();
-  if (title) return title;
-  return isSystem ? "Hệ thống" : "Ai đó";
-}
-
-function resolveBody(data) {
-  const body = (data.body || data.preview || data.message || "").trim();
-  if (body) return body;
-
-  const kind = data.contentKind || "text";
+function actionTitle(kind, isSystem) {
+  if (isSystem) return "Hệ thống";
   switch (kind) {
     case "friend_request":
-      return "Gửi lời mời kết bạn";
+      return "đã gửi lời mời kết bạn";
     case "friend_accepted":
-      return "Chấp nhận lời mời kết bạn";
+      return "đã chấp nhận lời mời kết bạn";
     case "image":
-      return "Đã gửi hình ảnh";
+      return "đã gửi hình ảnh";
     case "file":
-      return "Đã gửi tệp đính kèm";
+      return "đã gửi tệp đính kèm";
     case "location":
-      return "Đã gửi vị trí";
+      return "đã gửi vị trí";
     case "audio":
-      return "Đã gửi tin nhắn thoại";
-    case "system":
-      return "Bạn có thông báo mới";
+      return "đã gửi tin nhắn thoại";
+    case "mention":
+      return "đã nhắc đến bạn";
+    case "group_text":
+      return "đã gửi tin nhắn trong nhóm";
     default:
-      return "Tin nhắn mới";
+      return "đã gửi tin nhắn:";
   }
+}
+
+function resolveTitle(data, isSystem) {
+  const title = (data.title || "").trim();
+  if (title) return title;
+  return actionTitle(data.contentKind || "text", isSystem);
+}
+
+function resolveBody(data, isSystem) {
+  const body = (data.body || "").trim();
+  if (body) return body;
+
+  const sender = (data.senderName || "Ai đó").trim();
+  const preview = (data.preview || data.message || "").trim();
+  const kind = data.contentKind || "text";
+
+  if (isSystem) return preview || "Bạn có thông báo mới";
+
+  if (
+    kind === "friend_request" ||
+    kind === "friend_accepted" ||
+    kind === "image" ||
+    kind === "file" ||
+    kind === "location" ||
+    kind === "audio"
+  ) {
+    return sender;
+  }
+
+  return preview ? `${sender}\n${preview}` : sender;
 }
 
 function parsePayloadData(raw) {
@@ -83,7 +105,7 @@ function parsePayloadData(raw) {
 function showPushNotification(data, messageId) {
   const isSystem = data.isSystem === "true" || data.type === "system";
   const title = resolveTitle(data, isSystem);
-  const body = resolveBody(data);
+  const body = resolveBody(data, isSystem);
   const icon = resolveIcon(data, isSystem);
   const tag = data.chatId || data.groupId || data.messageId || data.type || "default";
   const url = data.url || data.link || "/";
